@@ -49,57 +49,27 @@ The following former runtime overrides now live directly in their owning ACM add
 
 Their old `CfgFunctions` override registrations and duplicate files have been removed from `addons/acm_extended`.
 
-## Native merges completed in phase 2
+## Native merges completed in phases 2-6
 
-Cardiac-arrest ownership has moved into the fork-native ACM core/circulation addons:
+Fork-native ownership now includes the cardiac arrest/ROSC transaction, circulation medication effects, IV/IO flow and access state, circulation syringe/pulse UI hooks, and airway vomiting/suction workers. The corresponding `acm_extended` CfgFunctions overrides have been removed. CPR and BVM remain native ACM-owned actions.
 
-- `ACM_core_fnc_onCardiacArrest`
-- `ACM_circulation_fnc_updateCirculationState`
-- `ACM_circulation_fnc_attemptROSC`
-- `ACM_circulation_fnc_handleCardiacArrest`
-- `ACM_circulation_fnc_handleReversibleCardiacArrest`
-- new native helper `ACM_circulation_fnc_roscEligibility`
+## Native merges completed in phase 7
 
-The previous `ACME_native_fnc_onCardiacArrest` trampoline and `ACME_fnc_roscEligibility` helper were removed. The native circulation state writer now publishes its own state directly instead of depending on `ACME_fnc_setVarNet`.
+The entire direct-match breathing override cluster is now fork-native under `addons/breathing`: thoracostomy, chest seals, chest examination, NCD, pneumothorax, breathing/lung state, respiration rate, EtCO2, and stethoscope behavior. Their `acm_extended` CfgFunctions replacement entries and duplicate override files have been removed.
 
-## Native merges completed in phase 3
+## Native merges completed in phase 8
 
-Circulation medication-effect ownership has moved into the native circulation addon:
+`ACM_core_fnc_getUp` is now fork-native. This completes all **37 direct one-to-one ACM override migrations** identified at fork start. Remaining files in `addons/acm_extended/overrides` are manual mappings, ACE overrides, or genuinely Extended-specific behaviors that require architectural decisions rather than mechanical relocation.
 
-- `ACM_circulation_fnc_getCardiacMedicationEffects`
-- `ACM_circulation_fnc_getNauseaMedicationEffects`
-- `ACM_circulation_fnc_handleMed_AdenosineLocal`
-- `ACM_circulation_fnc_handleMed_AtropineLocal`
-- `ACM_circulation_fnc_handleMed_CalciumChlorideLocal`
-- `ACM_circulation_fnc_handleMed_DimercaprolLocal`
-- `ACM_circulation_fnc_handleOverdose`
+## Manual migration phase 9: rhythm and monitor ownership
 
-The fork still uses Extended medication exposure/owner helpers where those are part of the newer pharmacology model, but the ACM function identities themselves are now owned by the circulation addon instead of being replaced from `acm_extended`.
+The first manual-map cluster is now native:
 
-## Native merges completed in phase 4
+- `ACM_circulation_fnc_AED_AnalyzeRhythm`
+- `ACM_circulation_fnc_AED_Button_Shock`
+- `ACM_circulation_fnc_displayAEDMonitor_generateEKG`
+- `ACM_circulation_fnc_displayAEDMonitor_generatePO`
+- `ACM_circulation_fnc_displayAEDMonitor_generateCO`
+- ACM core's `ace_medical_treatment_fnc_checkPulseLocal` override
 
-IV/IO access state and physical flow are now native circulation functions:
-
-- `ACM_circulation_fnc_getIVFlowRate`
-- `ACM_circulation_fnc_setIVLocal`
-
-The Extended 18g/20g flow model, roller-clamp/pressure-infuser behavior, AAJT occlusion, line-generation invalidation, medicated-bag custody, and exact-site IV state are retained in the native implementations.
-
-## Native merges completed in phase 5
-
-The remaining one-to-one circulation action/UI functions are now native:
-
-- `ACM_circulation_fnc_Syringe_Inject`
-- `ACM_circulation_fnc_TransfusionMenu_onKeyDown`
-- `ACM_circulation_fnc_feelPulse`
-
-This removes the final direct-match circulation overrides. Extended syringe routing, Escape return-to-menu behavior, and the v1.1.0 pulse-check pose/cancel behavior are retained.
-
-## Native merges completed in phase 6
-
-Airway worker ownership has begun moving into the native airway addon:
-
-- `ACM_airway_fnc_handleAirwayObstruction_Vomit`
-- `ACM_airway_fnc_handleSuction`
-
-The owner/epoch-safe vomiting worker and ACCUVAC completion behavior are retained without CfgFunctions replacement from `acm_extended`.
+This keeps torsades/pVT shock eligibility, custom rhythm waveforms, true-PEA presentation, AAJT pulse occlusion, and clinical pulse wording in their native owners instead of `acm_extended` CfgFunctions replacements.
