@@ -73,3 +73,15 @@ The first manual-map cluster is now native:
 - ACM core's `ace_medical_treatment_fnc_checkPulseLocal` override
 
 This keeps torsades/pVT shock eligibility, custom rhythm waveforms, true-PEA presentation, AAJT pulse occlusion, and clinical pulse wording in their native owners instead of `acm_extended` CfgFunctions replacements.
+
+## Manual migration phase 10: patient lifecycle ownership
+
+Patient lifecycle and persistence are now owned by ACM core again:
+
+- `ACM_core_fnc_resetVariables`
+- `ACM_core_fnc_onUnconscious`
+- ACM core's ACE override for `ace_medical_fnc_serializeState`
+- ACM core's ACE override for `ace_medical_fnc_deserializeState`
+- ACM core's ACE medical-feedback `handleEffects` override
+
+The Extended clinical epoch/state serialization, restore guards, spawn/get-up safety, and rhythm pain contribution remain intact without a second `acm_extended` CfgFunctions replacement layer.
