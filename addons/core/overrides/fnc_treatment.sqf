@@ -20,6 +20,46 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         _this call ACM_core_fnc_treatmentNative
     };
 
+    // Resolve ACME's provider-theatre policy BEFORE native treatment starts. When one of these modes is selected,
+    // fn_treatmentNative is told not to enqueue ACM/ACE's generic medic animation. Previously the native bandage
+    // motion was already in the animation queue by the time ACME started the requested chest/head/NCD gesture, so
+    // it won later and made the specific animation appear to never play.
+    private _cfg = configFile >> "ace_medical_treatment_actions" >> _classname;
+    private _category = toLowerANSI getText (_cfg >> "category");
+    private _part = toLowerANSI _bodyPart;
+    private _classKey = toLowerANSI _classname;
+    private _torso = _part in ["body", "torso", "chest", "abdomen"];
+    private _mode = "";
+    private _exactAnim = "";
+    private _gestureWindow = 2.4;
+
+    if ((_classKey find "performncd") >= 0 || {(_classKey find "narspear") >= 0}) then {
+        _mode = "ncdSeat";
+        _gestureWindow = 5.0;
+    } else {
+        if ((_classKey find "checkbreathing") >= 0) then {
+            _exactAnim = "AinvPknlMstpSnonWnonDnon_AinvPknlMstpSnonWnonDnon_medic";
+        } else {
+            if (_torso && {(_classKey find "pressurebandage") >= 0}) then {
+                _exactAnim = "AinvPknlMstpSnonWnonDnon_medic3";
+            } else {
+                if (_torso && {(_classKey find "emergencytraumadressing") >= 0}) then {
+                    _exactAnim = "AinvPknlMstpSnonWnonDnon_medic4";
+                } else {
+                    if (_category == "bandage" && {_torso}) then {
+                        _mode = "torsoBandage";
+                    } else {
+                        if (_category == "bandage" && {_part == "head"}) then {
+                            private _relative = _patient worldToModel (getPosWorld _medic);
+                            _mode = ["headBandageLeft", "headBandageRight"] select ((_relative param [0, 0]) > 0);
+                        };
+                    };
+                };
+            };
+        };
+    };
+    private _ownsProviderAnim = (_mode != "") || {_exactAnim != ""};
+
     // One empty-hands request and one transition to crouch before native treatment starts.
     private _bypass = _medic getVariable ["ACME_treatmentPreflightBypass", []];
     private _isBypass = (_bypass isEqualType []) && {count _bypass >= 3}
@@ -48,9 +88,13 @@ if (_classname != "ACME_ConnectETVent") exitWith {
 
         [{
             params ["_m", "_args", "_tok"];
-            isNull _m || {!alive _m} || {!local _m}
-                || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}
-                || {(currentWeapon _m == "") && {stance _m == "CROUCH"}}
+            if (isNull _m || {!alive _m} || {!local _m}
+                || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {true};
+            private _anim = toLowerANSI animationState _m;
+            private _visuallyEmpty = (currentWeapon _m == "") || {
+                ((_anim find "wnon") >= 0) && {((_anim find "snon") >= 0)}
+            };
+            _visuallyEmpty && {stance _m == "CROUCH"}
         }, {
             params ["_m", "_args", "_tok"];
             if (isNull _m || {!alive _m} || {!local _m}
@@ -88,49 +132,19 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         _nativeArgs set [2, "Head"];
     };
 
+    if (_ownsProviderAnim && {local _medic}) then {
+        _medic setVariable ["ACME_suppressNativeTreatmentAnim", true, false];
+    };
     private _started = _nativeArgs call ACM_core_fnc_treatmentNative;
+    if (local _medic) then {
+        _medic setVariable ["ACME_suppressNativeTreatmentAnim", false, false];
+    };
+
     if (_started && {local _medic} && {!isNull _medic} && {isNull objectParent _medic}) then {
         // Every finite ACME-owned provider animation exits to empty-handed crouch.
         private _end = _medic getVariable ["ace_medical_treatment_endInAnim", ""];
         if (_end != "") then {
             _medic setVariable ["ace_medical_treatment_endInAnim", "AmovPknlMstpSnonWnonDnon"];
-        };
-
-        private _cfg = configFile >> "ace_medical_treatment_actions" >> _classname;
-        private _category = toLowerANSI getText (_cfg >> "category");
-        private _part = toLowerANSI _bodyPart;
-        private _classKey = toLowerANSI _classname;
-        private _torso = _part in ["body", "torso", "chest", "abdomen"];
-        private _mode = "";
-        private _exactAnim = "";
-        private _gestureWindow = 2.4;
-
-        // Exact project animation policy. The preflight above already handles STAND/PRONE -> unarmed CROUCH.
-        // Native treatment completion supplies the smooth return to the same empty-handed crouch.
-        if ((_classKey find "performncd") >= 0) then {
-            _mode = "ncdSeat";
-            _gestureWindow = 5.0;
-        } else {
-            if ((_classKey find "checkbreathing") >= 0) then {
-                _exactAnim = "AinvPknlMstpSnonWnonDnon_AinvPknlMstpSnonWnonDnon_medic";
-            } else {
-                if (_torso && {(_classKey find "pressurebandage") >= 0}) then {
-                    _exactAnim = "AinvPknlMstpSnonWnonDnon_medic3";
-                } else {
-                    if (_torso && {(_classKey find "emergencytraumadressing") >= 0}) then {
-                        _exactAnim = "AinvPknlMstpSnonWnonDnon_medic4";
-                    } else {
-                        if (_category == "bandage" && {_torso}) then {
-                            _mode = "torsoBandage";
-                        } else {
-                            if (_category == "bandage" && {_part == "head"}) then {
-                                private _relative = _patient worldToModel (getPosWorld _medic);
-                                _mode = ["headBandageLeft", "headBandageRight"] select ((_relative param [0, 0]) > 0);
-                            };
-                        };
-                    };
-                };
-            };
         };
 
         if (_mode != "") then {
