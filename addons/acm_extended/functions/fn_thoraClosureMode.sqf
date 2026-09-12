@@ -1,12 +1,8 @@
-/* Resolve the closure tool from the captured treating provider.
-   Preserve the existing Doctor requirement for chest tubes from fn_thoraInit.
-   The slot is only a selector; the held tool keeps its identity until put down. */
+/* Resolve chest-tube availability for the captured treating provider.
+   B93 gives the chest seal its own tray slot, so this helper no longer aliases the tube slot into a seal slot.
+   Keeping one tool identity per slot also means Doctors can choose a seal while carrying a chest-tube kit. */
 params [["_medic", objNull, [objNull]]];
-if (isNull _medic) exitWith {["seal", 0, false]};
+if (isNull _medic) exitWith {["tube", 0, false]};
 private _tubeCount = [_medic, "ACM_ChestTubeKit"] call ace_common_fnc_getCountOfItem;
 private _canTube = (_tubeCount > 0) && {[_medic, "chestTube"] call ACME_fnc_procedureAllowed};
-if (_canTube) exitWith {["tube", _tubeCount, true]};
-private _sealCount = if ([_medic, "thoracostomySeal", true] call ACME_fnc_procedureAllowed) then {
-    [_medic, "ACM_ChestSeal"] call ace_common_fnc_getCountOfItem
-} else {0};
-["seal", _sealCount, false]
+["tube", [_tubeCount, 0] select (!_canTube), _canTube]
