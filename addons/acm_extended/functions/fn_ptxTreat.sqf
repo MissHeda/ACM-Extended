@@ -14,8 +14,13 @@ switch (_op) do {
         [_patient,"ACME_CS_sealVenting",1] call ACME_fnc_setVarNet;
     };
     case "thoraSeal": {
-        [_patient,"ACME_CS_sealOcclusion",0] call ACME_fnc_setVarNet;
-        [_patient,"ACME_CS_sealVenting",1] call ACME_fnc_setVarNet;
+        // A chest seal laid directly over a completed finger-thoracostomy tract is closure of that surgical
+        // communication, not another patent pleural drain. Treat the tract the same way the suture-close path does:
+        // stop the open-tract leak/outlet while leaving any residual pneumothorax to resolve on its own. The seal
+        // stays recorded separately for the visible intervention and can still be distinguished from a suture.
+        [_patient,"ACME_CS_sealOcclusion",1] call ACME_fnc_setVarNet;
+        [_patient,"ACME_CS_sealVenting",0] call ACME_fnc_setVarNet;
+        _s set [3,0];
     };
     case "peel": {
         [_patient,"ACME_ptx_nativeSealCount",-1] call ACME_fnc_setVarNet;
