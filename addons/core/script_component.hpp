@@ -13,6 +13,7 @@
 #endif
 
 #include "\x\ACM\addons\main\script_macros.hpp"
+#include "\x\ACM\addons\main\script_effective_volume.hpp"
 
 // CfgReplacementItems.hpp
 #define TYPE_FIRST_AID_KIT 401
