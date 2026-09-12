@@ -95,9 +95,30 @@ if (!isNull _display && {(_slots findIf {(_x getVariable ["thoraTool", ""]) == "
         uiNamespace setVariable ["ACME_Thora_SlotBGs", _slots];
         uiNamespace setVariable ["ACME_Thora_SeparateClosureSlots", true];
 
+        // This handler is installed before thoraInit installs its main mouse-down handler. A carried dedicated seal
+        // uses the UI-only identity sealSlot so the stock shared-slot tick leaves the tube half alone. Immediately
+        // before a real click, map it to the clinical identity "seal" so the existing placement path remains the
+        // sole consumer/state authority. If that click did not place it, return to sealSlot on the next frame.
+        private _proxyEH = _display getVariable ["ACME_Thora_SealProxyEH", -1];
+        if (_proxyEH < 0) then {
+            _proxyEH = _display displayAddEventHandler ["MouseButtonDown", {
+                params ["", "_button"];
+                if (_button == 0 && {(uiNamespace getVariable ["ACME_Thora_Held", ""]) == "sealSlot"}) then {
+                    uiNamespace setVariable ["ACME_Thora_Held", "seal"];
+                    [{
+                        if ((uiNamespace getVariable ["ACME_Thora_Held", ""]) == "seal") then {
+                            uiNamespace setVariable ["ACME_Thora_Held", "sealSlot"];
+                        };
+                    }, []] call CBA_fnc_execNextFrame;
+                };
+                false
+            }];
+            _display setVariable ["ACME_Thora_SealProxyEH", _proxyEH];
+        };
+
         // The stock thoracostomy tick only knows about the legacy final tube slot. Keep the new seal half live with
-        // its own tiny UI-only refresher so inventory changes while the panel is open update count, tint and enable
-        // state immediately. It never changes patient state or consumes inventory.
+        // a UI-only refresher. It also supplies the snap state for the sealSlot proxy; patient mutation remains in
+        // the existing mouse-down owner-command path.
         private _oldPFH = uiNamespace getVariable ["ACME_Thora_SealSlotPFH", -1];
         if (_oldPFH < 0) then {
             private _pfh = [{
@@ -109,6 +130,14 @@ if (!isNull _display && {(_slots findIf {(_x getVariable ["thoraTool", ""]) == "
                     uiNamespace setVariable ["ACME_Thora_SealSlotPFH", -1];
                     uiNamespace setVariable ["ACME_Thora_SeparateClosureSlots", false];
                 };
+
+                // thoraInit creates SprData immediately after the first tray-icon pass. Add the proxy entry as soon
+                // as that map exists so the ordinary held-tool renderer draws the seal with its centered anchor.
+                private _sprData = uiNamespace getVariable ["ACME_Thora_SprData", createHashMap];
+                if (_sprData isEqualType createHashMap) then {
+                    _sprData set ["sealSlot", ["\x\acm\addons\breathing\ui\chestseal_ca.paa", 0.18]];
+                };
+
                 private _sealBG2 = controlNull;
                 {
                     if ((_x getVariable ["thoraTool", ""]) == "seal") exitWith {_sealBG2 = _x;};
@@ -117,8 +146,8 @@ if (!isNull _display && {(_slots findIf {(_x getVariable ["thoraTool", ""]) == "
                 private _m = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
                 private _allowed = !isNull _m && {[_m, "thoracostomySeal", true] call ACME_fnc_procedureAllowed};
                 private _n = if (_allowed) then {[_m, "ACM_ChestSeal"] call ace_common_fnc_getCountOfItem} else {0};
-                private _held = uiNamespace getVariable ["ACME_Thora_Held", ""];
-                private _selected = _held == "seal";
+                private _heldRaw = uiNamespace getVariable ["ACME_Thora_Held", ""];
+                private _selected = _heldRaw in ["seal", "sealSlot"];
                 private _available = _allowed && {_n > 0};
                 private _ic = _sealBG2 getVariable ["thoraIcon", controlNull];
                 if (!isNull _ic) then {
@@ -135,7 +164,36 @@ if (!isNull _display && {(_slots findIf {(_x getVariable ["thoraTool", ""]) == "
                     _b ctrlEnable (_available || {_selected});
                     _b ctrlSetTooltip (if (_available || {_selected}) then {"Place a chest seal"} else {"Chest seal required"});
                 };
-            }, 0.10, []] call CBA_fnc_addPerFrameHandler;
+
+                // Dedicated-seal snap calculation, matching the native closure geometry without changing the held
+                // identity to "seal" between clicks. This keeps the tube slot independent while retaining the same
+                // snap radius and incision-center target used by the original placement path.
+                if (_heldRaw == "sealSlot") then {
+                    uiNamespace setVariable ["ACME_Thora_TubeSnap", false];
+                    private _pat = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
+                    private _sside = uiNamespace getVariable ["ACME_Thora_Side", "right"];
+                    if (!isNull _pat
+                        && {!(_pat getVariable [format ["ACME_thora_tube_%1", _sside], false])}
+                        && {!(_pat getVariable [format ["ACME_thora_sealed_%1", _sside], false])}
+                        && {(_pat getVariable [format ["ACME_thora_open_%1", _sside], ""]) == "finger"}) then {
+                        private _inc = _pat getVariable [format ["ACME_thora_incision_%1", _sside], []];
+                        private _cuv = [] call ACME_fnc_thoraCursorUV;
+                        if (count _inc == 3 && {count _cuv == 2}) then {
+                            _inc params ["_ist", "_iang", "_ilenCm"];
+                            _ist params ["_isu", "_isv"];
+                            _cuv params ["_ccu", "_ccv"];
+                            private _ilenUV = (_ilenCm * (missionNamespace getVariable ["ACME_thora_pxPerCm", 60])) / 2048;
+                            private _icU = _isu + ((cos _iang) * (_ilenUV / 2));
+                            private _icV = _isv + ((sin _iang) * (_ilenUV / 2));
+                            private _af = uiNamespace getVariable ["ACME_Thora_AspectFix", 0.5625];
+                            private _dU = _ccu - _icU;
+                            private _dV = (_ccv - _icV) * (1 / (_af max 0.01));
+                            private _snap = (sqrt ((_dU * _dU) + (_dV * _dV))) <= (missionNamespace getVariable ["ACME_thora_tubeSnapR", 0.055]);
+                            uiNamespace setVariable ["ACME_Thora_TubeSnap", _snap];
+                        };
+                    };
+                };
+            }, 0.03, []] call CBA_fnc_addPerFrameHandler;
             uiNamespace setVariable ["ACME_Thora_SealSlotPFH", _pfh];
         };
     };
