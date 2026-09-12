@@ -105,7 +105,7 @@ private _FBTKBags = 0;
             };
         };
         _totalBags = _totalBags + 1;  
-    } forEach _allBagsBodyPart; 
+    } forEach _IVBagsBodyPart; 
 } forEach ALL_BODY_PARTS;
 
 if (_totalBags > 0) then {

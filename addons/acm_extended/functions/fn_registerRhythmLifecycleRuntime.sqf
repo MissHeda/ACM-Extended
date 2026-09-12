@@ -70,4 +70,5 @@ addMissionEventHandler ["EntityRespawned", {
     [_patient, CBA_missionTime + (missionNamespace getVariable ["ACME_rhythmNativeShockGraceSec", 10]), true, false] call ACME_fnc_rhythmNativeShockGraceCommit;
     [_patient, "", -1, true, false] call ACME_fnc_rhythmNativeHoldCommit;
     [_patient, 0, false, false, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;
+    if (local _patient) then {_patient setVariable ["ACME_peaElectricalHR", nil, true];};
 }] call CBA_fnc_addEventHandler;

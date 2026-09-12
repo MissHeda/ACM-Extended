@@ -1,4 +1,4 @@
-#include "\z\ace\addons\common\script_component.hpp"
+#include "..\script_component.hpp"
 #include "\a3\ui_f\hpp\defineDIKCodes.inc"
 /*
  * Author: commy2, Glowbal, PabstMirror
@@ -39,12 +39,12 @@ private _player = ACE_player;
 //Open Dialog and set the title
 closeDialog 0;
 if (_dialog) then {
-    createDialog QGVAR(ProgressBar_Dialog);
+    createDialog QACEGVAR(common,ProgressBar_Dialog);
 } else {
-    QGVAR(progressBarDisplay) cutRsc [QGVAR(ProgressBar_Display), "PLAIN"];
+    QACEGVAR(common,progressBarDisplay) cutRsc [QACEGVAR(common,ProgressBar_Display), "PLAIN"];
 };
 
-private _display = uiNamespace getVariable QGVAR(dlgProgress);
+private _display = uiNamespace getVariable QACEGVAR(common,dlgProgress);
 
 // Ensure CBA keybindings are hooked into the display
 _display call (uiNamespace getVariable "CBA_events_fnc_initDisplayCurator");
@@ -52,27 +52,27 @@ _display call (uiNamespace getVariable "CBA_events_fnc_initDisplayCurator");
 // Hide cursor by using custom transparent cursor
 if (_dialog) then {
     private _map = _display displayCtrl 101;
-    _map ctrlMapCursor ["", QGVAR(blank)];
+    _map ctrlMapCursor ["", QACEGVAR(common,blank)];
 } else { // Add key handler for ESC to cancel
     [DIK_ESCAPE, [false, false, false], {
-        QGVAR(progressBarDisplay) cutText ["", "PLAIN"];
-        [QGVAR(progressBarKeyHandler), "keydown"] call CBA_fnc_removeKeyHandler;
+        QACEGVAR(common,progressBarDisplay) cutText ["", "PLAIN"];
+        [QACEGVAR(common,progressBarKeyHandler), "keydown"] call CBA_fnc_removeKeyHandler;
         true
-    }, "keydown", QGVAR(progressBarKeyHandler)] call CBA_fnc_addKeyHandler;
+    }, "keydown", QACEGVAR(common,progressBarKeyHandler)] call CBA_fnc_addKeyHandler;
 };
 
-(uiNamespace getVariable QGVAR(ctrlProgressBarTitle)) ctrlSetText _localizedTitle;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle)) ctrlSetText _localizedTitle;
 
 //Adjust position based on user setting:
-private _ctrlPos = ctrlPosition (uiNamespace getVariable QGVAR(ctrlProgressBarTitle));
-_ctrlPos set [1, ((0 + 29 * GVAR(settingProgressBarLocation)) * ((((safeZoneW / safeZoneH) min 1.2) / 1.2) / 25) + (safeZoneY + (safeZoneH - (((safeZoneW / safeZoneH) min 1.2) / 1.2))/2))];
+private _ctrlPos = ctrlPosition (uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle));
+_ctrlPos set [1, ((0 + 29 * ACEGVAR(common,settingProgressBarLocation)) * ((((safeZoneW / safeZoneH) min 1.2) / 1.2) / 25) + (safeZoneY + (safeZoneH - (((safeZoneW / safeZoneH) min 1.2) / 1.2))/2))];
 
-(uiNamespace getVariable QGVAR(ctrlProgressBG)) ctrlSetPosition _ctrlPos;
-(uiNamespace getVariable QGVAR(ctrlProgressBG)) ctrlCommit 0;
-(uiNamespace getVariable QGVAR(ctrlProgressBar)) ctrlSetPosition _ctrlPos;
-(uiNamespace getVariable QGVAR(ctrlProgressBar)) ctrlCommit 0;
-(uiNamespace getVariable QGVAR(ctrlProgressBarTitle)) ctrlSetPosition _ctrlPos;
-(uiNamespace getVariable QGVAR(ctrlProgressBarTitle)) ctrlCommit 0;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBG)) ctrlSetPosition _ctrlPos;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBG)) ctrlCommit 0;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBar)) ctrlSetPosition _ctrlPos;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBar)) ctrlCommit 0;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle)) ctrlSetPosition _ctrlPos;
+(uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle)) ctrlCommit 0;
 
 [{
     (_this select 0) params ["_args", "_onFinish", "_onFail", "_condition", "_player", "_startTime", "_totalTime", "_exceptions", "_title", "_dialog"];
@@ -81,7 +81,7 @@ _ctrlPos set [1, ((0 + 29 * GVAR(settingProgressBarLocation)) * ((((safeZoneW / 
     private _errorCode = -1;
 
     // this does not check: target fell unconscious, target died, target moved inside vehicle / left vehicle, target moved outside of players range, target moves at all.
-    if (isNull (uiNamespace getVariable [QGVAR(ctrlProgressBar), controlNull])) then {
+    if (isNull (uiNamespace getVariable [QACEGVAR(common,ctrlProgressBar), controlNull])) then {
         _errorCode = 1;
     } else {
         if (ACE_player != _player || !alive _player) then {
@@ -90,7 +90,7 @@ _ctrlPos set [1, ((0 + 29 * GVAR(settingProgressBarLocation)) * ((((safeZoneW / 
             if !([_args, _elapsedTime, _totalTime, _errorCode] call _condition) then {
                 _errorCode = 3;
             } else {
-                if !([_player, objNull, _exceptions] call EFUNC(common,canInteractWith)) then {
+                if !([_player, objNull, _exceptions] call ACEFUNC(common,canInteractWith)) then {
                     _errorCode = 4;
                 } else {
                     if (!_dialog && {dialog}) then {
@@ -109,13 +109,13 @@ _ctrlPos set [1, ((0 + 29 * GVAR(settingProgressBarLocation)) * ((((safeZoneW / 
         //Error or Success, close dialog and remove PFEH
 
         //Only close dialog if it's the progressBar:
-        if (!isNull (uiNamespace getVariable [QGVAR(ctrlProgressBar), controlNull])) then {
+        if (!isNull (uiNamespace getVariable [QACEGVAR(common,ctrlProgressBar), controlNull])) then {
             if (_dialog) then {
                 closeDialog 0;
             } else {
-                QGVAR(progressBarDisplay) cutText ["", "PLAIN"];
+                QACEGVAR(common,progressBarDisplay) cutText ["", "PLAIN"];
                 // Remove key handler for non-dialog bar
-                [QGVAR(progressBarKeyHandler), "keydown"] call CBA_fnc_removeKeyHandler;
+                [QACEGVAR(common,progressBarKeyHandler), "keydown"] call CBA_fnc_removeKeyHandler;
             };
         };
 
@@ -137,14 +137,14 @@ _ctrlPos set [1, ((0 + 29 * GVAR(settingProgressBarLocation)) * ((((safeZoneW / 
     } else {
         //Update Progress Bar (ratio of elepased:total)
         private _ratio = _elapsedTime / _totalTime;
-        (uiNamespace getVariable QGVAR(ctrlProgressBar)) progressSetPosition _ratio;
-        switch (GVAR(progressBarInfo)) do {
+        (uiNamespace getVariable QACEGVAR(common,ctrlProgressBar)) progressSetPosition _ratio;
+        switch (ACEGVAR(common,progressBarInfo)) do {
             case 0: {};
             case 1: {
-                (uiNamespace getVariable QGVAR(ctrlProgressBarTitle)) ctrlSetText (_title + format [" (%1", floor (_ratio * 100)] + "%)");
+                (uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle)) ctrlSetText (_title + format [" (%1", floor (_ratio * 100)] + "%)");
             };
             case 2: {
-                (uiNamespace getVariable QGVAR(ctrlProgressBarTitle)) ctrlSetText (_title + " " + format [localize LSTRING(TimeLeft), ceil (_totalTime - _elapsedTime)]);
+                (uiNamespace getVariable QACEGVAR(common,ctrlProgressBarTitle)) ctrlSetText (_title + " " + format [localize "STR_ACE_Common_TimeLeft", ceil (_totalTime - _elapsedTime)]);
             };
         };
     };

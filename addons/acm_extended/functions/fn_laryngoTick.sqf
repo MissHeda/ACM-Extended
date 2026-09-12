@@ -615,6 +615,7 @@ switch (_state) do {
         // their hands.
         // it is the obvious thing now: no grip, no lift, blade all the way down, so it comes out and goes back in the
         // tray. the tube stays exactly where it was placed, at whatever depth that was.
+        private _lift = uiNamespace getVariable ["ACME_laryngo_lift", 0];
         if (_gripHeld || {_lift > 0.02}) then {
             uiNamespace setVariable ["ACME_laryngo_downSince", -1];
         } else {

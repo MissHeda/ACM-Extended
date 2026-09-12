@@ -27,7 +27,7 @@ private _hazard = switch (_hazardType) do {
 };
 private _particleClass = format ["ACM_ChemicalDevice_%1%2", _hazard, _severity];
 
-private _chemicalExplosionEmitter = "#particlesource" createVehicleLocal getPos _attachedObject;
+private _chemicalExplosionEmitter = "#particlesource" createVehicleLocal getPos _object;
 _chemicalExplosionEmitter setParticleClass _particleClass;
 
 [{

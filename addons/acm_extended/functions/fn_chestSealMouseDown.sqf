@@ -124,7 +124,7 @@ if (_heldSpear) exitWith {
                     private _nx = (_hx - _fieldX) / _fieldRX;
                     private _ny = (_hy - _fieldY) / _fieldRY;
                     private _distance = sqrt (((_nx * _nx) + (_ny * _ny)) max 0);
-                    if (_distance > 0.96 && {_distance > 0}) then {
+                    if (_distance > 0.96) then {
                         private _scale = 0.96 / _distance;
                         _hx = _fieldX + ((_hx - _fieldX) * _scale);
                         _hy = _fieldY + ((_hy - _fieldY) * _scale);

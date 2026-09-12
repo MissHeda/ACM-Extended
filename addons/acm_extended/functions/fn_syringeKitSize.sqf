@@ -17,7 +17,7 @@ uiNamespace setVariable ["ACME_SK_Grab", false];
 
 // clear the source-list selection, so the next source pick re-triggers.
 private _display = uiNamespace getVariable ["ACME_SK_DLG", displayNull];
-if (!isNull _display) then { lbSetCurSel [(_display displayCtrl 86318), -1]; };
+if (!isNull _display) then { (_display displayCtrl 86318) lbSetCurSel -1; };
 
 [format ["%1 mL syringe. Pick a source on the left.", _size]] call ACME_fnc_syringeKitInfo;
 call ACME_fnc_syringeKitRender;

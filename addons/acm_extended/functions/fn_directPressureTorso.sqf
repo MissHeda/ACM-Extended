@@ -14,29 +14,22 @@ _medic setVariable ["ACME_DP_Paused", false];
 _medic setVariable ["ACME_DP_InPose", false];
 _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
 _medic setVariable ["ACME_DP_LastPos", getPosASL _medic];
+_medic setVariable ["ACME_DP_LastPoseAssert", 0];
 _patient setVariable ["ACME_DP_TorsoMedic", _medic, true];
 
 if (dialog) then { closeDialog 0; };
 
-// Smooth theatre: stow the weapon, play ACM's authored kneel/medic entry, then blend into our
-// connected static pressure hold. Do not use switchMove here: it bypasses CfgMoves transitions.
+// Enter the connected pressure hold immediately. The old staged medic animation delayed the actual pressure
+// pose by almost two seconds and then ACE's trailing treatment-animation restore could cancel it entirely.
+// Priority 1 keeps the authored CfgMoves interpolation, while doAnimHeld survives that short restore window.
 if (isNull objectParent _medic) then {
     [_medic] call ACME_fnc_medicAnimationPrep;
     _medic setUnitPos "MIDDLE";
-    private _poseToken = (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1;
-    _medic setVariable ["ACME_DP_PoseToken", _poseToken];
-    private _initialAnimation = toLower animationState _medic;
-    private _entryDelay = if (_initialAnimation in ["amovpercmstpsnonwnondnon", "amovpknlmstpsnonwnondnon_gear", "amovpknlmstpsnonwnondnon"]) then {1.8} else {2.0};
-    [_medic, "AinvPknlMstpSnonWnonDnon_AinvPknlMstpSnonWnonDnon_medic", 1] call ACME_fnc_doAnim;
-    [{
-        params ["_unit", "_token"];
-        if (isNull _unit || {!local _unit} || {!alive _unit}) exitWith {};
-        if (!(_unit getVariable ["ACME_DP_Active", false]) || {(_unit getVariable ["ACME_DP_PoseToken", -1]) != _token}) exitWith {};
-        if ([_unit] call ACME_fnc_animBlocked) exitWith {};
-        if (dialog || {_unit getVariable ["ACME_treatmentPreflightActive", false]} || {(_unit getVariable ["ace_medical_treatment_endInAnim", ""]) != ""}) exitWith {};
-        [_unit, "ACME_DirectPressureHold", 1] call ACME_fnc_doAnim;
-        _unit setVariable ["ACME_DP_InPose", true];
-    }, [_medic, _poseToken], _entryDelay] call CBA_fnc_waitAndExecute;
+    _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
+    _medic setVariable ["ACME_DP_PoseGraceUntil", CBA_missionTime + 0.9];
+    [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
+    _medic setVariable ["ACME_DP_InPose", true];
+    _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
 };
 
 // the mouse hints, as [lmb, RMB, MMB].

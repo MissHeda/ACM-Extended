@@ -274,12 +274,19 @@ class CfgPatches {
             // implemented and completely unreachable.
             "ACME_ModuleInflictBlastLung", "ACME_ModuleInflictJunctional", "ACME_ModuleInduceObtundation",
             "ACME_ModuleInflictTBI", "ACME_ModuleClearTBI", "ACME_ModuleInsertIV",
-            "ACME_ModuleInflictEdema", "ACME_ModuleClearEdema"};
+            "ACME_ModuleInflictEdema", "ACME_ModuleClearEdema",
+            "ACME_BloodCoolerBox_CSWB1U", "ACME_BloodCoolerBox_CSWB2U", "ACME_BloodCoolerBox_CSWB4U"};
         weapons[] = {
             "ACME_HTSBag", "ACME_MagnesiumBag", "ACME_MannitolBag",
-            "ACM_EsmololBag", "ACM_Vial_HTS3", "ACM_Vial_Norepinephrine", "ACM_Vial_Ceftriaxone", "ACM_Vial_Rocuronium", "ACM_Vial_Sugammadex",
-            "ACM_IV_18g", "ACM_SalineFlush_10", "ACME_Vial_EpinephrineCardiac",
-            "ACM_Thermometer", "ACM_NRBMask", "ACM_HPMK", "ACM_EMMA", "ACM_CombatGauze", "ACME_NARSPEAR", "ACME_XStat", "ACME_Ventilator", "ACME_VentBattery", "ACME_Laryngoscope", "ACME_ETTube"
+            "ACM_EsmololBag", "ACM_Vial_Norepinephrine", "ACM_Vial_Ceftriaxone", "ACM_Vial_Rocuronium", "ACM_Vial_Sugammadex",
+            "ACM_IV_18g", "ACM_IV_20g", "ACM_SalineFlush_10", "ACME_Vial_EpinephrineCardiac",
+            "ACM_Thermometer", "ACM_NRBMask", "ACM_HPMK", "ACM_EMMA", "ACM_CombatGauze", "ACME_NARSPEAR", "ACME_XStat", "ACME_Ventilator", "ACME_VentBattery", "ACME_Laryngoscope", "ACME_ETTube",
+            "ACME_HTSBullet", "ACME_MannitolVial",
+            "ACME_PlasmaLyteBag", "ACME_PlasmaLyteBag_500", "ACME_PlasmaLyteBag_250", "ACME_PlasmaLyteBag_100",
+            "ACME_SalineBag_50", "ACME_SalineBag_100", "ACME_Spray_Esketamine",
+            "ACM_Vial_Phentolamine", "ACM_Vial_Hyaluronidase", "ACM_Vial_CalciumGluconate", "ACM_Vial_Propofol", "ACM_Vial_Midazolam", "ACM_Vial_Fentanyl",
+            "ACME_IVLine", "ACME_YTubing", "ACME_BloodWarmer", "ACME_PressureInfuser", "ACME_NARBOA", "ACME_AAJT_S", "ACME_SpoiledBlood",
+            "ACME_BloodCooler_CSWB1U", "ACME_BloodCooler_CSWB2U", "ACME_BloodCooler_CSWB4U"
         };
         requiredVersion = 2.18;
         requiredAddons[] = {
@@ -4290,8 +4297,8 @@ class ACME_HangBag_Tuner {
     class controlsBackground {
         class BG: RscText {
             idc = -1;
-            x = safeZoneX + safeZoneW - 0.44;
-            y = safeZoneY + 0.035;
+            x = "safeZoneX + safeZoneW - 0.44";
+            y = "safeZoneY + 0.035";
             w = 0.42;
             h = 0.90;
             colorBackground[] = {0,0,0,0.88};
@@ -4299,8 +4306,8 @@ class ACME_HangBag_Tuner {
         class Title: RscText {
             idc = -1;
             text = "RIGHT-HAND IV BAG + LINE LIVE PLACEMENT";
-            x = safeZoneX + safeZoneW - 0.43;
-            y = safeZoneY + 0.045;
+            x = "safeZoneX + safeZoneW - 0.43";
+            y = "safeZoneY + 0.045";
             w = 0.40;
             h = 0.035;
             sizeEx = 0.028;
@@ -4308,8 +4315,8 @@ class ACME_HangBag_Tuner {
         class BagPosTitle: RscText {
             idc = -1;
             text = "BAG POSITION ON RIGHT HAND  (-5.00 m to +5.00 m)";
-            x = safeZoneX + safeZoneW - 0.43;
-            y = safeZoneY + 0.087;
+            x = "safeZoneX + safeZoneW - 0.43";
+            y = "safeZoneY + 0.087";
             w = 0.40;
             h = 0.03;
             sizeEx = 0.021;
@@ -4317,63 +4324,63 @@ class ACME_HangBag_Tuner {
         };
         class BagRotTitle: BagPosTitle {
             text = "BAG ORIENTATION  (-360 deg to +360 deg)";
-            y = safeZoneY + 0.247;
+            y = "safeZoneY + 0.247";
         };
         class LinePosTitle: BagPosTitle {
             text = "IV PATIENT-END POSITION  (-5.00 m to +5.00 m)";
-            y = safeZoneY + 0.407;
+            y = "safeZoneY + 0.407";
         };
         class LineRotTitle: BagPosTitle {
             text = "IV PATIENT-END ORIENTATION  (-360 deg to +360 deg)";
-            y = safeZoneY + 0.567;
+            y = "safeZoneY + 0.567";
         };
     };
     class controls {
         class SX: RscXSliderH {
             idc = 87101;
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.122;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.122";
             w = 0.245;
             h = 0.024;
             onSliderPosChanged = "[] call ACME_fnc_hangBagTuneUpdate";
         };
-        class SY: SX {idc = 87102; y = safeZoneY + 0.162;};
-        class SZ: SX {idc = 87103; y = safeZoneY + 0.202;};
-        class SYaw: SX {idc = 87104; y = safeZoneY + 0.282;};
-        class SPitch: SX {idc = 87105; y = safeZoneY + 0.322;};
-        class SRoll: SX {idc = 87106; y = safeZoneY + 0.362;};
-        class SLineX: SX {idc = 87107; y = safeZoneY + 0.442;};
-        class SLineY: SX {idc = 87108; y = safeZoneY + 0.482;};
-        class SLineZ: SX {idc = 87109; y = safeZoneY + 0.522;};
-        class SLineYaw: SX {idc = 87120; y = safeZoneY + 0.602;};
-        class SLinePitch: SX {idc = 87121; y = safeZoneY + 0.642;};
-        class SLineRoll: SX {idc = 87122; y = safeZoneY + 0.682;};
+        class SY: SX {idc = 87102; y = "safeZoneY + 0.162";};
+        class SZ: SX {idc = 87103; y = "safeZoneY + 0.202";};
+        class SYaw: SX {idc = 87104; y = "safeZoneY + 0.282";};
+        class SPitch: SX {idc = 87105; y = "safeZoneY + 0.322";};
+        class SRoll: SX {idc = 87106; y = "safeZoneY + 0.362";};
+        class SLineX: SX {idc = 87107; y = "safeZoneY + 0.442";};
+        class SLineY: SX {idc = 87108; y = "safeZoneY + 0.482";};
+        class SLineZ: SX {idc = 87109; y = "safeZoneY + 0.522";};
+        class SLineYaw: SX {idc = 87120; y = "safeZoneY + 0.602";};
+        class SLinePitch: SX {idc = 87121; y = "safeZoneY + 0.642";};
+        class SLineRoll: SX {idc = 87122; y = "safeZoneY + 0.682";};
 
         class LX: RscText {
             idc = 87111;
-            x = safeZoneX + safeZoneW - 0.175;
-            y = safeZoneY + 0.114;
+            x = "safeZoneX + safeZoneW - 0.175";
+            y = "safeZoneY + 0.114";
             w = 0.145;
             h = 0.04;
             sizeEx = 0.020;
         };
-        class LY: LX {idc = 87112; y = safeZoneY + 0.154;};
-        class LZ: LX {idc = 87113; y = safeZoneY + 0.194;};
-        class LYaw: LX {idc = 87114; y = safeZoneY + 0.274;};
-        class LPitch: LX {idc = 87115; y = safeZoneY + 0.314;};
-        class LRoll: LX {idc = 87116; y = safeZoneY + 0.354;};
-        class LLineX: LX {idc = 87117; y = safeZoneY + 0.434;};
-        class LLineY: LX {idc = 87118; y = safeZoneY + 0.474;};
-        class LLineZ: LX {idc = 87119; y = safeZoneY + 0.514;};
-        class LLineYaw: LX {idc = 87123; y = safeZoneY + 0.594;};
-        class LLinePitch: LX {idc = 87124; y = safeZoneY + 0.634;};
-        class LLineRoll: LX {idc = 87125; y = safeZoneY + 0.674;};
+        class LY: LX {idc = 87112; y = "safeZoneY + 0.154";};
+        class LZ: LX {idc = 87113; y = "safeZoneY + 0.194";};
+        class LYaw: LX {idc = 87114; y = "safeZoneY + 0.274";};
+        class LPitch: LX {idc = 87115; y = "safeZoneY + 0.314";};
+        class LRoll: LX {idc = 87116; y = "safeZoneY + 0.354";};
+        class LLineX: LX {idc = 87117; y = "safeZoneY + 0.434";};
+        class LLineY: LX {idc = 87118; y = "safeZoneY + 0.474";};
+        class LLineZ: LX {idc = 87119; y = "safeZoneY + 0.514";};
+        class LLineYaw: LX {idc = 87123; y = "safeZoneY + 0.594";};
+        class LLinePitch: LX {idc = 87124; y = "safeZoneY + 0.634";};
+        class LLineRoll: LX {idc = 87125; y = "safeZoneY + 0.674";};
 
         class Hint: RscText {
             idc = -1;
             text = "Bag is parented to RightHand. IV-end roll starts at 180 deg (top down). All changes apply live; F2 reopens.";
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.730;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.730";
             w = 0.395;
             h = 0.055;
             sizeEx = 0.019;
@@ -4382,8 +4389,8 @@ class ACME_HangBag_Tuner {
         class Report: RscButton {
             idc = -1;
             text = "REPORT VALUES";
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.805;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.805";
             w = 0.19;
             h = 0.04;
             action = "[] call ACME_fnc_hangBagTuneReport";
@@ -4391,7 +4398,7 @@ class ACME_HangBag_Tuner {
         };
         class Close: Report {
             text = "DONE";
-            x = safeZoneX + safeZoneW - 0.225;
+            x = "safeZoneX + safeZoneW - 0.225";
             w = 0.195;
             action = "closeDialog 0";
             tooltip = "Close the tuner";
@@ -4410,8 +4417,8 @@ class ACME_HeadElev_Tuner {
     class controlsBackground {
         class BG: RscText {
             idc = -1;
-            x = safeZoneX + safeZoneW - 0.44;
-            y = safeZoneY + 0.035;
+            x = "safeZoneX + safeZoneW - 0.44";
+            y = "safeZoneY + 0.035";
             w = 0.42;
             h = 0.79;
             colorBackground[] = {0,0,0,0.88};
@@ -4419,8 +4426,8 @@ class ACME_HeadElev_Tuner {
         class Title: RscText {
             idc = -1;
             text = "HEAD / PLATE-CARRIER LIVE TUNER";
-            x = safeZoneX + safeZoneW - 0.43;
-            y = safeZoneY + 0.045;
+            x = "safeZoneX + safeZoneW - 0.43";
+            y = "safeZoneY + 0.045";
             w = 0.40;
             h = 0.035;
             sizeEx = 0.028;
@@ -4428,8 +4435,8 @@ class ACME_HeadElev_Tuner {
         class TiltTitle: RscText {
             idc = -1;
             text = "EXTRA TILT  (0 = animation pose only)";
-            x = safeZoneX + safeZoneW - 0.43;
-            y = safeZoneY + 0.087;
+            x = "safeZoneX + safeZoneW - 0.43";
+            y = "safeZoneY + 0.087";
             w = 0.40;
             h = 0.03;
             sizeEx = 0.021;
@@ -4437,66 +4444,66 @@ class ACME_HeadElev_Tuner {
         };
         class PivotTitle: TiltTitle {
             text = "POSITION NUDGE  (-2.00 m to +2.00 m)  X / Y / Z";
-            y = safeZoneY + 0.207;
+            y = "safeZoneY + 0.207";
         };
         class LiftTitle: TiltTitle {
             text = "BODY LIFT  (-1.00 m to +1.00 m)";
-            y = safeZoneY + 0.367;
+            y = "safeZoneY + 0.367";
         };
         class VestOffTitle: TiltTitle {
             text = "PLATE-CARRIER OFFSET  (m, Spine3)  X / Y / Z";
-            y = safeZoneY + 0.450;
+            y = "safeZoneY + 0.450";
             colorText[] = {1,0.85,0.55,1};
         };
         class VestRotTitle: VestOffTitle {
             text = "PLATE-CARRIER ORIENT  (deg)  Pitch / Yaw / Roll";
-            y = safeZoneY + 0.602;
+            y = "safeZoneY + 0.602";
         };
     };
     class controls {
         class STilt: RscXSliderH {
             idc = 87201;
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.122;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.122";
             w = 0.245;
             h = 0.024;
             onSliderPosChanged = "[] call ACME_fnc_headElevTuneUpdate";
         };
-        class SPivotX: STilt {idc = 87202; y = safeZoneY + 0.242;};
-        class SPivotY: STilt {idc = 87203; y = safeZoneY + 0.282;};
-        class SPivotZ: STilt {idc = 87204; y = safeZoneY + 0.322;};
-        class SLift:   STilt {idc = 87205; y = safeZoneY + 0.402;};
-        class SVestOffX: STilt {idc = 87221; y = safeZoneY + 0.482;};
-        class SVestOffY: STilt {idc = 87222; y = safeZoneY + 0.520;};
-        class SVestOffZ: STilt {idc = 87223; y = safeZoneY + 0.558;};
-        class SVestPitch: STilt {idc = 87224; y = safeZoneY + 0.634;};
-        class SVestYaw:   STilt {idc = 87225; y = safeZoneY + 0.672;};
-        class SVestRoll:  STilt {idc = 87226; y = safeZoneY + 0.710;};
+        class SPivotX: STilt {idc = 87202; y = "safeZoneY + 0.242";};
+        class SPivotY: STilt {idc = 87203; y = "safeZoneY + 0.282";};
+        class SPivotZ: STilt {idc = 87204; y = "safeZoneY + 0.322";};
+        class SLift:   STilt {idc = 87205; y = "safeZoneY + 0.402";};
+        class SVestOffX: STilt {idc = 87221; y = "safeZoneY + 0.482";};
+        class SVestOffY: STilt {idc = 87222; y = "safeZoneY + 0.520";};
+        class SVestOffZ: STilt {idc = 87223; y = "safeZoneY + 0.558";};
+        class SVestPitch: STilt {idc = 87224; y = "safeZoneY + 0.634";};
+        class SVestYaw:   STilt {idc = 87225; y = "safeZoneY + 0.672";};
+        class SVestRoll:  STilt {idc = 87226; y = "safeZoneY + 0.710";};
 
         class LTilt: RscText {
             idc = 87211;
-            x = safeZoneX + safeZoneW - 0.175;
-            y = safeZoneY + 0.114;
+            x = "safeZoneX + safeZoneW - 0.175";
+            y = "safeZoneY + 0.114";
             w = 0.145;
             h = 0.04;
             sizeEx = 0.020;
         };
-        class LPivotX: LTilt {idc = 87212; y = safeZoneY + 0.234;};
-        class LPivotY: LTilt {idc = 87213; y = safeZoneY + 0.274;};
-        class LPivotZ: LTilt {idc = 87214; y = safeZoneY + 0.314;};
-        class LLift:   LTilt {idc = 87215; y = safeZoneY + 0.394;};
-        class LVestOffX: LTilt {idc = 87231; y = safeZoneY + 0.474;};
-        class LVestOffY: LTilt {idc = 87232; y = safeZoneY + 0.512;};
-        class LVestOffZ: LTilt {idc = 87233; y = safeZoneY + 0.550;};
-        class LVestPitch: LTilt {idc = 87234; y = safeZoneY + 0.626;};
-        class LVestYaw:   LTilt {idc = 87235; y = safeZoneY + 0.664;};
-        class LVestRoll:  LTilt {idc = 87236; y = safeZoneY + 0.702;};
+        class LPivotX: LTilt {idc = 87212; y = "safeZoneY + 0.234";};
+        class LPivotY: LTilt {idc = 87213; y = "safeZoneY + 0.274";};
+        class LPivotZ: LTilt {idc = 87214; y = "safeZoneY + 0.314";};
+        class LLift:   LTilt {idc = 87215; y = "safeZoneY + 0.394";};
+        class LVestOffX: LTilt {idc = 87231; y = "safeZoneY + 0.474";};
+        class LVestOffY: LTilt {idc = 87232; y = "safeZoneY + 0.512";};
+        class LVestOffZ: LTilt {idc = 87233; y = "safeZoneY + 0.550";};
+        class LVestPitch: LTilt {idc = 87234; y = "safeZoneY + 0.626";};
+        class LVestYaw:   LTilt {idc = 87235; y = "safeZoneY + 0.664";};
+        class LVestRoll:  LTilt {idc = 87236; y = "safeZoneY + 0.702";};
 
         class Hint: RscText {
             idc = -1;
             text = "Head rows tune the casualty pose. Plate-carrier rows move and rotate the upper-back prop live.";
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.752;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.752";
             w = 0.395;
             h = 0.055;
             sizeEx = 0.019;
@@ -4505,8 +4512,8 @@ class ACME_HeadElev_Tuner {
         class Report: RscButton {
             idc = -1;
             text = "REPORT VALUES";
-            x = safeZoneX + safeZoneW - 0.425;
-            y = safeZoneY + 0.810;
+            x = "safeZoneX + safeZoneW - 0.425";
+            y = "safeZoneY + 0.810";
             w = 0.19;
             h = 0.04;
             action = "[] call ACME_fnc_headElevTuneReport";
@@ -4515,8 +4522,8 @@ class ACME_HeadElev_Tuner {
         class Close: RscButton {
             idc = -1;
             text = "DONE";
-            x = safeZoneX + safeZoneW - 0.225;
-            y = safeZoneY + 0.810;
+            x = "safeZoneX + safeZoneW - 0.225";
+            y = "safeZoneY + 0.810";
             w = 0.195;
             h = 0.04;
             action = "closeDialog 0";
@@ -5344,7 +5351,7 @@ class ACME_Laryngoscopy_Dialog {
             text = "\acm_extended\ui\laryngo\suction\yank_master.paa";
             colorText[] = {1,1,1,0};
         };
-    }
+    };
     class Controls {
         class LG_Title: RscText {
             idc = -1;

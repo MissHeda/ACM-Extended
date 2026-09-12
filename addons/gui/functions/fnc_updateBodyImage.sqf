@@ -76,11 +76,14 @@ private _ctrlPulseOximeterLeft = _ctrlGroup controlsGroupCtrl IDC_BODY_LEFTARM_P
 private _ctrlChestSeal = _ctrlGroup controlsGroupCtrl IDC_BODY_TORSO_CHESTSEAL;
 private _ctrlChestInjury = _ctrlGroup controlsGroupCtrl IDC_BODY_TORSO_PNEUMOTHORAX;
 
-if (_target getVariable [QEGVAR(breathing,ChestSeal_State), false]) then {
-    _ctrlChestSeal ctrlShow true;
-} else {
-    _ctrlChestSeal ctrlShow false;
+private _sealRows = _target getVariable ["ACME_CS_holeData", []];
+private _hasDetailedSeal = (_sealRows isEqualType []) && {
+    (_sealRows findIf {
+        _x isEqualType [] && {count _x >= 5} && {(_x select 4) isEqualTo true}
+    }) >= 0
 };
+private _hasChestSeal = (_target getVariable [QEGVAR(breathing,ChestSeal_State), false]) || {_hasDetailedSeal};
+_ctrlChestSeal ctrlShow _hasChestSeal;
 
 if (HAS_PULSEOX(_target,0)) then {
     _ctrlPulseOximeterLeft ctrlShow true;

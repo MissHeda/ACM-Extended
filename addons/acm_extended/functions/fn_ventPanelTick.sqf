@@ -9,6 +9,7 @@ if !([ACE_player, "ventilator", true] call ACME_fnc_procedureAllowed) exitWith {
 };
 [_dlg] call ACME_fnc_ventFlipKeyHint;
 private _custodyTarget = uiNamespace getVariable ["ACME_vent_target", objNull];
+private _tgtM = uiNamespace getVariable ["ACME_vent_target", ACE_player];
 if (!isNull _custodyTarget && {_custodyTarget isNotEqualTo ACE_player}
     && {!alive _custodyTarget || {!(_custodyTarget getVariable ["ACME_vent_onPatient", false])} || {_custodyTarget getVariable ["ACME_vent_recovering", false]}}) exitWith {
     [87700] call ACME_fnc_minigameClose;
@@ -40,7 +41,6 @@ if (_simple != (uiNamespace getVariable ["ACME_vent_simpleShown", _simple])) the
 // pins that to the set BPM in the mandatory modes, and it is the patient's own drive under CPAP.
 if (diag_tickTime > (uiNamespace getVariable ["ACME_vent_measBpmNextT", 0])) then {
     private _bpmNow = uiNamespace getVariable ["ACME_vent_bpm", 12];
-    private _tgtM = uiNamespace getVariable ["ACME_vent_target", ACE_player];
     // PEEP and i:e row.
     // this row was static config text, "PEEP 5.0   I:E 1:2.0", and was never written at runtime, so it had been
     // lying about the PEEP since the panel was built. it now shows the real numbers, auto-PEEP included. trapped

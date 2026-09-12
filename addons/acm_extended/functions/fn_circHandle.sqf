@@ -284,6 +284,7 @@ private _getMedEffect = {
     private _epiInfusionDrive = 0;
     private _epiLikeDrive = 0;
     private _distalDripActive = false;
+    private _distalDrugEffectActive = false;
     private _distalPressorActive = false;
     private _distalEpiRunning = false;
     private _amioMg = 0;
@@ -302,6 +303,7 @@ private _getMedEffect = {
             && {(_x param [1,""]) in ["leftarm","rightarm","leftleg","rightleg"]};
         if (_running && {_distal}) then {
             _distalDripActive = true;
+            _distalDrugEffectActive = true;
             if ((_x param [11,""]) in _pressorMeds) then {_distalPressorActive = true;};
             if ((_x param [11,""]) == "Epinephrine") then {_distalEpiRunning = true;};
         };

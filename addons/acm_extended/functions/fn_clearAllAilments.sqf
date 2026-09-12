@@ -225,7 +225,7 @@ if (alive _patient) then {
 {
     _patient setVariable [_x, nil, true];
 } forEach [
-    "ACME_rhythm_active", "ACME_rhythm_targetHR", "ACME_rhythm_bpOffset", "ACME_rhythm_savedTargetHR",
+    "ACME_rhythm_active", "ACME_rhythm_targetHR", "ACME_rhythm_bpOffset", "ACME_rhythm_savedTargetHR", "ACME_peaElectricalHR",
     "ACME_rhythm_amioCum", "ACME_rhythm_obtundUntil", "ACME_rhythm_torsadesRefractoryUntil",
     "ACME_rhythm_epiDripEarliest", "ACME_rhythm_magTerminatedLogged", "ACME_rhythm_magSuppressUntil",
     "ACME_rhythm_magLevel", "ACME_rhythm_lidoLastTherapeutic", "ACME_rhythm_lidoEffectiveness", "ACME_lido_serumLevel",
@@ -327,7 +327,7 @@ if (alive _patient && {!(_patient getVariable ["ACE_isUnconscious", false])}
     private _forced = ((_asHeal find "ainj") >= 0) || {(_asHeal find "unconscious") >= 0} || {(_asHeal find "lying") >= 0}
         || {(_asHeal find "acts_") == 0} || {_asHeal == "acm_lyingstate"};
     if (_forced && {(_asHeal find "unconsciousoutprone") < 0}) then {
-        [_patient, "UnconsciousOutProne", 1.4, 1] call ACME_fnc_doAnimHeld;
+        [_patient, "UnconsciousOutProne", 2] call ACME_fnc_doAnim;
     };
 };
 

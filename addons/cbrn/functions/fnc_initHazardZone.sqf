@@ -137,11 +137,16 @@ if (_showMist) then {
 };
 
 if (_manualPlaced) then {
-    [{
-        params ["_thisCurator", "_originObject"];
+    if (!isNull _spawner) then {
+        private _curator = getAssignedCuratorLogic _spawner;
+        if (!isNull _curator) then {
+            [{
+                params ["_curator", "_originObject"];
 
-        _thisCurator addCuratorEditableObjects [[_originObject], false]; // Make placed zone visible in zeus
-    }, [_thisCurator, _originObject], 0.1] call CBA_fnc_waitAndExecute;
+                _curator addCuratorEditableObjects [[_originObject], false]; // Make placed zone visible in Zeus.
+            }, [_curator, _originObject], 0.1] call CBA_fnc_waitAndExecute;
+        };
+    };
 
     if (isNull _spawner) exitWith {};
     //[QGVAR(showRadius), [_spawner, _originObject, _radiusDimensions], _spawner] call CBA_fnc_targetEvent;

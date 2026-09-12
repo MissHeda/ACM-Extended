@@ -173,7 +173,7 @@ if (random 1 <= _reopeningChance * _plateletEffect * ACEGVAR(medical_treatment,w
                     private _openWoundIndex = _openWoundsOnPart findIf {(_x select 0) isEqualTo _id};
 
                     if (_openWoundIndex < 0) then {
-                        _openWoundsOnPart pushBack [_id, _impact, _cBleeding, _targetDamage];
+                        _openWoundsOnPart pushBack [_id, _impact, _cBleeding, _cDamage];
                     } else {
                         (_openWoundsOnPart select _openWoundIndex) params ["", "_openAmountOf", "_openBleeding", "_openDamage"];
                         _openWoundsOnPart set [_openWoundIndex, [_id, (_openAmountOf + _impact), _openBleeding, _openDamage]]

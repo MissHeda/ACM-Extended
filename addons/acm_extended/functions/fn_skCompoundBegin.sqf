@@ -164,7 +164,9 @@ private _h = [{
     private _bottomMouse = _maxY + _mouseOffset;
     private _floorYMouse = _floorY + _mouseOffset;
     getMousePosition params ["_mouseX", "_mouseY"];
-    setMousePosition [(_uiX + (_uiW / 2)), (_bottomMouse min _mouseY max _floorYMouse)];
+    private _canvasNow = call ACME_fnc_uiCanvas;
+    _canvasNow params ["_uiXNow", "", "_uiWNow", ""];
+    setMousePosition [(_uiXNow + (_uiWNow / 2)), (_bottomMouse min _mouseY max _floorYMouse)];
 
     private _rawY = (_mouseY - _mouseOffset) min _maxY max _floorY;
     private _rawFill = linearConversion [_limitTop, _limitBottom, _rawY, 0, _size, true];

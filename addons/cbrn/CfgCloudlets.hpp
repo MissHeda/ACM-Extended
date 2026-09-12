@@ -86,6 +86,7 @@ class CfgCloudlets {
 };
 
 class SmokeShellWhiteSmall;
+class SmokeShellWhite;
 class ACM_Mortar_Shell_CS_Effect: SmokeShellWhiteSmall {
     SMOKESHELL_ENTRY(CS);
 };

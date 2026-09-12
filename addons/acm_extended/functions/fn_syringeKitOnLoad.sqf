@@ -135,7 +135,7 @@ uiNamespace setVariable ["ACME_SK_Grab", false];
 // setup window, so their resets cannot fight what we set here, including deferred events that land a frame or two
 // later. we set all the state explicitly, so the handlers are not needed during setup.
 uiNamespace setVariable ["ACME_SK_Suppress", true];
-lbSetCurSel [_sizes, 3];  // "10 mL".
+_sizes lbSetCurSel 3;  // "10 mL".
 
 // when it is opened from the "Saline Flush" self-action, auto-load a full 10 ml flush, so the medic lands straight
 // on a full plunger, ready to waste. the menu statement sets the flag before the open.
@@ -151,16 +151,16 @@ if (uiNamespace getVariable ["ACME_SK_AutoSaline", false]) then {
         uiNamespace setVariable ["ACME_SK_EpiMl", 0];
         uiNamespace setVariable ["ACME_SK_Med", ""];
         uiNamespace setVariable ["ACME_SK_Grab", false];
-        lbSetCurSel [_sources, 0];  // reflect "Saline Flush" in the list. the handler is suppressed.
+        _sources lbSetCurSel 0;  // reflect "Saline Flush" in the list. the handler is suppressed.
         _autoLoaded = true;
         ["10 mL flush loaded. Push plunger DOWN to your volume, then Waste."] call ACME_fnc_syringeKitInfo;
     } else {
-        lbSetCurSel [_sources, -1];
+        _sources lbSetCurSel -1;
         ["No prefilled saline flush (ACM_SalineFlush_10) in your kit. Pick a source on the left."] call ACME_fnc_syringeKitInfo;
     };
 };
 if (!_autoLoaded) then {
-    lbSetCurSel [_sources, -1];
+    _sources lbSetCurSel -1;
     ["Pick size -> Saline Flush -> drag plunger -> Waste to volume -> add Epi."] call ACME_fnc_syringeKitInfo;
 };
 

@@ -37,49 +37,13 @@ if (!isNull _tgtRhythm) then {
 // treat it as a flatline rather than propagating nan into the step-spacing loops.
 if (!(_spacing isEqualType 0) || {!(finite _spacing)} || {_spacing < 0}) then { _spacing = 0 };
 
-// the visual-transition latch. never write back to ACM_circulation_AED_EKGRhythm here, because that is ACM's
-// monitor state and writing it caused ACME and ACM rhythm fights. if a rhythm change arrives while the visible
-// sweep is inside a complex, keep using the last visual rhythm for this generated buffer and accept the new one
-// at the next safe generation.
+// Rhythm changes are immediate. The monitor display loop already splices a changed waveform into the remainder of
+// the active sweep, so do not defer morphology until an isoelectric segment or the next sweep.
 private _tgtLatch = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
 if (!isNull _tgtLatch) then {
-    private _lastShown = _tgtLatch getVariable ["ACME_AED_EKGVisualRhythm", _rhythm];
-    if (_lastShown != _rhythm) then {
-        private _step = _tgtLatch getVariable ["ACM_circulation_AED_UpdateStep", -1];
-        private _shown = _tgtLatch getVariable ["ACM_circulation_AED_EKGDisplay", []];
-        private _safe = true;
-        if (_step > 2 && {_step < ((count _shown) - 3)}) then {
-            private _v0 = _shown select ((_step - 2) max 0);
-            private _v1 = _shown select ((_step - 1) max 0);
-            private _v2 = _shown select _step;
-            private _v3 = _shown select ((_step + 1) min ((count _shown) - 1));
-            private _v4 = _shown select ((_step + 2) min ((count _shown) - 1));
-            private _absLim = missionNamespace getVariable ["ACME_monitorRhythmSwitchSafeAbs", 12];
-            private _slopeLim = missionNamespace getVariable ["ACME_monitorRhythmSwitchSafeSlope", 18];
-            private _nearBase = ({abs _x <= _absLim} count [_v0,_v1,_v2,_v3,_v4]) >= 4;
-            private _quietSlope = ((abs (_v2 - _v1)) <= _slopeLim) && {abs (_v3 - _v2) <= _slopeLim};
-            _safe = _nearBase && _quietSlope;
-        };
-        private _pendingSince = _tgtLatch getVariable ["ACME_AED_EKGPendingSince", -1];
-        if (!_safe && {_pendingSince < 0}) then {
-            _pendingSince = CBA_missionTime;
-            _tgtLatch setVariable ["ACME_AED_EKGPendingSince", _pendingSince, false];
-        };
-        private _forceAfter = missionNamespace getVariable ["ACME_monitorRhythmSwitchMaxWait", 0.18];
-        private _force = !_safe && {_pendingSince >= 0} && {(CBA_missionTime - _pendingSince) >= _forceAfter};
-        if (_safe || {_force}) then {
-            _tgtLatch setVariable ["ACME_AED_EKGVisualRhythm", _rhythm, false];
-            _tgtLatch setVariable ["ACME_AED_EKGPendingRhythm", -999, false];
-            _tgtLatch setVariable ["ACME_AED_EKGPendingSince", -1, false];
-        } else {
-            _tgtLatch setVariable ["ACME_AED_EKGPendingRhythm", _rhythm, false];
-            _rhythm = _lastShown;
-        };
-    } else {
-        _tgtLatch setVariable ["ACME_AED_EKGVisualRhythm", _rhythm, false];
-        _tgtLatch setVariable ["ACME_AED_EKGPendingRhythm", -999, false];
-        _tgtLatch setVariable ["ACME_AED_EKGPendingSince", -1, false];
-    };
+    _tgtLatch setVariable ["ACME_AED_EKGVisualRhythm", _rhythm, false];
+    _tgtLatch setVariable ["ACME_AED_EKGPendingRhythm", -999, false];
+    _tgtLatch setVariable ["ACME_AED_EKGPendingSince", -1, false];
 };
 
 // our custom rhythms: AFib-RVR at 100, atrial tach at 101, torsades at 102, controlled AFib at 103 and SVT at
@@ -98,8 +62,8 @@ private _dt = 0.03;  // seconds per monitor column, which is the sweep tick.
 private _tgtForRate = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
 private _rateHR = 0;
 if (!isNull _tgtForRate) then {
-    _rateHR = _tgtForRate getVariable ["ACM_circulation_AED_Pads_Display", 0];
-    if (_rateHR <= 0) then { _rateHR = _tgtForRate getVariable ["ace_medical_heartRate", 0]; };
+    _rateHR = [_tgtForRate] call ACM_circulation_fnc_getEKGHeartRate;
+    if (_rateHR <= 0 && {_rhythm in [0,4]}) then { _rateHR = _tgtForRate getVariable ["ace_medical_heartRate", 0]; };
 };
 private _scale = missionNamespace getVariable ["ACME_rhythm_ekgPeriodScale", 2.2222];
 private _truePeriod = if (_rateHR > 0) then { round ((60 / _rateHR) / _dt) } else { if (_spacing > 0) then { round ((_spacing max 1) * _scale) } else { _spacing } };
@@ -156,13 +120,22 @@ switch (_rhythm) do {
     };
     case 5: {  // true PEA: organized electrical complexes with no mechanical output. Broad, abnormal morphology.
         private _cleanRhythmStep = [0,-2,-8,-20,-38,-50,-48,-36,-16,5,18,27,23,14,6,1,0];
-        private _noiseRange = 2;
+        private _noiseRange = 3.5;
         private _gap = [count _cleanRhythmStep] call _fnc_gapFor;
         _blockPeriod = (count _cleanRhythmStep) + _gap;
         _rPhase = _gap + (_cleanRhythmStep find (selectMin _cleanRhythmStep));
         private _repeat = ceil(176 / _blockPeriod) + 1;
         for "_i" from 0 to _repeat do {
-            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_cleanRhythmStep, _noiseRange] call _generateNoisyRhythmStep);
+            // Keep R-R spacing exact, but make each PEA complex a little less sterile: mild amplitude drift,
+            // baseline wander, and an occasional small notch/artifact in the late QRS/ST segment.
+            private _amp = random [0.90, 1.0, 1.10];
+            private _base = random [-2, 0, 2];
+            private _beat = _cleanRhythmStep apply {(_x * _amp) + _base};
+            if ((random 1) < 0.22) then {
+                private _j = 7 + floor (random 4);
+                _beat set [_j, (_beat select _j) + random [-6, 0, 6]];
+            };
+            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_beat, _noiseRange] call _generateNoisyRhythmStep);
             _safeSpacingArray = _safeSpacingArray + ([_gap, true] call _generateSafeSpacing) + ([count _cleanRhythmStep] call _generateSafeSpacing);
         };
     };

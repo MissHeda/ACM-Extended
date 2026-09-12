@@ -97,10 +97,13 @@ private _PFH = [{
         private _ekgHR = [_patient] call FUNC(getEKGHeartRate);
         private _rhythmState = _patient getVariable [QGVAR(Cardiac_RhythmState), ACM_Rhythm_Sinus];
 
-        if (_lastSync + 5.25 < CBA_missionTime) then {
+        private _roundedEKG = round (_ekgHR max 0);
+        private _shownEKG = round (_patient getVariable [QGVAR(AED_Pads_Display), 0]);
+        // One electrical-rate source owns the beep, the big BPM number, and waveform spacing. Publish a changed BPM
+        // immediately instead of leaving the display stale for the old 5.25-second polling interval.
+        if (_roundedEKG != _shownEKG || {_lastSync + 1 < CBA_missionTime}) then {
             _patient setVariable [QGVAR(AED_Pads_LastSync), CBA_missionTime];
-            
-            _patient setVariable [QGVAR(AED_Pads_Display), round(_ekgHR), true];
+            _patient setVariable [QGVAR(AED_Pads_Display), _roundedEKG, true];
         };
 
         if ([_patient] call FUNC(AED_IsSilent)) then {

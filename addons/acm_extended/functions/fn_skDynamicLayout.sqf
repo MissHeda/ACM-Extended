@@ -4,7 +4,8 @@
 disableSerialization;
 private _acmeCanvas = call ACME_fnc_uiCanvas;
 _acmeCanvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
-params [["_duration", 0, [0]]];
+// UI event handlers may pass a Control in _this. Rendering is intentionally immediate, so never parse _this as a numeric duration.
+private _duration = 0;
 // Client-performance rule: the prepared-syringe carousel/layout is an instantaneous UI state change.
 // ctrlCommit interpolation across dozens of picture/text controls caused visible frame hitches on lower-end clients.
 _duration = 0;

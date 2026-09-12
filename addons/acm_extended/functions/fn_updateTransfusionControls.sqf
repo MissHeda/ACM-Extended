@@ -532,7 +532,7 @@ private _rowEntry = [];  // per bag row: its bound entry, or [] if it is a plain
     private _bestEntry = _rowEntry select _selIndex;
     if !(_bestEntry isEqualTo []) then {
         _infusionSelectionIndexes pushBackUnique _selIndex;
-        _infusionLabels pushBack [_selIndex, [_bestEntry, _patient getVariable ["ACME_infusion_BagMedications", []]] call ACME_fnc_formatInfusionLabel, _sRemaining, _sType, _sBloodType, _sVolume, (_bestEntry param [11, ""]), _sTrueIndex];
+        _infusionLabels pushBack [_selIndex, [_bestEntry, _targetPatient getVariable ["ACME_infusion_BagMedications", []]] call ACME_fnc_formatInfusionLabel, _sRemaining, _sType, _sBloodType, _sVolume, (_bestEntry param [11, ""]), _sTrueIndex];
     };
 } forEach _selection;
 

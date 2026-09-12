@@ -11,6 +11,11 @@
 // restored immediately.  These are internal timing tunables, not independent feature switches.
 ACME_acre_babbleEnable = true;
 ACME_acre_babbleId     = "ACME_Obtunded";
+ACME_acre_commonId     = "ACME_Common";
+ACME_acre_babbleReady  = false;
+ACME_acre_babbleSafe   = false;
+ACME_acre_babbleRegistered = false;
+ACME_acre_ownsFallbackCommon = false;
 ACME_acre_babbleTickSec = 0.04;
 
 // At mild/recovering physiology, speech gets a short 0.18-0.30 s corruption roughly every 7-12 s of continuous
@@ -31,8 +36,9 @@ ACME_acre_babbleStartSevereRand= 0.40;
 
 ACME_darkness_enable = true;
 
-// register the obtunded language with acre2 once, if it is loaded. it defers a moment so acre finishes its own
-// init before we ask it to add a language type.
+// Initialize ACRE speech state once ACRE has had time to finish its own startup. Phase 142 will not touch Babel at
+// all while Obtundation is disabled. If the master is enabled and the mission has no Babel setup, ACME establishes
+// its own Common baseline before registering the synthetic obtunded language.
 if (hasInterface) then {
     [{ call ACME_fnc_acreBabbleInit; }, [], 5] call CBA_fnc_waitAndExecute;
 };

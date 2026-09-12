@@ -8,9 +8,7 @@ class CfgPatches {
             QGVAR(moduleCreateHazardZone),
             QGVAR(moduleCreateChemicalDevice)
         };
-        weapons[] = {
-            "ACM_Grenade_CS"
-        };
+        weapons[] = {};
         magazines[] = {
             "ACM_Mortar_Shell_8Rnd_CS",
             "ACM_Mortar_Shell_8Rnd_Chlorine"

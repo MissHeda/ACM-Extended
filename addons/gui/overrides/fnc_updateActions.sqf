@@ -100,10 +100,14 @@ _dogTags = _dogTags apply {
     _row set [7, ''];
     _row
 };
-// Keep direct pressure before every bandage action/header on each refresh. Use the stable
-// treatment class, not its localized label, and leave its normal eligibility check below.
+// Stop Direct Pressure is always the first treatment row whenever its normal condition makes it visible. Apply
+// Direct Pressure follows it, still ahead of bandage headers/actions. Use stable treatment classes, never labels.
+private _stopPressure = _menuActions select {toLower (_x param [8, '']) == 'acme_stopdirectpressure'};
 private _pressure = _menuActions select {toLower (_x param [8, '']) == 'acme_directpressure'};
-_menuActions = _menuActions select {toLower (_x param [8, '']) != 'acme_directpressure'};
+_menuActions = _menuActions select {
+    private _class = toLower (_x param [8, '']);
+    !(_class in ['acme_stopdirectpressure', 'acme_directpressure'])
+};
 if (_nestEnabled) then {
     private _groups = (missionNamespace getVariable ['ACME_menuGroups', []]) select {
         (_x select 2) isEqualTo _selectedCategory && {call (_x param [4, {true}])}
@@ -182,7 +186,7 @@ if (_nestEnabled) then {
     _menuActions = _out;
 };
 
-_menuActions = _pressure + _menuActions + _dogTags;
+_menuActions = _stopPressure + _pressure + _menuActions + _dogTags;
 private _shownIndex = 0;
 private _actionIndex = 0;
 {

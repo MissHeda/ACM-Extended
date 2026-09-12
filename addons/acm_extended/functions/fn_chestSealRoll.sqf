@@ -34,11 +34,20 @@ private _hold = if (_target isEqualTo "back") then {
     missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]
 };
 
-// B73: play the exact patient roll through playMoveNow only. The body now interpolates into the roll instead of
-// using ACE priority 2's switchMove fallback, which could visibly teleport the casualty into the first frame.
-[_patient, _trans, 1] call ACME_fnc_doAnim;
+// Ask for the smooth priority-1 transition first. ACM_LyingState is intentionally isolated and can swallow
+// playMoveNow, so verify the requested roll actually began. If it did not, use ACE priority 2 once as a narrowly
+// scoped state-graph repair. The token prevents an old fallback from overriding a newer flip.
 private _token = format ["%1:%2:%3", clientOwner, CBA_missionTime, random 1];
 _patient setVariable ["ACME_CS_rollToken", _token, false];
+[_patient, _trans, 1] call ACME_fnc_doAnim;
+[{
+    params ["_p", "_tok", "_trans"];
+    if (isNull _p || {!local _p} || {!alive _p} || {!isNull objectParent _p}) exitWith {};
+    if ((_p getVariable ["ACME_CS_rollToken", ""]) != _tok) exitWith {};
+    if ((toLower animationState _p) != (toLower _trans)) then {
+        [_p, _trans, 2] call ACME_fnc_doAnim;
+    };
+}, [_patient, _token, _trans], 0.15] call CBA_fnc_waitAndExecute;
 
 private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
 if (!(_rollTime isEqualType 0) || {_rollTime <= 0}) then {_rollTime = 1.85;};

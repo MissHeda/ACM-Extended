@@ -82,19 +82,32 @@ private _rhythm = _patient getVariable [QGVAR(Cardiac_RhythmState), ACM_Rhythm_S
 
 if ([_patient] call FUNC(recentAEDShock) || !(alive _patient)) exitWith {0};
 
+// ACME custom rhythms retain a native ACM proxy for treatment/arrest semantics, but their electrical rate is the
+// explicit rhythm target. Returning it here makes the beep, BPM number, and EKG generator consume one source.
+private _effective = [_patient] call ACME_fnc_rhythmGet;
+if (_effective >= 100) exitWith {
+    private _target = _patient getVariable ["ACME_rhythm_targetHR", 0];
+    if (_target > 0) then {_target} else {GET_HEART_RATE(_patient)}
+};
+
 switch (_rhythm) do {
     case ACM_Rhythm_Asystole: { // Asystole
         _patient setVariable [QGVAR(CardiacArrest_EKG_HR), 0];
         0;
     };
     case ACM_Rhythm_VF: { // Ventricular Fibrillation
-        round (random [150, 170, 200]);
+        missionNamespace getVariable ["ACME_rhythm_vfElectricalHR", 170]
     };
     case ACM_Rhythm_PVT: { // (Pulseless) Ventricular Tachycardia
-        round (random [200, 220, 240]);
+        missionNamespace getVariable ["ACME_rhythm_pvtElectricalHR", 220]
     };
     case ACM_Rhythm_PEA: { // Pulseless Electrical Activity (Reversible)
-        [_patient] call _fnc_generateHeartRate;
+        // The owner selects one rate for the PEA episode. Remote monitor clients only read it. 100 BPM is the safe
+        // fallback for an old save/JIP frame that predates the seed; never reroll on every monitor/beep query.
+        private _pea = _patient getVariable ["ACME_peaElectricalHR", 100];
+        if (!(_pea isEqualType 0) || {_pea <= 0}) then {_pea = 100;};
+        _patient setVariable [QGVAR(CardiacArrest_EKG_HR), _pea];
+        _pea
     };
     case ACM_Rhythm_VT;
     default { // Sinus

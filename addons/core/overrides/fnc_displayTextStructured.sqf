@@ -1,4 +1,4 @@
-#include "\z\ace\addons\common\script_component.hpp"
+#include "..\script_component.hpp"
 /*
  * Author: commy2, Glowbal, GitHawk
  * Display a structured text.
@@ -71,8 +71,8 @@ private _isShown = ctrlShown (uiNamespace getVariable ["ACE_ctrlHint", controlNu
 disableSerialization;
 private _ctrlHint = uiNamespace getVariable "ACE_ctrlHint";
 
-_ctrlHint ctrlSetBackgroundColor GVAR(displayTextColor);
-_ctrlHint ctrlSetTextColor GVAR(displayTextFontColor);
+_ctrlHint ctrlSetBackgroundColor ACEGVAR(common,displayTextColor);
+_ctrlHint ctrlSetTextColor ACEGVAR(common,displayTextFontColor);
 
 // Use profile settings from CfgUIGrids.hpp
 private _xPos = profileNamespace getVariable ["IGUI_GRID_ACE_displayText_X", ((safeZoneX + safeZoneW) - (10 *(((safeZoneW / safeZoneH) min 1.2) / 40)) - 2.9 *(((safeZoneW / safeZoneH) min 1.2) / 40))];

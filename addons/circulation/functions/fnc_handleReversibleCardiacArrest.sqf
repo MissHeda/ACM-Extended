@@ -16,6 +16,23 @@ if (isNil {_patient getVariable QGVAR(ReversibleCardiacArrest_Time)}) then {
     _patient setVariable [QGVAR(ReversibleCardiacArrest_Time), CBA_missionTime, true];
 };
 _patient setVariable [QGVAR(Cardiac_RhythmState), ACM_Rhythm_PEA, true];
+if (!_resume || {isNil {_patient getVariable "ACME_peaElectricalHR"}}) then {
+    private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0.25]);
+    private _peaHR = if (_brady) then {
+        round (random [
+            missionNamespace getVariable ["ACME_peaBradyMinHR", 35],
+            missionNamespace getVariable ["ACME_peaBradyModeHR", 45],
+            missionNamespace getVariable ["ACME_peaBradyMaxHR", 58]
+        ])
+    } else {
+        round (random [
+            missionNamespace getVariable ["ACME_peaNormalMinHR", 90],
+            missionNamespace getVariable ["ACME_peaNormalModeHR", 100],
+            missionNamespace getVariable ["ACME_peaNormalMaxHR", 110]
+        ])
+    };
+    _patient setVariable ["ACME_peaElectricalHR", _peaHR, true];
+};
 [_patient] call FUNC(updateCirculationState);
 private _PFH = [{
     params ["_args", "_idPFH"];

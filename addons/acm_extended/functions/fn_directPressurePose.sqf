@@ -7,12 +7,18 @@
 params ["_medic", "_patient"];
 private _inPose = _medic getVariable ["ACME_DP_InPose", false];
 
-// Medical-menu/treatment ownership always wins over the decorative hold pose. This prevents the 0.15 s pressure
-// tick from immediately overwriting another intervention's provider animation.
-private _treating = dialog
-    || {_medic getVariable ["ACME_treatmentPreflightActive", false]}
+// ACE can still be finishing the treatment callback for a fraction of a second after Direct Pressure starts.
+// During that entry grace, do not interpret ACE's own end-animation bookkeeping as a competing treatment or it
+// immediately tears down the hold we just requested.
+private _entryGrace = CBA_missionTime < (_medic getVariable ["ACME_DP_PoseGraceUntil", 0]);
+
+// A plain open medical menu is NOT a competing treatment. Stop Direct Pressure has to remain usable while the
+// provider visibly keeps pressure on the wound. Yield only when another treatment actually owns the provider pose.
+private _treating = !_entryGrace && {
+    (_medic getVariable ["ACME_treatmentPreflightActive", false])
     || {(_medic getVariable ["ace_medical_treatment_endInAnim", ""]) != ""}
-    || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]};
+    || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
+};
 if (_treating) exitWith {
     if (_inPose && {!([_medic] call ACME_fnc_animBlocked)}) then {
         [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
@@ -62,9 +68,21 @@ if (_moving || {!_looking}) then {
     if (!_inPose) then {
         private _idleStart = _medic getVariable ["ACME_DP_IdleStart", _now];
         if ((_now - _idleStart) >= (missionNamespace getVariable ["ACME_DP_idleToPose", 0.8])) then {
-            // Do not re-holster here. The action already performed its one weapon-clear at entry.
-            [_medic, "ACME_DirectPressureHold", 1] call ACME_fnc_doAnim;
+            // Do not re-holster here. The action already performed its one weapon-clear at entry. The short held
+            // reassert window defeats ACE's trailing treatment restore without turning this into a movement lock.
+            [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
             _medic setVariable ["ACME_DP_InPose", true];
+            _medic setVariable ["ACME_DP_LastPoseAssert", _now];
+        };
+    } else {
+        // ACE or another animation layer can replace a looping hold after our initial request. ACME_DP_InPose is
+        // intent, not proof that the engine is still showing the pose, so reassert it at a low rate while the medic
+        // remains stationary, facing the patient, and no real competing treatment owns the animation.
+        private _actual = toLower (animationState _medic);
+        private _lastAssert = _medic getVariable ["ACME_DP_LastPoseAssert", 0];
+        if (_actual != "acme_directpressurehold" && {(_now - _lastAssert) >= 0.6} && {!([_medic] call ACME_fnc_animBlocked)}) then {
+            [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
+            _medic setVariable ["ACME_DP_LastPoseAssert", _now];
         };
     };
 };

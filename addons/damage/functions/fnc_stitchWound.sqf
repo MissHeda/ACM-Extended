@@ -20,16 +20,12 @@
 
 params ["_patient", "_bodyPart", ["_treatedWound", []], ["_woundType", 0]];
 
-private _stitchTimeMultiplier = [1, EGVAR(core,treatmentTimeSutureStitch)] select _useSuture;
-
 private _targetWounds = GET_BANDAGED_WOUNDS(_patient);
-private _timeToStitch = ACEGVAR(medical_treatment,woundStitchTime) * _stitchTimeMultiplier;
 private _woundVar = VAR_BANDAGED_WOUNDS;
 
 switch (_woundType) do {
     case 1: {
         _targetWounds = GET_WRAPPED_WOUNDS(_patient);
-        _timeToStitch = EGVAR(core,treatmentTimeWrappedStitch) * _stitchTimeMultiplier;
         _woundVar = VAR_WRAPPED_WOUNDS;
     };
     case 2: {

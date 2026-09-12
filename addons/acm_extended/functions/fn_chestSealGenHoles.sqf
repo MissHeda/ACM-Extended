@@ -58,7 +58,7 @@ private _fnc_confinePoint = {
     private _nx = (_x - _cx) / _rx;
     private _ny = (_y - _cy) / _ry;
     private _distance = sqrt (((_nx * _nx) + (_ny * _ny)) max 0);
-    if (_distance > 0.96 && {_distance > 0}) then {
+    if (_distance > 0.96) then {
         private _scale = 0.96 / _distance;
         _x = _cx + ((_x - _cx) * _scale);
         _y = _cy + ((_y - _cy) * _scale);

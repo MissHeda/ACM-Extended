@@ -22,7 +22,7 @@ params ["_medic", "_medication", ["_size", false], "_amount"];
 
 _medic call ACEFUNC(common,goKneeling);
 
-private _containers = [uniformContainer _unit, vestContainer _unit, backpackContainer _unit];
+private _containers = [uniformContainer _medic, vestContainer _medic, backpackContainer _medic];
 
 {
     private _exit = false;

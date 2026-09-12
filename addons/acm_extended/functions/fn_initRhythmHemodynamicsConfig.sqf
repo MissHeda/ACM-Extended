@@ -31,3 +31,15 @@ ACME_rhythm_perfusingCustom = [100, 101, 103, 104];
 // lethal. if it proxied as sinus it would become harmless, and a defibrillation would asystole the patient.
 // see fn_rhythmset. this is the piece that lets us stop lying to ACM without losing anything.
 ACME_rhythm_acmProxy = [[102, 3]];
+
+// Electrical monitor-rate contract. PEA is normally near 100 BPM, with a minority brady-PEA phenotype. The chosen
+// PEA rate is seeded once per arrest episode on the patient owner, then networked so every monitor hears/draws it.
+ACME_peaBradyChance        = 0.25;
+ACME_peaNormalMinHR        = 90;
+ACME_peaNormalModeHR       = 100;
+ACME_peaNormalMaxHR        = 110;
+ACME_peaBradyMinHR         = 35;
+ACME_peaBradyModeHR        = 45;
+ACME_peaBradyMaxHR         = 58;
+ACME_rhythm_vfElectricalHR  = 170;
+ACME_rhythm_pvtElectricalHR = 220;

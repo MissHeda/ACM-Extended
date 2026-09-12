@@ -19,11 +19,38 @@ if (isNull _unit) then {
 
 private _now = diag_tickTime;
 
-// Hard gate first, before any scheduler state.  Master OFF means immediate language restoration, regardless of
+// If ACME previously supplied the module-less Common fallback but the mission later registers real Babel languages,
+// immediately surrender fallback ownership. Pause pulses until ACRE has assigned this client one of those mission
+// languages; this makes late scripted/module initialization deterministic across clients too.
+if (missionNamespace getVariable ["ACME_acre_ownsFallbackCommon", false]) then {
+    private _registry = missionNamespace getVariable ["acre_sys_core_languages", []];
+    if (_registry isEqualType []) then {
+        private _id = missionNamespace getVariable ["ACME_acre_babbleId", "ACME_Obtunded"];
+        private _common = missionNamespace getVariable ["ACME_acre_commonId", "ACME_Common"];
+        private _missionKeys = (_registry apply {_x param [0, ""]}) - [_id, _common];
+        if (_missionKeys isNotEqualTo []) then {
+            [false, false, true] call ACME_fnc_acreBabbleSet;
+            missionNamespace setVariable ["ACME_acre_babbleReady", false];
+            missionNamespace setVariable ["ACME_acre_babbleSafe", false];
+            missionNamespace setVariable ["ACME_acre_ownsFallbackCommon", false];
+        };
+    };
+};
+
+// If the master is on but ACRE/mission language setup finished after ACME's delayed initializer, re-evaluate before
+// deciding whether the pulse feature is safe. This also bootstraps ACME_Common for a module-less mission.
+if ((missionNamespace getVariable ["ACME_sys_obtunded", false])
+    && {!(missionNamespace getVariable ["ACME_acre_babbleReady", false])}) then {
+    call ACME_fnc_acreBabbleInit;
+};
+
+// Hard gate first, before any scheduler state. Master OFF means immediate language restoration, regardless of
 // manual/debug obtundation or stale ACME_obtunded variables.
 private _validState = (missionNamespace getVariable ["ACME_sys_obtunded", false])
     && {missionNamespace getVariable ["ACME_acre_babbleEnable", false]}
     && {missionNamespace getVariable ["ACME_acre_present", false]}
+    && {missionNamespace getVariable ["ACME_acre_babbleSafe", false]}
+    && {missionNamespace getVariable ["ACME_acre_babbleReady", false]}
     && {!isNull _unit}
     && {_unit isEqualTo (if (!isNil "ACE_player" && {!isNull ACE_player}) then {ACE_player} else {player})}
     && {alive _unit}

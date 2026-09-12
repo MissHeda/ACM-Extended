@@ -25,7 +25,7 @@ private _W = 176;  // aed_monitor_width.
 private _tgtForRate = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
 private _rateHR = 0;
 if (!isNull _tgtForRate) then {
-    _rateHR = _tgtForRate getVariable ["ACM_circulation_AED_Pads_Display", 0];
+    _rateHR = [_tgtForRate] call ACM_circulation_fnc_getEKGHeartRate;
     if (_rateHR <= 0) then { _rateHR = _tgtForRate getVariable ["ace_medical_heartRate", 0]; };
 };
 private _scale = missionNamespace getVariable ["ACME_rhythm_ekgPeriodScale", 2.2222];

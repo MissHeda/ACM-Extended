@@ -20,7 +20,7 @@ uiNamespace setVariable ["ACME_SK_Source", ""];
 uiNamespace setVariable ["ACME_SK_Grab", false];
 private _display = uiNamespace getVariable ["ACME_SK_DLG", displayNull];
 if (!isNull _display) then {
-    lbSetCurSel [(_display displayCtrl 86318), -1];
+    (_display displayCtrl 86318) lbSetCurSel -1;
     private _geo = uiNamespace getVariable ["ACME_SK_Geo", []];
     if !(_geo isEqualTo []) then {
         _geo params ["_gx", "_gyTop", "_gw", "_gh"];

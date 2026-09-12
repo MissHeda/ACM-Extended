@@ -9,3 +9,4 @@ hemtt.exe
 # Development checkpoint logs
 FORK_CHECKPOINT_PHASE*.md
 FORK_DEV.md
+.hemttprivatekey

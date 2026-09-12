@@ -17,6 +17,7 @@ _medic setVariable ["ACME_DP_Paused", false];
 _medic setVariable ["ACME_DP_InPose", false];
 _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
 _medic setVariable ["ACME_DP_LastPos", getPosASL _medic];
+_medic setVariable ["ACME_DP_LastPoseAssert", 0];
 _patient setVariable ["ACME_DP_LimbMedic", _medic, true];
 
 // the pain stimulus: direct pressure over a fractured limb is severe. it runs on the patient owner, so the ACE pain
@@ -26,6 +27,18 @@ if ([_patient, _bodyPart] call ACME_fnc_directPressureHasFracture) then {
 };
 
 if (dialog) then { closeDialog 0; };
+
+// Enter the same visibly held/frozen pressure pose immediately. It remains non-locking: fn_directPressurePose
+// drops it as soon as the provider moves or looks away and resumes it after the provider settles again.
+if (isNull objectParent _medic) then {
+    [_medic] call ACME_fnc_medicAnimationPrep;
+    _medic setUnitPos "MIDDLE";
+    _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
+    _medic setVariable ["ACME_DP_PoseGraceUntil", CBA_missionTime + 0.9];
+    [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
+    _medic setVariable ["ACME_DP_InPose", true];
+    _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
+};
 
 // the manual release: RMB or esc. there is no persistent mouse hint, because the medic is moving freely.
 private _ids = [];

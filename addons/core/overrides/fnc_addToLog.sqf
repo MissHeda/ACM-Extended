@@ -1,4 +1,4 @@
-#include "\z\ace\addons\medical_treatment\script_component.hpp"
+#include "..\script_component.hpp"
 /*
  * Author: Glowbal, mharis001
  * Adds an entry to the specified medical log of the unit.
@@ -42,25 +42,25 @@ if ((missionNamespace getVariable ["ACME_hc_descriptors", false]) isEqualTo true
 _out params ["_unit", "_logType", "_message", "_arguments"];
 
 if (!local _unit) exitWith {
-    [QGVAR(addToLog), _this, _unit] call CBA_fnc_targetEvent;
+    [QACEGVAR(medical_treatment,addToLog), _this, _unit] call CBA_fnc_targetEvent;
 };
 
 date params ["", "", "", "_hour", "_minute"];
 private _timeStamp = format ["%1:%2", _hour, [_minute, 2] call CBA_fnc_formatNumber];
 
-private _logVarName = MED_LOG_VARNAME(_logType);
+private _logVarName = format ["ace_medical_log_%1", _logType];
 private _log = _unit getVariable [_logVarName, []];
 
-if (count _log >= MED_LOG_MAX_ENTRIES) then {
+if (count _log >= 8) then {
     _log deleteAt 0;
 };
 
 _log pushBack [_message, _timeStamp, _arguments, _logType];
 _unit setVariable [_logVarName, _log, true];
 
-private _allLogs = _unit getVariable [QEGVAR(medical,allLogs), []];
+private _allLogs = _unit getVariable ["ace_medical_allLogs", []];
 
 if !(_logVarName in _allLogs) then {
     _allLogs pushBack _logVarName;
-    _unit setVariable [QEGVAR(medical,allLogs), _allLogs, true];
+    _unit setVariable ["ace_medical_allLogs", _allLogs, true];
 };

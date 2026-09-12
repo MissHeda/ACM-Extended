@@ -56,7 +56,9 @@ if (local _medic && {alive _medic} && {isNull objectParent _medic} && {!([_medic
     ["ACME_DP_LastPos", []],
     ["ACME_DP_PFH", -1],
     ["ACME_DP_KeyIDs", []],
-    ["ACME_DP_Draw3D", -1]
+    ["ACME_DP_Draw3D", -1],
+    ["ACME_DP_PoseGraceUntil", 0],
+    ["ACME_DP_LastPoseAssert", 0]
 ];
 
 if (_wasActive) then {

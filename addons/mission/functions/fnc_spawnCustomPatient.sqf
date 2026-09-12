@@ -53,6 +53,7 @@ _patient setVariable [QEGVAR(damage,InstantDeathImmune), true, true];
 
 private _bodyPartDamage = GET_BODYPART_DAMAGE(_patient);
 private _openWounds = GET_OPEN_WOUNDS(_patient);
+private _internalWounds = GET_INTERNAL_WOUNDS(_patient);
 private _totalPain = 0;
 
 {
@@ -77,12 +78,14 @@ private _totalPain = 0;
     _openWoundsPart pushBack _wound;
     _totalPain = _totalPain + _pain;
 
-    private _internalWounds = GET_INTERNAL_WOUNDS(_patient);
-    private _internalWoundsPart = _internalWounds getOrDefault [_bodyPart, [], true];
+    if (_hasInternalBleeding) then {
+        private _internalWoundsPart = _internalWounds getOrDefault [_bodyPart, []];
+        private _bodyPartSeverity = [0.6,0.6,0.3,0.3,0.45,0.45] select _partIndex;
+        private _targetWoundID = _woundClass;
 
-    private _bodyPartSeverity = [0.6,0.6,0.3,0.3,0.45,0.45] select _partIndex;
-
-    _internalWoundsPart pushBack [_targetWoundID, 1, (_bleeding * _bodyPartSeverity)];
+        _internalWoundsPart pushBack [_targetWoundID, 1, (_bleeding * _bodyPartSeverity)];
+        _internalWounds set [_bodyPart, _internalWoundsPart];
+    };
 
     if (!(_patient getVariable [QEGVAR(breathing,ChestInjury_State), false]) && _bodyPart == "body" && _name in ["VelocityWound","PunctureWound","Avulsion"]) then {
         _patient setVariable [QEGVAR(breathing,ChestInjury_State), true, true];

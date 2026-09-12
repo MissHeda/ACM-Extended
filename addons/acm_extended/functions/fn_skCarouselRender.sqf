@@ -5,9 +5,9 @@
 disableSerialization;
 private _acmeCanvas = call ACME_fnc_uiCanvas;
 _acmeCanvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
-params [["_duration",0,[0]]];
+// UI event handlers may pass a Control in _this. Rendering is intentionally immediate, so never parse _this as a numeric duration.
+private _duration = 0;
 // Client-performance rule: render state is immediate. Interpolating dozens of carousel controls caused frame hitches.
-_duration = 0;
 private _d = findDisplay 84000;
 if (isNull _d) exitWith {};
 

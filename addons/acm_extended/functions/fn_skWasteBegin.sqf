@@ -149,7 +149,9 @@ private _h = [{
     ACM_circulation_SyringeDraw_MaxDose=_maxFill;
     private _floorMouse=_floorY+_mouseOffset;
     private _maxMouse=_maxY+_mouseOffset;
-    setMousePosition [_uiX+_uiW/2,(_maxMouse min _mouseY max _floorMouse)];
+    private _canvasNow = call ACME_fnc_uiCanvas;
+    _canvasNow params ["_uiXNow", "", "_uiWNow", ""];
+    setMousePosition [_uiXNow+_uiWNow/2,(_maxMouse min _mouseY max _floorMouse)];
     private _rawY=(_mouseY-_mouseOffset) min _maxY max _floorY;
     private _fill=linearConversion [_limitTop,_limitBottom,_rawY,0,_size,true] max _floorMl min _maxFill;
     private _newY=linearConversion [0,_size,_fill,_limitTop,_limitBottom,true];
