@@ -13,3 +13,4 @@
 #endif
 
 #include "\x\ACM\addons\main\script_macros.hpp"
+#include "\x\ACM\addons\main\script_effective_volume.hpp"
