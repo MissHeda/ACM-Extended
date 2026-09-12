@@ -121,6 +121,14 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
         getText (_config >> ["animationMedic", "animationMedicProne"] select (stance _medic == "PRONE"));
     };
 
+    // ACME can own the provider theatre for an individual treatment. In that case native ACM/ACE still owns the
+    // progress bar, item use, callbacks and patient state, but it must not enqueue its generic medic animation or
+    // its matching end pose. That generic queue was what overwrote the authored chest/head bandage, NCD and
+    // breathing-check motions a frame after ACME started them.
+    if (_medic getVariable ["ACME_suppressNativeTreatmentAnim", false]) then {
+        _medicAnim = "";
+    };
+
     _medic setVariable [QACEGVAR(medical_treatment,selectedWeaponOnTreatment), weaponState _medic];
 
     // Adjust animation based on the current weapon of the medic
