@@ -13,6 +13,7 @@
 #endif
 
 #include "\x\ACM\addons\main\script_macros.hpp"
+#include "\x\ACM\addons\main\script_effective_volume.hpp"
 
 #define C_LLSTRING(string) localize 'STR_ACM_Circulation_##string##'
 #define ICON_SYRINGE(size) QPATHTOF(ui\icon_syringe_##size##_ca.paa)
