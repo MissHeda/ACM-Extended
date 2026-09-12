@@ -26,7 +26,16 @@ switch (_op) do {
             || {_patient getVariable [format ["ACME_thora_tube_%1", _side], false]}) exitWith {};
         [_patient] call ACME_fnc_ptxEnsure;
         [_patient, [["chestSeal", true]], true] call ACM_breathing_fnc_setRuntimeState;
+
+        // A seal over the finger-thoracostomy is a true closure of that surgical communication. Preserve the
+        // incision and the placed seal for presentation/aftercare, but retire the tract from the patent "finger"
+        // state exactly as suture closure retires the open outlet. ptxContext therefore no longer counts this side
+        // as a drain or vent while the chest-seal artwork remains visible from ACME_thora_sealed_<side>.
+        [_patient, _side, "open", "sealed"] call ACME_fnc_thoraSideStateCommit;
+        [_patient] call ACME_fnc_thoraBumpVer;
         [_patient, "thoraSeal"] call ACME_fnc_ptxTreat;
+        [_patient] call ACM_breathing_fnc_updateLungState;
+
         private _logged = [_patient, "apply", "%1 applied a chest seal over the thoracostomy incision", [[_medic, false, true] call ace_common_fnc_getName], _medic] call ACME_fnc_chestSealLogOnce;
         if (_logged) then {[_patient, localize "STR_ACM_Breathing_ChestSeal"] call ace_medical_treatment_fnc_addToTriageCard;};
     };
