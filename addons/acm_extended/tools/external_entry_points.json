@@ -1,0 +1,9 @@
+[
+  {
+    "name": "ace_medical_fnc_serializeState",
+    "source_root": "ace",
+    "source": "docs/wiki/framework/medical-framework.md",
+    "evidence": "ace_medical_fnc_serializeState",
+    "reason": "Documented external medical-state export API used by mission save/persistence callers. No internal call is required; this is a declared public entry point, not a source-call claim."
+  }
+]

@@ -1,0 +1,16 @@
+params ["_args"];
+_args params ["_medic", "_patient", "_target", "_item", "_action", "_vehicle", "_part", "_iv", "_site", "_volume", "_prepared", "_index", "_label"];
+private _epoch = [_patient] call ACME_fnc_clinicalEpoch;
+private _key = format ["prepared:%1:%2:%3:%4", clientOwner, netId _patient, _epoch, _prepared select 0];
+private _inflight = missionNamespace getVariable ["ACME_preparedPending", createHashMap];
+if (((values _inflight) findIf {(!(_x select 2)) && {(((_x select 0) select 10) select 0) == (_prepared select 0)}}) >= 0) exitWith {};
+private _serial = (missionNamespace getVariable ["ACME_preparedRequestSerial", 0]) + 1;
+missionNamespace setVariable ["ACME_preparedRequestSerial", _serial];
+private _id = format ["%1:%2", _key, _serial];
+private _pending = missionNamespace getVariable ["ACME_preparedPending", createHashMap];
+if (_id in _pending) exitWith {};
+_pending set [_id, [_args, CBA_missionTime, false, _epoch]];
+missionNamespace setVariable ["ACME_preparedPending", _pending];
+private _source = findDisplay 86000;
+if (!isNull _source) then {_source closeDisplay 1;};
+[_patient, "preparedAttach", [_args, _id, _epoch]] call ACME_fnc_ownerDispatch;

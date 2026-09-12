@@ -1,0 +1,622 @@
+[
+  {
+    "override": "addons/acm_extended/overrides/fn_Syringe_Inject.sqf",
+    "function_basename": "fnc_Syringe_Inject.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_Syringe_Inject.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_Thoracostomy_closeLocal.sqf",
+    "function_basename": "fnc_Thoracostomy_closeLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_Thoracostomy_closeLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_Thoracostomy_insertChestTubeLocal.sqf",
+    "function_basename": "fnc_Thoracostomy_insertChestTubeLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_Thoracostomy_insertChestTubeLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_Thoracostomy_resealChestTubeLocal.sqf",
+    "function_basename": "fnc_Thoracostomy_resealChestTubeLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_Thoracostomy_resealChestTubeLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_Thoracostomy_startLocal.sqf",
+    "function_basename": "fnc_Thoracostomy_startLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_Thoracostomy_startLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_TransfusionMenu_onKeyDown.sqf",
+    "function_basename": "fnc_TransfusionMenu_onKeyDown.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_TransfusionMenu_onKeyDown.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_aedAnalyzeRhythm.sqf",
+    "function_basename": "fnc_aedAnalyzeRhythm.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_aedButtonShock.sqf",
+    "function_basename": "fnc_aedButtonShock.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_applyChestSealLocal.sqf",
+    "function_basename": "fnc_applyChestSealLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_applyChestSealLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_attemptROSC.sqf",
+    "function_basename": "fnc_attemptROSC.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_attemptROSC.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canCarry.sqf",
+    "function_basename": "fnc_canCarry.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canDrag.sqf",
+    "function_basename": "fnc_canDrag.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canOpenMenu.sqf",
+    "function_basename": "fnc_canOpenMenu.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canTreatCached.sqf",
+    "function_basename": "fnc_canTreatCached.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_checkBreathingLocal.sqf",
+    "function_basename": "fnc_checkBreathingLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_checkBreathingLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_checkPulseLocal.sqf",
+    "function_basename": "fnc_checkPulseLocal.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_collectActions.sqf",
+    "function_basename": "fnc_collectActions.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_deserializeState.sqf",
+    "function_basename": "fnc_deserializeState.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_feelPulse.sqf",
+    "function_basename": "fnc_feelPulse.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_feelPulse.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genCO.sqf",
+    "function_basename": "fnc_genCO.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genEKG.sqf",
+    "function_basename": "fnc_genEKG.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genPO.sqf",
+    "function_basename": "fnc_genPO.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getAirwayState.sqf",
+    "function_basename": "fnc_getAirwayState.sqf",
+    "upstream_matches": [
+      "addons/airway/functions/fnc_getAirwayState.sqf"
+    ],
+    "direct_match": true,
+    "status": "native-merged-phase1",
+    "native_target": "addons/airway/functions/fnc_getAirwayState.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBloodPressure.sqf",
+    "function_basename": "fnc_getBloodPressure.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBloodVolumeChange.sqf",
+    "function_basename": "fnc_getBloodVolumeChange.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBodyPartIVBags.sqf",
+    "function_basename": "fnc_getBodyPartIVBags.sqf",
+    "upstream_matches": [
+      "addons/gui/functions/fnc_getBodyPartIVBags.sqf"
+    ],
+    "direct_match": true,
+    "status": "native-merged-phase1",
+    "native_target": "addons/gui/functions/fnc_getBodyPartIVBags.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBreathingState.sqf",
+    "function_basename": "fnc_getBreathingState.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_getBreathingState.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getCardiacMedicationEffects.sqf",
+    "function_basename": "fnc_getCardiacMedicationEffects.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_getCardiacMedicationEffects.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getCardiacOutput.sqf",
+    "function_basename": "fnc_getCardiacOutput.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getDogtagData.sqf",
+    "function_basename": "fnc_getDogtagData.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getEtCO2.sqf",
+    "function_basename": "fnc_getEtCO2.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_getEtCO2.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getIVFlowRate.sqf",
+    "function_basename": "fnc_getIVFlowRate.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_getIVFlowRate.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getMedicationCount.sqf",
+    "function_basename": "fnc_getMedicationCount.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getNauseaMedicationEffects.sqf",
+    "function_basename": "fnc_getNauseaMedicationEffects.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_getNauseaMedicationEffects.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getUp.sqf",
+    "function_basename": "fnc_getUp.sqf",
+    "upstream_matches": [
+      "addons/core/functions/fnc_getUp.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleAirwayObstruction_Vomit.sqf",
+    "function_basename": "fnc_handleAirwayObstruction_Vomit.sqf",
+    "upstream_matches": [
+      "addons/airway/functions/fnc_handleAirwayObstruction_Vomit.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleCardiacArrest.sqf",
+    "function_basename": "fnc_handleCardiacArrest.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleCardiacArrest.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleEffects.sqf",
+    "function_basename": "fnc_handleEffects.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleMed_AdenosineLocal.sqf",
+    "function_basename": "fnc_handleMed_AdenosineLocal.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleMed_AdenosineLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleMed_AtropineLocal.sqf",
+    "function_basename": "fnc_handleMed_AtropineLocal.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleMed_AtropineLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleMed_CalciumChlorideLocal.sqf",
+    "function_basename": "fnc_handleMed_CalciumChlorideLocal.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleMed_CalciumChlorideLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleMed_DimercaprolLocal.sqf",
+    "function_basename": "fnc_handleMed_DimercaprolLocal.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleMed_DimercaprolLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleOverdose.sqf",
+    "function_basename": "fnc_handleOverdose.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleOverdose.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handlePneumothorax.sqf",
+    "function_basename": "fnc_handlePneumothorax.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_handlePneumothorax.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleReversibleCardiacArrest.sqf",
+    "function_basename": "fnc_handleReversibleCardiacArrest.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_handleReversibleCardiacArrest.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleSuction.sqf",
+    "function_basename": "fnc_handleSuction.sqf",
+    "upstream_matches": [
+      "addons/airway/functions/fnc_handleSuction.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleUnitVitals.sqf",
+    "function_basename": "fnc_handleUnitVitals.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_inspectChestLocal.sqf",
+    "function_basename": "fnc_inspectChestLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_inspectChestLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_ivBagLocal.sqf",
+    "function_basename": "fnc_ivBagLocal.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_medicationLocal.sqf",
+    "function_basename": "fnc_medicationLocal.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_onCardiacArrest.sqf",
+    "function_basename": "fnc_onCardiacArrest.sqf",
+    "upstream_matches": [
+      "addons/core/functions/fnc_onCardiacArrest.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_onMedicationUsage.sqf",
+    "function_basename": "fnc_onMedicationUsage.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_onUnconscious.sqf",
+    "function_basename": "fnc_onUnconscious.sqf",
+    "upstream_matches": [
+      "addons/airway/functions/fnc_onUnconscious.sqf",
+      "addons/core/functions/fnc_onUnconscious.sqf"
+    ],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_performNCDLocal.sqf",
+    "function_basename": "fnc_performNCDLocal.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_performNCDLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_recentAEDShock.sqf",
+    "function_basename": "fnc_recentAEDShock.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_recentAEDShock.sqf"
+    ],
+    "direct_match": true,
+    "status": "native-merged-phase1",
+    "native_target": "addons/circulation/functions/fnc_recentAEDShock.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_resetVariables.sqf",
+    "function_basename": "fnc_resetVariables.sqf",
+    "upstream_matches": [
+      "addons/airway/functions/fnc_resetVariables.sqf",
+      "addons/breathing/functions/fnc_resetVariables.sqf",
+      "addons/cbrn/functions/fnc_resetVariables.sqf",
+      "addons/disability/functions/fnc_resetVariables.sqf",
+      "addons/core/functions/fnc_resetVariables.sqf",
+      "addons/damage/functions/fnc_resetVariables.sqf",
+      "addons/circulation/functions/fnc_resetVariables.sqf"
+    ],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_serializeState.sqf",
+    "function_basename": "fnc_serializeState.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_setIVLocal.sqf",
+    "function_basename": "fnc_setIVLocal.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_setIVLocal.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeDrawButton.sqf",
+    "function_basename": "fnc_syringeDrawButton.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeGetMedicationList.sqf",
+    "function_basename": "fnc_syringeGetMedicationList.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringePrepareFinish.sqf",
+    "function_basename": "fnc_syringePrepareFinish.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeUpdateMedicationList.sqf",
+    "function_basename": "fnc_syringeUpdateMedicationList.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_tourniquetRemove.sqf",
+    "function_basename": "fnc_tourniquetRemove.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_transfusionMoveBag.sqf",
+    "function_basename": "fnc_transfusionMoveBag.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_transfusionMoveBagCancel.sqf",
+    "function_basename": "fnc_transfusionMoveBagCancel.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_treatment.sqf",
+    "function_basename": "fnc_treatment.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateActions.sqf",
+    "function_basename": "fnc_updateActions.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateCirculationState.sqf",
+    "function_basename": "fnc_updateCirculationState.sqf",
+    "upstream_matches": [
+      "addons/circulation/functions/fnc_updateCirculationState.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateHeartRate.sqf",
+    "function_basename": "fnc_updateHeartRate.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateLungState.sqf",
+    "function_basename": "fnc_updateLungState.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_updateLungState.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateOxygen.sqf",
+    "function_basename": "fnc_updateOxygen.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updatePeripheralResistance.sqf",
+    "function_basename": "fnc_updatePeripheralResistance.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateRespirationRate.sqf",
+    "function_basename": "fnc_updateRespirationRate.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_updateRespirationRate.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateWoundBloodLoss.sqf",
+    "function_basename": "fnc_updateWoundBloodLoss.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_useStethoscope.sqf",
+    "function_basename": "fnc_useStethoscope.sqf",
+    "upstream_matches": [
+      "addons/breathing/functions/fnc_useStethoscope.sqf"
+    ],
+    "direct_match": true,
+    "status": "migrated-native"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_woundsHandlerBase.sqf",
+    "function_basename": "fnc_woundsHandlerBase.sqf",
+    "upstream_matches": [],
+    "direct_match": false,
+    "status": "acme-specific-or-manual-map"
+  }
+]

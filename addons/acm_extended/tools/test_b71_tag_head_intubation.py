@@ -1,0 +1,125 @@
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+
+def txt(rel):
+    return (ROOT / rel).read_text(encoding='utf-8', errors='ignore')
+
+def test_version_batch():
+    assert 'version = "1.0.100-r35";' in txt('config.cpp')
+    p = txt('functions/fn_postInit.sqf')
+    assert '"1.0.100-r35"' in p
+    assert 'ACME_buildBatch = "B71";' in p
+
+def test_main_tag_button_copies_carousel_tag_face_anchor():
+    render = txt('functions/fn_skPendingTagRender.sqf')
+    ensure = txt('functions/fn_skPendingTagEnsure.sqf')
+    assert 'private _tagCenterX = _x + _w*0.36;' in render
+    assert 'private _btnY = _y + _h*0.575;' in render
+    assert 'safeZoneH * 0.20' in render
+    assert 'private _tagCenter0 = (_r0 select 0) + (_r0 select 2)*0.36;' in ensure
+    assert 'private _by0 = (_r0 select 1) + (_r0 select 3)*0.575;' in ensure
+
+def test_pending_tag_dropdown_is_hover_open_clickable_dark_and_topmost():
+    ensure = txt('functions/fn_skPendingTagEnsure.sqf')
+    cfg = txt('config.cpp')
+    render = txt('functions/fn_skPendingTagRender.sqf')
+    assert 'ctrlCreate ["ACME_SK_TagList", 84611]' in ensure
+    assert 'ctrlAddEventHandler ["MouseEnter"' in ensure
+    assert 'ctrlAddEventHandler ["LBSelChanged"' in ensure
+    assert 'ctrlAddEventHandler ["MouseButtonUp"' in ensure
+    assert ensure.index('ctrlCreate ["RscPicture", 84600]') < ensure.index('ctrlCreate ["ACME_SK_TagList", 84611]')
+    assert 'class ACME_SK_TagList: ACME_SK_StyledList' in cfg
+    assert 'colorBackground[] = {0.04,0.04,0.04,0.96};' in cfg
+    assert 'safeZoneH * 1.20' in render
+    assert 'safeZoneH * 0.52' in render
+
+def test_pending_tag_gives_immediate_feedback_and_only_exists_in_draw_view():
+    render = txt('functions/fn_skPendingTagRender.sqf')
+    ensure = txt('functions/fn_skPendingTagEnsure.sqf')
+    view = txt('functions/fn_skSetView.sqf')
+    assert 'private _showSetup = (_view == "syringe");' in render
+    assert 'private _btnBg = switch (_color) do' in render
+    assert '_tag ctrlShow true;' in render
+    assert 'private _drawView = (uiNamespace getVariable ["ACME_SK_View", "syringe"]) == "syringe";' in ensure
+    assert '[84600,84601,84602,84603,84610,84611]' in view
+
+def test_pushing_status_is_bodymap_injection_only_and_above_active_syringe():
+    inject = txt('functions/fn_skInject.sqf')
+    render = txt('functions/fn_skCarouselRender.sqf')
+    view = txt('functions/fn_skSetView.sqf')
+    assert 'ctrlCreate ["ACME_SK_StyledLabel", 84810]' in inject
+    assert '_pushStatus ctrlSetText "Pushing...";' in inject
+    assert 'private _showPush = _injectBusy && {!_editMode};' in render
+    assert 'private _statusY = (_ay - _statusH - _statusGap) max (_editBottom + _statusGap);' in render
+    assert '(_display displayCtrl 84810) ctrlShow false;' in view
+
+def test_intubate_hidden_for_conscious_patient():
+    cfg = txt('config.cpp')
+    block = cfg[cfg.index('class ACME_IntubateStart'):cfg.index('class ACME_IntubateStart')+3500]
+    assert "ACE_isUnconscious" in block
+    assert "ace_medical_unconscious" in block
+    assert "ace_medical_inCardiacArrest" in block
+    assert "ACME_Laryngoscope" in block and "ACME_ETTube" in block
+
+def test_head_elevation_rolls_only_actual_prone_patient_to_supine():
+    start = txt('functions/fn_headElevateStart.sqf')
+    assert 'private _mustRollSupine = false;' in start
+    assert 'call ACME_fnc_chestSealActualSide) == "back"' in start
+    assert 'if (_mustRollSupine) exitWith {' in start
+    assert '[_patient, "front"] call ACME_fnc_chestSealRoll;' in start
+    assert '[_medic,_patient,_bodyPart,_auto,true] call ACME_fnc_headElevateStart;' in start
+
+def test_native_acm_treatment_cannot_invent_head_position_roll():
+    cfg = txt('config.cpp')
+    elev = cfg[cfg.index('class ACME_ElevateHead'):cfg.index('class ACME_LowerHead')]
+    lower = cfg[cfg.index('class ACME_LowerHead'):cfg.index('class ACME_TuneHeadTilt')]
+    override = txt('overrides/fn_treatment.sqf')
+    assert 'ACM_rollToBack = 0;' in elev
+    assert 'ACM_rollToBack = 0;' in lower
+    assert 'private _nativeArgs = +_this;' in override
+    assert '_classname in ["ACME_ElevateHead", "ACME_LowerHead"]' in override
+    assert 'toLowerANSI _bodyPart == "body"' in override
+    assert '_nativeArgs set [2, "Head"];' in override
+    assert 'private _started = _nativeArgs call ACME_native_fnc_treatment;' in override
+
+def test_exact_semifowler_patient_and_provider_animations_retained():
+    apply = txt('functions/fn_headElevApplyTilt.sqf')
+    stop = txt('functions/fn_headElevateStop.sqf')
+    seq = txt('functions/fn_headElevMedicSeq.sqf')
+    assert 'AinjPpneMrunSnonWnonDb_grab' in apply
+    assert 'AinjPpneMrunSnonWnonDb_release' in stop
+    assert 'private _dragger = "DraggerBase";' in seq
+    assert 'AcinPknlMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon' in seq
+    assert 'private _unarmed = "AmovPknlMstpSnonWnonDnon";' in seq
+
+def test_provider_sequence_releases_on_finish_movement_or_menu_exit_without_lowering_head():
+    seq = txt('functions/fn_headElevMedicSeq.sqf')
+    cancel = txt('functions/fn_headElevateCancelSeq.sqf')
+    assert '_u setUnitPos "AUTO";' in seq
+    assert 'inputAction _x' in seq
+    assert 'ace_medical_gui_menuDisplay' in seq
+    assert '[_u,_pfh,true] call _finish;' in seq
+    assert 'headElevateStop' not in cancel
+    assert '_medic setUnitPos "AUTO";' in cancel
+
+def test_exact_head_elevation_log_wording():
+    start = txt('functions/fn_headElevMedicStart.sqf')
+    stop = txt('functions/fn_headElevateStop.sqf')
+    assert '"%1 elevated head 30 degrees"' in start
+    assert '"%1 placed them in Semi-Fowler\'s position"' in start
+    assert '"%1 laid head flat"' in stop
+    assert '"%1 laid them supine"' in stop
+
+def test_one_time_weapon_stow_no_restore_retained():
+    prep = txt('functions/fn_medicAnimationPrep.sqf')
+    seq = txt('functions/fn_headElevMedicSeq.sqf')
+    assert 'selectWeapon "";' in prep
+    assert 'selectWeapon' not in seq
+    assert 'currentWeapon' not in seq
+
+if __name__ == '__main__':
+    import inspect
+    tests = [v for k,v in sorted(globals().items()) if k.startswith('test_') and callable(v)]
+    for t in tests:
+        t()
+    print(f'B71 focused contracts: {len(tests)}/{len(tests)} passed')

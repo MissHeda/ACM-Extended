@@ -1,0 +1,53 @@
+// roll to spawn a junctional wound off an incoming wound. it is fired on ace_medical_woundReceived, where _this is
+// [_unit, _allDamages, _source, _projectile].
+// junctional wounds have a high chance off medium and large velocity wounds and a low chance off large avulsions,
+// on the chest, arms and legs. we read the freshly-applied open wounds, because ACE has populated them by the
+// time this fires, and resolve the class and size of each wound from its id:
+// classindex is floor(id/10), size is id mod 10, where 0 is small, 1 medium and 2 large, and classname is
+// ace_medical_damage_woundClassNames select classindex.
+params ["_unit", ["_newWounds", createHashMap]];
+if (isNull _unit || {!local _unit} || {!alive _unit}) exitWith {};
+if !(missionNamespace getVariable ["ACME_sys_junc", true]) exitWith {};
+
+private _names = missionNamespace getVariable ["ace_medical_damage_woundClassNames", []];
+if (_names isEqualTo []) exitWith {};
+private _openWounds = _newWounds;
+
+private _pVel = missionNamespace getVariable ["ACME_junctionalChanceVelocity", 0.6];  // high.
+private _pAvl = missionNamespace getVariable ["ACME_junctionalChanceAvulsion", 0.15];  // low.
+
+// a per-casualty junctional cap for ACM training-spawner casualties. immediate, priority and routine, plus the
+// unknown or random tier, get at most 2 junctionals, and only expectant, at severity 4, may reach 3 or more, up
+// to all four limbs. players and normal ai are uncapped, at a _cap of -1, which is the original behavior.
+// the severity comes from the generatepatient shim: the patient stamp if present, and otherwise the pending global
+// during the initial spawn wound loop, because the rolls fire synchronously inside generatepatient, before the
+// patient stamp lands.
+private _allParts = ["leftarm", "rightarm", "leftleg", "rightleg"];
+private _cap = -1;
+if ((group _unit) isEqualTo (missionNamespace getVariable ["ACM_mission_TrainingCasualtyGroup", grpNull])) then {
+    private _sev = _unit getVariable ["ACME_spawnSeverity", (missionNamespace getVariable ["ACME_pendingSpawnSeverity", -1])];
+    _cap = [2, 4] select (_sev >= 4);
+};
+private _curJunc = { (_unit getVariable [format ["ACME_Junc_%1", _x], ""]) != "" } count _allParts;
+
+{
+    private _part = _x;
+    if (_cap >= 0 && {_curJunc >= _cap}) then { continue };  // at the cap of the casualty, so no more junctionals.
+    if ((_unit getVariable [format ["ACME_Junc_%1", _part], ""]) != "") then { continue };  // already junctional.
+
+    private _chance = 0;
+    {
+        _x params ["_id", "_amountOf"];
+        if (_amountOf <= 0) then { continue };
+        private _classIndex = floor (_id / 10);
+        private _size = _id % 10;  // 0 small, 1 medium, 2 large.
+        private _cn = if (_classIndex >= 0 && _classIndex < count _names) then { _names select _classIndex } else { "" };
+        if (_cn == "VelocityWound" && _size >= 1) then { _chance = _chance max _pVel };  // a medium or large velocity wound.
+        if (_cn == "Avulsion"     && _size >= 2) then { _chance = _chance max _pAvl };  // a large avulsion.
+    } forEach (_openWounds getOrDefault [_part, []]);
+
+    if (_chance > 0 && {random 1 < _chance}) then {
+        [_unit, _part, true] call ACME_fnc_junctionalInflict;
+        _curJunc = _curJunc + 1;
+    };
+} forEach _allParts;

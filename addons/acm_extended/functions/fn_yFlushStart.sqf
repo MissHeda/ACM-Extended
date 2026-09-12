@@ -1,0 +1,14 @@
+params ["_p", "_medic", "_part", "_iv", "_site", "_epoch"];
+if (!local _p || {!alive _p} || {_epoch != ([_p] call ACME_fnc_clinicalEpoch)}) exitWith {};
+if !([_p, _part, _iv, _site] call ACME_fnc_isYLineAccess) exitWith {[_medic, "No Y tubing on that access site."] call ACME_fnc_clinicalNotice;};
+private _key = toLowerANSI format ["%1#%2#%3", _part, _iv, _site];
+private _jobs = _p getVariable ["ACME_yFlushJobs", createHashMap];
+if (_key in _jobs) exitWith {[_medic, "A flush is already running on that site."] call ACME_fnc_clinicalNotice;};
+private _bags = (_p getVariable ["ACM_circulation_IV_Bags", createHashMap]) getOrDefault [_part, []];
+private _index = _bags findIf {(_x param [0, ""]) in ["ACME_SalineY", "Saline"] && {(_x param [3, -1]) == _site} && {(_x param [4, true]) == _iv}};
+private _total = (missionNamespace getVariable ["ACME_YFlushVolume", 50]) max 0;
+if (_index < 0 || {((_bags select _index) select 1) < _total}) exitWith {[_medic, format ["That site's saline reserve needs at least %1 mL.", _total]] call ACME_fnc_clinicalNotice;};
+private _id = [_p, _part, _index] call ACME_fnc_bagIdentity;
+_jobs set [_key, [_part, _iv, _site, _id, _total, _total / ((missionNamespace getVariable ["ACME_YFlushSeconds", 5]) max 0.1), CBA_missionTime, _medic, _epoch]];
+[_p, "ACME_yFlushJobs", _jobs] call ACME_fnc_setVarNet;
+[_medic, format ["Flushing this line: %1 mL saline.", _total]] call ACME_fnc_clinicalNotice;

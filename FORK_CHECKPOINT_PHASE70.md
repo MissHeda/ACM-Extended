@@ -19,9 +19,3 @@ This checkpoint extends the authoritative-writer work through persistent physiol
 - HEMTT is not installed in the current environment.
 
 This remains source/static validation and is not a substitute for Arma config merge, PBO compile/signing, dedicated-server or multiplayer acceptance testing.
-
-## Preserved source archive
-
-Phase 70 full-source SHA-256: `2c4416cbfc348e76ab615881515c4b2744a6b03469b0cbcc7e06a2d228964a5b`
-
-Archive size: 225,088,464 bytes.

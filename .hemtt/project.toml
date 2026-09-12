@@ -1,0 +1,15 @@
+name = "ACM Extended"
+author = "mavis"
+# Preserve ACM's prefix/mainprefix so existing ACM public classes/functions remain compatible.
+prefix = "ACM"
+mainprefix = "x"
+
+[files]
+include = [
+    "mod.cpp",
+    "logo.paa",
+    "logo_small.paa"
+]
+
+[version]
+git_hash = 0

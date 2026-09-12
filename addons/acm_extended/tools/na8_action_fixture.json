@@ -1,0 +1,1930 @@
+{
+  "scope": "Literal category/inheritance fixture extracted from supplied sources. Not engine-resolved config.",
+  "entries": {
+    "basicbandage": {
+      "name": "BasicBandage",
+      "base": "",
+      "category": "bandage",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:3"
+      ]
+    },
+    "fielddressing": {
+      "name": "FieldDressing",
+      "base": "BasicBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:36"
+      ]
+    },
+    "packingbandage": {
+      "name": "PackingBandage",
+      "base": "BasicBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:45"
+      ]
+    },
+    "elasticbandage": {
+      "name": "ElasticBandage",
+      "base": "BasicBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:55"
+      ]
+    },
+    "quikclot": {
+      "name": "QuikClot",
+      "base": "BasicBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:64"
+      ]
+    },
+    "applytourniquet": {
+      "name": "ApplyTourniquet",
+      "base": "BasicBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:75",
+        "ACE_Medical_Treatment_Actions.hpp:307"
+      ]
+    },
+    "removetourniquet": {
+      "name": "RemoveTourniquet",
+      "base": "ApplyTourniquet",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:88",
+        "ACE_Medical_Treatment_Actions.hpp:311"
+      ]
+    },
+    "splint": {
+      "name": "Splint",
+      "base": "BasicBandage",
+      "category": "bandage",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:98",
+        "ACE_Medical_Treatment_Actions.hpp:35"
+      ]
+    },
+    "morphine": {
+      "name": "Morphine",
+      "base": "FieldDressing",
+      "category": "medication",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:117",
+        "ACE_Medical_Treatment_Actions.hpp:39"
+      ]
+    },
+    "adenosine": {
+      "name": "Adenosine",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:134",
+        "ACE_Medical_Treatment_Actions.hpp:44"
+      ]
+    },
+    "epinephrine": {
+      "name": "Epinephrine",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:143",
+        "ACE_Medical_Treatment_Actions.hpp:49"
+      ]
+    },
+    "painkillers": {
+      "name": "Painkillers",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:153"
+      ]
+    },
+    "bloodiv": {
+      "name": "BloodIV",
+      "base": "BasicBandage",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:166",
+        "ACE_Medical_Treatment_Actions.hpp:190"
+      ]
+    },
+    "bloodiv_500": {
+      "name": "BloodIV_500",
+      "base": "BloodIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:183"
+      ]
+    },
+    "bloodiv_250": {
+      "name": "BloodIV_250",
+      "base": "BloodIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:187"
+      ]
+    },
+    "plasmaiv": {
+      "name": "PlasmaIV",
+      "base": "BloodIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:191",
+        "ACE_Medical_Treatment_Actions.hpp:193"
+      ]
+    },
+    "plasmaiv_500": {
+      "name": "PlasmaIV_500",
+      "base": "PlasmaIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:197"
+      ]
+    },
+    "plasmaiv_250": {
+      "name": "PlasmaIV_250",
+      "base": "PlasmaIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:201"
+      ]
+    },
+    "salineiv": {
+      "name": "SalineIV",
+      "base": "BloodIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:205",
+        "ACE_Medical_Treatment_Actions.hpp:196"
+      ]
+    },
+    "salineiv_500": {
+      "name": "SalineIV_500",
+      "base": "SalineIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:211"
+      ]
+    },
+    "salineiv_250": {
+      "name": "SalineIV_250",
+      "base": "SalineIV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:215"
+      ]
+    },
+    "diagnose": {
+      "name": "Diagnose",
+      "base": "BasicBandage",
+      "category": "examine",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:221"
+      ]
+    },
+    "checkpulse": {
+      "name": "CheckPulse",
+      "base": "Diagnose",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:239",
+        "ACE_Medical_Treatment_Actions.hpp:3"
+      ]
+    },
+    "checkbloodpressure": {
+      "name": "CheckBloodPressure",
+      "base": "CheckPulse",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:248",
+        "ACE_Medical_Treatment_Actions.hpp:74"
+      ]
+    },
+    "checkresponse": {
+      "name": "CheckResponse",
+      "base": "CheckPulse",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:254",
+        "ACE_Medical_Treatment_Actions.hpp:71",
+        "config.cpp:6819"
+      ]
+    },
+    "bodybag": {
+      "name": "BodyBag",
+      "base": "BasicBandage",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:263",
+        "ACE_Medical_Treatment_Actions.hpp:26"
+      ]
+    },
+    "bodybagblue": {
+      "name": "BodyBagBlue",
+      "base": "BodyBag",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:278",
+        "ACE_Medical_Treatment_Actions.hpp:29"
+      ]
+    },
+    "bodybagwhite": {
+      "name": "BodyBagWhite",
+      "base": "BodyBag",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:282",
+        "ACE_Medical_Treatment_Actions.hpp:32"
+      ]
+    },
+    "grave": {
+      "name": "Grave",
+      "base": "BodyBag",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:286"
+      ]
+    },
+    "cpr": {
+      "name": "CPR",
+      "base": "BasicBandage",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:296",
+        "ACE_Medical_Treatment_Actions.hpp:175",
+        "config.cpp:6898"
+      ]
+    },
+    "surgicalkit": {
+      "name": "SurgicalKit",
+      "base": "FieldDressing",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:319",
+        "ACE_Medical_Treatment_Actions.hpp:265"
+      ]
+    },
+    "personalaidkit": {
+      "name": "PersonalAidKit",
+      "base": "BasicBandage",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:337",
+        "config.cpp:7812"
+      ]
+    },
+    "atna_autoinjector": {
+      "name": "ATNA_Autoinjector",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:54"
+      ]
+    },
+    "midazolam_autoinjector": {
+      "name": "Midazolam_Autoinjector",
+      "base": "ATNA_Autoinjector",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:63"
+      ]
+    },
+    "measurebloodpressure": {
+      "name": "MeasureBloodPressure",
+      "base": "CheckBloodPressure",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:81",
+        "config.cpp:6942"
+      ]
+    },
+    "measurebloodpressurestethoscope": {
+      "name": "MeasureBloodPressureStethoscope",
+      "base": "MeasureBloodPressure",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:90",
+        "config.cpp:6943"
+      ]
+    },
+    "checkdogtags": {
+      "name": "CheckDogTags",
+      "base": "CheckResponse",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:97"
+      ]
+    },
+    "pressurebandage": {
+      "name": "PressureBandage",
+      "base": "BasicBandage",
+      "category": "bandage",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:108"
+      ]
+    },
+    "emergencytraumadressing": {
+      "name": "EmergencyTraumaDressing",
+      "base": "PressureBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:135",
+        "config.cpp:6761"
+      ]
+    },
+    "elasticwrap": {
+      "name": "ElasticWrap",
+      "base": "PressureBandage",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:141"
+      ]
+    },
+    "elasticwrapbandages": {
+      "name": "ElasticWrapBandages",
+      "base": "ElasticWrap",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:151"
+      ]
+    },
+    "elasticwrapclots": {
+      "name": "ElasticWrapClots",
+      "base": "ElasticWrap",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:157"
+      ]
+    },
+    "elasticwrapsplint": {
+      "name": "ElasticWrapSplint",
+      "base": "ElasticWrap",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:163"
+      ]
+    },
+    "stitchairwayincision": {
+      "name": "StitchAirwayIncision",
+      "base": "FieldDressing",
+      "category": "airway",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:172"
+      ]
+    },
+    "stitchairwayincision_suture": {
+      "name": "StitchAirwayIncision_Suture",
+      "base": "StitchAirwayIncision",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:193"
+      ]
+    },
+    "surgicalairway_securestrap": {
+      "name": "SurgicalAirway_SecureStrap",
+      "base": "StitchAirwayIncision",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:200"
+      ]
+    },
+    "inspectforfracture": {
+      "name": "InspectForFracture",
+      "base": "CheckPulse",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:217"
+      ]
+    },
+    "fracturerealignment": {
+      "name": "FractureRealignment",
+      "base": "Splint",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:229"
+      ]
+    },
+    "applysamsplint": {
+      "name": "ApplySAMSplint",
+      "base": "Splint",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:244"
+      ]
+    },
+    "removesamsplint": {
+      "name": "RemoveSAMSplint",
+      "base": "Splint",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:254"
+      ]
+    },
+    "surgicalkit_suture": {
+      "name": "SurgicalKit_Suture",
+      "base": "SurgicalKit",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:269"
+      ]
+    },
+    "stitchwrappedwounds": {
+      "name": "StitchWrappedWounds",
+      "base": "SurgicalKit",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:278"
+      ]
+    },
+    "stitchwrappedwounds_suture": {
+      "name": "StitchWrappedWounds_Suture",
+      "base": "SurgicalKit_Suture",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:285"
+      ]
+    },
+    "stitchclottedwounds": {
+      "name": "StitchClottedWounds",
+      "base": "SurgicalKit",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:292"
+      ]
+    },
+    "stitchclottedwounds_suture": {
+      "name": "StitchClottedWounds_Suture",
+      "base": "SurgicalKit_Suture",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:299"
+      ]
+    },
+    "opentransfusionmenu": {
+      "name": "OpenTransfusionMenu",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:317"
+      ]
+    },
+    "inspectiv_upper": {
+      "name": "InspectIV_Upper",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:334"
+      ]
+    },
+    "inspectiv_middle": {
+      "name": "InspectIV_Middle",
+      "base": "InspectIV_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:347"
+      ]
+    },
+    "inspectiv_lower": {
+      "name": "InspectIV_Lower",
+      "base": "InspectIV_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:352"
+      ]
+    },
+    "insertiv_16_upper": {
+      "name": "InsertIV_16_Upper",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:359",
+        "config.cpp:6962"
+      ]
+    },
+    "removeiv_16_upper": {
+      "name": "RemoveIV_16_Upper",
+      "base": "InsertIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:376",
+        "config.cpp:6978"
+      ]
+    },
+    "insertiv_16_middle": {
+      "name": "InsertIV_16_Middle",
+      "base": "InsertIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:389",
+        "config.cpp:6963"
+      ]
+    },
+    "removeiv_16_middle": {
+      "name": "RemoveIV_16_Middle",
+      "base": "RemoveIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:394",
+        "config.cpp:6979"
+      ]
+    },
+    "insertiv_16_lower": {
+      "name": "InsertIV_16_Lower",
+      "base": "InsertIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:399",
+        "config.cpp:6964"
+      ]
+    },
+    "removeiv_16_lower": {
+      "name": "RemoveIV_16_Lower",
+      "base": "RemoveIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:404",
+        "config.cpp:6980"
+      ]
+    },
+    "insertiv_14_upper": {
+      "name": "InsertIV_14_Upper",
+      "base": "InsertIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:409",
+        "config.cpp:6965"
+      ]
+    },
+    "removeiv_14_upper": {
+      "name": "RemoveIV_14_Upper",
+      "base": "RemoveIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:418",
+        "config.cpp:6981"
+      ]
+    },
+    "insertiv_14_middle": {
+      "name": "InsertIV_14_Middle",
+      "base": "InsertIV_14_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:427",
+        "config.cpp:6966"
+      ]
+    },
+    "removeiv_14_middle": {
+      "name": "RemoveIV_14_Middle",
+      "base": "RemoveIV_14_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:432",
+        "config.cpp:6982"
+      ]
+    },
+    "insertiv_14_lower": {
+      "name": "InsertIV_14_Lower",
+      "base": "InsertIV_14_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:437",
+        "config.cpp:6967"
+      ]
+    },
+    "removeiv_14_lower": {
+      "name": "RemoveIV_14_Lower",
+      "base": "RemoveIV_14_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:442",
+        "config.cpp:6983"
+      ]
+    },
+    "insertio_fast1": {
+      "name": "InsertIO_FAST1",
+      "base": "InsertIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:447",
+        "config.cpp:6984"
+      ]
+    },
+    "removeio_fast1": {
+      "name": "RemoveIO_FAST1",
+      "base": "RemoveIV_16_Upper",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:461"
+      ]
+    },
+    "insertio_ez": {
+      "name": "InsertIO_EZ",
+      "base": "InsertIO_FAST1",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:472",
+        "config.cpp:6989"
+      ]
+    },
+    "removeio_ez": {
+      "name": "RemoveIO_EZ",
+      "base": "RemoveIO_FAST1",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:485"
+      ]
+    },
+    "paracetamol": {
+      "name": "Paracetamol",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:497"
+      ]
+    },
+    "penthrox": {
+      "name": "Penthrox",
+      "base": "Paracetamol",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:511"
+      ]
+    },
+    "ammoniainhalant": {
+      "name": "AmmoniaInhalant",
+      "base": "Paracetamol",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:520"
+      ]
+    },
+    "naloxone": {
+      "name": "Naloxone",
+      "base": "Paracetamol",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:530"
+      ]
+    },
+    "fentanyllozenge": {
+      "name": "FentanylLozenge",
+      "base": "Paracetamol",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:540"
+      ]
+    },
+    "removefentanyllozenge": {
+      "name": "RemoveFentanylLozenge",
+      "base": "FentanylLozenge",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:553"
+      ]
+    },
+    "shakeawake": {
+      "name": "ShakeAwake",
+      "base": "CheckResponse",
+      "category": "medication",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:565"
+      ]
+    },
+    "slapawake": {
+      "name": "SlapAwake",
+      "base": "ShakeAwake",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:575"
+      ]
+    },
+    "usesyringe_10": {
+      "name": "UseSyringe_10",
+      "base": "OpenTransfusionMenu",
+      "category": "medication",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:587"
+      ]
+    },
+    "usesyringe_5": {
+      "name": "UseSyringe_5",
+      "base": "UseSyringe_10",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:599"
+      ]
+    },
+    "usesyringe_3": {
+      "name": "UseSyringe_3",
+      "base": "UseSyringe_10",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:606"
+      ]
+    },
+    "usesyringe_1": {
+      "name": "UseSyringe_1",
+      "base": "UseSyringe_10",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:613"
+      ]
+    },
+    "epinephrine_10_iv": {
+      "name": "Epinephrine_10_IV",
+      "base": "Morphine",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:622"
+      ]
+    },
+    "epinephrine_5_iv": {
+      "name": "Epinephrine_5_IV",
+      "base": "Epinephrine_10_IV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:638"
+      ]
+    },
+    "epinephrine_3_iv": {
+      "name": "Epinephrine_3_IV",
+      "base": "Epinephrine_10_IV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:645"
+      ]
+    },
+    "epinephrine_1_iv": {
+      "name": "Epinephrine_1_IV",
+      "base": "Epinephrine_10_IV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:652"
+      ]
+    },
+    "epinephrine_10_im": {
+      "name": "Epinephrine_10_IM",
+      "base": "Epinephrine_10_IV",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:725"
+      ]
+    },
+    "epinephrine_5_im": {
+      "name": "Epinephrine_5_IM",
+      "base": "Epinephrine_10_IM",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:736"
+      ]
+    },
+    "epinephrine_3_im": {
+      "name": "Epinephrine_3_IM",
+      "base": "Epinephrine_10_IM",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:743"
+      ]
+    },
+    "epinephrine_1_im": {
+      "name": "Epinephrine_1_IM",
+      "base": "Epinephrine_10_IM",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:750"
+      ]
+    },
+    "washeyes": {
+      "name": "WashEyes",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:824"
+      ]
+    },
+    "checkairway": {
+      "name": "CheckAirway",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:3",
+        "config.cpp:6809"
+      ]
+    },
+    "headturn": {
+      "name": "HeadTurn",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:18"
+      ]
+    },
+    "beginheadtiltchinlift": {
+      "name": "BeginHeadTiltChinLift",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:29"
+      ]
+    },
+    "recoveryposition": {
+      "name": "RecoveryPosition",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:40"
+      ]
+    },
+    "cancelrecoveryposition": {
+      "name": "CancelRecoveryPosition",
+      "base": "RecoveryPosition",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:51"
+      ]
+    },
+    "usesuctionbag": {
+      "name": "UseSuctionBag",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:63",
+        "config.cpp:8127"
+      ]
+    },
+    "useaccuvac": {
+      "name": "UseAccuvac",
+      "base": "UseSuctionBag",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:76",
+        "config.cpp:8155"
+      ]
+    },
+    "insertopa": {
+      "name": "InsertOPA",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:88",
+        "config.cpp:6853"
+      ]
+    },
+    "insertnpa": {
+      "name": "InsertNPA",
+      "base": "InsertOPA",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:101",
+        "config.cpp:6872"
+      ]
+    },
+    "insertigel": {
+      "name": "InsertIGel",
+      "base": "InsertOPA",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:112",
+        "config.cpp:6883"
+      ]
+    },
+    "removeopa": {
+      "name": "RemoveOPA",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:123"
+      ]
+    },
+    "removenpa": {
+      "name": "RemoveNPA",
+      "base": "RemoveOPA",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:132"
+      ]
+    },
+    "removeigel": {
+      "name": "RemoveIGel",
+      "base": "RemoveOPA",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:139"
+      ]
+    },
+    "establishsurgicalairway": {
+      "name": "EstablishSurgicalAirway",
+      "base": "CheckAirway",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:147"
+      ]
+    },
+    "checkbreathing": {
+      "name": "CheckBreathing",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:3",
+        "config.cpp:6823"
+      ]
+    },
+    "inspectchest": {
+      "name": "InspectChest",
+      "base": "CheckBreathing",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:17",
+        "config.cpp:7016"
+      ]
+    },
+    "usestethoscope": {
+      "name": "UseStethoscope",
+      "base": "CheckBreathing",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:29"
+      ]
+    },
+    "usebvm": {
+      "name": "UseBVM",
+      "base": "UseStethoscope",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:43"
+      ]
+    },
+    "usebvm_oxygen": {
+      "name": "UseBVM_Oxygen",
+      "base": "UseBVM",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:53"
+      ]
+    },
+    "usebvm_vehicleoxygen": {
+      "name": "UseBVM_VehicleOxygen",
+      "base": "UseBVM_Oxygen",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:61"
+      ]
+    },
+    "usebvm_portableoxygen": {
+      "name": "UseBVM_PortableOxygen",
+      "base": "UseBVM_Oxygen",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:65"
+      ]
+    },
+    "applychestseal": {
+      "name": "ApplyChestSeal",
+      "base": "CheckBreathing",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:73",
+        "config.cpp:7082"
+      ]
+    },
+    "performncd": {
+      "name": "PerformNCD",
+      "base": "ApplyChestSeal",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:90"
+      ]
+    },
+    "performthoracostomy": {
+      "name": "PerformThoracostomy",
+      "base": "ApplyChestSeal",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:106",
+        "config.cpp:7085"
+      ]
+    },
+    "performthoracostomy_kit": {
+      "name": "PerformThoracostomy_Kit",
+      "base": "PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:122"
+      ]
+    },
+    "insertchesttube": {
+      "name": "InsertChestTube",
+      "base": "PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:130",
+        "config.cpp:7199"
+      ]
+    },
+    "resealchesttube": {
+      "name": "ResealChestTube",
+      "base": "InsertChestTube",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:143",
+        "config.cpp:7200"
+      ]
+    },
+    "drainfluid_accuvac": {
+      "name": "DrainFluid_ACCUVAC",
+      "base": "PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:153",
+        "config.cpp:7201"
+      ]
+    },
+    "drainfluid_suctionbag": {
+      "name": "DrainFluid_SuctionBag",
+      "base": "DrainFluid_ACCUVAC",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:165",
+        "config.cpp:7202"
+      ]
+    },
+    "closeincision": {
+      "name": "CloseIncision",
+      "base": "PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:175",
+        "config.cpp:7203"
+      ]
+    },
+    "placepulseoximeter": {
+      "name": "PlacePulseOximeter",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:187"
+      ]
+    },
+    "removepulseoximeter": {
+      "name": "RemovePulseOximeter",
+      "base": "PlacePulseOximeter",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:202"
+      ]
+    },
+    "pressurecuff_attach": {
+      "name": "PressureCuff_Attach",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:12"
+      ]
+    },
+    "pressurecuff_remove": {
+      "name": "PressureCuff_Remove",
+      "base": "PressureCuff_Attach",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:29"
+      ]
+    },
+    "aed_viewmonitor": {
+      "name": "AED_ViewMonitor",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:40",
+        "config.cpp:6920"
+      ]
+    },
+    "aed_applypads": {
+      "name": "AED_ApplyPads",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:55"
+      ]
+    },
+    "aed_removepads": {
+      "name": "AED_RemovePads",
+      "base": "AED_ApplyPads",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:72"
+      ]
+    },
+    "aed_connectpulseoximeter": {
+      "name": "AED_ConnectPulseOximeter",
+      "base": "AED_ApplyPads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:82",
+        "config.cpp:6923"
+      ]
+    },
+    "aed_disconnectpulseoximeter": {
+      "name": "AED_DisconnectPulseOximeter",
+      "base": "AED_RemovePads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:94",
+        "config.cpp:6924"
+      ]
+    },
+    "aed_connectpressurecuff": {
+      "name": "AED_ConnectPressureCuff",
+      "base": "AED_ApplyPads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:104",
+        "config.cpp:6925"
+      ]
+    },
+    "aed_disconnectpressurecuff": {
+      "name": "AED_DisconnectPressureCuff",
+      "base": "AED_RemovePads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:115",
+        "config.cpp:6926"
+      ]
+    },
+    "aed_connectcapnograph": {
+      "name": "AED_ConnectCapnograph",
+      "base": "AED_ApplyPads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:124",
+        "config.cpp:6927"
+      ]
+    },
+    "aed_disconnectcapnograph": {
+      "name": "AED_DisconnectCapnograph",
+      "base": "AED_RemovePads",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:135",
+        "config.cpp:6928"
+      ]
+    },
+    "aed_analyzerhythm": {
+      "name": "AED_AnalyzeRhythm",
+      "base": "AED_ViewMonitor",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:145",
+        "config.cpp:6921"
+      ]
+    },
+    "aed_manualcharge": {
+      "name": "AED_ManualCharge",
+      "base": "AED_AnalyzeRhythm",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:152"
+      ]
+    },
+    "aed_shock": {
+      "name": "AED_Shock",
+      "base": "AED_ManualCharge",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:158"
+      ]
+    },
+    "aed_cancelcharge": {
+      "name": "AED_CancelCharge",
+      "base": "AED_ManualCharge",
+      "category": null,
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:163"
+      ]
+    },
+    "aed_measurebp": {
+      "name": "AED_MeasureBP",
+      "base": "AED_AnalyzeRhythm",
+      "category": "advanced",
+      "evidence": [
+        "ACE_Medical_Treatment_Actions.hpp:168",
+        "config.cpp:6922"
+      ]
+    },
+    "acme_abdominalbandage": {
+      "name": "ACME_AbdominalBandage",
+      "base": "EmergencyTraumaDressing",
+      "category": null,
+      "evidence": [
+        "config.cpp:6788"
+      ]
+    },
+    "checkcapillaryrefill": {
+      "name": "CheckCapillaryRefill",
+      "base": "",
+      "category": null,
+      "evidence": [
+        "config.cpp:6833"
+      ]
+    },
+    "insertiv_18_upper": {
+      "name": "InsertIV_18_Upper",
+      "base": "",
+      "category": null,
+      "evidence": [
+        "config.cpp:6968"
+      ]
+    },
+    "insertiv_18_middle": {
+      "name": "InsertIV_18_Middle",
+      "base": "",
+      "category": null,
+      "evidence": [
+        "config.cpp:6969"
+      ]
+    },
+    "insertiv_18_lower": {
+      "name": "InsertIV_18_Lower",
+      "base": "",
+      "category": null,
+      "evidence": [
+        "config.cpp:6970"
+      ]
+    },
+    "acme_esketamine_in": {
+      "name": "ACME_Esketamine_IN",
+      "base": "Naloxone",
+      "category": null,
+      "evidence": [
+        "config.cpp:7000"
+      ]
+    },
+    "acme_inspectchest": {
+      "name": "ACME_InspectChest",
+      "base": "CheckBreathing",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7019"
+      ]
+    },
+    "acme_performthoracostomy": {
+      "name": "ACME_PerformThoracostomy",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7096"
+      ]
+    },
+    "acme_adjustthoracostomy": {
+      "name": "ACME_AdjustThoracostomy",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7136"
+      ]
+    },
+    "acme_insertchesttube": {
+      "name": "ACME_InsertChestTube",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7148"
+      ]
+    },
+    "acme_drainfluid_accuvac": {
+      "name": "ACME_DrainFluid_ACCUVAC",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7158"
+      ]
+    },
+    "acme_drainfluid_suctionbag": {
+      "name": "ACME_DrainFluid_SuctionBag",
+      "base": "ACME_DrainFluid_ACCUVAC",
+      "category": null,
+      "evidence": [
+        "config.cpp:7166"
+      ]
+    },
+    "acme_resealchesttube": {
+      "name": "ACME_ResealChestTube",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7174"
+      ]
+    },
+    "acme_closeincision": {
+      "name": "ACME_CloseIncision",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7181"
+      ]
+    },
+    "acme_suturechesttube": {
+      "name": "ACME_SutureChestTube",
+      "base": "ACME_PerformThoracostomy",
+      "category": null,
+      "evidence": [
+        "config.cpp:7191"
+      ]
+    },
+    "acme_applychestseal": {
+      "name": "ACME_ApplyChestSeal",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7209"
+      ]
+    },
+    "acme_burpchestseal": {
+      "name": "ACME_BurpChestSeal",
+      "base": "ACME_ApplyChestSeal",
+      "category": null,
+      "evidence": [
+        "config.cpp:7236"
+      ]
+    },
+    "acme_performnarspear": {
+      "name": "ACME_PerformNARSPEAR",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7252"
+      ]
+    },
+    "acme_directpressure": {
+      "name": "ACME_DirectPressure",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7275"
+      ]
+    },
+    "acme_assesspupils": {
+      "name": "ACME_AssessPupils",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:7292"
+      ]
+    },
+    "acme_checktemperature": {
+      "name": "ACME_CheckTemperature",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:7311"
+      ]
+    },
+    "acme_elevatehead": {
+      "name": "ACME_ElevateHead",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:7335"
+      ]
+    },
+    "acme_lowerhead": {
+      "name": "ACME_LowerHead",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:7357"
+      ]
+    },
+    "acme_tuneheadtilt": {
+      "name": "ACME_TuneHeadTilt",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:7373"
+      ]
+    },
+    "acme_packjunctional": {
+      "name": "ACME_PackJunctional",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7391"
+      ]
+    },
+    "acme_wrapjunctional": {
+      "name": "ACME_WrapJunctional",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7414"
+      ]
+    },
+    "acme_inflictjunctional": {
+      "name": "ACME_InflictJunctional",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7434"
+      ]
+    },
+    "acme_autobp": {
+      "name": "ACME_AutoBP",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7451"
+      ]
+    },
+    "acme_ivminigamestart": {
+      "name": "ACME_IVMinigameStart",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7472"
+      ]
+    },
+    "acme_swapventbattery": {
+      "name": "ACME_SwapVentBattery",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7514"
+      ]
+    },
+    "acme_intubatestart": {
+      "name": "ACME_IntubateStart",
+      "base": "CheckAirway",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7525"
+      ]
+    },
+    "acme_extubate": {
+      "name": "ACME_Extubate",
+      "base": "CheckAirway",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7558"
+      ]
+    },
+    "acme_openairwayview": {
+      "name": "ACME_OpenAirwayView",
+      "base": "CheckAirway",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7585"
+      ]
+    },
+    "acme_connectetvent": {
+      "name": "ACME_ConnectETVent",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7612"
+      ]
+    },
+    "acme_disconnectetvent": {
+      "name": "ACME_DisconnectETVent",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7632"
+      ]
+    },
+    "acme_debugforceshake": {
+      "name": "ACME_DebugForceShake",
+      "base": "CheckPulse",
+      "category": null,
+      "evidence": [
+        "config.cpp:7656"
+      ]
+    },
+    "acme_ventopenpatient": {
+      "name": "ACME_VentOpenPatient",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7666"
+      ]
+    },
+    "acme_establishej": {
+      "name": "ACME_EstablishEJ",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7686"
+      ]
+    },
+    "acme_removeej": {
+      "name": "ACME_RemoveEJ",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7710"
+      ]
+    },
+    "acme_applyaajt_inguinal": {
+      "name": "ACME_ApplyAAJT_Inguinal",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7730"
+      ]
+    },
+    "acme_removeaajt_inguinal": {
+      "name": "ACME_RemoveAAJT_Inguinal",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7754"
+      ]
+    },
+    "acme_applyaajt_axilla": {
+      "name": "ACME_ApplyAAJT_Axilla",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7771"
+      ]
+    },
+    "acme_removeaajt_axilla": {
+      "name": "ACME_RemoveAAJT_Axilla",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7792"
+      ]
+    },
+    "acme_applyxstat": {
+      "name": "ACME_ApplyXStat",
+      "base": "CheckPulse",
+      "category": "bandage",
+      "evidence": [
+        "config.cpp:7830"
+      ]
+    },
+    "acme_applynrb": {
+      "name": "ACME_ApplyNRB",
+      "base": "CheckAirway",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7863"
+      ]
+    },
+    "acme_removenrb": {
+      "name": "ACME_RemoveNRB",
+      "base": "CheckAirway",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:7884"
+      ]
+    },
+    "acme_prephpmk": {
+      "name": "ACME_PrepHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7906"
+      ]
+    },
+    "acme_wraphpmk": {
+      "name": "ACME_WrapHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7924"
+      ]
+    },
+    "acme_unwraphpmk": {
+      "name": "ACME_UnwrapHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7942"
+      ]
+    },
+    "acme_exposechesthpmk": {
+      "name": "ACME_ExposeChestHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7963"
+      ]
+    },
+    "acme_coverchesthpmk": {
+      "name": "ACME_CoverChestHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:7982"
+      ]
+    },
+    "acme_removehpmk": {
+      "name": "ACME_RemoveHPMK",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8000"
+      ]
+    },
+    "acme_attachemma": {
+      "name": "ACME_AttachEMMA",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:8017"
+      ]
+    },
+    "acme_attachemmaett": {
+      "name": "ACME_AttachEMMAETT",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:8042"
+      ]
+    },
+    "acme_removeemmaett": {
+      "name": "ACME_RemoveEMMAETT",
+      "base": "ACME_AttachEMMAETT",
+      "category": null,
+      "evidence": [
+        "config.cpp:8059"
+      ]
+    },
+    "acme_attachemmaigel": {
+      "name": "ACME_AttachEMMAIGel",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:8066"
+      ]
+    },
+    "acme_removeemmaigel": {
+      "name": "ACME_RemoveEMMAIGel",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:8084"
+      ]
+    },
+    "acme_removeemma": {
+      "name": "ACME_RemoveEMMA",
+      "base": "CheckPulse",
+      "category": "airway",
+      "evidence": [
+        "config.cpp:8102"
+      ]
+    },
+    "acme_givecalcium": {
+      "name": "ACME_GiveCalcium",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8168"
+      ]
+    },
+    "acme_givemagnesium": {
+      "name": "ACME_GiveMagnesium",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8191"
+      ]
+    },
+    "acme_hangbag": {
+      "name": "ACME_HangBag",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8208"
+      ]
+    },
+    "acme_readcoretemp": {
+      "name": "ACME_ReadCoreTemp",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:8230"
+      ]
+    },
+    "acme_feelskin": {
+      "name": "ACME_FeelSkin",
+      "base": "CheckPulse",
+      "category": "examine",
+      "evidence": [
+        "config.cpp:8247"
+      ]
+    },
+    "acme_pushdoseepi": {
+      "name": "ACME_PushDoseEpi",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8263"
+      ]
+    },
+    "acme_syringekit_drawpatient": {
+      "name": "ACME_SyringeKit_DrawPatient",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8282"
+      ]
+    },
+    "acme_toggleshock": {
+      "name": "ACME_ToggleShock",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8302"
+      ]
+    },
+    "acme_toggleoverresus": {
+      "name": "ACME_ToggleOverResus",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8317"
+      ]
+    },
+    "acme_toggleobtunded": {
+      "name": "ACME_ToggleObtunded",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8331"
+      ]
+    },
+    "acme_toggleobtundedprone": {
+      "name": "ACME_ToggleObtundedProne",
+      "base": "ACME_ToggleObtunded",
+      "category": null,
+      "evidence": [
+        "config.cpp:8345"
+      ]
+    },
+    "acme_debugobtundedbackpose": {
+      "name": "ACME_DebugObtundedBackPose",
+      "base": "ACME_ToggleObtunded",
+      "category": null,
+      "evidence": [
+        "config.cpp:8349"
+      ]
+    },
+    "acme_togglehypothermia": {
+      "name": "ACME_ToggleHypothermia",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8353"
+      ]
+    },
+    "acme_rhythmafibrvr": {
+      "name": "ACME_RhythmAFibRVR",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8367"
+      ]
+    },
+    "acme_rhythmafib": {
+      "name": "ACME_RhythmAFib",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8381"
+      ]
+    },
+    "acme_rhythmatrialtach": {
+      "name": "ACME_RhythmAtrialTach",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8395"
+      ]
+    },
+    "acme_rhythmtorsades": {
+      "name": "ACME_RhythmTorsades",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8409"
+      ]
+    },
+    "acme_rhythmsvt": {
+      "name": "ACME_RhythmSVT",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8423"
+      ]
+    },
+    "acme_rhythmdiag": {
+      "name": "ACME_RhythmDiag",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8437"
+      ]
+    },
+    "acme_debugdescriptorselftest": {
+      "name": "ACME_DebugDescriptorSelfTest",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8457"
+      ]
+    },
+    "acme_debugcheynestokes": {
+      "name": "ACME_DebugCheyneStokes",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8471"
+      ]
+    },
+    "acme_flushdrawdirty": {
+      "name": "ACME_FlushDrawDirty",
+      "base": "ACME_PushDoseEpi",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8486"
+      ]
+    },
+    "acme_flushline": {
+      "name": "ACME_FlushLine",
+      "base": "ACME_PushDoseEpi",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8499"
+      ]
+    },
+    "acme_osmobolus_hts": {
+      "name": "ACME_OsmoBolus_HTS",
+      "base": "CheckPulse",
+      "category": "medication",
+      "evidence": [
+        "config.cpp:8517"
+      ]
+    },
+    "acme_osmobolus_mannitol": {
+      "name": "ACME_OsmoBolus_Mannitol",
+      "base": "ACME_OsmoBolus_HTS",
+      "category": null,
+      "evidence": [
+        "config.cpp:8536"
+      ]
+    },
+    "acme_place18g_upper": {
+      "name": "ACME_Place18g_Upper",
+      "base": "CheckPulse",
+      "category": "advanced",
+      "evidence": [
+        "config.cpp:8544"
+      ]
+    },
+    "acme_place18g_middle": {
+      "name": "ACME_Place18g_Middle",
+      "base": "ACME_Place18g_Upper",
+      "category": null,
+      "evidence": [
+        "config.cpp:8567"
+      ]
+    },
+    "acme_place18g_lower": {
+      "name": "ACME_Place18g_Lower",
+      "base": "ACME_Place18g_Upper",
+      "category": null,
+      "evidence": [
+        "config.cpp:8571"
+      ]
+    },
+    "acme_remove18g_upper": {
+      "name": "ACME_Remove18g_Upper",
+      "base": "ACME_Place18g_Upper",
+      "category": null,
+      "evidence": [
+        "config.cpp:8575"
+      ]
+    },
+    "acme_remove18g_middle": {
+      "name": "ACME_Remove18g_Middle",
+      "base": "ACME_Remove18g_Upper",
+      "category": null,
+      "evidence": [
+        "config.cpp:8592"
+      ]
+    },
+    "acme_remove18g_lower": {
+      "name": "ACME_Remove18g_Lower",
+      "base": "ACME_Remove18g_Upper",
+      "category": null,
+      "evidence": [
+        "config.cpp:8597"
+      ]
+    }
+  }
+}

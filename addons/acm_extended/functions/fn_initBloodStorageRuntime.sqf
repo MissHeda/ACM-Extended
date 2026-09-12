@@ -1,0 +1,158 @@
+/*
+ * Phase 25 subsystem ownership: Blood-fridge/cooler storage, cold-chain, clot-pop and loadout-change runtime.
+ *
+ * Extracted intact from ACME_fnc_postInit and invoked at the original point so startup
+ * sequencing and CBA registration order are preserved.
+ */
+
+// blood fridge.
+// the server tick drives the auto open and close of every fridge, from the viewer pings, and the daily
+// restock.
+if (isServer) then {
+    [{ call ACME_fnc_bloodFridgeTick }, 0.25, []] call CBA_fnc_addPerFrameHandler;
+};
+
+// owner-side viewer bookkeeping. a client pings the fridge through targetevent while its ACE menu is on it,
+// and the tick treats the fridge as in use while any ping is fresh. it is keyed by netid, so a player counts at
+// most once.
+["ACME_bfViewPing", {
+    params ["_anchor", "_player"];
+    if (isNull _anchor || isNull _player) exitWith {};
+    private _v = _anchor getVariable ["ACME_bf_viewers", createHashMap];
+    _v set [netId _player, diag_tickTime];
+    _anchor setVariable ["ACME_bf_viewers", _v];
+}] call CBA_fnc_addEventHandler;
+["ACME_bfViewStop", {
+    params ["_anchor", "_player"];
+    if (isNull _anchor || isNull _player) exitWith {};
+    private _v = _anchor getVariable ["ACME_bf_viewers", createHashMap];
+    _v deleteAt (netId _player);
+    _anchor setVariable ["ACME_bf_viewers", _v];
+}] call CBA_fnc_addEventHandler;
+
+// take. the owner is authoritative over the count, so decrement here, then hand the unit to the machine of the
+// taker. if the taker carries a cooler, the existing cold-chain ledger covers the taken unit by volume
+// automatically, at no spoilage cost.
+["ACME_bfTake", {
+    params ["_anchor", "_class", "_player"];
+    if (isNull _anchor || isNull _player) exitWith {};
+    private _stock = _anchor getVariable ["ACME_bf_stock", []];
+    private _i = _stock findIf { (_x # 0) == _class };
+    if (_i < 0 || {(_stock # _i # 1) <= 0}) exitWith {
+        ["The fridge is out of that blood type.", 2] remoteExec ["ace_common_fnc_displayTextStructured", _player];
+    };
+    private _e = +(_stock # _i);
+    _e set [1, (_e # 1) - 1];
+    _stock set [_i, _e];
+    _anchor setVariable ["ACME_bf_stock", _stock, true];
+    ["ACME_bfGive", [_class], _player] call CBA_fnc_targetEvent;
+}] call CBA_fnc_addEventHandler;
+["ACME_bfGive", {
+    params ["_class"];
+    // addtoinventory returns [addedtounit, weaponholder] and drops to a ground holder itself when there is no
+    // room.
+    [ACE_player, _class] call ace_common_fnc_addToInventory;
+    [format ["Took %1 from the blood fridge.", getText (configFile >> "CfgWeapons" >> _class >> "displayName")], 2] call ace_common_fnc_displayTextStructured;
+}] call CBA_fnc_addEventHandler;
+
+// client. while the world interaction menu is open, poll the selected target and ping any fridge it lands
+// on.
+["ace_interactMenuOpened", {
+    params ["_menuType"];
+    if (_menuType != 1) exitWith {};
+    if (!isNil "ACME_bf_pollPFH") exitWith {};
+    ACME_bf_pollPFH = [{ call ACME_fnc_bloodFridgeMenuPoll }, 0.1, []] call CBA_fnc_addPerFrameHandler;
+}] call CBA_fnc_addEventHandler;
+["ace_interactMenuClosed", {
+    if (isNil "ACME_bf_pollPFH") exitWith {};
+    [ACME_bf_pollPFH] call CBA_fnc_removePerFrameHandler;
+    ACME_bf_pollPFH = nil;
+    private _lf = ACE_player getVariable ["ACME_bf_lastFridge", objNull];
+    if (!isNull _lf) then {
+        ["ACME_bfViewStop", [_lf, ACE_player], _lf] call CBA_fnc_targetEvent;
+        ACE_player setVariable ["ACME_bf_lastFridge", objNull];
+    };
+}] call CBA_fnc_addEventHandler;
+
+// blood cooler, a true container.
+// a double-click on a cooler in the inventory manages its contents. a local pass ages and spoils what is inside
+// once the coolant runs out.
+if (hasInterface) then {
+    ["CAManBase", "InventoryOpened", {_this call ACME_fnc_coolerInvHook}] call CBA_fnc_addClassEventHandler;
+    // NA2: register after ACME_coolerContentsDt is initialized below.
+};
+
+// clot pop. the server tick fires this at the owner of a patient to reopen bandaged wounds.
+["ACME_popClots", { _this call ACME_fnc_popClots }] call CBA_fnc_addEventHandler;
+
+// blood cold chain. a cooler keeps blood transfusable and warm blood spoils. freshness is tracked from the
+// moment blood enters a holder and survives a hand-off, through a server-authoritative ledger and a short
+// floating pool. a cooler arrives pre-loaded with its rated o- blood. the times are compressed hard for
+// operations of about 4 h, because a real chain runs 24 to 72 h.
+ACME_bloodScanInterval   = 60;  // s between cold-chain passes (also the age step)
+ACME_bloodLooseSpoilTime = 1800;  // 30 min in the warm before uncovered blood spoils
+ACME_bloodRewarmTime     = 1200;  // 20 min for a hung cold, [cooled], unit to rewarm to ambient, and with it the flow penalty.
+                                  // and transfusion hypothermia fades to zero across this time. 0 warms instantly.
+ACME_bloodFloatTTL       = 180;  // s that the clock of a handed-off or dropped bag persists in the float pool before a reset.
+ACME_coolerFillType      = "ON";  // the blood type a cooler auto-loads with. o-, on, is the universal donor. the options are o, on, a, an, b, bn, ab and abn.
+// true-container model, where a double-click on a cooler manages it. blood is kept cold only while it is
+// inside a cooler. loose blood therefore always warms, with autocover off, and a cooler no longer dumps loose
+// o- into the inventory, with autofill off. a new cooler instead pre-fills its own container with rated o-.
+// flip either back to true for the old behavior.
+ACME_coolerAutoCover     = false;
+ACME_coolerAutoFill      = false;
+ACME_coolerContentsDt    = 5;  // s between local cooler-contents aging passes
+if (hasInterface) then {
+    [{ call ACME_fnc_coolerContentsTick }, ACME_coolerContentsDt, []] call CBA_fnc_addPerFrameHandler;
+};
+ACME_coolerThawRateInside = 0.2;  // once the coolant is gone, blood inside the box thaws at this fraction of real time.
+ACME_coolerBoxScale      = 0.65;  // visual and geometry scale applied to a deployed cooler box. 1 is the vanilla box size.
+// fluid-overload clot pop. crystalloid into a hemodynamically unstable, hypovolemic, patient tears clots
+// loose.
+ACME_clotPop_enabled     = true;
+ACME_clotPop_bvThreshold = 5.1;  // blood volume in l below which the patient is unstable. normal is 6, so this is about a 15 percent loss.
+ACME_clotPop_chance      = 0.30;  // base per-pass reopen chance while qualifying. the load and the shock depth scale it.
+ACME_clotPop_fraction    = 0.5;  // fraction of a bandaged wound that tears back open per pop
+ACME_clotPop_dt          = 8;  // s between clot-pop passes
+ACME_clotPop_maxChance   = 0.45;  // ceiling per pass. the four factors multiply and could exceed 1.0, which
+                                  // turned a risk into a guaranteed reopen on every pass.
+ACME_ca_mapEasePerSec    = 0.2;  // mmhg/s that the calcium MAP suppression is walked off. 18 mmhg across about 90 s,
+                                  // rather than vanishing on the tick after the syringe goes in.
+ACME_clotPop_fluidTypes  = ["Saline", "PlasmaLyte"];  // dilutional fluids that pop clots. add "HTS" or "Plasma" to include them.
+if (isServer) then {
+    [{ [] call ACME_fnc_bloodColdChainTick }, ACME_bloodScanInterval, []] call CBA_fnc_addPerFrameHandler;
+    [{ [] call ACME_fnc_clotPopTick }, ACME_clotPop_dt, []] call CBA_fnc_addPerFrameHandler;
+    // a deployed cooler box ages its real blood cargo here. it is the box equivalent of the per-player contents
+    // tick.
+    [{ [] call ACME_fnc_coolerBoxColdChainTick }, ACME_coolerContentsDt, []] call CBA_fnc_addPerFrameHandler;
+};
+// react the instant the kit of a player changes, on an arsenal close, a pickup or a hand-off. this nudges a
+// no-age server pass, so a new cooler fills and new blood is stamped promptly. it needs remoteexec of ACME
+// functions to be permitted.
+// when a wholesale loadout is applied, an arsenal load or a setUnitLoadout on the same unit rather than a
+// single item pickup, a cooler in that loadout is a fresh unit. so this clears the per-player coolant clock and
+// virtual store and lets the contents tick re-stock it with full coolant. respawn already makes a fresh unit
+// with no clock, so that path is fine on its own. it tells a full load from looting by counting how many
+// top-level loadout slots change at once. a single pickup touches one and a full load touches several.
+["loadout", {
+    remoteExecCall ["ACME_fnc_bloodColdChainNudge", 2];
+    [] call ACME_fnc_coolerAutoStore;
+    private _p = ACE_player;
+    if (!isNull _p) then {
+        private _new = getUnitLoadout _p;
+        private _old = _p getVariable ["ACME_lastLoadoutSig", []];
+        _p setVariable ["ACME_lastLoadoutSig", _new];
+        if (_old isNotEqualTo []) then {
+            private _diffs = 0;
+            { if !((_new param [_x, []]) isEqualTo (_old param [_x, []])) then { _diffs = _diffs + 1; }; } forEach [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            if (_diffs >= 3) then {
+                [_p, "coolant", createHashMap, true] call ACME_fnc_coolerStateCommit;
+                [_p, "store", createHashMap, true] call ACME_fnc_coolerStateCommit;
+            };
+        };
+        // ventilator boot re-arm. if the ventilator was reloaded, transferred or moved, and any loadout change is
+        // signal enough that the device left and re-entered the kit, this re-arms the startup sequence so the next open
+        // plays boot again. a preset self-open would otherwise skip boot, and this is what makes it replay.
+        _p setVariable ["ACME_vent_booted", false];
+    };
+}] call CBA_fnc_addPlayerEventHandler;

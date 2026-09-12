@@ -1,0 +1,33 @@
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+BREATH=ROOT/'addons/breathing'
+EXT=ROOT/'addons/acm_extended/functions'
+prep=(BREATH/'XEH_PREP.hpp').read_text()
+owner=(BREATH/'functions/fnc_setRuntimeState.sqf').read_text()
+assert 'PREP(setRuntimeState);' in prep
+for token in [
+    'RespirationRate','BVM_provider','BVM_ConnectedOxygen','BVM_lastBreath','BVM_lastBreathOxygen',
+    'Thoracostomy_UsedKit','Hemothorax_Fluid','ChestSeal_State','Pneumothorax_PFH','Stethoscope_LungState',
+    'Pneumothorax_State','TensionPneumothorax_State','TensionPneumothorax_Time','Hardcore_Pneumothorax','Hemothorax_State']:
+    assert token in owner,token
+# No Extended function may publish ACM breathing state directly or through ACME's generic network writer.
+viol=[]
+for p in EXT.glob('*.sqf'):
+    for line in p.read_text().splitlines():
+        if 'setVariable ["ACM_breathing_' in line:
+            viol.append((p.name,'direct',line.strip()))
+        if 'ACME_fnc_setVarNet' in line and 'ACM_breathing_' in line:
+            viol.append((p.name,'setVarNet',line.strip()))
+    # Catch same-line dynamic mixed-key writers that still carry a native breathing key.
+    for line in p.read_text().splitlines():
+        if 'setVariable [_x' in line and 'ACM_breathing_' in line:
+            viol.append((p.name,'dynamic-list',line.strip()))
+assert not viol,viol
+callers=[p.name for p in EXT.glob('*.sqf') if 'ACM_breathing_fnc_setRuntimeState' in p.read_text()]
+for required in [
+    'fn_clinicalReset.sqf','fn_megacodeSetAirway.sqf','fn_megacodeScenarioTick.sqf','fn_megacodeSetVital.sqf',
+    'fn_ventManualBreath.sqf','fn_ventStopHard.sqf','fn_ventSimpleManualBreath.sqf','fn_ventPatientClear.sqf','fn_ventDriveTick.sqf',
+    'fn_thoraMouseDown.sqf','fn_thoraPassiveDrain.sqf','fn_chestSealEffectLocal.sqf','fn_ptxEnsure.sqf','fn_ptxPublish.sqf',
+    'fn_toggleOverResus.sqf','fn_megacodeChestInjury.sqf']:
+    assert required in callers,(required,callers)
+print('fork phase 51 breathing state ownership checks: PASS')

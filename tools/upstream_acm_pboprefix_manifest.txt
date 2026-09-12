@@ -1,0 +1,14 @@
+# Upstream ACM native addon PBO prefix compatibility manifest
+# Source: supplied ACM-main.zip baseline used to create the fork
+airway=x\ACM\addons\airway
+breathing=x\ACM\addons\breathing
+cbrn=x\ACM\addons\cbrn
+circulation=x\ACM\addons\circulation
+core=x\ACM\addons\core
+damage=x\ACM\addons\damage
+disability=x\ACM\addons\disability
+evacuation=x\ACM\addons\evacuation
+gui=x\ACM\addons\gui
+main=x\ACM\addons\main
+mission=x\ACM\addons\mission
+zeus=x\ACM\addons\zeus

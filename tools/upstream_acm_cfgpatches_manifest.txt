@@ -1,0 +1,13 @@
+# Supplied ACM native CfgPatches identities.
+ACM_airway
+ACM_breathing
+ACM_cbrn
+ACM_circulation
+ACM_core
+ACM_damage
+ACM_disability
+ACM_evacuation
+ACM_gui
+ACM_main
+ACM_mission
+ACM_zeus

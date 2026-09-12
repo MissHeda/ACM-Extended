@@ -1,0 +1,39 @@
+// obtunded vision and voice run every frame, so the darkness oscillation stays smooth.
+[{call ACME_fnc_obtundedTick}, 0, []] call CBA_fnc_addPerFrameHandler;
+// physiological auto-obtundation. this evaluates the vitals of local units on a slow cadence.
+[{call ACME_fnc_obtundedAuto}, 1.5, []] call CBA_fnc_addPerFrameHandler;
+[{call ACME_fnc_consciousnessBudget}, 1, []] call CBA_fnc_addPerFrameHandler;
+
+// Shared wrapping audio follows ACE's actual start/end events on every machine.
+[] call ACME_fnc_wrapSfxInit;
+
+// Track when a medic is working on a player-patient. This is informational/grace state only. B49 deliberately
+// removed the old obtunded treatment hook that forced ACM_rollToBack actions into a locked supine posture. The
+// treatment itself may still roll/reposition a casualty when clinically required, but obtundation no longer adds
+// any body-position writer of its own.
+["ace_treatmentStarted", {
+    params ["_medic", "_patient", "_bodyPart", "_classname"];
+    if (isPlayer _patient) then {
+        _patient setVariable ["ACME_beingTreated_until", CBA_missionTime + (missionNamespace getVariable ["ACME_obtunded_careGraceMax", 25]), true];
+    };
+}] call CBA_fnc_addEventHandler;
+
+// the debug overlay target follows the casualty this client starts treating. this is local ui state only. it
+// does not broadcast and it does not change patient physiology.
+if (hasInterface) then {
+    ["ace_treatmentStarted", {
+        params ["_medic", "_patient"];
+        private _me = if (!isNil "ACE_player" && {!isNull ACE_player}) then {ACE_player} else {player};
+        if (!isNull _patient && {!isNull _medic} && {_medic isEqualTo _me}) then {
+            missionNamespace setVariable ["ACME_debug_target", _patient];
+            missionNamespace setVariable ["ACME_debug_lastTreatmentTarget", _patient];
+            missionNamespace setVariable ["ACME_tbi_debugTarget", _patient];
+        };
+    }] call CBA_fnc_addEventHandler;
+};
+{
+    [_x, {
+        params ["_medic", "_patient"];
+        if (isPlayer _patient) then { _patient setVariable ["ACME_beingTreated_until", CBA_missionTime + 1, true]; };  // small tail, then clears
+    }] call CBA_fnc_addEventHandler;
+} forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];

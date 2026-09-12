@@ -1,0 +1,11 @@
+PREP(canConvert);
+PREP(convertCasualty);
+PREP(convertCasualtyAction);
+PREP(defineReinforcePoint);
+PREP(defineEvacuationPoint);
+PREP(getAvailableTickets);
+PREP(initUnit);
+PREP(moduleCreateEvacuationPoint);
+PREP(moduleCreateReinforcePoint);
+PREP(onRespawn);
+PREP(setCasualtyTicket);

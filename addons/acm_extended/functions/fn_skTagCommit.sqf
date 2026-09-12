@@ -1,0 +1,19 @@
+/* B62: persist the three stored-syringe tag lines without repainting the editor on every keystroke.
+   Avoiding a render here preserves focus/caret/IME composition while still keeping the stable syringe record live. */
+disableSerialization;
+private _d=findDisplay 84000;
+if(isNull _d)exitWith{};
+private _store=[ACE_player]call ACME_fnc_skStoreEnsureIds;
+private _i=[_store,false]call ACME_fnc_skSelectedIndex;
+if(_i<0)exitWith{};
+private _entry=+(_store select _i);
+while{count _entry<12}do{_entry pushBack "";};
+for "_n" from 0 to 2 do{
+    private _ctrl=_d displayCtrl(84460+_n);
+    private _t=(ctrlText _ctrl) select [0,25];
+    _entry set[8+_n,_t];
+    if((ctrlText _ctrl)!=_t)then{_ctrl ctrlSetText _t;};
+};
+_store set[_i,_entry];
+[ACE_player, _store] call ACME_fnc_narcStoreCommit;
+if !(uiNamespace getVariable ["ACME_SK_TagEditMode",false]) then {call ACME_fnc_skRefreshDrawn;};

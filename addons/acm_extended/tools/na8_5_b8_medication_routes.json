@@ -1,0 +1,150 @@
+{
+  "note": "Resolved from the supplied ACM source plus B8 config by a limited class/inheritance reader. This is source evidence, not Arma config compilation.",
+  "macros": {
+    "ACM_ROUTE_IM": 0,
+    "ACM_ROUTE_IV": 1,
+    "ACM_ROUTE_PO": 2,
+    "ACM_ROUTE_INHALE": 3
+  },
+  "cases": {
+    "Paracetamol": {
+      "administrationType": 2,
+      "ancestry": [
+        "Paracetamol",
+        "ACM_PO_Medication"
+      ]
+    },
+    "Penthrox": {
+      "administrationType": 3,
+      "ancestry": [
+        "Penthrox",
+        "ACM_Inhalant_Medication"
+      ]
+    },
+    "AmmoniaInhalant": {
+      "administrationType": 3,
+      "ancestry": [
+        "AmmoniaInhalant",
+        "ACM_Inhalant_Medication"
+      ]
+    },
+    "Naloxone": {
+      "administrationType": 3,
+      "ancestry": [
+        "Naloxone",
+        "ACM_Inhalant_Medication"
+      ]
+    },
+    "Esketamine": {
+      "administrationType": 3,
+      "ancestry": [
+        "Esketamine",
+        "ACM_Inhalant_Medication"
+      ]
+    },
+    "Fentanyl_BUC": {
+      "administrationType": 0,
+      "ancestry": [
+        "Fentanyl_BUC",
+        "ACM_BUC_Medication"
+      ]
+    },
+    "Fentanyl": {
+      "administrationType": 0,
+      "ancestry": [
+        "Fentanyl",
+        "ACM_IM_Medication"
+      ]
+    },
+    "Morphine": {
+      "administrationType": 0,
+      "ancestry": [
+        "Morphine",
+        "ACM_IM_Medication"
+      ]
+    },
+    "Ketamine": {
+      "administrationType": 0,
+      "ancestry": [
+        "Ketamine",
+        "ACM_IM_Medication"
+      ]
+    },
+    "Fentanyl_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Fentanyl_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Ketamine_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Ketamine_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Propofol_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Propofol_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "CalciumChloride_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "CalciumChloride_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "CalciumGluconate_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "CalciumGluconate_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Norepinephrine_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Norepinephrine_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Magnesium_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Magnesium_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Esmolol_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Esmolol_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Atropine_IV": {
+      "administrationType": 1,
+      "ancestry": [
+        "Atropine_IV",
+        "ACM_IV_Medication"
+      ]
+    },
+    "Atropine_IV_L": {
+      "administrationType": 1,
+      "ancestry": [
+        "Atropine_IV_L",
+        "Atropine_IV",
+        "ACM_IV_Medication"
+      ]
+    }
+  },
+  "source_hashes": {
+    "addons/core/ACM_Medication.hpp": "2bb835969bb472e71e56737d0f2cb3758f51c1ba22d92b6e421c06e2a72265f5",
+    "acm_extended/config.cpp": "c4d90467472366be113ebbd3e1deac9e320169214882e0e9e66447fb1719ceab",
+    "addons/main/script_macros.hpp": "b5ff9674cb68ebe193549c57a4ed2f8bfe61452bc4b43193592f87d8c6e979f3"
+  }
+}

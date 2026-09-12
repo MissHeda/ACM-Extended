@@ -1,0 +1,69 @@
+{
+  "baseline": "supplied ACM-main.zip",
+  "components": {
+    "airway": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment"
+    ],
+    "breathing": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment"
+    ],
+    "cbrn": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment",
+      "ACM_main"
+    ],
+    "circulation": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment",
+      "ACM_core"
+    ],
+    "core": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment",
+      "ace_medical_statemachine"
+    ],
+    "damage": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment"
+    ],
+    "disability": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment"
+    ],
+    "evacuation": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment"
+    ],
+    "gui": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_gui"
+    ],
+    "main": [
+      "cba_main",
+      "ace_main"
+    ],
+    "mission": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment",
+      "ACM_main"
+    ],
+    "zeus": [
+      "cba_main",
+      "ace_main",
+      "ace_medical_treatment",
+      "ACM_main"
+    ]
+  }
+}

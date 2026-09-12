@@ -1,0 +1,549 @@
+{
+  "baseline": "supplied ACE3-master.zip",
+  "targets": [
+    {
+      "tag": "ace_advanced_fatigue",
+      "function": "handleEffects",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleEffects_AF.sqf",
+      "upstream": "addons/advanced_fatigue/functions/fnc_handleEffects.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_common",
+      "function": "displayTextStructured",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_displayTextStructured.sqf",
+      "upstream": "addons/common/functions/fnc_displayTextStructured.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_common",
+      "function": "progressBar",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_progressBar.sqf",
+      "upstream": "addons/common/functions/fnc_progressBar.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dogtags",
+      "function": "checkDogtag",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_checkDogtag.sqf",
+      "upstream": "addons/dogtags/functions/fnc_checkDogtag.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dogtags",
+      "function": "getDogtagData",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getDogtagData.sqf",
+      "upstream": "addons/dogtags/functions/fnc_getDogtagData.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dogtags",
+      "function": "showDogtag",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_showDogtag.sqf",
+      "upstream": "addons/dogtags/functions/fnc_showDogtag.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dragging",
+      "function": "canCarry",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_canCarry.sqf",
+      "upstream": "addons/dragging/functions/fnc_canCarry.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dragging",
+      "function": "canDrag",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_canDrag.sqf",
+      "upstream": "addons/dragging/functions/fnc_canDrag.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dragging",
+      "function": "dropObject_carry",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_dropObject_carry.sqf",
+      "upstream": "addons/dragging/functions/fnc_dropObject_carry.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dragging",
+      "function": "handleUnconscious",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleUnconscious.sqf",
+      "upstream": "addons/dragging/functions/fnc_handleUnconscious.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_dragging",
+      "function": "startCarryLocal",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_startCarryLocal.sqf",
+      "upstream": "addons/dragging/functions/fnc_startCarryLocal.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_interact_menu",
+      "function": "compileMenuSelfAction",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_compileMenuSelfAction.sqf",
+      "upstream": "addons/interact_menu/functions/fnc_compileMenuSelfAction.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_interact_menu",
+      "function": "keyDown",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_keyDown.sqf",
+      "upstream": "addons/interact_menu/functions/fnc_keyDown.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical",
+      "function": "deserializeState",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_deserializeState.sqf",
+      "upstream": "addons/medical/functions/fnc_deserializeState.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical",
+      "function": "serializeState",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_serializeState.sqf",
+      "upstream": "addons/medical/functions/fnc_serializeState.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_ai",
+      "function": "healingLogic",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_healingLogic.sqf",
+      "upstream": "addons/medical_ai/functions/fnc_healingLogic.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_ai",
+      "function": "healSelf",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_healSelf.sqf",
+      "upstream": "addons/medical_ai/functions/fnc_healSelf.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_ai",
+      "function": "healUnit",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_healUnit.sqf",
+      "upstream": "addons/medical_ai/functions/fnc_healUnit.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_ai",
+      "function": "itemCheck",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_itemCheck.sqf",
+      "upstream": "addons/medical_ai/functions/fnc_itemCheck.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_ai",
+      "function": "playTreatmentAnim",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_playTreatmentAnim.sqf",
+      "upstream": "addons/medical_ai/functions/fnc_playTreatmentAnim.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_damage",
+      "function": "woundsHandlerBase",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_woundsHandlerBase.sqf",
+      "upstream": "addons/medical_damage/functions/fnc_woundsHandlerBase.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_engine",
+      "function": "applyAnimAfterRagdoll",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_applyAnimAfterRagdoll.sqf",
+      "upstream": "addons/medical_engine/functions/fnc_applyAnimAfterRagdoll.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_engine",
+      "function": "handleDamage",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleDamage.sqf",
+      "upstream": "addons/medical_engine/functions/fnc_handleDamage.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_engine",
+      "function": "setUnconsciousAnim",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_setUnconsciousAnim.sqf",
+      "upstream": "addons/medical_engine/functions/fnc_setUnconsciousAnim.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_engine",
+      "function": "updateDamageEffects",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_updateDamageEffects.sqf",
+      "upstream": "addons/medical_engine/functions/fnc_updateDamageEffects.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "effectHeartBeat",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_effectHeartBeat.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_effectHeartBeat.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "effectPain",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_effectPain.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_effectPain.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "effectUnconscious",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_effectUnconscious.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_effectUnconscious.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "handleEffects",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleEffects.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_handleEffects.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "initEffects",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_initEffects.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_initEffects.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_feedback",
+      "function": "playInjuredSound",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_playInjuredSound.sqf",
+      "upstream": "addons/medical_feedback/functions/fnc_playInjuredSound.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "canOpenMenu",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_canOpenMenu.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_canOpenMenu.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "collectActions",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_collectActions.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_collectActions.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "onMenuOpen",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_onMenuOpen.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_onMenuOpen.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "updateActions",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_updateActions.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_updateActions.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "updateBodyImage",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_updateBodyImage.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_updateBodyImage.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_gui",
+      "function": "updateInjuryList",
+      "owner_addon": "gui",
+      "local": "gui/overrides/fnc_updateInjuryList.sqf",
+      "upstream": "addons/medical_gui/functions/fnc_updateInjuryList.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_statemachine",
+      "function": "conditionExecutionDeath",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_conditionExecutionDeath.sqf",
+      "upstream": "addons/medical_statemachine/functions/fnc_conditionExecutionDeath.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_statemachine",
+      "function": "conditionSecondChance",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_conditionSecondChance.sqf",
+      "upstream": "addons/medical_statemachine/functions/fnc_conditionSecondChance.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_statemachine",
+      "function": "enteredStateCardiacArrest",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_enteredStateCardiacArrest.sqf",
+      "upstream": "addons/medical_statemachine/functions/fnc_enteredStateCardiacArrest.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_statemachine",
+      "function": "handleStateUnconscious",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleStateUnconscious.sqf",
+      "upstream": "addons/medical_statemachine/functions/fnc_handleStateUnconscious.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "addMedicationAdjustment",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_addMedicationAdjustment.sqf",
+      "upstream": "addons/medical_status/functions/fnc_addMedicationAdjustment.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "getBloodLoss",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getBloodLoss.sqf",
+      "upstream": "addons/medical_status/functions/fnc_getBloodLoss.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "getBloodPressure",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getBloodPressure.sqf",
+      "upstream": "addons/medical_status/functions/fnc_getBloodPressure.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "getBloodVolumeChange",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getBloodVolumeChange.sqf",
+      "upstream": "addons/medical_status/functions/fnc_getBloodVolumeChange.sqf",
+      "upstream_present": false
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "getCardiacOutput",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getCardiacOutput.sqf",
+      "upstream": "addons/medical_status/functions/fnc_getCardiacOutput.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "getMedicationCount",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getMedicationCount.sqf",
+      "upstream": "addons/medical_status/functions/fnc_getMedicationCount.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "hasStableVitals",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_hasStableVitals.sqf",
+      "upstream": "addons/medical_status/functions/fnc_hasStableVitals.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "setCardiacArrestState",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_setCardiacArrestState.sqf",
+      "upstream": "addons/medical_status/functions/fnc_setCardiacArrestState.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_status",
+      "function": "updateWoundBloodLoss",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_updateWoundBloodLoss.sqf",
+      "upstream": "addons/medical_status/functions/fnc_updateWoundBloodLoss.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "addToLog",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_addToLog.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_addToLog.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "canTreatCached",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_canTreatCached.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_canTreatCached.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "checkPulseLocal",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_checkPulseLocal.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_checkPulseLocal.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "getTriageStatus",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_getTriageStatus.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_getTriageStatus.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "handleBandageOpening",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleBandageOpening.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_handleBandageOpening.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "ivBag",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_ivBag.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_ivBag.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "ivBagLocal",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_ivBagLocal.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_ivBagLocal.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "loadUnit",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_loadUnit.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_loadUnit.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "medication",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_medication.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_medication.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "medicationLocal",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_medicationLocal.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_medicationLocal.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "onMedicationUsage",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_onMedicationUsage.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_onMedicationUsage.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "placeInBodyBag",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_placeInBodyBag.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_placeInBodyBag.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "tourniquetRemove",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_tourniquetRemove.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_tourniquetRemove.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_treatment",
+      "function": "treatment",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_treatment.sqf",
+      "upstream": "addons/medical_treatment/functions/fnc_treatment.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_vitals",
+      "function": "handleUnitVitals",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_handleUnitVitals.sqf",
+      "upstream": "addons/medical_vitals/functions/fnc_handleUnitVitals.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_vitals",
+      "function": "updateHeartRate",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_updateHeartRate.sqf",
+      "upstream": "addons/medical_vitals/functions/fnc_updateHeartRate.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_vitals",
+      "function": "updateOxygen",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_updateOxygen.sqf",
+      "upstream": "addons/medical_vitals/functions/fnc_updateOxygen.sqf",
+      "upstream_present": true
+    },
+    {
+      "tag": "ace_medical_vitals",
+      "function": "updatePeripheralResistance",
+      "owner_addon": "core",
+      "local": "core/overrides/fnc_updatePeripheralResistance.sqf",
+      "upstream": "addons/medical_vitals/functions/fnc_updatePeripheralResistance.sqf",
+      "upstream_present": true
+    }
+  ]
+}

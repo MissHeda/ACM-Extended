@@ -1,0 +1,141 @@
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+
+def txt(rel):
+    return (ROOT / rel).read_text(encoding='utf-8', errors='replace')
+
+def test_b59_version_and_registration():
+    cfg = txt('config.cpp')
+    post = txt('functions/fn_postInit.sqf')
+    assert 'version = "1.0.100-r23";' in cfg
+    assert 'ACME_buildBatch = "B59";' in post
+    for fn in ('skStoreEnsureIds','skSelectStored','skSelectedIndex','skAfterStoredRemoval','skBodySyringeRender','skBodySyringeMove'):
+        assert f'class {fn} {{}};' in cfg
+
+def test_drawn_list_is_fully_replaced_in_body_map():
+    inj = txt('functions/fn_skInject.sqf')
+    refresh = txt('functions/fn_skRefreshDrawn.sqf')
+    rows = txt('functions/fn_skListRefresh.sqf')
+    view = txt('functions/fn_skSetView.sqf')
+    assert 'ctrlCreate ["ACME_SK_StyledList", 84133]' not in inj
+    assert 'ctrlCreate ["ACME_SK_StyledLabel", 84134]' not in inj
+    assert 'LBSelChanged", {_this call ACME_fnc_skPickDrawn}' not in inj
+    assert 'the Drawn list is retired' in refresh
+    assert '[84133,84302,"drawn"]' not in rows
+    assert 'forEach [84133,84134,84302]' not in view
+
+def test_body_map_has_compact_three_slot_mini_carousel():
+    inj = txt('functions/fn_skInject.sqf')
+    render = txt('functions/fn_skBodySyringeRender.sqf')
+    assert 'ACME_SK_BodyPreviewRect' in inj
+    assert '84500 + (_slot * 10)' in inj
+    assert 'for "_slot" from 0 to 2' in inj
+    for idc in ('84540','84541','84542'):
+        assert idc in inj
+    assert 'previous / selected / next' in render
+    assert 'private _sc = [0.62,1.0,0.62]' in render
+    assert 'private _al = [0.30,1.0,0.30]' in render
+    assert 'SELECTED SYRINGE' in render
+
+def test_body_and_full_carousel_share_stable_id_selection():
+    ensure = txt('functions/fn_skStoreEnsureIds.sqf')
+    select = txt('functions/fn_skSelectStored.sqf')
+    selected = txt('functions/fn_skSelectedIndex.sqf')
+    car = txt('functions/fn_skCarouselRender.sqf')
+    body = txt('functions/fn_skBodySyringeRender.sqf')
+    assert '_row set [11, _id]' in ensure
+    assert 'ACME_SK_SelectedSyringeId' in select
+    assert 'param [11, "", [""]]' in selected
+    assert 'ACME_fnc_skSelectedIndex' in car
+    assert 'ACME_fnc_skSelectedIndex' in body
+    assert 'ACME_SK_SelectedSyringeId' not in car or 'skSelectedIndex' in car
+
+def test_ad_keys_drive_both_views_without_stealing_tag_typing():
+    inj = txt('functions/fn_skInject.sqf')
+    move = txt('functions/fn_skCarouselMove.sqf')
+    body_move = txt('functions/fn_skBodySyringeMove.sqf')
+    assert '_view in ["carousel","body"]' in inj
+    assert '(ctrlIDC _focus) in [84460,84461,84462]' in inj
+    assert 'case 30: {-1}' in inj and 'case 32: {1}' in inj
+    assert 'if(_view=="body")exitWith{[_dir]call ACME_fnc_skBodySyringeMove;};' in move
+    assert 'ctrlCommit 0.075' in move
+    assert 'ctrlCommit 0.07' in body_move
+    tick = txt('functions/fn_skUiTick.sqf')
+    assert 'ACME_SK_CarouselHeldDir' in inj and 'ACME_SK_CarouselRepeatAt' in inj
+    assert 'displayAddEventHandler ["KeyUp"' in inj
+    assert '_now + 0.09' in tick and 'ACME_SK_CarouselBusy' in tick
+
+def test_view_buttons_make_carousel_to_body_workflow_explicit():
+    view = txt('functions/fn_skSetView.sqf')
+    toggle = txt('functions/fn_skToggleView.sqf')
+    assert 'Choose Injection Site' in view
+    assert '< Back to Syringes' in view
+    assert 'Open Syringe Menu' in view and 'Close Syringe Menu' in view
+    assert '_menuButton ctrlShow (!_body)' in view
+    assert 'case "carousel": {"body"}' in toggle
+    assert 'case "body": {if (_store isEqualTo []) then {"syringe"} else {"carousel"}}' in toggle
+
+def test_body_preview_renders_real_fill_tag_and_summary():
+    body = txt('functions/fn_skBodySyringeRender.sqf')
+    assert '(_amt + _nsMl) / (_size max 0.01)' in body
+    assert 'ACME_SK_CarouselTravel10' in body
+    assert 'syringe_%1_plunger_ca.paa' in body
+    assert 'tag_overlay_%1mL_%2.paa' in body
+    assert '_entry param [8 + _ln, ""]' in body
+    assert 'ACME_fnc_skSyringeSummary' in body
+    assert 'displayCtrl 84001' in body and 'displayCtrl 84002' in body
+
+def test_flush_body_map_path_is_not_broken_by_syringe_preview():
+    body = txt('functions/fn_skBodySyringeRender.sqf')
+    move = txt('functions/fn_skBodySyringeMove.sqf')
+    hot = txt('functions/fn_skBuildHotspots.sqf')
+    assert 'ACME_SK_SelFlush' in body
+    assert 'Saline Flush 10 mL' in body
+    assert 'syringe_flush_10_barrel_ca.paa' in body
+    assert 'ACME_SK_SelFlush' in move
+    assert 'private _deliveryReady = (_flush != "") || {_syringeIndex >= 0};' in hot
+
+def test_consumption_keeps_nearest_syringe_and_clears_target_state():
+    after = txt('functions/fn_skAfterStoredRemoval.sqf')
+    inject = txt('functions/fn_skInjectSite.sqf')
+    assert '(_oldIndex min ((count _store) - 1)) max 0' in after
+    assert 'ACME_SK_SiteIdx", -1' in after
+    assert 'ACME_SK_EpiDoseChoice", 0' in after
+    assert 'ACME_SK_SelFlush", ""' in after
+    assert '[_storeIdx] call ACME_fnc_skAfterStoredRemoval' in inject
+    assert 'Choose a prepared syringe in Syringe Menu first.' in inject
+
+def test_self_interaction_uses_stable_syringe_id_not_array_identity():
+    menu = txt('functions/fn_skSyringeSelfMenu.sqf')
+    opened = txt('functions/fn_skOpenStoredSyringe.sqf')
+    assert 'private _id = _e param [11,"",[""]]' in menu
+    assert '[_id]' in menu
+    assert 'ACME_SK_OpenCarouselId' in opened
+    assert 'ACME_fnc_skSelectStored' in opened
+    assert 'ACME_SK_OpenCarouselIndex' not in opened
+
+def test_carousel_hides_draw_ui_sections_and_uses_native_scale():
+    rows = txt('functions/fn_skListRefresh.sqf')
+    inj = txt('functions/fn_skInject.sqf')
+    car = txt('functions/fn_skCarouselRender.sqf')
+    assert 'private _visible = !_carousel;' in rows
+    assert 'ACME_SK_CarouselNativeRect' in inj
+    assert 'ACME_SK_CarouselNativeRect' in car
+    assert '(_amt+_nsMl)/(_size max 0.01)' in car
+    assert 'private _sc=[0.55,0.75,1.0,0.75,0.55]' in car
+
+def test_life_reset_clears_store_and_stable_selection():
+    post = txt('functions/fn_postInit.sqf')
+    assert '_unit setVariable ["ACME_narcStore", [], true]' in post
+    assert 'ACME_SK_SelectedSyringeId", ""' in post
+    assert 'player addEventHandler ["Killed"' in post
+    assert 'player addEventHandler ["Respawn"' in post
+
+
+def test_no_user_facing_drawn_list_wording_remains():
+    kit = txt('functions/fn_syringeKitDraw.sqf')
+    compound = txt('functions/fn_skCompoundBegin.sqf')
+    assert 'Narc Box Drawn list' not in kit
+    assert 'Stored in the Syringe Menu.' in kit
+    assert 'Drawn list' not in compound
+    assert 'Syringe Menu' in compound

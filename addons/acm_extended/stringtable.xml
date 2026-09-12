@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="ACME">
+    <Package name="acm_extended">
+        <Container name="Medications">
+            <Key ID="STR_ACM_Circulation_Medication_Norepinephrine">
+                <Original>Norepinephrine</Original>
+                <English>Norepinephrine</English>
+            </Key>
+            <Key ID="STR_ACM_Circulation_Medication_Ceftriaxone">
+                <Original>Ceftriaxone</Original>
+                <English>Ceftriaxone</English>
+            </Key>
+            <Key ID="STR_ACM_Circulation_Medication_CalciumGluconate">
+                <Original>Calcium Gluconate</Original>
+                <English>Calcium Gluconate</English>
+            </Key>
+            <Key ID="STR_ACM_Circulation_Medication_Midazolam">
+                <Original>Midazolam</Original>
+                <English>Midazolam</English>
+            </Key>
+            <Key ID="STR_ACM_Circulation_Medication_Propofol">
+                <Original>Propofol</Original>
+                <English>Propofol</English>
+            </Key>
+        </Container>
+        <Container name="TBI">
+            <Key ID="STR_ACME_ElevateHead30">
+                <Original>Elevate Head 30 deg</Original>
+                <English>Elevate Head 30 deg</English>
+            </Key>
+        </Container>
+        <Container name="B12Epinephrine">
+      <Key ID="STR_ACM_Circulation_Medication_EpinephrineCardiac">
+        <Original>Epinephrine 1:10,000</Original><English>Epinephrine 1:10,000</English>
+      </Key>
+    </Container>
+</Package>
+</Project>

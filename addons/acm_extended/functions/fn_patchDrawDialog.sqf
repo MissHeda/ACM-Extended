@@ -1,0 +1,120 @@
+private _acmeCanvas = call ACME_fnc_uiCanvas;
+_acmeCanvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
+private _display = findDisplay 84000;
+if (isNull _display) exitWith {};
+
+// note that the unload handler of the dialog, meaning the close sfx, the med-list restore and clearing the infusion
+// context, lives in fn_skinject now, so it covers both the narc box and the infusion-prep modes and survives size
+// switches. this function only repurposes the buttons of the dialog for infusion prep, and is re-applied on every
+// reopen by fn_skopendraw.
+
+private _context = missionNamespace getVariable ["ACME_infusion_pendingContext", []];
+private _mode = if (_context isEqualTo []) then {"active"} else {_context select 0};
+private _topText = ["Select medication, pull syringe, then inject into active saline bag", "Select medication, pull syringe, then prep the saline bag"] select (_mode == "prepared");
+private _bottomText = ["Active bag infusion mode", "Prepared bag mode - use Give Prep after inserting the IV/IO"] select (_mode == "prepared");
+
+private _ctrlTop = _display displayCtrl 84001;
+_ctrlTop ctrlSetText _topText;
+
+private _ctrlBottom = _display displayCtrl 84002;
+_ctrlBottom ctrlShow true;
+_ctrlBottom ctrlSetText _bottomText;
+
+private _buttonY = safeZoneY + (safeZoneH / 1.19);
+private _buttonW = _uiW / 7.5;
+private _buttonH = safeZoneH / 24;
+private _leftX = _uiX + (_uiW / 2) - _buttonW - (_uiW / 70);
+private _rightX = _uiX + (_uiW / 2) + (_uiW / 70);
+
+private _ctrlDraw = _display displayCtrl 84003;
+_ctrlDraw ctrlSetText "Inject Into Bag";
+_ctrlDraw ctrlSetTooltip "Inject the drawn medication into the selected saline bag";
+_ctrlDraw ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_injectIntoBag"];
+_ctrlDraw ctrlSetPosition [_leftX, _buttonY, _buttonW, _buttonH];
+_ctrlDraw ctrlSetFontHeight (safeZoneH / 42);
+_ctrlDraw ctrlCommit 0;
+
+private _ctrlPush = _display displayCtrl 84004;
+_ctrlPush ctrlShow false;
+_ctrlPush ctrlEnable false;
+
+private _ctrlCancel = _display displayCtrl 84005;
+_ctrlCancel ctrlShow true;
+_ctrlCancel ctrlEnable true;
+_ctrlCancel ctrlSetText "Cancel";
+_ctrlCancel ctrlSetTooltip "Cancel medication infusion";
+_ctrlCancel ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_cancelInfusionDraw"];
+_ctrlCancel ctrlSetPosition [_rightX, _buttonY, _buttonW, _buttonH];
+_ctrlCancel ctrlSetFontHeight (safeZoneH / 42);
+_ctrlCancel ctrlCommit 0;
+
+private _ctrlSwitch = _display displayCtrl 84007;
+_ctrlSwitch ctrlShow false;
+_ctrlSwitch ctrlEnable false;
+
+private _ctrlInventoryText = _display displayCtrl 84008;
+_ctrlInventoryText ctrlSetText "Allowed infusion medications";
+
+// the infusion-mode ui changes.
+// the body map toggle, 84150, has no meaning while injecting into a bag, so it becomes a done button that closes the
+// infusion menu.
+// The tally reports all accepted components. Closing never undoes committed injections.
+private _doneBtn = _display displayCtrl 84150;
+if (!isNull _doneBtn) then {
+    _doneBtn ctrlSetText "Done";
+    _doneBtn ctrlSetTooltip "Finish and close the infusion menu";
+    _doneBtn ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_infusionDone"];
+    _doneBtn ctrlCommit 0;
+};
+// hide the route toggle, which is body-view only, in infusion mode.
+private _routeBtn = _display displayCtrl 84151;
+if (!isNull _routeBtn) then { _routeBtn ctrlShow false; };
+
+// Flushes cannot be used while preparing a bag; B59 no longer creates a Drawn list.
+// Reuse that free left-column area and measure it from the actual size list.
+{
+    private _c = _display displayCtrl _x;
+    if (!isNull _c) then {_c ctrlShow false; _c ctrlEnable false;};
+} forEach [84131, 84132, 84301];
+private _sizeRect = ctrlPosition (_display displayCtrl 84130);
+_sizeRect params ["_listX", "_sizeY", "_listW", "_sizeH"];
+private _gap = safeZoneH / 40;
+private _hdrY = _sizeY + _sizeH + _gap;
+private _hdrH = safeZoneH / 28;
+private _bodyY = _hdrY + _hdrH;
+private _bodyH = (_buttonY - _gap - _bodyY) max (safeZoneH / 20);
+private _tallyHdr = _display displayCtrl 84360;
+if (isNull _tallyHdr) then {_tallyHdr = _display ctrlCreate ["ACME_SK_StyledLabel", 84360];};
+_tallyHdr ctrlSetPosition [_listX, _hdrY, _listW, _hdrH];
+_tallyHdr ctrlSetText "Pushed into bag";
+_tallyHdr ctrlSetFontHeight (safeZoneH / 44);
+_tallyHdr ctrlCommit 0;
+private _tallyGroup = _display displayCtrl 84362;
+if (isNull _tallyGroup) then {_tallyGroup = _display ctrlCreate ["RscControlsGroup", 84362];};
+_tallyGroup ctrlSetPosition [_listX, _bodyY, _listW, _bodyH];
+_tallyGroup ctrlCommit 0;
+private _tallyBody = _display displayCtrl 84361;
+if (isNull _tallyBody) then {_tallyBody = _display ctrlCreate ["RscStructuredText", 84361, _tallyGroup];};
+_tallyBody ctrlSetPosition [0, 0, _listW - _uiW / 180, _bodyH];
+_tallyBody ctrlCommit 0;
+[] call ACME_fnc_infusionRefreshTally;
+
+ACM_circulation_SyringeDraw_InventorySelection = 0;
+[] call ACM_circulation_fnc_Syringe_UpdateMedicationList;
+
+private _stockPFH = _display getVariable ["ACME_infusionStockPFH", -1];
+if (_stockPFH < 0) then {
+    _stockPFH = [{
+        params ["_args", "_handle"];
+        _args params ["_display"];
+        if (isNull _display) exitWith {[_handle] call CBA_fnc_removePerFrameHandler;};
+        [] call ACME_fnc_infusionDrawStock;
+    }, 0.1, [_display]] call CBA_fnc_addPerFrameHandler;
+    _display setVariable ["ACME_infusionStockPFH", _stockPFH];
+    _display displayAddEventHandler ["Unload", {
+        params ["_d"];
+        private _h = _d getVariable ["ACME_infusionStockPFH", -1];
+        if (_h >= 0) then {[_h] call CBA_fnc_removePerFrameHandler;};
+    }];
+};
+[] call ACME_fnc_infusionDrawStock;

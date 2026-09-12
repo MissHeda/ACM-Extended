@@ -1,0 +1,180 @@
+[
+  {
+    "override": "addons/acm_extended/overrides/fn_aedAnalyzeRhythm.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/circulation/functions/fnc_AED_AnalyzeRhythm.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_aedButtonShock.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/circulation/functions/fnc_AED_Button_Shock.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canCarry.sqf",
+    "proposed_owner": "transport"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canDrag.sqf",
+    "proposed_owner": "transport"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canOpenMenu.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_canTreatCached.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_checkPulseLocal.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/core/overrides/fnc_checkPulseLocal.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_collectActions.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_deserializeState.sqf",
+    "proposed_owner": "patient-lifecycle",
+    "status": "migrated-native",
+    "native_target": "addons/core/overrides/fnc_deserializeState.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genCO.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/circulation/functions/fnc_displayAEDMonitor_generateCO.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genEKG.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/circulation/functions/fnc_displayAEDMonitor_generateEKG.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_genPO.sqf",
+    "proposed_owner": "monitor-rhythm",
+    "status": "migrated-native",
+    "native_target": "addons/circulation/functions/fnc_displayAEDMonitor_generatePO.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBloodPressure.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getBloodVolumeChange.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getCardiacOutput.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getDogtagData.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_getMedicationCount.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleEffects.sqf",
+    "proposed_owner": "patient-lifecycle",
+    "status": "migrated-native",
+    "native_target": "addons/core/overrides/fnc_handleEffects.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_handleUnitVitals.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_ivBagLocal.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_medicationLocal.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_onMedicationUsage.sqf",
+    "proposed_owner": "procedure-or-manual-review"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_onUnconscious.sqf",
+    "proposed_owner": "patient-lifecycle",
+    "status": "migrated-native",
+    "native_target": "addons/core/functions/fnc_onUnconscious.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_resetVariables.sqf",
+    "proposed_owner": "patient-lifecycle",
+    "status": "migrated-native",
+    "native_target": "addons/core/functions/fnc_resetVariables.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_serializeState.sqf",
+    "proposed_owner": "patient-lifecycle",
+    "status": "migrated-native",
+    "native_target": "addons/core/overrides/fnc_serializeState.sqf"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeDrawButton.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeGetMedicationList.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringePrepareFinish.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_syringeUpdateMedicationList.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_tourniquetRemove.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_transfusionMoveBag.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_transfusionMoveBagCancel.sqf",
+    "proposed_owner": "medication-infusion"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_treatment.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateActions.sqf",
+    "proposed_owner": "medical-interaction-ui"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateHeartRate.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateOxygen.sqf",
+    "proposed_owner": "procedure-or-manual-review"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updatePeripheralResistance.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_updateWoundBloodLoss.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  },
+  {
+    "override": "addons/acm_extended/overrides/fn_woundsHandlerBase.sqf",
+    "proposed_owner": "ace-medical-physiology"
+  }
+]

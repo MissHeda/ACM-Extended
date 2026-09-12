@@ -1,0 +1,41 @@
+params ["_p", "_medic", "_id", "_mode", "_part", "_iv", "_site", "_epoch"];
+if (!local _p || {_epoch != ([_p] call ACME_fnc_clinicalEpoch)}) exitWith {};
+private _map = _p getVariable ["ACM_circulation_IV_Bags", createHashMap];
+private _moves = _p getVariable ["ACME_bagMoves", createHashMap];
+if (_mode == "reserve") exitWith {
+    if (_id == "" || {_id in _moves}) exitWith {[_medic, "That bag is already being moved."] call ACME_fnc_clinicalNotice;};
+    private _arr = _map getOrDefault [_part, []]; private _idx = _arr findIf {(_x param [8, ""]) == _id};
+    if (_idx < 0) exitWith {[_medic, "That bag is no longer on this site."] call ACME_fnc_clinicalNotice;};
+    private _bag = +(_arr select _idx);
+    _moves set [_id, [_part, _bag, _medic, CBA_missionTime, _epoch]];
+    _arr deleteAt _idx; _map set [_part, _arr];
+    [_p, "ACME_bagMoves", _moves] call ACME_fnc_setVarNet;
+    [_p, _map, true] call ACME_fnc_ivBagsCommit;
+    [_p, _part] call ACM_circulation_fnc_updateActiveFluidBags;
+    private _pi = ACME_infusion_bodyParts find toLowerANSI _part;
+    _p setVariable [format ["ACME_clampRate_%1_%2_%3", _pi, _bag select 4, _bag select 3], -1, false];
+};
+private _move = _moves getOrDefault [_id, []];
+if (_move isEqualTo [] || {!((_move select 2) isEqualTo _medic)}) exitWith {};
+_move params ["_origin", "_bag", "", "", ""];
+if (_mode == "cancel") then {_part = _origin; _iv = _bag select 4; _site = _bag select 3;};
+private _hasAccess = if (_iv) then {[_p, _part, 0, _site] call ACM_circulation_fnc_hasIV} else {[_p, _part, 0] call ACM_circulation_fnc_hasIO};
+if (!_hasAccess && {_mode != "cancel"}) exitWith {
+    // Preserve the disconnected physical bag and dose record; do not fabricate a full inventory replacement.
+    [_medic, "That access is unavailable. The disconnected bag is retained; choose a valid site."] call ACME_fnc_clinicalNotice;
+};
+private _hasDrug = ((_p getVariable ["ACME_infusion_BagMedications", []]) findIf {(_x param [23, ""]) == _id}) >= 0;
+if (_hasDrug && {_mode != "cancel"} && {[_p, _part, _iv, _site] call ACME_fnc_isYLineAccess}) exitWith {[_medic, "Do not move a medication infusion into a blood Y-line."] call ACME_fnc_clinicalNotice;};
+private _detached = +(_p getVariable ["ACME_detachedBags", []]);
+if (_hasAccess) then {_detached = _detached - [_id];} else {_detached pushBackUnique _id;};
+[_p, _detached] call ACME_fnc_detachedBagsCommit;
+private _pi = ACME_infusion_bodyParts find toLowerANSI _part;
+_bag set [2, [_p, _iv, _pi, _site] call ACM_circulation_fnc_getAccessType]; _bag set [3, _site]; _bag set [4, _iv];
+private _arr = _map getOrDefault [_part, []];
+_arr pushBack _bag; _map set [_part, _arr]; _moves deleteAt _id;
+[_p, _map, true] call ACME_fnc_ivBagsCommit;
+[_p, "ACME_bagMoves", _moves] call ACME_fnc_setVarNet;
+private _entries = _p getVariable ["ACME_infusion_BagMedications", []];
+{if ((_x param [23, ""]) == _id) then {_x set [1, _part]; _x set [2, (count _arr)-1]; _x set [4, _site]; _x set [5, _iv]; [_p, _x] call ACME_fnc_infusionFlow;};} forEach _entries;
+[_p, _entries] call ACME_fnc_infusionMedicationStateCommit;
+[_p, _part] call ACM_circulation_fnc_updateActiveFluidBags;

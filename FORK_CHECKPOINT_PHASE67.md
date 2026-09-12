@@ -29,9 +29,3 @@ This checkpoint continues the fork ownership work from Phase 58 and focuses on a
 - HEMTT: not installed in this environment.
 
 The single combined regression wrapper exceeds the execution window, so validation was performed in two bounded batches. This is not an engine/config/PBO or multiplayer acceptance test.
-
-## Preserved source archive
-
-Phase 67 full-source SHA-256: `1861a3ac32fb199ebd2ca18169e1ec9db4bb6dbd8577ca41f910498212eecc64`
-
-Archive size: 225,082,210 bytes.

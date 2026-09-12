@@ -1,0 +1,51 @@
+[
+  {
+    "name": "ACME_evacuated",
+    "scope": "entity",
+    "writer": "Mission author or Zeus script on the patient",
+    "reason": "Optional evacuation flag consumed by TBI recovery; no automatic evacuation event is defined by this addon.",
+    "source": "functions/fn_tbiHandle.sqf: evacuation gate"
+  },
+  {
+    "name": "ACME_vehicleOpen",
+    "scope": "entity",
+    "writer": "Mission author or vehicle compatibility script on the vehicle",
+    "reason": "Optional numeric openness override in the range 0 to 1. Unset values use the existing animation-source inference.",
+    "source": "functions/fn_vehicleOpenness.sqf: forced openness branch"
+  },
+  {
+    "name": "ACME_facialBurn",
+    "scope": "entity",
+    "writer": "Mission author or Zeus scenario script on the patient",
+    "reason": "Retained additive scenario hook. Native head burn wounds are also detected without this flag. Full heal clears the hook.",
+    "source": "functions/fn_airwayHasFacialBurn.sqf"
+  },
+  {
+    "name": "ACME_leftAlign_managedButton",
+    "scope": "entity",
+    "writer": "Legacy v0.9.437 compositor, only in a surviving old dialog",
+    "source": "functions/fn_menuLeftAlignTick.sqf; overrides/fn_updateActions.sqf",
+    "reason": "Historical cleanup only. Current code never activates this obsolete overlay flag; retain cleanup for an old display."
+  },
+  {
+    "name": "ACME_leftAlign_originalText",
+    "scope": "entity",
+    "writer": "Legacy v0.9.437 compositor, only in a surviving old dialog",
+    "source": "functions/fn_menuLeftAlignTick.sqf; overrides/fn_updateActions.sqf",
+    "reason": "Historical cleanup only. Current native renderer does not blank button labels or produce saved label text."
+  },
+  {
+    "name": "ACME_CS_FingerLift",
+    "scope": "uinamespace",
+    "writer": "Optional local mission/UI integration; no producer in the shipped addon",
+    "source": "functions/fn_chestSealTick.sqf",
+    "reason": "Optional cosmetic finger offset override. Default remains dot height times 1.6. Does not gate treatment or presence transmission."
+  },
+  {
+    "name": "ACME_IV_PadTex",
+    "scope": "uinamespace",
+    "writer": "Optional local mission/UI integration; no producer in the shipped addon",
+    "source": "functions/fn_ivMinigameTick.sqf",
+    "reason": "Optional cosmetic held-pad texture override. Retain shipped texture default; no gameplay state depends on an external writer."
+  }
+]

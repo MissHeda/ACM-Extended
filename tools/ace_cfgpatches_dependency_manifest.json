@@ -1,0 +1,648 @@
+{
+  "baseline": "supplied ACE3-master.zip",
+  "patches": {
+    "ace_advanced_ballistics": [
+      "ace_ballistics",
+      "ace_weather"
+    ],
+    "ace_advanced_fatigue": [
+      "ace_common"
+    ],
+    "ace_advanced_throwing": [
+      "ace_common",
+      "ace_weaponselect"
+    ],
+    "ace_ai": [
+      "ace_common"
+    ],
+    "ace_aircraft": [
+      "ace_common"
+    ],
+    "ace_apl": [
+      "ace_main"
+    ],
+    "ace_arsenal": [
+      "ace_common"
+    ],
+    "ace_artillerytables": [
+      "ace_interaction"
+    ],
+    "ace_atragmx": [
+      "ace_advanced_ballistics",
+      "ace_common",
+      "ace_weather"
+    ],
+    "ace_attach": [
+      "ace_interaction"
+    ],
+    "ace_backpacks": [
+      "ace_common"
+    ],
+    "ace_ballistics": [
+      "ace_common"
+    ],
+    "ace_captives": [
+      "ace_interaction"
+    ],
+    "ace_cargo": [
+      "ace_interaction"
+    ],
+    "ace_casings": [
+      "ace_common"
+    ],
+    "ace_chemlights": [
+      "ace_common"
+    ],
+    "ace_common": [
+      "ace_main",
+      "ace_modules"
+    ],
+    "ace_compat_aegis": [
+      "A3_Aegis_Weapons_F_Aegis",
+      "A3_Aegis_Weapons_F_Aegis_Machineguns_MAG",
+      "A3_Aegis_Weapons_F_Aegis_Pistols_G17",
+      "A3_Aegis_Weapons_F_Aegis_Pistols_Mk26",
+      "A3_Aegis_Weapons_F_Aegis_Pistols_Ruger57",
+      "A3_Aegis_Weapons_F_Aegis_Rifles_M16",
+      "A3_Aegis_Weapons_F_Aegis_Shotguns_KSG",
+      "A3_Aegis_Weapons_F_Aegis_Shotguns_M4_SSAS",
+      "ace_common"
+    ],
+    "ace_compat_atlas": [
+      "A3_Atlas_Data_F_Atlas_Loadorder",
+      "ace_common"
+    ],
+    "ace_compat_cfp": [
+      "ace_common",
+      "cfp_main"
+    ],
+    "ace_compat_csla": [
+      "ace_common",
+      "CSLA",
+      "US85",
+      "FIA"
+    ],
+    "ace_compat_cup_terrains": [
+      "CUP_CAStructures_E_Misc_Misc_Interier",
+      "CUP_CAStructures_E_Misc_Misc_Market",
+      "CUP_Editor_Buildings_Config",
+      "CUP_Editor_Structures_Config",
+      "CUP_Misc3_Config",
+      "ace_common"
+    ],
+    "ace_compat_cup_units": [
+      "CUP_Creatures_People_LoadOrder"
+    ],
+    "ace_compat_cup_vehicles": [
+      "CUP_Vehicles_LoadOrder",
+      "ace_interaction"
+    ],
+    "ace_compat_cup_weapons": [
+      "CUP_Weapons_LoadOrder"
+    ],
+    "ace_compat_ef": [
+      "ace_common",
+      "EF_Weapons",
+      "EF_Marines"
+    ],
+    "ace_compat_gm": [
+      "ace_common",
+      "gm_core"
+    ],
+    "ace_compat_r3f": [
+      "r3f_armes_c",
+      "r3f_acc",
+      "R3F_G17_addons",
+      "R3F_G_SCAR",
+      "R3F_SCAR_H",
+      "R3F_SCAR_L",
+      "R3F_FN_MAG"
+    ],
+    "ace_compat_rf": [
+      "RF_Data_Loadorder"
+    ],
+    "ace_compat_rh_acc": [
+      "ace_scopes",
+      "RH_acc"
+    ],
+    "ace_compat_rh_de": [
+      "RH_de_cfg"
+    ],
+    "ace_compat_rh_m4": [
+      "RH_m4_cfg"
+    ],
+    "ace_compat_rh_pdw": [
+      "RH_PDW"
+    ],
+    "ace_compat_rhs_afrf3": [
+      "ace_common",
+      "rhs_main_loadorder"
+    ],
+    "ace_compat_rhs_gref3": [
+      "ace_common",
+      "rhsgref_main_loadorder"
+    ],
+    "ace_compat_rhs_saf3": [
+      "ace_common",
+      "rhssaf_main_loadorder"
+    ],
+    "ace_compat_rhs_usf3": [
+      "ace_common",
+      "rhsusf_main_loadorder"
+    ],
+    "ace_compat_rksl_pm_ii": [
+      "ace_scopes",
+      "RKSL_PMII",
+      "RKSL_PMII_525"
+    ],
+    "ace_compat_sma3_iansky": [
+      "ace_scopes",
+      "iansky_opt"
+    ],
+    "ace_compat_sog": [
+      "ace_common",
+      "loadorder_f_vietnam"
+    ],
+    "ace_compat_sogns": [
+      "ace_common",
+      "loadorder_f_vietnam",
+      "data_f_vietnam_03"
+    ],
+    "ace_compat_spe": [
+      "WW2_SPE_Core_c_ZZZ_LastLoaded_c",
+      "ace_common"
+    ],
+    "ace_compat_spex": [
+      "WW2_SPEX_Assets_c_Weapons_InfantryWeapons_c",
+      "WW2_SPEX_Assets_c_Characters_Commonwealth_c_UK_Army_Gear",
+      "WW2_SPEX_Assets_c_Vehicles_ZZZ_AllVehiclesLoaded_c",
+      "ace_common"
+    ],
+    "ace_compat_ws": [
+      "data_f_lxWS_Loadorder",
+      "ace_common"
+    ],
+    "ace_concertina_wire": [
+      "ace_apl",
+      "ace_interaction"
+    ],
+    "ace_cookoff": [
+      "ace_common"
+    ],
+    "ace_csw": [
+      "ace_interaction"
+    ],
+    "ace_dagr": [
+      "ace_weather"
+    ],
+    "ace_disarming": [
+      "ace_interaction"
+    ],
+    "ace_disposable": [
+      "ace_common"
+    ],
+    "ace_dogtags": [
+      "ace_interaction"
+    ],
+    "ace_dragging": [
+      "ace_interaction"
+    ],
+    "ace_dragon": [
+      "ace_hot",
+      "ace_csw"
+    ],
+    "ace_explosives": [
+      "ace_interaction"
+    ],
+    "ace_fastroping": [
+      "ace_interaction",
+      "ace_logistics_rope"
+    ],
+    "ace_fcs": [
+      "ace_interaction"
+    ],
+    "ace_field_rations": [
+      "ace_interact_menu"
+    ],
+    "ace_fieldmanual": [
+      "ace_common"
+    ],
+    "ace_finger": [
+      "ace_common"
+    ],
+    "ace_fire": [
+      "ace_common"
+    ],
+    "ace_flags": [
+      "ace_common",
+      "ace_interact_menu",
+      "ace_interaction"
+    ],
+    "ace_flashlights": [
+      "ace_interaction"
+    ],
+    "ace_flashsuppressors": [
+      "ace_common"
+    ],
+    "ace_fonts": [
+      "ace_main"
+    ],
+    "ace_fortify": [
+      "ace_interaction"
+    ],
+    "ace_frag": [
+      "ace_common"
+    ],
+    "ace_gestures": [
+      "ace_interact_menu"
+    ],
+    "ace_gforces": [
+      "ace_common"
+    ],
+    "ace_goggles": [
+      "ace_common"
+    ],
+    "ace_grenades": [
+      "ace_common"
+    ],
+    "ace_gunbag": [
+      "ace_interaction",
+      "ace_movement"
+    ],
+    "ace_headless": [
+      "ace_common"
+    ],
+    "ace_hearing": [
+      "ace_interaction"
+    ],
+    "ace_hellfire": [
+      "ace_interaction",
+      "ace_missileguidance"
+    ],
+    "ace_hitreactions": [
+      "ace_common"
+    ],
+    "ace_hot": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_hunterkiller": [
+      "ace_common"
+    ],
+    "ace_huntir": [
+      "ace_common"
+    ],
+    "ace_intelitems": [
+      "ace_interact_menu",
+      "ace_zeus"
+    ],
+    "ace_interact_menu": [
+      "ace_common"
+    ],
+    "ace_interaction": [
+      "ace_interact_menu"
+    ],
+    "ace_inventory": [
+      "ace_common"
+    ],
+    "ace_irlight": [
+      "ace_common"
+    ],
+    "ace_javelin": [
+      "ace_main",
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_kestrel4500": [
+      "ace_common",
+      "ace_weather"
+    ],
+    "ace_killtracker": [
+      "ace_common"
+    ],
+    "ace_laser": [
+      "ace_common"
+    ],
+    "ace_laserpointer": [
+      "ace_common"
+    ],
+    "ace_logistics_rope": [
+      "ace_common"
+    ],
+    "ace_logistics_uavbattery": [
+      "ace_interaction"
+    ],
+    "ace_logistics_wirecutter": [
+      "ace_interaction"
+    ],
+    "ace_magazinerepack": [
+      "ace_interaction"
+    ],
+    "ace_main": [
+      "cba_main"
+    ],
+    "ace_map": [
+      "ace_interaction"
+    ],
+    "ace_map_gestures": [
+      "ace_common"
+    ],
+    "ace_maptools": [
+      "ace_interaction"
+    ],
+    "ace_marker_flags": [
+      "ace_common",
+      "ace_interaction",
+      "ace_interact_menu"
+    ],
+    "ace_markers": [
+      "ace_common"
+    ],
+    "ace_markinglaser": [
+      "ace_common",
+      "ace_laser"
+    ],
+    "ace_maverick": [
+      "ace_missileguidance"
+    ],
+    "ace_medical": [
+      "ace_medical_engine"
+    ],
+    "ace_medical_ai": [
+      "ace_medical_treatment"
+    ],
+    "ace_medical_blood": [
+      "ace_medical_status"
+    ],
+    "ace_medical_damage": [
+      "ace_medical_engine"
+    ],
+    "ace_medical_engine": [
+      "ace_common"
+    ],
+    "ace_medical_feedback": [
+      "ace_medical_status"
+    ],
+    "ace_medical_gui": [
+      "ace_medical_treatment",
+      "ace_interaction"
+    ],
+    "ace_medical_statemachine": [
+      "ace_medical_vitals"
+    ],
+    "ace_medical_status": [
+      "ace_medical_engine"
+    ],
+    "ace_medical_treatment": [
+      "ace_medical_status",
+      "ace_medical_damage",
+      "ace_apl"
+    ],
+    "ace_medical_vitals": [
+      "ace_medical_status"
+    ],
+    "ace_metis": [
+      "ace_missileguidance"
+    ],
+    "ace_microdagr": [
+      "ace_common"
+    ],
+    "ace_minedetector": [
+      "ace_explosives"
+    ],
+    "ace_missile_aim120": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_aim9": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_clgp": [
+      "ace_missileguidance"
+    ],
+    "ace_missile_gbu": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_hud": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_manpad": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_sam": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_sdb": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missile_vikhr": [
+      "ace_common",
+      "ace_missileguidance"
+    ],
+    "ace_missileguidance": [
+      "ace_laser"
+    ],
+    "ace_missionmodules": [
+      "ace_common"
+    ],
+    "ace_mk6mortar": [
+      "ace_csw",
+      "ace_artillerytables"
+    ],
+    "ace_modules": [
+      "ace_main"
+    ],
+    "ace_movement": [
+      "ace_common"
+    ],
+    "ace_mx2a": [
+      "ace_apl"
+    ],
+    "ace_nametags": [
+      "ace_interaction"
+    ],
+    "ace_nightvision": [
+      "ace_common"
+    ],
+    "ace_nlaw": [
+      "ace_missileguidance"
+    ],
+    "ace_noidle": [
+      "ace_common"
+    ],
+    "ace_noradio": [
+      "ace_common"
+    ],
+    "ace_norearm": [
+      "ace_common"
+    ],
+    "ace_novehicleclanlogo": [
+      "ace_common"
+    ],
+    "ace_optics": [
+      "ace_common"
+    ],
+    "ace_optionsmenu": [
+      "ace_common"
+    ],
+    "ace_overheating": [
+      "ace_interaction"
+    ],
+    "ace_overpressure": [
+      "ace_common"
+    ],
+    "ace_parachute": [
+      "ace_common"
+    ],
+    "ace_pylons": [
+      "ace_interact_menu"
+    ],
+    "ace_quickmount": [
+      "ace_interaction"
+    ],
+    "ace_rangecard": [
+      "ace_advanced_ballistics",
+      "ace_scopes"
+    ],
+    "ace_realisticnames": [
+      "ace_common",
+      "ace_optics"
+    ],
+    "ace_realisticweights": [
+      "ace_common",
+      "ace_disposable"
+    ],
+    "ace_rearm": [
+      "ace_interaction"
+    ],
+    "ace_recoil": [
+      "ace_common"
+    ],
+    "ace_refuel": [
+      "ace_interaction"
+    ],
+    "ace_reload": [
+      "ace_interaction"
+    ],
+    "ace_reloadlaunchers": [
+      "ace_interaction"
+    ],
+    "ace_repair": [
+      "ace_interaction"
+    ],
+    "ace_respawn": [
+      "ace_common",
+      "ace_interaction"
+    ],
+    "ace_safemode": [
+      "ace_common"
+    ],
+    "ace_sandbag": [
+      "ace_interaction"
+    ],
+    "ace_scopes": [
+      "ace_common"
+    ],
+    "ace_sitting": [
+      "ace_interaction"
+    ],
+    "ace_slideshow": [
+      "ace_common"
+    ],
+    "ace_smallarms": [
+      "ace_common"
+    ],
+    "ace_spectator": [
+      "ace_common"
+    ],
+    "ace_spike": [
+      "ace_common"
+    ],
+    "ace_spottingscope": [
+      "ace_apl",
+      "ace_interaction"
+    ],
+    "ace_switchunits": [
+      "ace_common"
+    ],
+    "ace_tacticalladder": [
+      "ace_apl",
+      "ace_interaction"
+    ],
+    "ace_tagging": [
+      "ace_interaction"
+    ],
+    "ace_thermals": [
+      "ace_common"
+    ],
+    "ace_towing": [
+      "ace_interaction",
+      "ace_logistics_rope"
+    ],
+    "ace_trenches": [
+      "ace_interaction"
+    ],
+    "ace_tripod": [
+      "ace_interaction"
+    ],
+    "ace_ui": [
+      "ace_common"
+    ],
+    "ace_vector": [
+      "ace_common"
+    ],
+    "ace_vehicle_damage": [
+      "ace_common",
+      "ace_cookoff"
+    ],
+    "ace_vehiclelock": [
+      "ace_interaction"
+    ],
+    "ace_vehicles": [
+      "ace_common"
+    ],
+    "ace_viewdistance": [
+      "ace_common"
+    ],
+    "ace_viewports": [
+      "ace_common"
+    ],
+    "ace_viewrestriction": [
+      "ace_common"
+    ],
+    "ace_volume": [
+      "ace_common"
+    ],
+    "ace_wardrobe": [
+      "ace_goggles",
+      "ace_interact_menu"
+    ],
+    "ace_weaponselect": [
+      "ace_common"
+    ],
+    "ace_weather": [
+      "ace_common"
+    ],
+    "ace_winddeflection": [
+      "ace_common"
+    ],
+    "ace_xm157": [
+      "ace_advanced_ballistics",
+      "ace_scopes"
+    ],
+    "ace_yardage450": [
+      "ace_apl",
+      "ace_laser"
+    ],
+    "ace_zeus": [
+      "ace_common",
+      "ace_ai"
+    ]
+  }
+}

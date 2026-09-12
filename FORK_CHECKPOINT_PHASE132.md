@@ -1,5 +1,7 @@
 # ACM Extended Fork Checkpoint — Phase 132
 
+> **Phase 133 correction:** the Phase 132 switch to the engine-default/model-free Hang Bag rope was reversed after in-game confirmation that the bundled custom IV rope works correctly. Phase 133 restores the custom per-fluid rope classes while retaining every other Phase 132 Hang Bag stability change.
+
 Phase 132 is a reported-runtime regression batch built directly on the Phase 127 fork. It preserves the completed fork ownership architecture and public `v1.1.0` identity while correcting direct-pressure range behavior, vehicle pulse checks, Hang Bag presentation/cancellation, Plasma-Lyte inventory visibility, ultrawide UI geometry and HPMK transport physics.
 
 ## Phase 128 — direct-pressure leash and vehicle-safe pulse checks

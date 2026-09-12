@@ -1,0 +1,119 @@
+{
+  "baseline": "supplied ACE3-master.zip",
+  "parents": {
+    "ACE_Actions": [
+      "ace_advanced_throwing",
+      "ace_attach",
+      "ace_captives",
+      "ace_cargo",
+      "ace_common",
+      "ace_compat_cup_terrains",
+      "ace_compat_cup_weapons",
+      "ace_compat_gm",
+      "ace_compat_rhs_afrf3",
+      "ace_compat_rhs_gref3",
+      "ace_compat_rhs_saf3",
+      "ace_compat_rhs_usf3",
+      "ace_compat_sog",
+      "ace_compat_spe",
+      "ace_concertina_wire",
+      "ace_csw",
+      "ace_disarming",
+      "ace_dogtags",
+      "ace_dragon",
+      "ace_explosives",
+      "ace_fastroping",
+      "ace_flags",
+      "ace_gunbag",
+      "ace_intelitems",
+      "ace_interaction",
+      "ace_logistics_uavbattery",
+      "ace_medical_gui",
+      "ace_medical_treatment",
+      "ace_overheating",
+      "ace_quickmount",
+      "ace_rangecard",
+      "ace_rearm",
+      "ace_refuel",
+      "ace_reload",
+      "ace_reloadlaunchers",
+      "ace_repair",
+      "ace_respawn",
+      "ace_sandbag",
+      "ace_spottingscope",
+      "ace_tacticalladder",
+      "ace_towing",
+      "ace_trenches",
+      "ace_tripod",
+      "ace_vehiclelock"
+    ],
+    "ACE_bloodIV": [
+      "ace_medical_treatment"
+    ],
+    "ACE_bloodIV_250": [
+      "ace_medical_treatment"
+    ],
+    "ACE_bloodIV_500": [
+      "ace_medical_treatment"
+    ],
+    "ACE_ItemCore": [
+      "ace_common"
+    ],
+    "ACE_LogicDummy": [
+      "ace_common"
+    ],
+    "ACE_MainActions": [
+      "ace_attach",
+      "ace_captives",
+      "ace_cargo",
+      "ace_common",
+      "ace_compat_cup_terrains",
+      "ace_compat_cup_weapons",
+      "ace_compat_gm",
+      "ace_compat_rhs_afrf3",
+      "ace_compat_rhs_gref3",
+      "ace_compat_rhs_saf3",
+      "ace_compat_rhs_usf3",
+      "ace_compat_sog",
+      "ace_compat_spe",
+      "ace_concertina_wire",
+      "ace_csw",
+      "ace_disarming",
+      "ace_dragon",
+      "ace_explosives",
+      "ace_gunbag",
+      "ace_interaction",
+      "ace_logistics_uavbattery",
+      "ace_medical_gui",
+      "ace_medical_treatment",
+      "ace_quickmount",
+      "ace_rearm",
+      "ace_refuel",
+      "ace_reload",
+      "ace_repair",
+      "ace_sandbag",
+      "ace_spottingscope",
+      "ace_tacticalladder",
+      "ace_towing",
+      "ace_trenches",
+      "ace_tripod",
+      "ace_vehiclelock"
+    ],
+    "ACE_Medical_Menu_ActionButton": [
+      "ace_medical_gui"
+    ],
+    "ACE_medicalSupplyCrate": [
+      "ace_medical_treatment"
+    ],
+    "ACE_salineIV_250": [
+      "ace_medical_treatment"
+    ],
+    "ACE_salineIV_500": [
+      "ace_medical_treatment"
+    ],
+    "ACE_splint": [
+      "ace_fieldmanual",
+      "ace_medical_treatment"
+    ]
+  }
+}
