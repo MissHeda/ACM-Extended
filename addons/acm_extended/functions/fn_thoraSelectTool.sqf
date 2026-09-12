@@ -6,7 +6,8 @@ disableSerialization;
 private _display = uiNamespace getVariable ["ACME_Thora_DLG", displayNull];
 if (isNull _display) exitWith {};
 
-private _held = uiNamespace getVariable ["ACME_Thora_Held", ""];
+private _heldRaw = uiNamespace getVariable ["ACME_Thora_Held", ""];
+private _held = ["seal", _heldRaw] select (_heldRaw != "sealSlot");
 private _medic = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
 ([_medic] call ACME_fnc_thoraClosureMode) params ["_closure", "_count", "_canTube"];
 
@@ -27,7 +28,13 @@ if (_tool == "tube" && {!_canTube}) exitWith {};
 if (_tool == "seal" && {!([_medic, "thoracostomySeal", true] call ACME_fnc_procedureAllowed)}) exitWith {};
 if (_tool == "seal" && {(isNull _medic) || {([_medic, "ACM_ChestSeal"] call ace_common_fnc_getCountOfItem) < 1}}) exitWith {};
 
-uiNamespace setVariable ["ACME_Thora_Held", _tool];
+private _separateClosures = uiNamespace getVariable ["ACME_Thora_SeparateClosureSlots", false];
+// Keep a dedicated UI identity for a seal while it is merely being carried. The stock thoracostomy tick treats
+// the literal string "seal" as the old shared-slot mode and would otherwise turn the tube half into a second seal.
+// The early MouseButtonDown adapter installed by thoraUpdateTrayIcons converts sealSlot -> seal for the actual
+// placement callback, then puts it back on the next frame if placement did not occur.
+private _heldStore = if (_separateClosures && {_tool == "seal"}) then {"sealSlot"} else {_tool};
+uiNamespace setVariable ["ACME_Thora_Held", _heldStore];
 uiNamespace setVariable ["ACME_Thora_TubeSnap", false];
 uiNamespace setVariable ["ACME_Thora_SealMode", _tool == "seal"];
 
@@ -39,7 +46,6 @@ uiNamespace setVariable ["ACME_Thora_KellyArmed", false];
 
 // Highlight only the actual selected slot once the dedicated closure layout exists. Keep the old shared-slot alias
 // solely for a hot-reloaded dialog that predates this build.
-private _separateClosures = uiNamespace getVariable ["ACME_Thora_SeparateClosureSlots", false];
 {
     private _bg = _x;
     private _slotTool = _bg getVariable ["thoraTool", ""];
