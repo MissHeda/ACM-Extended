@@ -5,7 +5,17 @@
  */
 params [["_medic", objNull, [objNull]]];
 if (isNull _medic || {!local _medic} || {!alive _medic} || {[_medic] call ACME_fnc_animBlocked}) exitWith {0};
-if (currentWeapon _medic == "") exitWith {0};
+
+// currentWeapon can remain populated for a frame after the unit has already reached a Wnon/Snon state. Treat the
+// animation state as the visual truth. Without this guard an already-empty-handed medic receives ACE's weapon-away
+// request anyway, visibly performs a pointless stow gesture, and the requested medical RTM starts late or misses
+// its short treatment window entirely.
+private _state = toLowerANSI animationState _medic;
+private _visuallyEmpty = ((_state find "wnon") >= 0) && {((_state find "snon") >= 0)};
+if (currentWeapon _medic == "" || {_visuallyEmpty}) exitWith {
+    _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime], false];
+    0
+};
 
 private _previous = _medic getVariable ["ACME_medicAnimationPrep", []];
 if (_previous isEqualType [] && {count _previous >= 2} && {(_previous param [0, ""]) == "empty_hands_once"}) then {
