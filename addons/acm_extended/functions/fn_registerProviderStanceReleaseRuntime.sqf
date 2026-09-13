@@ -8,6 +8,11 @@
 // provider stays stationary and may resume after the treatment; any movement input hard-releases it in its own tick.
 ["ace_treatmentStarted", {
     params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
+    if (hasInterface && {!isNil "ACE_player"} && {_medic isEqualTo ACE_player}
+        && {uiNamespace getVariable ["ACME_PulseCheckActive", false]}) then {
+        uiNamespace setVariable ["ACME_PulseCheckCancel", true];
+        "ACM_FeelPulse" cutText ["","PLAIN",0,false];
+    };
     if (isNull _medic || {!local _medic} || {!(_medic getVariable ["ACME_DP_Active", false])}) exitWith {};
     if (_classname == "ACME_DirectPressure") exitWith {};
 

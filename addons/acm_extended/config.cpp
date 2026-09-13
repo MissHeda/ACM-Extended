@@ -7404,7 +7404,6 @@ class ace_medical_treatment_actions {
         animationMedicProne = "AmovPknlMstpSrasWpstDnon_AmovPknlMstpSrasWpstDnon_gear";
     };
     class UseStethoscope {
-        ACM_rollToBack = "false";  // Auscultation works in the casualty's current position, including Semi-Fowler's.
         // The launch action is only 0.001 s and should not attempt ACM's inherited gear animation. Start the
         // optional TSP sling here instead, so the rifle is already moving to the sling while the minigame opens.
         // Exact-class gating keeps BVM descendants from inheriting this stethoscope-specific preflight.
@@ -7413,6 +7412,7 @@ class ace_medical_treatment_actions {
         animationMedicSelf = "";
         animationMedicSelfProne = "";
         callbackStart = "if (toLower (_this param [3, '']) == 'usestethoscope') then {[(_this param [0, objNull])] call ACME_fnc_medicAnimationPrep}";
+        callbackSuccess = "private _a = +_this; private _p = _a param [1,objNull]; private _ready = if (isNull _p) then {-1} else {_p getVariable ['ACME_headElev_suspendReadyAt',-1]}; if (!isNull _p && {_p getVariable ['ACME_headElev_Suspended',false]} && {_ready > CBA_missionTime}) then {[{_this call ACM_breathing_fnc_useStethoscope},_a,((_ready - CBA_missionTime) max 0.05) + 0.05] call CBA_fnc_waitAndExecute} else {_a call ACM_breathing_fnc_useStethoscope}";
     };
     // CheckPulse is deliberately not touched. it is the base class for more than fifty actions in this addon
     // alone: the thoracostomy, chest seals, junctional packing, the ej line, the EMMA, the ventilator battery and

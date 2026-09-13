@@ -29,7 +29,6 @@ if (!_authorized) exitWith {};
 // immediately settles them prone. That makes a failed attempt look physical instead of making the button appear dead.
 if (_patient getVariable ["ACME_AAJT_zone3", false]) then {
     [_patient] call ACME_fnc_aajtDownedTick;
-    _patient setVariable ["ACME_AAJT_uprightSince", CBA_missionTime + 0.35, false];
     if (_patient == ACE_player) then {
         ["Zone 3 AAJT-S compression prevents you from weight bearing.", 2, _patient] call ace_common_fnc_displayTextStructured;
     };
@@ -50,7 +49,7 @@ if (_patient getVariable ["ACME_headElevated", false]) exitWith {
         if (isNull _p || {!alive _p} || {_p getVariable ["ACME_headElevated", false]}) exitWith {};
         _p setUnitPos "AUTO";
         [_p, true, _initiator] call ACM_core_fnc_getUp;
-    }, [_patient, _initiator], (missionNamespace getVariable ["ACME_headElev_releaseAnimTime", 0.8]) + 0.35] call CBA_fnc_waitAndExecute;
+    }, [_patient, _initiator], (missionNamespace getVariable ["ACME_headElev_lowerAnimTime", 1.4]) + 0.15] call CBA_fnc_waitAndExecute;
 };
 
 private _wasLying = _patient getVariable ["ACM_core_Lying_State", false];

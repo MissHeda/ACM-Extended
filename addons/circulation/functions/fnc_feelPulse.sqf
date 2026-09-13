@@ -31,6 +31,10 @@ private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];
 if (!isNull _disp) then {(_disp displayCtrl 80001) ctrlSetText format ["%1 (%2)",[_patient,false,true] call ace_common_fnc_getName,_site];};
 uiNamespace setVariable ["ACME_PulseCheckActive",true];
 uiNamespace setVariable ["ACME_PulseCheckEscape",false];
+uiNamespace setVariable ["ACME_PulseCheckCancel",false];
+uiNamespace setVariable ["ACME_PulseCheckMedic",_medic];
+uiNamespace setVariable ["ACME_PulseCheckPatient",_patient];
+uiNamespace setVariable ["ACME_PulseCheckStartedAt",CBA_missionTime];
 private _epoch = [_medic,"pulse",-1] call ACME_fnc_treatmentPoseStart;
 uiNamespace setVariable ["ACME_PulsePoseEpoch",_epoch];
 // Consume Escape instead of letting the engine open the pause menu. The RscFeelPulse layer is a cutRsc, not a
@@ -57,13 +61,26 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
 [{
     params ["_args","_pfh"];
     _args params ["_medic","_patient","_bodyPart","_esc","_epoch","_mainDisplay","_escEH"];
-    private _quit = isNull _medic || {isNull _patient} || {!alive _medic} || {_medic getVariable ["ACE_isUnconscious",false]} || {uiNamespace getVariable ["ACME_PulseCheckEscape",false]} || {_medic distance2D _patient > 4.5};
+    private _uiGuardArmed = CBA_missionTime > ((uiNamespace getVariable ["ACME_PulseCheckStartedAt", CBA_missionTime]) + 0.20);
+    private _menuOpen = _uiGuardArmed && {!isNull (uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull])};
+    private _replacementDialog = _uiGuardArmed && {dialog};
+    private _quit = isNull _medic || {isNull _patient} || {!alive _medic}
+        || {_medic getVariable ["ACE_isUnconscious",false]}
+        || {!(uiNamespace getVariable ["ACME_PulseCheckActive", false])}
+        || {uiNamespace getVariable ["ACME_PulseCheckEscape",false]}
+        || {uiNamespace getVariable ["ACME_PulseCheckCancel",false]}
+        || {_menuOpen} || {_replacementDialog}
+        || {_medic distance2D _patient > 4.5};
     if (_quit) exitWith {
         [_pfh] call CBA_fnc_removePerFrameHandler;
         [_esc,"keydown"] call CBA_fnc_removeKeyHandler;
         if (!isNull _mainDisplay && {_escEH >= 0}) then {_mainDisplay displayRemoveEventHandler ["KeyDown", _escEH];};
         "ACM_FeelPulse" cutText ["","PLAIN",0,false];
         uiNamespace setVariable ["ACME_PulseCheckActive",false];
+        uiNamespace setVariable ["ACME_PulseCheckCancel",false];
+        uiNamespace setVariable ["ACME_PulseCheckMedic",objNull];
+        uiNamespace setVariable ["ACME_PulseCheckPatient",objNull];
+        uiNamespace setVariable ["ACME_PulseCheckStartedAt",-1];
         [_medic,"pulse",_epoch] call ACME_fnc_treatmentPoseStop;
         if (uiNamespace getVariable ["ACME_PulseCheckEscape",false]) then {[_patient,"examine"] call ACME_fnc_reopenMedicalMenu;};
     };

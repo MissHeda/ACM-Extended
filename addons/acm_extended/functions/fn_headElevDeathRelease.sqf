@@ -18,6 +18,8 @@ _patient setVariable ["ACME_headElev_ResumePending", false, true];
 _patient setVariable ["ACME_headElev_TransportPending", nil, true];
 _patient setVariable ["ACME_headElev_poseToken", "", true];
 _patient setVariable ["ACME_headElev_visualActive", false, true];
+_patient setVariable ["ACME_headElev_suspendVestLoadout", [], false];
+_patient setVariable ["ACME_headElev_suspendReadyAt", -1, false];
 
 private _pfh = _patient getVariable ["ACME_headElev_pfh", -1];
 if (_pfh >= 0) then {[_pfh] call CBA_fnc_removePerFrameHandler;};

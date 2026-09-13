@@ -5,9 +5,25 @@
     if (!isNull _patient && {local _patient}) then {[_patient] call ACME_fnc_syncPremixedBags;};
 }] call CBA_fnc_addEventHandler;
 
+// Any ACE interaction menu replaces pulse palpation as the active interaction surface. Retire the pulse layer
+// immediately so it can never remain underlaid behind another action/menu.
+["ace_interactMenuOpened", {
+    if (uiNamespace getVariable ["ACME_PulseCheckActive", false]) then {
+        uiNamespace setVariable ["ACME_PulseCheckCancel", true];
+        "ACM_FeelPulse" cutText ["","PLAIN",0,false];
+    };
+}] call CBA_fnc_addEventHandler;
+
 // the medical menu opened.
 ["ace_medicalMenuOpened", {
     params ["_medic", "_target", "_display"];
+
+    // Pulse palpation is a modal cutRsc. Opening the medical menu must retire it immediately; otherwise the pulse
+    // layer can survive underneath the menu and keep its input/pose handlers alive until the player finds Escape.
+    if (uiNamespace getVariable ["ACME_PulseCheckActive", false]) then {
+        uiNamespace setVariable ["ACME_PulseCheckCancel", true];
+        "ACM_FeelPulse" cutText ["","PLAIN",0,false];
+    };
 
     // Register a premixed bag at once when the patient menu opens. Pass the target explicitly. A bare call here
     // inherits this event's _this array and previously treated the medic as the optional patient argument.

@@ -7,7 +7,6 @@ if (_h >= 0) then {[_h] call CBA_fnc_removePerFrameHandler;};
 _patient setVariable ["ACME_AAJT_downedPFH", -1, false];
 _patient setVariable ["ACME_AAJT_downedActive", false, false];
 _patient setVariable ["ACME_AAJT_uprightSince", -1, false];
-_patient setVariable ["ACME_AAJT_wasUnconscious", false, false];
 _patient setVariable ["ACME_AAJT_treatmentGraceUntil", -1, false];
 private _locked = _patient getVariable ["ACME_AAJT_lockOn", false];
 _patient setVariable ["ACME_AAJT_lockOn", false, false];

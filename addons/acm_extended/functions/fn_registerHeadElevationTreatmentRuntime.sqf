@@ -1,11 +1,11 @@
-// B11: pair each provider's treatment events before routing to the patient owner.
+// Pair provider treatment events before routing to the patient owner. Elevated casualties are flattened through
+// the authored release path before torso/roll-to-back work. Stethoscope is a special launcher: ACE reports success
+// after the 0.001 s launch action, but the real continuous action stays open until its dialog closes. Keep the
+// elevation suspension lease alive for that full interval so the casualty does not repeatedly drop/raise under the
+// auscultation camera.
 ["ace_treatmentStarted", {
     params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
     if (isNull _patient || {!local _medic} || {!(_patient getVariable ["ACME_headElevated", false])}) exitWith {};
-    private _classLower = toLowerANSI _classname;
-    // Chest assessment is observational. It must not suspend/rebuild Semi-Fowler's, which caused the patient
-    // animation/camera to restart repeatedly while auscultating a ventilated casualty.
-    if (_classLower in ["usestethoscope", "acme_inspectchest"]) exitWith {};
     private _cfg = configFile >> "ace_medical_treatment_actions" >> _classname;
     private _roll = (getNumber (_cfg >> "ACM_rollToBack")) > 0;
     private _isBody = if (_bodyPart isEqualType "") then {toLower _bodyPart == "body"} else {_bodyPart == 1};
@@ -17,13 +17,33 @@
     _medic setVariable ["ACME_headElev_treatment", [_patient, _classname, _id, _token]];
     [_patient, _medic, _id, true, _token] call ACME_fnc_headElevTreatmentEvent;
 }] call CBA_fnc_addEventHandler;
-{
-    [_x, {
-        params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
-        if (!local _medic) exitWith {};
-        private _entry = _medic getVariable ["ACME_headElev_treatment", []];
-        if ((_entry param [0, objNull]) != _patient || {(_entry param [1, ""]) != _classname}) exitWith {};
-        _medic setVariable ["ACME_headElev_treatment", []];
-        [_patient, _medic, _entry select 2, false, _entry select 3] call ACME_fnc_headElevTreatmentEvent;
-    }] call CBA_fnc_addEventHandler;
-} forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];
+
+// Ordinary treatments release their elevation lease on native success. UseStethoscope does not: that success is
+// only the minigame launcher completing, not the end of auscultation.
+["ace_treatmentSucceded", {
+    params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
+    if (!local _medic) exitWith {};
+    private _entry = _medic getVariable ["ACME_headElev_treatment", []];
+    if ((_entry param [0, objNull]) != _patient) exitWith {};
+    private _storedClass = toLowerANSI (_entry param [1, ""]);
+    private _eventClass = toLowerANSI _classname;
+    if (_storedClass == "usestethoscope" && {_eventClass == "usestethoscope"}) exitWith {};
+    if (_storedClass != _eventClass) exitWith {};
+    _medic setVariable ["ACME_headElev_treatment", []];
+    [_patient, _medic, _entry select 2, false, _entry select 3] call ACME_fnc_headElevTreatmentEvent;
+}] call CBA_fnc_addEventHandler;
+
+// A normal failure closes an exact-class lease. The stethoscope controller intentionally emits
+// ACM_ContinuousAction when its dialog actually closes, so accept that event as the real end of UseStethoscope.
+["ace_treatmentFailed", {
+    params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
+    if (!local _medic) exitWith {};
+    private _entry = _medic getVariable ["ACME_headElev_treatment", []];
+    if ((_entry param [0, objNull]) != _patient) exitWith {};
+    private _storedClass = toLowerANSI (_entry param [1, ""]);
+    private _eventClass = toLowerANSI _classname;
+    private _scopeEnd = _storedClass == "usestethoscope" && {_eventClass in ["usestethoscope", "acm_continuousaction"]};
+    if (!_scopeEnd && {_storedClass != _eventClass}) exitWith {};
+    _medic setVariable ["ACME_headElev_treatment", []];
+    [_patient, _medic, _entry select 2, false, _entry select 3] call ACME_fnc_headElevTreatmentEvent;
+}] call CBA_fnc_addEventHandler;

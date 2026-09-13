@@ -6,7 +6,6 @@ if (!(_patient getVariable ["ACME_AAJT_zone3", false])) exitWith {};
 if ((_patient getVariable ["ACME_AAJT_downedPFH", -1]) >= 0) exitWith {};
 _patient setVariable ["ACME_AAJT_downedActive", true, false];
 _patient setVariable ["ACME_AAJT_uprightSince", -1, false];
-_patient setVariable ["ACME_AAJT_wasUnconscious", (_patient getVariable ["ACE_isUnconscious", false]), false];
 private _handle = [{
     params ["_args", "_h"];
     _args params ["_patient", "_owner", "_epoch"];
@@ -17,24 +16,14 @@ private _handle = [{
         if (_same) then {[_patient] call ACME_fnc_aajtDownedStop;} else {[_h] call CBA_fnc_removePerFrameHandler;};
     };
 
+    // AAJT-S never authors ACM's wake/lying state. If ACM has put a previously unconscious casualty into its
+    // native lying state, leave that state completely alone until the casualty (or another provider) actually uses
+    // ACM's Get Up path. Only then can a genuine STAND/CROUCH attempt start the delayed Zone 3 collapse timer.
+    private _nativeLying = _patient getVariable ["ACM_core_Lying_State", false];
     private _uncon = (_patient getVariable ["ACE_isUnconscious", false]) || {_patient getVariable ["ace_medical_unconscious", false]};
-    if (_uncon) exitWith {
-        _patient setVariable ["ACME_AAJT_wasUnconscious", true, false];
+    if (_uncon || {_nativeLying} || {_patient getVariable ["ACME_obtunded", false]}
+        || {!isNull objectParent _patient} || {!isNull attachedTo _patient}) exitWith {
         _patient setVariable ["ACME_AAJT_uprightSince", -1, false];
-    };
-    if (_patient getVariable ["ACME_obtunded", false] || {!isNull objectParent _patient} || {!isNull attachedTo _patient}) exitWith {
-        _patient setVariable ["ACME_AAJT_uprightSince", -1, false];
-    };
-
-    // On wake, settle into ACM's lying state instead of allowing ACE's wake animation to snap to prone. This also
-    // guarantees the conscious casualty receives the Get Up path required to attempt to rise again.
-    if (_patient getVariable ["ACME_AAJT_wasUnconscious", false]) exitWith {
-        _patient setVariable ["ACME_AAJT_wasUnconscious", false, false];
-        _patient setVariable ["ACME_AAJT_uprightSince", -1, false];
-        [_patient, true, true] call ACM_core_fnc_setLyingState;
-        _patient setUnitPos "DOWN";
-        [_patient, "ACM_LyingState", 2] call ACME_fnc_doAnim;
-        ["ACM_core_getUpPrompt", [_patient], _patient] call CBA_fnc_targetEvent;
     };
 
     // Do not interpret a treatment animation or an open self medical menu as an attempt to weight-bear. Treatment

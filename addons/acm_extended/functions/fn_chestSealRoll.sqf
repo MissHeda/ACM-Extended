@@ -20,10 +20,6 @@ private _isUncon = (_patient getVariable ["ACE_isUnconscious", false]) || {_pati
 private _isObtunded = _patient getVariable ["ACME_obtunded", false];
 private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"} || {_patient getVariable ["ACM_core_Lying_State", false]};
 if (!_isGrounded) exitWith {};
-if (!_isUncon && {!(_patient getVariable ["ACM_core_Lying_State", false])}) then {
-    [_patient, true, true] call ACM_core_fnc_setLyingState;
-    ["ACM_core_getUpPrompt", [_patient], _patient] call CBA_fnc_targetEvent;
-};
 
 private _trans = if (_target isEqualTo "back") then {
     // posterior up -> patient rolls onto the front
