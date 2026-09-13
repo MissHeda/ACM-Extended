@@ -331,9 +331,17 @@ _linesL pushBack ([
 // Show each admitted drug effect separately from the shared hypnotic/adjunct result.
 ([_patient] call ACME_fnc_sedationComponents) params ["_ketLoad", "_propLoad", "_midLoad", "_fentLoad", "_adjunct", "_sedLoad"];
 private _rocLoad = [_patient] call ACME_fnc_rocuroniumOnBoard;
+// Raw medication counts make a newly accepted RSI push visible immediately, before the normal onset envelope has
+// risen far enough to affect physiology. This is diagnostic only; treatment logic continues to use effective load.
+private _ketRaw = 0;
+private _rocRaw = 0;
+if (!isNil "ace_medical_status_fnc_getMedicationCount") then {
+    { _ketRaw = _ketRaw + ([_patient, _x, true] call ace_medical_status_fnc_getMedicationCount); } forEach ["Ketamine", "Ketamine_IV"];
+    { _rocRaw = _rocRaw + ([_patient, _x, true] call ace_medical_status_fnc_getMedicationCount); } forEach ["Rocuronium", "Rocuronium_IV"];
+};
 private _paralyzed = _patient getVariable ["ACME_roc_paralyzed", false];
 private _ettIn = _patient getVariable ["ACME_ETT_Inserted", false];
-if (_sedLoad > 0.001 || {_fentLoad > 0.001} || {_rocLoad > 0.05} || {_paralyzed} || {_ettIn}) then {
+if (_sedLoad > 0.001 || {_fentLoad > 0.001} || {_rocLoad > 0.05} || {_ketRaw > 0.001} || {_rocRaw > 0.001} || {_paralyzed} || {_ettIn}) then {
     _linesL pushBack format ["<t color='%1'>RSI / AIRWAY</t>", _cSect];
     // sedationComponents already returns induction-normalized hypnotic loads: 1.0 is the
     // configured induction threshold after hypnotic synergy/opioid adjuncts. Do not compare
@@ -343,7 +351,8 @@ if (_sedLoad > 0.001 || {_fentLoad > 0.001} || {_rocLoad > 0.05} || {_paralyzed}
     private _sedTxt = if (_sedated) then {"YES"} else {if (_induction) then {"induction threshold"} else {"below induction"}};
     private _cSed = if (_sedated || {_induction}) then {_cGood} else {_cMute};
     _linesL pushBack (["SEDATED", _sedTxt, _cSed, 8, 20] call _fnKV);
-    _linesL pushBack (["Ketamine", format ["x%1 induction", _ketLoad toFixed 2], _cMute, 10, 16] call _fnKV);
+    private _ketTxt = if (_ketLoad <= 0.001 && {_ketRaw > 0.001}) then {"accepted, onset pending"} else {format ["x%1 induction", _ketLoad toFixed 2]};
+    _linesL pushBack (["Ketamine", _ketTxt, _cMute, 10, 22] call _fnKV);
     _linesL pushBack (["Propofol", _propLoad toFixed 2, _cMute, 10, 7] call _fnKV);
     _linesL pushBack (["Sed total", _sedLoad toFixed 2, _cMute, 10, 7] call _fnKV);
     _linesL pushBack (["Fentanyl", format ["%1%2 attenuation / x%3 adjunct", round (_fentLoad*100), "%", _adjunct toFixed 2], _cMute, 10, 28] call _fnKV);
@@ -377,7 +386,7 @@ if (_sedLoad > 0.001 || {_fentLoad > 0.001} || {_rocLoad > 0.05} || {_paralyzed}
     private _parTxt = if (_paralyzed) then {
         if (_awake) then {"YES - AWAKE (danger!)"} else {"YES (apnea, ventilate)"}
     } else {
-        if (_rocLoad >= _blockThr) then {"onset..."} else {if (_rocLoad > 0.05) then {"sub-dose"} else {"no"}}
+        if (_rocLoad >= _blockThr) then {"onset..."} else {if (_rocLoad > 0.05) then {"sub-dose"} else {if (_rocRaw > 0.001) then {"accepted, onset pending"} else {"no"}}}
     };
     private _cPar = if (_awake) then {_cBad} else {if (_paralyzed) then {_cWarn} else {_cMute}};
     _linesL pushBack ([

@@ -28,11 +28,18 @@
 params ["_patient", "_bodyPart", "_classname", ["_dose", 1], ["_iv", false], ["_alreadyAdmitted", false], ["_delivery", []]];
 TRACE_3("medicationLocal",_patient,_bodyPart,_classname);
 private _preparedMixture = (_delivery param [4, false]) isEqualTo true;
+// Critical RSI medications are ACM Extended gameplay systems, not disposable UI-only items. In ACE basic-medication
+// mode the stock callback exits after handling only Morphine/Epinephrine/Painkillers; Ketamine and Rocuronium were
+// therefore consumed successfully but never entered ace_medical_medications, which made both the physiology and
+// ACME debug readers see exactly zero. Keep the server's global basic-mode behavior for ordinary ACE medication,
+// but always run the complete ACM medication record path for the RSI/reversal family.
+private _forceAdvanced = _classname in ["Ketamine", "Ketamine_IV", "Rocuronium", "Rocuronium_IV", "Sugammadex_IV"];
+private _useAdvanced = ACEGVAR(medical_treatment,advancedMedication) || {_forceAdvanced};
 
 // Medication has no effects on dead units
 if (!local _patient) exitWith {["ace_medical_treatment_medicationLocal", _this, _patient] call CBA_fnc_targetEvent;};
 if (isNull _patient || {!alive _patient} || {!(_dose isEqualType 0)} || {_dose <= 0} || {!finite _dose}) exitWith {};
-if (ACEGVAR(medical_treatment,advancedMedication) && {!([_classname, _iv, false, _preparedMixture] call ACME_fnc_medicationRouteAllowed)}) exitWith {};
+if (_useAdvanced && {!([_classname, _iv, false, _preparedMixture] call ACME_fnc_medicationRouteAllowed)}) exitWith {};
 if ((toLowerANSI _bodyPart) == "ej") then {_bodyPart = "Head";};
 if !((toLowerANSI _bodyPart) in ["head","body","leftarm","rightarm","leftleg","rightleg"]) exitWith {};
 // These are local infiltration agents, not systemic medication adjustments. Dose is mg or U.
@@ -43,7 +50,7 @@ if (_classname in ["EpinephrineCardiac", "EpinephrineCardiac_IV"] && {!_iv} && {
 if (_classname in ["EpinephrineCardiac", "EpinephrineCardiac_IV"]) then {_classname = "Epinephrine_IV";};
 
 // Exit with basic medication handling if advanced medication not enabled
-if (!ACEGVAR(medical_treatment,advancedMedication)) exitWith {
+if (!_useAdvanced) exitWith {
     switch (_classname) do {
         case "Morphine": {
             private _painSuppress = GET_PAIN_SUPPRESS(_patient);

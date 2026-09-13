@@ -62,7 +62,7 @@ if (_itemIndex < 0) then {
     GVAR(MedicHasBVMType) = "ACM_BVM";
 };
 
-GVAR(MedicHasBVM) = _itemIndex > 0;
+GVAR(MedicHasBVM) = _itemIndex >= 0;
 
 if !(GVAR(MedicHasBVM)) then {
     GVAR(MedicHasBVMType) = "";
@@ -79,14 +79,10 @@ GVAR(CPRCancel_MouseID) = [0xF0, [false, false, false], {
 }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
 
 GVAR(CPRToggle_MouseID) = [0xF1, [false, false, false], {
+    // CPR ownership is independent of the ventilation provider. This intentionally allows one compressor plus one
+    // BVM/ventilator provider, matching the previously shipped B27 behavior.
     if (GVAR(CPRTarget) getVariable [QACEGVAR(medical,CPR_provider), objNull] isEqualTo objNull) then {
-        if ((GVAR(CPRTarget) getVariable [QEGVAR(airway,AirwayItem_Oral), ""]) == "SGA") then {
-            GVAR(CPRTarget) setVariable [QACEGVAR(medical,CPR_provider), ACE_player, true];
-        } else {
-            if !([GVAR(CPRTarget)] call EFUNC(core,bvmActive)) then {
-                GVAR(CPRTarget) setVariable [QACEGVAR(medical,CPR_provider), ACE_player, true];
-            };
-        };
+        GVAR(CPRTarget) setVariable [QACEGVAR(medical,CPR_provider), ACE_player, true];
     } else {
         GVAR(CPRTarget) setVariable [QACEGVAR(medical,CPR_provider), objNull, true];
     };
@@ -208,7 +204,7 @@ private _CPRStartTime = CBA_missionTime + _startDelay + 0.2;
                 GVAR(MedicHasBVMType) = "ACM_BVM";
             };
 
-            GVAR(MedicHasBVM) = _itemIndex > 0;
+            GVAR(MedicHasBVM) = _itemIndex >= 0;
 
             if !(GVAR(MedicHasBVM)) then {
                 GVAR(MedicHasBVMType) = "";

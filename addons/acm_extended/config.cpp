@@ -230,15 +230,16 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             canPullTrigger = 0;
             enableOptics = 0;
             enableBinocular = 0;
-            // hold the pose as a self-contained loop instead of auto-advancing out of it.
-            // the stock crew-aid "_loop" state inherits transitions, interpolateto and connectto, that fire at loop-end
-            // and hand off to an _out or idle state. that exit is what made the hang bag watchdog see animationstate
-            // against the pose every cycle and re-issue doanimation, which snapped the body back to the entry frame and
-            // looked like an animation repeating over and over. a loop in place with the exits cleared keeps
-            // animationstate pinned to this class name, so the watchdog never re-fires during a normal hold.
+            // The stock cinematic loop carries RTM movement. Running it at its authored speed is what makes a player
+            // drift across the terrain while simply holding the bag. Keep the first raised-bag frame effectively
+            // stationary on every client, while still leaving an explicit interrupt path into the authored lower-bag
+            // animation. The Hang Bag input lock owns movement; this state must never move the provider itself.
+            speed = -1000000;
             looped = 1;
-            interpolateTo[] = {};
+            connectFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "ACM_GenericContinuous", 0.15, "ACME_Acts_JetsCrewaidFCrouchThumbup_in", 0.05};
+            interpolateFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "ACM_GenericContinuous", 0.15, "ACME_Acts_JetsCrewaidFCrouchThumbup_in", 0.05};
             connectTo[] = {};
+            interpolateTo[] = {"ACME_Acts_JetsCrewaidFCrouchThumbup_out", 0.05, "AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
         };
         // exit. this is the lower-the-bag motion, played once when the medic cancels with RMB or esc. it must not
         // freeze the player, because static and enableDirectControl=0 are what got the medic stuck. it plays briefly,
@@ -259,8 +260,12 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             enableOptics = 0;
             enableBinocular = 0;
             looped = 0;
-            connectTo[] = {};
-            interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 1};
+            // A non-looping exit with no ConnectTo can be skipped by the move graph. Give the hold a real route into
+            // this state and let this state finish naturally into the normal empty-handed crouch.
+            connectFrom[] = {"ACME_Acts_JetsCrewaidFCrouchThumbup_loop", 0.05};
+            interpolateFrom[] = {"ACME_Acts_JetsCrewaidFCrouchThumbup_loop", 0.05};
+            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.12};
+            interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.12, "Unconscious", 0.02};
         };
     };
 };
@@ -9345,13 +9350,41 @@ class ACM_Medication {
             maxEffectTime = 900;
         };
         // B14: ketamine's shared dose-dependent cardiovascular helper owns chronotropy.
-        // Native analgesia/anesthetic visuals and all route clocks remain inherited.
+        // Re-declaring the class against ACM_IM/IV_Medication replaces the upstream Ketamine class at config merge,
+        // so every Ketamine-specific value must be retained explicitly here. Otherwise it silently falls back to the
+        // generic 1 mg/default clocks and ceases to behave like ACM Ketamine even when the medication record exists.
         class Adenosine_IV: ACM_IV_Medication {
             timeTillMaxEffect = 1; maxEffectTime = 1; timeInSystem = 15;
             hrIncrease[] = {0,0}; // short AV-nodal helper owns this effect; no long native brady tail.
         };
-        class Ketamine: ACM_IM_Medication { hrIncrease[] = {0,0}; };
-        class Ketamine_IV: ACM_IV_Medication { hrIncrease[] = {0,0}; };
+        class Ketamine: ACM_IM_Medication {
+            medicationType = "Ketamine";
+            minPainReduce = 0.4;
+            painReduce = 0.95;
+            maxPainReduce = 1;
+            hrIncrease[] = {0,0};
+            timeInSystem = 900;
+            timeTillMaxEffect = 20;
+            maxEffectTime = 600;
+            maxDose = 500;
+            maxDoseDeviation = 100;
+            minEffectDose = 41.5;
+            maxEffectDose = 62.25;
+        };
+        class Ketamine_IV: ACM_IV_Medication {
+            medicationType = "Ketamine";
+            minPainReduce = 0.5;
+            painReduce = 0.85;
+            maxPainReduce = 1;
+            hrIncrease[] = {0,0};
+            timeInSystem = 660;
+            timeTillMaxEffect = 5;
+            maxEffectTime = 540;
+            maxDose = 250;
+            maxDoseDeviation = 50;
+            minEffectDose = 8.3;
+            maxEffectDose = 16.6;
+        };
 
         // Local infiltration classes. These exit medicationLocal before systemic deposition.
         class Phentolamine: ACM_IM_Medication {

@@ -175,7 +175,7 @@ _patient setVariable ["ACME_vent_pipState", nil, true];
     } forEach ["incision", "incisionScore", "prep", "infection", "open", "ribTarget", "site", "tube", "sealed"];
 } forEach ["left", "right"];
 _patient setVariable ["ACME_thora_ver", 0, true];
-[_patient, nil] call ACME_fnc_surgicalCasualtyCommit;
+[_patient, false] call ACME_fnc_surgicalCasualtyCommit;
 [_patient, false, true, false, true] call ACME_fnc_evacuationRequirementCommit;
 
 // cheyne-stokes respiration cycling.

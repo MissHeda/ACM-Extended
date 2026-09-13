@@ -49,10 +49,12 @@ ACME_hang_lineSagSegs   = 24;  // back-compat only; the engine rope picks its ow
 ACME_hang_ropeClass = "ACME_IVLine_Rope";
 ACME_hang_anchorClass = "ace_fastroping_helper";  // PhysX rope endpoint, used at both the patient anchor and the bag outlet. ropecreate needs rope-capable physics objects, and a plain ThingX or soldier returns objnull.
 ACME_hang_autoTuner = true;  // auto-open the placement tuner on raise. f2 also opens it.
-ACME_hang_inAnim  = "ACME_Acts_JetsCrewaidFCrouchThumbup_in";  // entry: raise-the-bag motion, chains into the hold loop
-ACME_hang_outAnim = "ACME_Acts_JetsCrewaidFCrouchThumbup_out";  // exit: lower-the-bag motion on cancel
-ACME_hang_inTime  = 1.10;  // seconds to let the entry play before forcing the hold loop
-ACME_hang_outTime = 1.00;  // seconds to let the exit play before we tear the bag and rope down.
+// The old cinematic _in state is retained as a compatibility/tuning name but is intentionally not used by
+// fn_hangBagStart: its RTM translates the provider root. Entry now blends directly into the stationary hold.
+ACME_hang_inAnim  = "ACME_Acts_JetsCrewaidFCrouchThumbup_in";
+ACME_hang_outAnim = "ACME_Acts_JetsCrewaidFCrouchThumbup_out";  // authored lower-the-bag motion on cancel
+ACME_hang_inTime  = 1.10;  // legacy compatibility knob; Hang Bag entry no longer waits on the cinematic _in RTM
+ACME_hang_outTime = 1.00;  // legacy compatibility knob; stop now waits for the actual out state to finish
 ACME_hang_handSel = "RightHand";
 ACME_hang_handOffset = [-0.186979, -0.0842273, -0.0190512];  // legacy single offset (= 500 ml)
 // per-volume right-hand placement, taken from the live tuner. the hung bag picks by the real volume of the

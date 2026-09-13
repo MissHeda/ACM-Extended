@@ -77,19 +77,17 @@ _medic setVariable ["ACME_hang_Bag", _bag, true];
 
 // the weapon was already stowed by fn_hangbagprep. do not issue another asynchronous SwitchWeapon here, because
 // that second command was completing after the pose started and knocking the raised arm animation back out.
-private _pose   = missionNamespace getVariable ["ACME_hang_poseAnim", "ACME_Acts_JetsCrewaidFCrouchThumbup_loop"];
-private _inAnim = missionNamespace getVariable ["ACME_hang_inAnim", "ACME_Acts_JetsCrewaidFCrouchThumbup_in"];
-private _inTime = missionNamespace getVariable ["ACME_hang_inTime", 1.10];
+private _pose = missionNamespace getVariable ["ACME_hang_poseAnim", "ACME_Acts_JetsCrewaidFCrouchThumbup_loop"];
+// The stock Acts_* _in RTM contains cinematic root translation. That movement was being applied to the live
+// provider and is the source of the ground slide. The progress-bar/prep sequence already supplies the visible
+// crouch entry, so blend directly from that in-place crouch into the stationary raised-bag hold. Keep the local
+// variable name for the existing animation contract test: the Hang Bag "in" request is now deliberately the hold.
+private _inAnim = _pose;
+private _inTime = 0.45;
 _medic setVariable ["ACME_hang_Pose", _pose];
-// hold the watchdog off until the entry has had time to play and settle into the loop.
 _medic setVariable ["ACME_hang_PoseRetryAt", CBA_missionTime + _inTime + 0.5];
-// Entry is a normal graph transition, not a hard pose assertion. B40 connects the custom entry state to both
-// the normal crouch and ACM_GenericContinuous, so ACE priority 1/playMoveNow can blend into the raise motion
-// instead of using the priority-2 switchMove fallback. Its interpolateTo then chains into the held loop.
 [_medic, _inAnim, 1.4, 1] call ACME_fnc_doAnimHeld;
-// after the entry, guarantee we are in the looped hold, only as a failsafe, meaning if the entry never landed us in
-// any crew-aid state at all. we match the shared token rather than the exact loop class, so this never fires
-// mid-entry and cuts the raise motion short, and the interpolateto of the entry handles the in into loop.
+// One failsafe only. There is no position correction, setPos/setDir loop, or repeated pose wrestling.
 [{
     params ["_medic", "_pose"];
     if (!isNull _medic && {_medic getVariable ["ACME_hang_Active", false]} && {(toLower animationState _medic) find "jetscrewaidfcrouchthumbup" < 0}) then {

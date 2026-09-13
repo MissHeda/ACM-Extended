@@ -32,14 +32,10 @@ GVAR(BVMCancel_MouseID) = [0xF0, [false, false, false], {
 }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
 
 GVAR(BVMToggle_MouseID) = [0xF1, [false, false, false], {
+    // BVM ventilation does not consume the CPR provider slot. Keep the two roles independent so one provider can
+    // ventilate while another compresses, regardless of airway adjunct type.
     if (GVAR(BVMTarget) getVariable [QGVAR(BVM_provider), objNull] isEqualTo objNull) then {
-        if ((GVAR(BVMTarget) getVariable [QEGVAR(airway,AirwayItem_Oral), ""]) == "SGA") then {
-            GVAR(BVMTarget) setVariable [QGVAR(BVM_provider), ACE_player, true];
-        } else {
-            if !([GVAR(BVMTarget)] call EFUNC(core,cprActive)) then {
-                GVAR(BVMTarget) setVariable [QGVAR(BVM_provider), ACE_player, true];
-            };
-        };
+        GVAR(BVMTarget) setVariable [QGVAR(BVM_provider), ACE_player, true];
     } else {
         GVAR(BVMTarget) setVariable [QGVAR(BVM_provider), objNull, true];
     };
@@ -79,26 +75,14 @@ GVAR(BVMSwap_MouseID) = [0xF2, [false, false, false], {
     private _ctrlTopText = _display displayCtrl IDC_USEBVM_TOPTEXT; 
     private _ctrlText = _display displayCtrl IDC_USEBVM_TEXT;
 
-    private _assisting = false;
-
-    if !(GVAR(BVMTarget_Intubated)) then {
-        if ([_patient] call EFUNC(core,cprActive)) then {
-            [LLSTRING(BVM_Stop), "", ""] call ACEFUNC(interaction,showMouseHint);
-            GVAR(CPRActive) = true;
-            _assisting = true;
-        } else {
-            [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
-            _patient setVariable [QGVAR(BVM_provider), _medic, true];
-            GVAR(BVMActive) = true;
-        };
-    } else {
-        [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
-        _patient setVariable [QGVAR(BVM_provider), _medic, true];
-        GVAR(BVMActive) = true;
-        if ([_patient] call EFUNC(core,cprActive)) then {
-            _assisting = true;
-        };
-    };
+    // A BVM session remains an active ventilation session during CPR. The old non-SGA branch deliberately did
+    // not register BVM_provider when CPR was running, creating a visual "assist" state that delivered no breaths.
+    // Keep compressor and ventilator ownership independent instead.
+    private _assisting = [_patient] call EFUNC(core,cprActive);
+    GVAR(CPRActive) = _assisting;
+    _patient setVariable [QGVAR(BVM_provider), _medic, true];
+    GVAR(BVMActive) = true;
+    [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
 
     if (_assisting) then {
         if !(GVAR(BVM_OxygenActive)) then {
@@ -189,35 +173,17 @@ GVAR(BVMSwap_MouseID) = [0xF2, [false, false, false], {
     };
 
     if (_updateMouseHint) then {
-        if (GVAR(BVMTarget_Intubated)) then { // Intubated
-            GVAR(CPRActive) = [_patient] call EFUNC(core,cprActive);
-
-            if ([_patient] call EFUNC(core,bvmActive)) then { // Active BVM
-                [LLSTRING(BVM_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
-                GVAR(BVMActive) = true;
-            } else { // Paused BVM
-                [LLSTRING(BVM_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                [LLSTRING(BVM_Stop), LLSTRING(BVM_Continue), (["", LLSTRING(BVM_SwapToCPR)] select (isNull (_patient getVariable [QGVAR(CPR_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
-                GVAR(BVMActive) = false;
-            };
-        } else {
-            if ([_patient] call EFUNC(core,cprActive)) then {
-                [LLSTRING(BVM_Stop), "", ""] call ACEFUNC(interaction,showMouseHint);
-                GVAR(CPRActive) = true;
-                GVAR(BVMActive) = [_patient] call EFUNC(core,bvmActive);
-            } else {
-                GVAR(CPRActive) = false;
-                if ([_patient] call EFUNC(core,bvmActive)) then { // Active BVM
-                    [LLSTRING(BVM_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                    [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
-                    GVAR(BVMActive) = true;
-                } else { // Paused BVM
-                    [LLSTRING(BVM_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                    [LLSTRING(BVM_Stop), LLSTRING(BVM_Continue), (["", LLSTRING(BVM_SwapToCPR)] select (isNull (_patient getVariable [QGVAR(CPR_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
-                    GVAR(BVMActive) = false;
-                };
-            };
+        // Re-evaluate the two independent roles. CPR never suppresses a valid BVM provider and BVM never suppresses
+        // a valid compressor; the hint only controls this provider's BVM pause/resume state.
+        GVAR(CPRActive) = [_patient] call EFUNC(core,cprActive);
+        if ([_patient] call EFUNC(core,bvmActive)) then { // Active BVM
+            [LLSTRING(BVM_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+            [LLSTRING(BVM_Stop), LLSTRING(BVM_Pause), ""] call ACEFUNC(interaction,showMouseHint);
+            GVAR(BVMActive) = true;
+        } else { // Paused BVM
+            [LLSTRING(BVM_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+            [LLSTRING(BVM_Stop), LLSTRING(BVM_Continue), (["", LLSTRING(BVM_SwapToCPR)] select (isNull (_patient getVariable [QGVAR(CPR_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
+            GVAR(BVMActive) = false;
         };
         _medic setVariable [QGVAR(isUsingBVM), ([_patient] call EFUNC(core,bvmActive)), true];
     };

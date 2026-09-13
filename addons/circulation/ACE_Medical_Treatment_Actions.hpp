@@ -180,7 +180,9 @@ class ACEGVAR(medical_treatment,actions) {
         callbackProgress = "";
         callbackFailure = "";
         callbackSuccess = QUOTE([ARR_2(_medic,_patient)] call FUNC(beginCPR));
-        condition = QUOTE([ARR_2(_medic,_patient)] call ACEFUNC(medical_treatment,canCPR) && ((_patient getVariable [ARR_2(QQEGVAR(airway,AirwayItem_Oral),'')] == 'SGA') || !([_patient] call EFUNC(core,bvmActive))));
+        // Ventilation and compressions are independent provider roles. A manual BVM or an ACME ventilator may own
+        // the ventilation provider while another medic performs CPR; canCPR remains the authoritative CPR gate.
+        condition = QUOTE([ARR_2(_medic,_patient)] call ACEFUNC(medical_treatment,canCPR));
         ACM_rollToBack = 1;
         ACM_cancelRecovery = 1;
         ACM_menuIcon = "CPR";
