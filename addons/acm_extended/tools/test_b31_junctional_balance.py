@@ -65,31 +65,32 @@ class JunctionalB31(unittest.TestCase):
         self.assertGreater(hardcore, old * 2)
 
     def test_death_and_respawn_choose_the_correct_reset_mode(self):
-        post = source('postInit')
-        self.assertRegex(post, r'EntityKilled[\s\S]*?\[_unit, true\] call ACME_fnc_clearAllAilments')
-        self.assertIn('[_x, (_x isEqualTo _oldUnit && {!alive _x})] call ACME_fnc_clearAllAilments', post)
-        self.assertIn('["ace_medical_FullHeal", {_this call ACME_fnc_clearAllAilments}]', post)
-        clear = source('clearAllAilments')
-        self.assertIn('(_this param [1, false]) isEqualTo true} && {!alive _patient}', clear)
-        self.assertIn('if (!_preserveJunctional && {!isNil "ACME_fnc_junctionalFullHeal"})', clear)
-        self.assertIn('[_patient, "finish", _preserveJunctional] call ACME_fnc_clinicalReset', clear)
+        life = source('registerClinicalLifecycleRuntime')
+        resp = source('registerRhythmLifecycleRuntime')
+        death = source('deathFreeze')
+        self.assertRegex(life, r'EntityKilled[\s\S]*?ACME_fnc_deathFreeze')
+        self.assertIn('["ace_medical_FullHeal", {_this call ACME_fnc_clearAllAilments}]', life)
+        self.assertNotRegex(life, r'EntityKilled[\s\S]{0,220}?ACME_fnc_clearAllAilments')
+        self.assertIn('[_oldUnit] call ACME_fnc_deathFreeze', resp)
+        self.assertIn('[_newUnit] call ACME_fnc_clearAllAilments', resp)
+        self.assertNotIn('forEach [_oldUnit, _newUnit]', resp)
+        self.assertIn('[_patient, "begin", true] call ACME_fnc_clinicalReset', death)
+        self.assertNotIn('ACME_fnc_clearAllAilments', death)
 
     def test_corpse_keeps_wounds_devices_but_not_in_progress_treatment(self):
-        keep = retained_evidence()
-        self.assertTrue(all(f'ACME_Junc_{part}' in keep for part in PARTS))
-        self.assertTrue(all(f'ACME_Junc_XStatAt_{part}' in keep for part in PARTS))
-        fixture = {'ACME_Junc_leftarm': 'open', 'ACME_Junc_rightarm': 'packed',
-                   'ACME_Junc_leftleg': 'wrapped', 'ACME_Junc_rightleg': 'xstat',
-                   'ACME_AAJT_inguinal': True, 'ACME_Junc_XStatAt_rightleg': 12,
-                   'ACME_Junc_Packing_leftarm': True, 'ACME_Junc_PackStamp_leftarm': 30,
-                   'ACME_Junc_AAJTApplying': 25, 'ACME_AAJT_downedActive': True}
-        corpse = {k: v for k, v in fixture.items() if k in keep}
-        self.assertEqual(len(corpse), 6)
-        self.assertEqual(corpse['ACME_Junc_rightleg'], 'xstat')
-        # The ordinary heal/new-body mode has an empty keep list, so no evidence survives.
-        self.assertEqual({k: v for k, v in fixture.items() if k in set()}, {})
-        self.assertIn('if (_preserveJunctional && {!alive _patient})', source('clinicalReset'))
-        self.assertIn('!(_name in _junctionalEvidence)', source('clinicalReset'))
+        death = source('deathFreeze')
+        reset = source('clinicalReset')
+        # Death runs only the worker-invalidating begin half. Durable injury/intervention fields are therefore
+        # never iterated through the reset table, while PFHs and active scheduler membership are stopped.
+        self.assertIn('[_patient, "begin", true] call ACME_fnc_clinicalReset', death)
+        self.assertNotIn('"finish"', death)
+        self.assertNotIn('ACME_fnc_clearAllAilments', death)
+        begin = reset[:reset.index('// Physical equipment is detached')]
+        self.assertIn('if (_phase == "begin") exitWith', begin)
+        self.assertIn('ACME_fnc_aajtDownedStop', begin)
+        self.assertIn('ACME_AAJT_painPFH', begin)
+        self.assertNotIn('forEach (call ACME_fnc_clinicalFields)', begin)
+        self.assertNotIn('ACME_Junc_leftarm', death)
 
     def test_death_invalidates_workers_and_silences_leak(self):
         reset = source('clinicalReset')

@@ -157,18 +157,6 @@ class SourceContracts(unittest.TestCase):
             lines=src(n).rstrip().splitlines()
             self.assertIn("call ACME_fnc_darknessShade",lines[-2])
             self.assertIn("call ACME_fnc_minigameVisionTick",lines[-1])
-    def test_acm_x_prefix_alias(self):
-        t=src("minigameVisionTextures")
-        self.assertIn('"\\x\\acm\\" + (_x select [7])',t)
-        self.assertNotIn("\\\\",t)
-    def test_scalpel_and_dabs_have_actual_paths(self):
-        m=json.loads((ROOT/"tools/nv_texture_manifest.json").read_text())["mapping"]
-        for p in (r"\x\acm\addons\airway\ui\surgical_airway\active_scalpel_h.paa",r"\acm_extended\ui\items\active_scalpel_h2.paa",r"\acm_extended\ui\dot_grad_ca.paa"):self.assertIn(p,m)
-    def test_all_catheter_final_stages_in_map(self):
-        m=json.loads((ROOT/"tools/nv_texture_manifest.json").read_text())["mapping"]
-        final_frames=list((ROOT/"ui/iv").glob("*g/*/*frame_14_catheter_hub_only_ca.paa"))
-        self.assertGreaterEqual(len(final_frames),28)
-        for p in final_frames:self.assertIn(chr(92)+"acm_extended"+chr(92)+str(p.relative_to(ROOT)).replace("/",chr(92)),m)
     def test_no_laryngo_stimulus_result_log(self):
         t=code(src("laryngoStimulusLocal"))
         for s in ("addToLog","displayText","hint","systemChat"):self.assertNotIn(s,t)

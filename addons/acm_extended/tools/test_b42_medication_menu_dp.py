@@ -71,10 +71,11 @@ def test_audit_removed_stale_lidocaine_latch_read_and_preserved_live_effect_look
     assert 'ACME_fnc_lidoEffectiveness' in s
 
 
-def test_nv_texture_map_uses_exact_local_asset_case_for_known_case_sensitive_entries():
-    s = text('functions/fn_minigameVisionTextures.sqf')
-    for p in ('HPMK_ca.paa', 'HPMK_unwrapped.paa', 'HPMK_unwrapped_ca.paa', 'salineFlush_ca.paa'):
-        assert '\\acm_extended\\ui\\items\\' + p in s
+
+def test_generated_nv_texture_map_is_purged():
+    assert not (ROOT / 'functions/fn_minigameVisionTextures.sqf').exists()
+    assert not (ROOT / 'tools/nv_texture_manifest.json').exists()
+    assert not (ROOT / 'ui/nv_close').exists()
 
 
 def test_extended_fentanyl_source_capacity_matches_500mcg_10ml_inventory_item():

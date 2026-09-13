@@ -1459,7 +1459,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         author = "mavis";
         model = "\z\ace\addons\medical_treatment\data\bandage.p3d";
         displayName = "NAR AAJT-S";
-        descriptionShort = "Abdominal Aortic & Junctional Tourniquet (Stabilized). Inguinal placement clamps the aorta to control bilateral groin junctional hemorrhage and tourniquets the wounded leg(s); axilla placement controls one armpit junctional wound. Bulky (~7.5 x 6.5 x 2 in, ~17 oz).";
+        descriptionShort = "Abdominal Aortic & Junctional Tourniquet (Stabilized). Inguinal placement occludes one selected leg; axillary placement occludes one selected arm; Zone 3 REBOA placement occludes both lower extremities. Bulky (~7.5 x 6.5 x 2 in, ~17 oz).";
         picture = "\acm_extended\ui\items\aajt-s_ca.paa";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
@@ -1830,6 +1830,7 @@ class CfgFunctions {
             class clinicalSnapshot {};
             class clinicalRestore {};
             class clinicalReset {};
+            class deathFreeze {};
             class fluidCommit {};
             class infusionDeliver {};
             class injuryEvent {};
@@ -2168,6 +2169,8 @@ class CfgFunctions {
             class junctionalPackSfxStop {};
             class aajtDownedTick {};
             class aajtDownedStop {};
+            class aajtForceProne {};
+            class aajtPainTick {};
             class junctionalWrapDone {};
             class junctionalRollSpawn {};
             class junctionalStartBleed {};
@@ -2558,7 +2561,6 @@ class CfgFunctions {
             class vehicleOpenness {};
             class ventOxygenation {};
             class darknessShade {};
-            class minigameVisionTextures {};
             class minigameVisionClear {};
             class minigameVisionProfile {};
             class minigameVisionNative {};
@@ -7569,7 +7571,7 @@ class ace_medical_treatment_actions {
         items[] = {"ACME_Spray_Esketamine"};
         treatmentTime = 4;
         medicRequired = 0;
-        condition = "alive _patient && {!(alive (_patient getVariable ['ACM_breathing_BVM_Medic', objNull]))}";
+        condition = "!(alive (_patient getVariable ['ACM_breathing_BVM_Medic', objNull]))";
         callbackSuccess = "['ace_medical_treatment_medicationLocal', [_patient, _bodyPart, 'Esketamine', 1, false], _patient] call CBA_fnc_targetEvent";
         ACM_rollToBack = "false";  // a conscious pain patient. do not force them supine.
         sounds[] = {};
@@ -7809,7 +7811,7 @@ class ace_medical_treatment_actions {
         items[] = {};
         // every seal can be burped, in every mode. the valve clogs whatever the settings say and hardcore only
         // decides how fast, so gating the fix behind hardcore left a clogged seal with nothing to do about it.
-        condition = "alive _patient && {_patient getVariable ['ACM_breathing_ChestSeal_State', false]}";
+        condition = "_patient getVariable ['ACM_breathing_ChestSeal_State', false]";
         callbackSuccess = "_this call ACME_fnc_chestSealBurp";
         callbackFailure = "";
         callbackProgress = "";
@@ -7849,7 +7851,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 0.1;
         allowedSelections[] = {"Head","Body","LeftArm","RightArm","LeftLeg","RightLeg"};
-        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {alive _patient && {!(_medic getVariable ['ACME_DP_Active', false])} && {!(_medic getVariable ['ACME_hang_Active', false])}}";
+        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {!(_medic getVariable ['ACME_DP_Active', false])} && {!(_medic getVariable ['ACME_hang_Active', false])}";
         // one-shot sfx the moment the button is pressed, for hands on the wound.
         callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 0.85] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_DirectPressure'] remoteExec ['say3D', 0]}";
         callbackSuccess = "_this call ACME_fnc_directPressureStart";
@@ -8319,11 +8321,11 @@ class ace_medical_treatment_actions {
         callbackFailure = "";
         callbackProgress = "";
     };
-    // inguinal placement is the body selection, an aortic compression. it controls both leg junctional wounds and
-    // tourniquets the wounded legs. axilla placement is the LeftArm or RightArm selection and controls that one
-    // arm's junctional wound only, with no tourniquet. ACME_fnc_aajtApply and aajtremove manage the placement
-    // state and the leg tourniquets. an apply consumes one AAJT-s, and a removal returns nothing, because it is
-    // single use.
+    // AAJT-S placement modes. All applications take 20 seconds.
+    // Inguinal placement is unilateral and proximally occludes exactly the selected leg. Axillary placement
+    // proximally occludes exactly the selected arm. Zone 3 REBOA is applied on the chest/body selection and
+    // occludes both lower extremities. The physical device state is persistent; dead casualties keep the same
+    // treatment paths and visual evidence.
     class ACME_ApplyAAJT_Inguinal: CheckPulse {
         displayName = "Apply AAJT-S (Inguinal)";
         displayNameProgress = "Applying AAJT-S...";
@@ -8332,15 +8334,10 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 20;
         allowedSelections[] = {"LeftLeg","RightLeg"};
-        // show on either leg when it is not already placed, the medic carries one, and there is a leg junctional wound
-        // to control.
-        // the AAJT-s is a tourniquet before it is a junctional device. it clamps the aorta, so it works on any
-        // casualty whether or not a junctional wound is there to control.
         condition = "!(_patient getVariable ['ACME_AAJT_inguinal', false]) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
-        // pause junctional bleeding for the 20 s application. it clears on success in aajtapply, or here on failure.
-        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', time, true]";
+        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
-        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', -1, true]";
+        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {"ACME_AAJT_S"};
@@ -8356,7 +8353,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 4;
         allowedSelections[] = {"LeftLeg","RightLeg"};
-        condition = "_patient getVariable ['ACME_AAJT_inguinal', false]";
+        condition = "(_patient getVariable ['ACME_AAJT_inguinal', false]) && {(_patient getVariable ['ACME_AAJT_inguinalSide', '']) == toLowerANSI _bodyPart}";
         callbackSuccess = "_this call ACME_fnc_aajtRemove";
         callbackFailure = "";
         callbackProgress = "";
@@ -8373,12 +8370,10 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 20;
         allowedSelections[] = {"LeftArm","RightArm"};
-        // per side: that arm is not already placed, that arm has a junctional wound, and the medic carries one.
-        condition = "(((toLower _bodyPart) == 'leftarm' && {!(_patient getVariable ['ACME_AAJT_axillaleft', false])} && {(_patient getVariable ['ACME_Junc_leftarm', '']) != ''}) || {(toLower _bodyPart) == 'rightarm' && {!(_patient getVariable ['ACME_AAJT_axillaright', false])} && {(_patient getVariable ['ACME_Junc_rightarm', '']) != ''}}) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
-        // pause junctional bleeding for the 20 s application. it clears on success in aajtapply, or here on failure.
-        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', time, true]";
+        condition = "(((toLowerANSI _bodyPart) == 'leftarm' && {!(_patient getVariable ['ACME_AAJT_axillaleft', false])}) || {(toLowerANSI _bodyPart) == 'rightarm' && {!(_patient getVariable ['ACME_AAJT_axillaright', false])}}) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
+        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
-        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', -1, true]";
+        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {"ACME_AAJT_S"};
@@ -8394,13 +8389,49 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 4;
         allowedSelections[] = {"LeftArm","RightArm"};
-        condition = "((toLower _bodyPart) == 'leftarm' && {_patient getVariable ['ACME_AAJT_axillaleft', false]}) || {(toLower _bodyPart) == 'rightarm' && {_patient getVariable ['ACME_AAJT_axillaright', false]}}";
+        condition = "((toLowerANSI _bodyPart) == 'leftarm' && {_patient getVariable ['ACME_AAJT_axillaleft', false]}) || {(toLowerANSI _bodyPart) == 'rightarm' && {_patient getVariable ['ACME_AAJT_axillaright', false]}}";
         callbackSuccess = "_this call ACME_fnc_aajtRemove";
         callbackFailure = "";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {};
         icon = "\acm_extended\ui\items\aajt-s_ca.paa";
+        ACM_menuIcon = "ACME_AAJT";
+    };
+    class ACME_ApplyAAJT_Zone3: CheckPulse {
+        displayName = "Apply AAJT-S (Zone 3 REBOA)";
+        displayNameProgress = "Applying AAJT-S (Zone 3 REBOA)...";
+        category = "bandage";
+        treatmentLocations[] = {"All"};
+        medicRequired = 0;
+        treatmentTime = 20;
+        allowedSelections[] = {"Body"};
+        condition = "!(_patient getVariable ['ACME_AAJT_zone3', false]) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
+        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, 'body'], true]";
+        callbackSuccess = "_this call ACME_fnc_aajtApply";
+        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
+        callbackProgress = "";
+        animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
+        items[] = {"ACME_AAJT_S"};
+        consumeItem = 1;
+        icon = "\acm_extended\ui\items\aajt-s_zone3_reboa_ca.paa";
+        ACM_menuIcon = "ACME_AAJT";
+    };
+    class ACME_RemoveAAJT_Zone3: CheckPulse {
+        displayName = "Remove AAJT-S (Zone 3 REBOA)";
+        displayNameProgress = "Removing AAJT-S (Zone 3 REBOA)...";
+        category = "bandage";
+        treatmentLocations[] = {"All"};
+        medicRequired = 0;
+        treatmentTime = 4;
+        allowedSelections[] = {"Body"};
+        condition = "_patient getVariable ['ACME_AAJT_zone3', false]";
+        callbackSuccess = "_this call ACME_fnc_aajtRemove";
+        callbackFailure = "";
+        callbackProgress = "";
+        animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
+        items[] = {};
+        icon = "\acm_extended\ui\items\aajt-s_zone3_reboa_ca.paa";
         ACM_menuIcon = "ACME_AAJT";
     };
     // a pak, the personal aid kit, normally requires a fully stable patient. an XStat is a temporising measure
@@ -8440,7 +8471,7 @@ class ace_medical_treatment_actions {
         // axillary wounds too. XStat is a junctional hemostatic and the axilla is a junctional site. it is one of the
         // places the sponges are indicated, because it is a wound you cannot tourniquet and cannot reliably pack by
         // hand. the AAJT exclusion stays inguinal only, because that is the only site the AAJT occupies.
-        condition = "((_patient getVariable [format ['ACME_Junc_%1', toLower _bodyPart], '']) == 'open') && {!(_patient getVariable ['ACME_AAJT_inguinal', false])} && {([_medic, 'ACME_XStat'] call ace_common_fnc_getCountOfItem) > 0}";
+        condition = "private _i = ['head','body','leftarm','rightarm','leftleg','rightleg'] find toLowerANSI _bodyPart; ((_patient getVariable [format ['ACME_Junc_%1', toLowerANSI _bodyPart], '']) == 'open') && {_i >= 0} && {!([_patient, _i] call ACME_fnc_aajtOccludes)} && {([_medic, 'ACME_XStat'] call ace_common_fnc_getCountOfItem) > 0}";
         callbackSuccess = "_this call ACME_fnc_xstatApply";
         callbackFailure = "";
         callbackProgress = "";
@@ -9112,7 +9143,7 @@ class ace_medical_treatment_actions {
         allowSelfTreatment = 0;
         // no TBI gate. a medic decides to give osmotherapy on the findings in front of them, and being wrong about
         // that is the thing being taught. it is the same rule the NCD and the chest inspection follow.
-        condition = "([_medic, 'ACME_OsmoBolus_HTS'] call ACME_fnc_procedureActionAllowed) && {alive _patient}";
+        condition = "[_medic, 'ACME_OsmoBolus_HTS'] call ACME_fnc_procedureActionAllowed";
         callbackSuccess = "[_this select 0, _this select 1, _this select 2, ['HTS3', 30, 'ACME_HTSBullet']] call ACME_fnc_tbiOsmoBolus";
         callbackFailure = "";
         callbackProgress = "";
@@ -9354,7 +9385,7 @@ class ACM_Medication {
             maxDose = 0;  // 16 mg/kg needs several vials, so do not cap that out.
             incompatibleMedication[] = {};
             viscosityChange = 0;
-        
+
             minEffectDose = 100;
 
             maxEffectDose = 100;

@@ -63,9 +63,10 @@ private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [
 // one sits over the groin and the axilla icons sit over each armpit. they are shown from the per-placement flags
 // set by fn_aajtapply.
 private _aajt = [
-    [7290010, "aajt-s_inguinal_ca.paa",     (!isNull _target && {_target getVariable ["ACME_AAJT_inguinal",   false]})],
-    [7290011, "aajt-s_axilla_left_ca.paa",  (!isNull _target && {_target getVariable ["ACME_AAJT_axillaleft",  false]})],
-    [7290012, "aajt-s_axilla_right_ca.paa", (!isNull _target && {_target getVariable ["ACME_AAJT_axillaright", false]})]
+    [7290010, "aajt-s_inguinal_ca.paa",      (!isNull _target && {_target getVariable ["ACME_AAJT_inguinal",   false]})],
+    [7290011, "aajt-s_axilla_left_ca.paa",   (!isNull _target && {_target getVariable ["ACME_AAJT_axillaleft",  false]})],
+    [7290012, "aajt-s_axilla_right_ca.paa",  (!isNull _target && {_target getVariable ["ACME_AAJT_axillaright", false]})],
+    [7290013, "aajt-s_zone3_reboa_ca.paa",   (!isNull _target && {_target getVariable ["ACME_AAJT_zone3",       false]})]
 ];
 {
     _x params ["_idc", "_tex", "_on"];

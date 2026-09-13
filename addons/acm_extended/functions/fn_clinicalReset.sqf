@@ -4,6 +4,9 @@ if (isNull _patient || {!local _patient}) exitWith {};
 if (_phase == "begin") exitWith {
     [_patient] call ACME_fnc_headElevHoldClear;
     [_patient] call ACME_fnc_aajtDownedStop;
+    private _aajtPain = _patient getVariable ["ACME_AAJT_painPFH", -1];
+    if (_aajtPain >= 0) then {[_aajtPain] call CBA_fnc_removePerFrameHandler;};
+    _patient setVariable ["ACME_AAJT_painPFH", -1, false];
     // Keep custody of reusable equipment. A full heal is not an inventory deletion/refund.
     _patient setVariable ["ACME_resetVentCustody", [
         _patient getVariable ["ACME_vent_onPatient", false],
@@ -42,8 +45,8 @@ if ((_patient getVariable ["ACM_breathing_BVM_provider", objNull]) isEqualTo _pa
 private _junctionalEvidence = [];
 if (_preserveJunctional && {!alive _patient}) then {
     _junctionalEvidence = [
-        "ACME_AAJT_inguinal", "ACME_AAJT_axillaleft", "ACME_AAJT_axillaright",
-        "ACME_AAJT_inguinalAt", "ACME_AAJT_axillaleftAt", "ACME_AAJT_axillarightAt", "ACME_AAJT_legs"
+        "ACME_AAJT_inguinal", "ACME_AAJT_inguinalSide", "ACME_AAJT_zone3", "ACME_AAJT_axillaleft", "ACME_AAJT_axillaright",
+        "ACME_AAJT_inguinalAt", "ACME_AAJT_zone3At", "ACME_AAJT_axillaleftAt", "ACME_AAJT_axillarightAt", "ACME_AAJT_legs"
     ];
     {
         private _part = _x;

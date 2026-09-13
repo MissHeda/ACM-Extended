@@ -2,6 +2,20 @@
    No patient physiology is cleared on ownership loss. PFH IDs never travel. */
 params ["_patient"];
 if (isNull _patient || {!local _patient} || {_patient getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
+
+// Migrate old bilateral inguinal AAJT saves exactly once. The physical AAJT-S has one wedge, so an old
+// ACME_AAJT_legs=[leftleg,rightleg] state must become one deterministic side instead of silently retaining
+// bilateral control. Prefer the only recorded leg, then the only leg with junctional evidence, otherwise left.
+if ((_patient getVariable ["ACME_AAJT_inguinal", false]) && {(_patient getVariable ["ACME_AAJT_inguinalSide", ""]) == ""}) then {
+    private _legacy = (_patient getVariable ["ACME_AAJT_legs", []]) select {_x in ["leftleg", "rightleg"]};
+    private _side = if ((count _legacy) == 1) then {_legacy select 0} else {
+        private _leftHas = (_patient getVariable ["ACME_Junc_leftleg", ""]) != "";
+        private _rightHas = (_patient getVariable ["ACME_Junc_rightleg", ""]) != "";
+        if (_leftHas != _rightHas) then {if (_leftHas) then {"leftleg"} else {"rightleg"}} else {"leftleg"}
+    };
+    [_patient, "inguinal", [true, _patient getVariable ["ACME_AAJT_inguinalAt", nil], _side]] call ACME_fnc_aajtStateCommit;
+};
+
 private _headState = (_patient getVariable ["ACME_headElevated", false])
     || {_patient getVariable ["ACME_headElev_vestRemoved", false]}
     || {(_patient getVariable ["ACME_headElev_propVest", ""]) != ""};
@@ -86,4 +100,8 @@ if (_patient getVariable ["ace_medical_inCardiacArrest", false]) then {
         };
     };
 };
-if (_patient getVariable ["ACME_AAJT_inguinal", false]) then {[_patient] call ACME_fnc_aajtDownedTick;};
+if (_patient getVariable ["ACME_AAJT_zone3", false]) then {[_patient] call ACME_fnc_aajtDownedTick;};
+if ((_patient getVariable ["ACME_AAJT_zone3", false])
+    || {_patient getVariable ["ACME_AAJT_inguinal", false]}
+    || {_patient getVariable ["ACME_AAJT_axillaleft", false]}
+    || {_patient getVariable ["ACME_AAJT_axillaright", false]}) then {[_patient] call ACME_fnc_aajtPainTick;};

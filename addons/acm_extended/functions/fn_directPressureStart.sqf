@@ -4,7 +4,7 @@
 // the ACE treatment callback args are [_medic, _patient, _bodyPart], where _bodyPart is lowercase.
 params ["_medic", "_patient", ["_bodyPart", ""]];
 _bodyPart = toLower _bodyPart;
-if (isNull _patient || {!alive _patient}) exitWith {};
+if (isNull _patient) exitWith {};
 
 if (_medic getVariable ["ACME_DP_Active", false]) exitWith {
     ["You're already holding direct pressure.", 2, _medic] call ace_common_fnc_displayTextStructured;

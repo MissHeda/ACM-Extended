@@ -10,3 +10,5 @@ hemtt.exe
 FORK_CHECKPOINT_PHASE*.md
 FORK_DEV.md
 .hemttprivatekey
+/*.zip
+/.hemttout/

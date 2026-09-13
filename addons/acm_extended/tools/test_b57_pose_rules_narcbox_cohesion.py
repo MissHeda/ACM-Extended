@@ -105,18 +105,25 @@ def test_pulse_escape_is_consumed_on_main_display():
     assert 'displayRemoveEventHandler ["KeyDown", _escEH]' in p
     assert '[_patient,"examine"] call ACME_fnc_reopenMedicalMenu' in p
 
-def test_hard_reset_scrubs_thoracostomy_and_iv_evidence_everywhere():
+def test_hard_reset_scrubs_only_full_heal_and_new_life_not_corpses():
     clear=txt('functions/fn_clearAllAilments.sqf')
     assert 'private _preserveDeathInterventions = false' in clear
     assert 'ACME_IV_Marks' in clear and 'ACME_EJTransfusionSite' in clear
     for key in ('incision','incisionScore','prep','infection','open','ribTarget','site','tube','sealed'):
         assert f'"{key}"' in clear
-    post=txt('functions/fn_postInit.sqf')
-    assert 'addMissionEventHandler ["EntityKilled"' in post
-    assert '[_unit] call ACME_fnc_clearAllAilments' in post
-    assert 'addMissionEventHandler ["EntityRespawned"' in post
-    assert 'forEach [_oldUnit, _newUnit]' in post
-    assert '["ace_medical_FullHeal", {_this call ACME_fnc_clearAllAilments}]' in post
+
+    life=txt('functions/fn_registerClinicalLifecycleRuntime.sqf')
+    resp=txt('functions/fn_registerRhythmLifecycleRuntime.sqf')
+    death=txt('functions/fn_deathFreeze.sqf')
+    assert 'addMissionEventHandler ["EntityKilled"' in life
+    assert '[_unit] call ACME_fnc_deathFreeze' in life
+    assert '["ace_medical_FullHeal", {_this call ACME_fnc_clearAllAilments}]' in life
+    assert 'addMissionEventHandler ["EntityRespawned"' in resp
+    assert '[_oldUnit] call ACME_fnc_deathFreeze' in resp
+    assert '[_newUnit] call ACME_fnc_clearAllAilments' in resp
+    assert 'forEach [_oldUnit, _newUnit]' not in resp
+    assert '[_patient, "begin", true] call ACME_fnc_clinicalReset' in death
+    assert 'ACME_fnc_clearAllAilments' not in death
 
 def test_obsolete_medication_background_diagnostic_is_removed():
     assert not (ROOT/'functions/fn_medicationDiagTick.sqf').exists()

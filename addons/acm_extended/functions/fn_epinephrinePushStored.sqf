@@ -1,6 +1,6 @@
 /* Consume measured solution before dispatch. No fictional fixed-dose charge conversion. */
 params ["_medic", "_patient", "_bodyPart", "_index", "_pushMl", ["_siteIdx", -2]];
-if (isNull _medic || {!local _medic} || {isNull _patient} || {!alive _patient}) exitWith {false};
+if (isNull _medic || {!local _medic} || {isNull _patient}) exitWith {false};
 if (_medic distance _patient > 5 && {isNull objectParent _medic || {objectParent _medic != objectParent _patient}}) exitWith {false};
 if (!finite _pushMl || {_pushMl <= 0}) exitWith {false};
 if (!([_patient, _bodyPart, 0] call ACM_circulation_fnc_hasIV) && {!([_patient, _bodyPart, 0] call ACM_circulation_fnc_hasIO)}) exitWith {false};

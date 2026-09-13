@@ -26,8 +26,13 @@ if (_patient getVariable ["ACME_XStat_impaired", false]) then {
 // AAJT-s devices come off too. the full-heal of ACE already reset the tourniquet array, so simply clear our
 // flags.
 [_patient, "inguinal", [false]] call ACME_fnc_aajtStateCommit;
+[_patient, "zone3", [false]] call ACME_fnc_aajtStateCommit;
 [_patient, "leftarm", [false]] call ACME_fnc_aajtStateCommit;
 [_patient, "rightarm", [false]] call ACME_fnc_aajtStateCommit;
+[_patient] call ACME_fnc_aajtDownedStop;
+private _aajtPain = _patient getVariable ["ACME_AAJT_painPFH", -1];
+if (_aajtPain >= 0) then {[_aajtPain] call CBA_fnc_removePerFrameHandler;};
+_patient setVariable ["ACME_AAJT_painPFH", -1, false];
 
 // silence any lingering leak sound source. the bleed pfh will tear itself down next tick, because no junction is
 // left.

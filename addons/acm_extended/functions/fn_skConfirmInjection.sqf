@@ -15,7 +15,7 @@ uiNamespace setVariable ["ACME_SK_SiteIdx",_siteIdx];
 uiNamespace setVariable ["ACME_SK_Route",_route];
 private _patient = uiNamespace getVariable ["ACME_SK_Patient",objNull];
 if (isNull _patient) then {_patient = _d getVariable ["ACME_SK_ReturnPatient",objNull];};
-if (isNull _patient || {!alive _patient}) exitWith {uiNamespace setVariable ["ACME_SK_PendingInjection",[]]; call ACME_fnc_skBodyActionRender; false};
+if (isNull _patient) exitWith {uiNamespace setVariable ["ACME_SK_PendingInjection",[]]; call ACME_fnc_skBodyActionRender; false};
 private _iv = _route != "im";
 private _present = true;
 if (_iv) then {_present = if (_siteIdx >= 0) then {[_patient,_bodyPart,0,_siteIdx] call ACM_circulation_fnc_hasIV} else {[_patient,_bodyPart,0] call ACM_circulation_fnc_hasIO};};

@@ -14,7 +14,7 @@ private _reply = {
 };
 private _prior = _receipts getOrDefault [_id,[]];
 if !(_prior isEqualTo []) exitWith {["ACME_medicationAck",[_medic,_id,_prior select 0,_prior select 1],_medic] call CBA_fnc_targetEvent;};
-if (!alive _medic || {!alive _patient} || {_medic getVariable ["ACE_isUnconscious",false]}
+if (!alive _medic || {_medic getVariable ["ACE_isUnconscious",false]}
     || {_epoch != ([_patient] call ACME_fnc_clinicalEpoch)}) exitWith {[false,"patient/provider state changed"] call _reply};
 if (_medic distance _patient > 5 && {isNull objectParent _medic || {objectParent _medic != objectParent _patient}}) exitWith {[false,"out of treatment range"] call _reply};
 if !(_bodyPart in ["head","body","leftarm","rightarm","leftleg","rightleg"]
@@ -52,9 +52,11 @@ if (_operation == "flush") then {
 _receipts set [_id,[true,"accepted"]];
 _patient setVariable ["ACME_medicationReceiptsB14",_receipts,true];
 _patient setVariable ["ACME_pendingFlush",_pending,true];
-// B45: -1 is the exact IO line identity. An accepted medication push or flush is real fluid pressure through
-// marrow, so it triggers the same immediate max-pain / delayed-syncope response as a running IO bag.
-if (_iv && {_site == -1}) then {[_patient, _bodyPart, "fluid"] call ACME_fnc_ioPainResponse;};
+// The exact IO line has route-specific pain behavior. Medication pushes cause a transient severe-pain response
+// only; saline flushes count as fluid pressure, but syncope still requires >3 s of continuous admitted fluid.
+if (_iv && {_site == -1}) then {
+    [_patient, _bodyPart, if (_operation == "flush") then {"fluid"} else {"medication"}] call ACME_fnc_ioPainResponse;
+};
 {
     _x params ["_class","_dose","_viaIV","_label","_seconds","_preparedMixture"];
     private _fraction = if (_viaIV) then {[_patient,_bodyPart,_site] call ACME_fnc_medicationLineFraction} else {1};

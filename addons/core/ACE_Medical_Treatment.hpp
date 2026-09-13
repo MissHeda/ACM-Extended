@@ -244,8 +244,10 @@ class ACE_ADDON(Medical_Treatment) {
         };
 
         class ElasticWrap: PressureBandage {
+            // Last-resort wound dressing used only after ETDs and pressure bandages are exhausted by the smart
+            // bandage planner. It works on open wounds, but at deliberately low effectiveness.
             class Abrasion {
-                effectiveness = 0;
+                effectiveness = 0.8;
             };
             class AbrasionMinor: Abrasion {};
             class AbrasionMedium: Abrasion {};

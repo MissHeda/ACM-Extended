@@ -3,7 +3,7 @@
    Optional component field 4 is delivery seconds; default is a brief modeled manual push. */
 params ["_medic","_patient","_bodyPart",["_doses",[]],["_operation","administer"],["_site",-2],["_refund",[]]];
 private _fail = {if (!isNull _medic && {local _medic}) then {[_medic,_refund,false] call ACME_fnc_medicationRefund;};false};
-if (isNull _medic || {!local _medic} || {!alive _medic} || {isNull _patient} || {!alive _patient}) exitWith {call _fail};
+if (isNull _medic || {!local _medic} || {!alive _medic} || {isNull _patient}) exitWith {call _fail};
 if (_medic distance _patient > 5 && {isNull objectParent _medic || {objectParent _medic != objectParent _patient}}) exitWith {call _fail};
 if !(_operation in ["administer","flush"] && {_doses isEqualType []} && {_bodyPart isEqualType ""} && {_site in [-2,-1,0,1,2]}) exitWith {call _fail};
 if (_operation == "administer" && {_doses isEqualTo []}) exitWith {call _fail};

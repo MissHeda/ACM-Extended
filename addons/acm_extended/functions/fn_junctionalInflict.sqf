@@ -16,13 +16,10 @@ if !(_p in ["leftarm", "rightarm", "leftleg", "rightleg"]) exitWith {
 };
 _unit setVariable [format ["ACME_Junc_%1", _p], "open", true];
 [_unit] call ACME_fnc_junctionalStartBleed;
-// if an inguinal AAJT-s is already clamped, a fresh leg, inguinal, wound is tourniqueted by it as well.
-if (_p in ["leftleg", "rightleg"] && {_unit getVariable ["ACME_AAJT_inguinal", false]}) then {
-    [_unit, _p, true] call ACME_fnc_aajtSetLegTQ;
-    private _legs = _unit getVariable ["ACME_AAJT_legs", []];
-    _legs pushBackUnique _p;
-    [_unit, "legs", _legs] call ACME_fnc_aajtStateCommit;
-};
+// If the new junction is already beneath an AAJT-S placement, immediately recompute native wound loss for that
+// limb. Zone 3, unilateral inguinal and axillary placements all use the same central occlusion predicate.
+private _partIndex = ["head","body","leftarm","rightarm","leftleg","rightleg"] find _p;
+if ([_unit, _partIndex] call ACME_fnc_aajtOccludes) then {[_unit, _p, true] call ACME_fnc_aajtSetLegTQ;};
 // this used to be ["leftarm",...] select (["leftarm",...] find _p), which is an elaborate way of returning
 // _p unchanged, so the hint read "Axillary hemorrhage: leftarm."
 private _label = [_p, "short"] call ACME_fnc_bodyPartName;

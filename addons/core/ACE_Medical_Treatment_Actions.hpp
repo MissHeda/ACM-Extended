@@ -105,47 +105,54 @@ class ACEGVAR(medical_treatment,actions) {
         ACM_rollToBack = 1;
     };
 
+    // One robust wound-bandaging action plans the complete body-part dressing bundle up front. Treatment time is
+    // the sum of the individual dressings actually required and inventory is pooled across medic + patient.
+    // Selection order is fixed: ETD, then pressure bandage, then elastic wrap as the last-resort wound dressing.
     class PressureBandage: BasicBandage {
-        displayName = ECSTRING(damage,PressureBandage);
-        displayNameProgress = ACECSTRING(medical_treatment,Bandaging);
+        displayName = "Bandage Wounds";
+        displayNameProgress = "Bandaging wounds...";
         icon = QACEPATHTOF(medical_gui,ui\bandage.paa);
         category = "bandage";
-
-        consumeItem = 1;
-        items[] = {"ACM_PressureBandage"};
-
+        consumeItem = 0;
+        items[] = {};
         medicRequired = 0;
         allowSelfTreatment = 1;
         allowedSelections[] = {"All"};
         treatmentLocations = TREATMENT_LOCATIONS_ALL;
-
-        treatmentTime = QEFUNC(damage,getBandageTime);
-
-        callbackStart = "";
-        callbackProgress = "";
-        callbackSuccess = QACEFUNC(medical_treatment,bandage);
-        callbackFailure = "";
-
+        condition = QUOTE([ARR_3(_medic,_patient,_bodyPart)] call EFUNC(damage,canSmartBandage));
+        treatmentTime = QEFUNC(damage,getSmartBandageTime);
+        callbackStart = QEFUNC(damage,smartBandageStart);
+        callbackProgress = QEFUNC(damage,smartBandageProgress);
+        callbackSuccess = QEFUNC(damage,smartBandageSuccess);
+        callbackFailure = QEFUNC(damage,smartBandageCancel);
         animationMedic = "AinvPknlMstpSlayW[wpn]Dnon_medicOther";
         animationMedicProne = "AinvPpneMstpSlayW[wpn]Dnon_medicOther";
         animationMedicSelf = "AinvPknlMstpSlayW[wpn]Dnon_medic";
         animationMedicSelfProne = "AinvPpneMstpSlayW[wpn]Dnon_medic";
         ACM_menuIcon = "ACM_PressureBandage";
     };
+    // ETDs are consumed by Bandage Wounds first. Suppress the duplicate one-dressing action so a casualty with
+    // multiple wounds cannot accidentally bypass the dynamic time/item transaction.
     class EmergencyTraumaDressing: PressureBandage {
         displayName = ECSTRING(damage,EmergencyTraumaDressing);
-        items[] = {"ACM_EmergencyTraumaDressing"};
+        condition = "false";
         allowSelfTreatment = 0;
         ACM_menuIcon = "ACM_EmergencyTraumaDressing";
     };
+    // Elastic wrap retains its existing bruise/wrap/splint actions. Reset callbacks/consumption inherited from the
+    // smart wound action; the planner can still use ACM_ElasticWrap directly as its third-priority wound dressing.
     class ElasticWrap: PressureBandage {
         displayName = ECSTRING(damage,ElasticWrap_Bruises);
         displayNameProgress = ECSTRING(damage,ElasticWrap_Progress);
         items[] = {"ACM_ElasticWrap"};
+        consumeItem = 1;
         medicRequired = QGVAR(allowWrap);
         condition = QUOTE([ARR_4(_medic,_patient,_bodyPart,2)] call EFUNC(damage,canWrap));
         treatmentTime = QEFUNC(damage,getBruiseWrapTime);
+        callbackStart = "";
+        callbackProgress = "";
         callbackSuccess = QEFUNC(damage,wrapBruises);
+        callbackFailure = "";
         ACM_menuIcon = "ACM_ElasticWrap";
     };
     class ElasticWrapBandages: ElasticWrap {

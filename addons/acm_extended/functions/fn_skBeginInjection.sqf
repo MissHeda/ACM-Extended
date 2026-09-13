@@ -10,7 +10,7 @@ if (uiNamespace getVariable ["ACME_SK_TagEditMode",false]) exitWith {false};
 
 private _patient = uiNamespace getVariable ["ACME_SK_Patient",objNull];
 if (isNull _patient) then {_patient = _d getVariable ["ACME_SK_ReturnPatient",objNull];};
-if (isNull _patient || {!alive _patient}) exitWith {false};
+if (isNull _patient) exitWith {false};
 private _route = uiNamespace getVariable ["ACME_SK_Route","vascular"];
 private _siteIdx = uiNamespace getVariable ["ACME_SK_SiteIdx",-1];
 private _iv = _route != "im";

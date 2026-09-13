@@ -94,7 +94,7 @@ if (!_valid) exitWith {
     ["This syringe has an unsupported component or route. Nothing was administered or consumed.", 4, ACE_player] call ace_common_fnc_displayTextStructured;
 };
 private _selectedPresent = !_iv || {if (_siteIdx >= 0) then {[_patient, _bodyPart, 0, _siteIdx] call ACM_circulation_fnc_hasIV} else {[_patient, _bodyPart, 0] call ACM_circulation_fnc_hasIO}};
-if (!_selectedPresent || {!alive _patient} || {ACE_player distance _patient > 5 && {isNull objectParent ACE_player || {objectParent ACE_player != objectParent _patient}}}) exitWith {};
+if (!_selectedPresent || {ACE_player distance _patient > 5 && {isNull objectParent ACE_player || {objectParent ACE_player != objectParent _patient}}}) exitWith {};
 // Compounds are virtual entries whose vial inventory was consumed at commit. Single drugs are physical magazines.
 if (!_virtual) then {
     private _magClass = format ["ACM_Syringe_%1_%2", _size, _med];

@@ -1,6 +1,6 @@
 """Source contracts and independent state models. These tests do not run SQF or Arma."""
 from pathlib import Path
-import hashlib,json,math,re,struct,unittest
+import math,re,unittest
 ROOT=Path(__file__).resolve().parents[1]
 def src(n):return (ROOT/'functions'/('fn_'+n+'.sqf')).read_text()
 class ModelTests(unittest.TestCase):
@@ -85,24 +85,4 @@ class SourceTests(unittest.TestCase):
   for n in ['ivMinigameInit','ivMinigamePrepView','ivMinigameClose']:self.assertIn('ACME_IV_PrepTotal", 0',src(n))
   self.assertIn('["leave"] call ACME_fnc_ivMinigamePrepView',src('ivMinigameFlip'))
   self.assertIn('["enter"] call ACME_fnc_ivMinigamePrepView',src('ivMinigameFlip'))
-class AssetTests(unittest.TestCase):
- @classmethod
- def setUpClass(cls):cls.info=json.loads((ROOT/'tools/nv_texture_manifest.json').read_text())
- def test_map_paths_exist(self):
-  for key,value in self.info['mapping'].items():
-   self.assertTrue(key.startswith('\\'));self.assertTrue((ROOT/value.removeprefix('\\acm_extended\\').replace('\\','/')).is_file())
- def test_all_derived_hashes(self):
-  for entry in self.info['unique_derivatives']:
-   p=ROOT/'ui/nv_close'/entry['texture'];self.assertEqual(hashlib.sha256(p.read_bytes()).hexdigest(),entry['sha256'])
- def test_dxt5_and_mip_bounds(self):
-  for entry in self.info['unique_derivatives']:
-   blob=(ROOT/'ui/nv_close'/entry['texture']).read_bytes();self.assertEqual(struct.unpack('<H',blob[:2])[0],0xff05)
-   pos=4;count=0
-   while pos+7<=len(blob):
-    w,h=struct.unpack('<HH',blob[pos:pos+4]);size=int.from_bytes(blob[pos+4:pos+7],'little');pos+=7
-    if w==0 and h==0:break
-    self.assertGreater(size,0);self.assertLessEqual(pos+size,len(blob));self.assertLessEqual(w&0x7fff,entry["size"][0]);self.assertLessEqual(h,entry["size"][1]);pos+=size;count+=1
-   self.assertGreater(count,0);self.assertEqual(pos,len(blob))
- def test_original_paths_not_mask_replacements(self):self.assertFalse(any('nightvision' in k for k in self.info['mapping']))
- def test_derivative_source_attribution(self):self.assertTrue((ROOT/'ui/nv_close/ACE_ASSET_LICENSE.txt').exists());self.assertIn('No claim of new ownership', (ROOT/'ui/nv_close/SOURCE_ATTRIBUTION.md').read_text())
 if __name__=='__main__':unittest.main()

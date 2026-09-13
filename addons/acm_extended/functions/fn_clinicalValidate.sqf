@@ -23,7 +23,7 @@ private _required = createHashMapFromArray [
     ["ACME_nrb_medic","OBJECT"], ["ACME_vent_operator","OBJECT"],
     ["ACME_nrb_on","BOOL"], ["ACME_nrb_hasO2","BOOL"],
     ["ACME_tbi_HasTBI","BOOL"], ["ACME_vent_connected","BOOL"],
-    ["ACME_vent_onPatient","BOOL"], ["ACME_AAJT_inguinal","BOOL"],
+    ["ACME_vent_onPatient","BOOL"], ["ACME_AAJT_inguinal","BOOL"], ["ACME_AAJT_zone3","BOOL"],
     ["ACME_AAJT_axillaleft","BOOL"], ["ACME_AAJT_axillaright","BOOL"]
 ];
 private _number = {params ["_v"]; !isNil "_v" && {_v isEqualType 0} && {finite _v}};
@@ -128,6 +128,9 @@ private _number = {params ["_v"]; !isNil "_v" && {_v isEqualType 0} && {finite _
                     && {(_move select 2) isEqualType objNull} && {[_move select 3] call _number}
                     && {[_move select 4] call _number})
             }) >= 0;
+        };
+        case "ACME_AAJT_inguinalSide": {
+            _bad = !(_v isEqualType "") || {!((toLowerANSI _v) in ["", "leftleg", "rightleg"])};
         };
         case "ACME_circ_State";
         case "ACME_tbi_State": {

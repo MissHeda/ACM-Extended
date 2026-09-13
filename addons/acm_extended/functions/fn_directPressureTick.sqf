@@ -14,7 +14,7 @@ if !(missionNamespace getVariable ["ACME_sys_dp", true]) exitWith {
 
 private _stop = "";
 if (!alive _medic || {_medic getVariable ["ACE_isUnconscious", false]}) then { _stop = "down"; };
-if (_stop == "" && {isNull _patient || {!alive _patient}}) then { _stop = "patient"; };
+if (_stop == "" && {isNull _patient}) then { _stop = "patient"; };
 
 private _leash = if (_mode == "torso") then { 2.2 } else { missionNamespace getVariable ["ACME_DP_leashDist", 1.7] };
 // Match the AED lead/leash contract: the hold is valid only while provider and patient remain in the same

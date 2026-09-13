@@ -19,10 +19,13 @@ if (!local _patient) exitWith {
 };
 if (!_authorized) exitWith {};
 
-// An inguinal AAJT-S mechanically prevents weight bearing.
-if (_patient getVariable ["ACME_AAJT_inguinal", false]) exitWith {
+// Zone 3 aortic occlusion is incompatible with weight bearing, but do not swallow the Get Up transaction. Let the
+// casualty actually begin to rise; the owner-local 5 Hz Zone 3 watcher detects STAND/CROUCH, ragdolls them, and
+// immediately settles them prone. That makes a failed attempt look physical instead of making the button appear dead.
+if (_patient getVariable ["ACME_AAJT_zone3", false]) then {
+    [_patient] call ACME_fnc_aajtDownedTick;
     if (_patient == ACE_player) then {
-        ["Your legs are clamped off by the AAJT-S.", 2, _patient] call ace_common_fnc_displayTextStructured;
+        ["Zone 3 AAJT-S compression prevents you from weight bearing.", 2, _patient] call ace_common_fnc_displayTextStructured;
     };
 };
 

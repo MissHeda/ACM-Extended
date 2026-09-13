@@ -1,19 +1,22 @@
-/* Phase 79: authoritative persistent AAJT placement state.
- * _op is one of inguinal, leftarm, rightarm or legs.
- * Placement data is [active, applicationTimeString]. Legs data is an array of limb keys.
- * Transient posture/PFH fields remain owned by the downed worker and are intentionally not handled here.
- */
+/* Authoritative persistent AAJT-S placement state. Network writes occur only when placement changes. */
 params ["_patient", "_op", ["_data", []]];
 if (isNull _patient) exitWith {};
-private _key = toLower _op;
+private _key = toLowerANSI _op;
 switch (_key) do {
     case "inguinal": {
-        _data params [["_active", false], ["_at", nil]];
+        _data params [["_active", false], ["_at", nil], ["_side", ""]];
+        _side = toLowerANSI _side;
+        if !(_side in ["leftleg", "rightleg"]) then {_side = "";};
+        if (_active && {_side == ""}) then {_active = false;};
         _patient setVariable ["ACME_AAJT_inguinal", _active, true];
         _patient setVariable ["ACME_AAJT_inguinalAt", if (_active) then {_at} else {nil}, true];
-        if (!_active) then {
-            _patient setVariable ["ACME_AAJT_legs", [], true];
-        };
+        _patient setVariable ["ACME_AAJT_inguinalSide", if (_active) then {_side} else {""}, true];
+        _patient setVariable ["ACME_AAJT_legs", if (_active) then {[_side]} else {[]}, true];
+    };
+    case "zone3": {
+        _data params [["_active", false], ["_at", nil]];
+        _patient setVariable ["ACME_AAJT_zone3", _active, true];
+        _patient setVariable ["ACME_AAJT_zone3At", if (_active) then {_at} else {nil}, true];
     };
     case "leftarm": {
         _data params [["_active", false], ["_at", nil]];
@@ -25,6 +28,7 @@ switch (_key) do {
         _patient setVariable ["ACME_AAJT_axillaright", _active, true];
         _patient setVariable ["ACME_AAJT_axillarightAt", if (_active) then {_at} else {nil}, true];
     };
+    // Legacy snapshot field. Keep it coherent for old saves/tools, but never use it as authority.
     case "legs": {
         private _legs = _data select {_x in ["leftleg", "rightleg"]};
         _patient setVariable ["ACME_AAJT_legs", _legs arrayIntersect _legs, true];

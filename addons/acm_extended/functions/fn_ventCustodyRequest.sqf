@@ -6,7 +6,7 @@ private _records = missionNamespace getVariable ["ACME_vent_custody", createHash
 private _id = _patient getVariable ["ACME_vent_custodyId", ""];
 if (_op == "attach") exitWith {
     if !([_medic, "ventilator"] call ACME_fnc_procedureAllowed) exitWith {};
-    if (!alive _patient || {!(_patient isKindOf "CAManBase")}
+    if (!(_patient isKindOf "CAManBase")
         || {_patient getVariable ["ACME_vent_onPatient", false]}
         || {_id in _records}) exitWith {};
     private _airway = (_patient getVariable ["ACME_ETT_Inserted", false])

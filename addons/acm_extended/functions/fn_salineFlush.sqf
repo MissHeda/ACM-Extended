@@ -68,7 +68,7 @@ switch (_mode) do {
     // medicationlocal event a normal push would, so the drug actually circulates. it consumes one 10 ml saline flush
     // even if no med was pending, because a plain post-med or post-site flush is still valid.
     case "flushLine": {
-        if (isNull _patient || {!alive _patient} || {!local _medic}) exitWith {};
+        if (isNull _patient || {!local _medic}) exitWith {};
         if (([_medic, "ACM_SalineFlush_10"] call ace_common_fnc_getCountOfItem) < 1) exitWith {};
         private _site = _args param [1, -2];
         private _present = if (_site >= 0) then {[_patient, _bodyPart, 0, _site] call ACM_circulation_fnc_hasIV} else {

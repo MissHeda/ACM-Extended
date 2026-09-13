@@ -15,6 +15,8 @@ private _sig = [
     _target getVariable ["ACME_Junc_leftleg", ""],
     _target getVariable ["ACME_Junc_rightleg", ""],
     _target getVariable ["ACME_AAJT_inguinal", false],
+    _target getVariable ["ACME_AAJT_inguinalSide", ""],
+    _target getVariable ["ACME_AAJT_zone3", false],
     _target getVariable ["ACME_AAJT_axillaleft", false],
     _target getVariable ["ACME_AAJT_axillaright", false]
 ];

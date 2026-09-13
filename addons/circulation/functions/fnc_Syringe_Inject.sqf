@@ -24,7 +24,7 @@
 private _acmeBinding = "B13:Syringe_Inject";
 params ["_medic", "_patient", "_bodyPart", "_classname", ["_size", 10], ["_iv", true], ["_returnSyringe", true]];
 private _routeClass = if (_iv) then {_classname + "_IV"} else {_classname};
-if (isNull _medic || {!local _medic} || {!alive _medic} || {isNull _patient} || {!alive _patient}) exitWith {};
+if (isNull _medic || {!local _medic} || {!alive _medic} || {isNull _patient}) exitWith {};
 if !([_routeClass, _iv, true] call ACME_fnc_medicationRouteAllowed) exitWith {
     ["This drug is not supported through the selected route. Syringe retained.", 3, _medic] call ace_common_fnc_displayTextStructured;
 };
@@ -112,7 +112,7 @@ private _pushSec = if (_iv) then {
 } else {missionNamespace getVariable ["ACME_syringe_imDeliverySec",3]};
 [_medic, _patient, _bodyPart, [[_medicationClassname, _concentrationDose, _iv, _medicationName, _pushSec]], "administer", -2, [[[_itemClassname,_dose]],_refundRows,_empty]] call ACME_fnc_medicationRequest;
 
-if (!_iv && ([_patient, "Lidocaine", false, GET_BODYPART_INDEX(_bodyPart)] call ACEFUNC(medical_status,getMedicationCount)) < 0.5) then {
+if (alive _patient && {!_iv} && {([_patient, "Lidocaine", false, GET_BODYPART_INDEX(_bodyPart)] call ACEFUNC(medical_status,getMedicationCount)) < 0.5}) then {
     [_patient, (linearConversion [1, 10, (_dose / 100), 0.1, 0.4])] call ACEFUNC(medical,adjustPainLevel);
     [_patient, "hit"] call ACEFUNC(medical_feedback,playInjuredSound);
 };

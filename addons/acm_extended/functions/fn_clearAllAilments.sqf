@@ -1,16 +1,17 @@
-// B57 hard clinical reset. Full heal, Zeus heal, respawn and death all scrub ACME injury/evidence state.
-// _this may still arrive in the old [unit, preserveDeathInterventions] form; that flag is intentionally ignored.
+// Hard clinical reset for FullHeal/new-life initialization. Death does NOT call this function; fn_deathFreeze
+// preserves the corpse's injury/intervention evidence and stops only runtime workers.
+// _this may still arrive in the old [unit, preserveDeathInterventions] form for compatibility.
 private _patient = if (_this isEqualType []) then { _this param [0, objNull] } else { _this };
 if (isNull _patient) exitWith {};
 if (!local _patient) exitWith {};
-private _preserveDeathInterventions = false;  // B57: no injury/evidence persistence across death/reset boundaries.
+private _preserveDeathInterventions = false;  // Full heal/respawn are real resets; death uses fn_deathFreeze instead.
 if (!alive _patient && {
     (_patient getVariable ["ACME_headElevated", false])
     || {_patient getVariable ["ACME_headElev_vestRemoved", false]}
     || {(_patient getVariable ["ACME_headElev_propVest", ""]) != ""}
 }) then {[_patient] call ACME_fnc_headElevDeathRelease;};
 [_patient, "begin", _preserveDeathInterventions] call ACME_fnc_clinicalReset;
-// B57 deliberately has no death-preservation early exit: a corpse crosses the same hard-reset boundary.
+// This function is intentionally a hard reset; normal death no longer routes through it.
 _patient setVariable ["ACME_NA2_resetTime", CBA_missionTime, true];
 _patient setVariable ["ACME_CS_blockedEffectEpoch", _patient getVariable ["ACME_CS_netEpoch", ""], true];
 _patient setVariable ["ACME_ncd_tensionEpoch", "", true];
@@ -225,7 +226,8 @@ if (alive _patient) then {
 {
     _patient setVariable [_x, nil, true];
 } forEach [
-    "ACME_rhythm_active", "ACME_rhythm_targetHR", "ACME_rhythm_bpOffset", "ACME_rhythm_savedTargetHR", "ACME_peaElectricalHR",
+    "ACME_rhythm_active", "ACME_rhythm_targetHR", "ACME_rhythm_bpOffset", "ACME_rhythm_savedTargetHR", "ACME_peaElectricalHR", "ACME_peaElectricalState",
+    "ACM_circulation_AED_RhythmTransition",
     "ACME_rhythm_amioCum", "ACME_rhythm_obtundUntil", "ACME_rhythm_torsadesRefractoryUntil",
     "ACME_rhythm_epiDripEarliest", "ACME_rhythm_magTerminatedLogged", "ACME_rhythm_magSuppressUntil",
     "ACME_rhythm_magLevel", "ACME_rhythm_lidoLastTherapeutic", "ACME_rhythm_lidoEffectiveness", "ACME_lido_serumLevel",
@@ -296,7 +298,8 @@ _patient setVariable ["ACME_ca_coagMult", 1, true];
     "ACME_circ_bpOffset", "ACME_circ_salineGivenMl",
     "ACME_ca_mapDropEased",
     "ACME_circ_salineTrackLastAt", "ACME_circ_salineTrackLastMl", "ACME_circ_salineTrackLastSource",
-    "ACME_circ_respAcidosisBaselineRR", "ACME_ioPainFlowing", "ACME_hrRestBaseline", "ACME_pressorResistAdd"
+    "ACME_circ_respAcidosisBaselineRR", "ACME_ioPainFlowing", "ACME_ioPainStates", "ACME_ioPainWatchSerial",
+    "ACME_ioFlowWatchSerial", "ACME_ioSyncopeSerial", "ACME_ioSyncopeToken", "ACME_hrRestBaseline", "ACME_pressorResistAdd"
 ];
 
 // the active infusions and bag medications.

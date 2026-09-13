@@ -1,7 +1,7 @@
 /* Compatibility action: give a measured 1 mL / 10 mcg from a B12 syringe, no legacy abstract charge tokens. New preparation never creates unmeasured charge tokens. */
 params ["_medic", "_patient", "_bodyPart"];
 if !([_medic, "pushDoseEpi"] call ACME_fnc_procedureAllowed) exitWith {};
-if (isNull _patient || {!local _medic} || {!alive _patient}) exitWith {};
+if (isNull _patient || {!local _medic}) exitWith {};
 if (!([_patient, _bodyPart, 0] call ACM_circulation_fnc_hasIV) && {!([_patient, _bodyPart, 0] call ACM_circulation_fnc_hasIO)}) exitWith {
     ["An IV/IO at the selected site is required.", 3, _medic] call ace_common_fnc_displayTextStructured;
 };

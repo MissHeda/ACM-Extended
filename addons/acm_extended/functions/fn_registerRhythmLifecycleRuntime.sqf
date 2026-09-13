@@ -17,48 +17,42 @@
 addMissionEventHandler ["EntityRespawned", {
     params ["_newUnit", "_oldUnit"];
     if !(_newUnit isKindOf "CAManBase") exitWith {};
-    {
-        if (!isNull _x) then {
-            if (local _x) then {
-                [_x] call ACME_fnc_clearAllAilments;  // B57: both the old body and new life are scrubbed
-            };
-            // clearAllAilments resets both the new life and the old body; ACME injury artifacts never survive a reset boundary.
-            // Keep every machine's immediate local reset, but only the current owner
-            // publishes it. Do not fan the same public reset out from every client.
-            [_x, false, false, "", -1, local _x] call ACME_fnc_obtundedStateCommit;
-            _x setVariable ["ACME_obtunded_forcedBack", false, local _x];
-            [_x, 0, local _x, false] call ACME_fnc_rhythmActiveCommit;
-            _x setVariable ["ACME_rhythm_targetHR", 0, local _x];
-            _x setVariable ["ACME_rhythm_bpOffset", 0, local _x];
-            _x setVariable ["ACME_rhythm_savedTargetHR", nil, local _x];
-            _x setVariable ["ACME_rhythm_obtundUntil", -1, local _x];
-            [_x, "", -1, local _x, false] call ACME_fnc_rhythmNativeHoldCommit;
-            [_x, 0, false, false, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;
-            [_x, 0, false, false] call ACME_fnc_rhythmNativeShockGraceCommit;
-            [_x, [["cardiacRhythmState", 0]], local _x] call ACM_circulation_fnc_setRuntimeState;
-            [_x, false, false, false, local _x, false] call ACME_fnc_nrbStateCommit;
-            [_x, "", local _x, false] call ACME_fnc_hpmkStateCommit;
-            _x setVariable ["ACME_emma_bvmAttached", false, local _x];
-            _x setVariable ["ACME_emma_lastPatient", objNull];
-            _x setVariable ["ACME_emma_lastBag", -1e9];
-        };
-    } forEach [_oldUnit, _newUnit];
-    // a freshly respawned player can still be transferring ownership when EntityRespawned fires. the local-gated
-    // clearAllAilments above therefore often runs on the server, where the new unit is momentarily local, while the
-    // medical and rhythm engine of the player runs on their client. that is why AFib could re-seat from uncleared
-    // client-side rhythm state. this re-runs the reset a beat later, by which point ownership has settled, so it
-    // lands on the real owner. the handler registers on every machine, so the local check passes on whichever one
-    // now owns the unit. clearAllAilments also resets junctional state; no duplicate all-client broadcast is needed.
-    // there is no remoteexec, so there is no cfgremoteexec whitelist dependency on a locked server.
+
+    // The old body remains a corpse snapshot. Stop any residual local workers without deleting its injuries,
+    // airway devices, vascular access, chest interventions, AAJT-S, dressings or other treatment evidence.
+    if (!isNull _oldUnit && {local _oldUnit}) then {[_oldUnit] call ACME_fnc_deathFreeze;};
+
+    // Only the freshly spawned life is scrubbed back to baseline.
+    if (!isNull _newUnit && {local _newUnit}) then {[_newUnit] call ACME_fnc_clearAllAilments;};
+    if (!isNull _newUnit) then {
+        [_newUnit, false, false, "", -1, local _newUnit] call ACME_fnc_obtundedStateCommit;
+        _newUnit setVariable ["ACME_obtunded_forcedBack", false, local _newUnit];
+        [_newUnit, 0, local _newUnit, false] call ACME_fnc_rhythmActiveCommit;
+        _newUnit setVariable ["ACME_rhythm_targetHR", 0, local _newUnit];
+        _newUnit setVariable ["ACME_rhythm_bpOffset", 0, local _newUnit];
+        _newUnit setVariable ["ACME_rhythm_savedTargetHR", nil, local _newUnit];
+        _newUnit setVariable ["ACME_rhythm_obtundUntil", -1, local _newUnit];
+        [_newUnit, "", -1, local _newUnit, false] call ACME_fnc_rhythmNativeHoldCommit;
+        [_newUnit, 0, false, false, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;
+        [_newUnit, 0, false, false] call ACME_fnc_rhythmNativeShockGraceCommit;
+        [_newUnit, [["cardiacRhythmState", 0]], local _newUnit] call ACM_circulation_fnc_setRuntimeState;
+        [_newUnit, false, false, false, local _newUnit, false] call ACME_fnc_nrbStateCommit;
+        [_newUnit, "", local _newUnit, false] call ACME_fnc_hpmkStateCommit;
+        _newUnit setVariable ["ACME_emma_bvmAttached", false, local _newUnit];
+        _newUnit setVariable ["ACME_emma_lastPatient", objNull];
+        _newUnit setVariable ["ACME_emma_lastBag", -1e9];
+    };
+
+    // Ownership of the new player can settle a moment after EntityRespawned. Re-run the NEW-life reset on whichever
+    // machine actually owns it; never touch the old corpse here.
     [{
         params ["_u"];
         if (isNull _u || {!alive _u}) exitWith {};
-        if (local _u) then {
-            [_u] call ACME_fnc_clearAllAilments;
-        };
+        if (local _u) then {[_u] call ACME_fnc_clearAllAilments;};
     }, [_newUnit], 2.0] call CBA_fnc_waitAndExecute;
-    [_newUnit, false] call ACME_fnc_obtundedApply;  // tear down pp/sound effects on the new life
-    if (!isNil "ACME_hpmk_activePatients") then { ACME_hpmk_activePatients = ACME_hpmk_activePatients - [_oldUnit, _newUnit]; };
+
+    [_newUnit, false] call ACME_fnc_obtundedApply;
+    if (!isNil "ACME_hpmk_activePatients") then {ACME_hpmk_activePatients = ACME_hpmk_activePatients - [_oldUnit, _newUnit];};
 }];
 
 
@@ -70,5 +64,8 @@ addMissionEventHandler ["EntityRespawned", {
     [_patient, CBA_missionTime + (missionNamespace getVariable ["ACME_rhythmNativeShockGraceSec", 10]), true, false] call ACME_fnc_rhythmNativeShockGraceCommit;
     [_patient, "", -1, true, false] call ACME_fnc_rhythmNativeHoldCommit;
     [_patient, 0, false, false, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;
-    if (local _patient) then {_patient setVariable ["ACME_peaElectricalHR", nil, true];};
+    if (local _patient) then {
+        _patient setVariable ["ACME_peaElectricalHR", nil, true];
+        _patient setVariable ["ACME_peaElectricalState", nil, true];
+    };
 }] call CBA_fnc_addEventHandler;

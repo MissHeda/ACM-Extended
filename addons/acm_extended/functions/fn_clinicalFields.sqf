@@ -121,12 +121,33 @@
     true
   ],
   [
+    "ACME_AAJT_inguinalSide",
+    "",
+    true
+  ],
+  [
+    "ACME_AAJT_zone3",
+    "",
+    true
+  ],
+  [
+    "ACME_AAJT_zone3At",
+    "time",
+    true
+  ],
+  [
     "ACME_AAJT_legs",
     "",
     true
   ],
   [
     "ACME_AAJT_lockOn",
+    "",
+    true,
+    false
+  ],
+  [
+    "ACME_AAJT_painPFH",
     "",
     true,
     false

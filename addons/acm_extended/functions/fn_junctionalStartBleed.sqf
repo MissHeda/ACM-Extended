@@ -37,17 +37,38 @@ private _handle = [{
 
     private _juncNorm = 0;
     private _anyXStat = false;
+
+    // AAJT-S application tamponades only the anatomical territory being compressed. Legacy numeric stamps are
+    // accepted as a conservative all-junction pause for old in-progress saves and self-heal after 25 seconds.
+    private _applyRaw = _unit getVariable ["ACME_Junc_AAJTApplying", []];
+    private _applyActive = false;
+    private _applyPart = "";
+    if (_applyRaw isEqualType []) then {
+        if ((count _applyRaw) >= 2) then {
+            private _stamp = _applyRaw param [0, -1];
+            _applyPart = toLowerANSI (_applyRaw param [1, ""]);
+            if (_stamp >= 0 && {time - _stamp < 25}) then {_applyActive = true;} else {
+                _unit setVariable ["ACME_Junc_AAJTApplying", [], true];
+            };
+        };
+    } else {
+        if (_applyRaw isEqualType 0 && {_applyRaw >= 0}) then {
+            if (time - _applyRaw < 25) then {_applyActive = true; _applyPart = "legacy";} else {
+                _unit setVariable ["ACME_Junc_AAJTApplying", [], true];
+            };
+        };
+    };
+
     {
         private _state = _unit getVariable [format ["ACME_Junc_%1", _x], ""];
-        // a NAR AAJT-s over this junction fully controls its bleed, like a wrap but removable. an inguinal device
-        // controls both legs, and a left or right axilla device controls that one arm. skip the accrual here.
-        private _aajtCtl = switch (_x) do {
-            case "leftleg";
-            case "rightleg": { _unit getVariable ["ACME_AAJT_inguinal", false] };
-            case "leftarm":  { _unit getVariable ["ACME_AAJT_axillaleft", false] };
-            case "rightarm": { _unit getVariable ["ACME_AAJT_axillaright", false] };
-            default { false };
+        // Device occlusion is centralized so native wounds, junctional wounds, IV/IO flow and medication delivery
+        // all agree about which limb is actually compressed. During the 20 s application, only that same territory
+        // is temporarily tamponaded. Zone 3 (body) covers both legs.
+        private _partIndex = ["head","body","leftarm","rightarm","leftleg","rightleg"] find _x;
+        private _applyingCtl = _applyActive && {
+            _applyPart == "legacy" || {_applyPart == _x} || {_applyPart == "body" && {_x in ["leftleg","rightleg"]}}
         };
+        private _aajtCtl = _applyingCtl || {[_unit, _partIndex] call ACME_fnc_aajtOccludes};
         // XStat 30, the inguinal-only sponge bolus. while seated, the bleed ramps from full to 0 over _xRamp seconds and
         // holds at zero. after a long dwell, defaulting to 2 h, the bolus slowly fails and the junction rebleeds, gently
         // and bounded: the rebleed grows from a trickle up to at most half the original bleed, over 2 minutes, and never
@@ -169,16 +190,9 @@ private _handle = [{
         };
     } forEach _parts;
 
-    // the AAJT-s is being applied right now, over 20 s, so hold all junctional bleeding at zero for the duration, the
-    // same way active gauze packing tamponades its part. the callbackstart of the apply action sets it, success in
-    // aajtapply and failure in the action callbackfailure clear it, and it self-heals after 25 s, so a dropped or
-    // disconnected application cannot subside the wound forever.
-    private _treatPause = false;
-    private _aajtStamp = _unit getVariable ["ACME_Junc_AAJTApplying", -1];
-    if (_aajtStamp >= 0) then {
-        if (time - _aajtStamp < 25) then { _treatPause = true; _juncNorm = 0; }
-        else { _unit setVariable ["ACME_Junc_AAJTApplying", -1, true]; };
-    };
+    // Keep the worker alive during an active AAJT application even when that application's local tamponade makes
+    // the current junctional contribution zero. The per-part logic above already handled which territory pauses.
+    private _treatPause = _applyActive;
 
     // stay alive while an XStat is seated even at zero bleed, because the loop is what watches the dwell timer and
     // resumes bleeding when it expires. also stay alive while an AAJT-s is being applied, meaning paused rather than

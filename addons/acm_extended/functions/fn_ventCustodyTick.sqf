@@ -18,8 +18,8 @@ private _now = CBA_missionTime;
             _r set ["settings", _state];
         };
     };
-    private _dead = isNull _patient || {_deleted} || {!alive _patient};
-    if (_phase == "attached" && {_dead}) then {
+    private _gone = isNull _patient || {_deleted};
+    if (_phase == "attached" && {_gone}) then {
         private _supplier = _r getOrDefault ["supplier", objNull];
         private _uid = _r getOrDefault ["supplierUID", ""];
         if ((isNull _supplier || {!alive _supplier} || {_uid != "" && {getPlayerUID _supplier != _uid}}) && {_uid != ""}) then {
