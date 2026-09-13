@@ -47,6 +47,7 @@ switch (_operation) do {
     case "bagMove": {_args call ACME_fnc_clinicalBagMove;};
     case "register": { [_patient] call ACME_fnc_ownerRegister; };
     case "hpmkWrap": { _args call ACME_fnc_hpmkWrap; };
+    case "hpmkRemove": { _args call ACME_fnc_hpmkRemove; };
     case "autoBP": { _args call ACME_fnc_toggleAutoBP; };
     case "cheyne": { _args call ACME_fnc_debugCheyneStokes; };
     case "tbiInit": { _args call ACME_fnc_tbiInit; };

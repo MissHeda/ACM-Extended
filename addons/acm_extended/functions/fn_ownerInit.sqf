@@ -3,6 +3,12 @@ if (missionNamespace getVariable ["ACME_NA2_ownerInstalled", false]) exitWith {}
 ACME_NA2_ownerInstalled = true;
 ["ACME_ownerCommand", { isNil { _this call ACME_fnc_ownerDispatch; }; }] call CBA_fnc_addEventHandler;
 ["ACME_netNotice", { _this call ACME_fnc_netNotice; }] call CBA_fnc_addEventHandler;
+["ACME_hpmkReturnItem", {
+    params [["_receiver", objNull, [objNull]]];
+    if (!isNull _receiver && {local _receiver}) then {
+        [_receiver, "ACM_HPMK"] call ace_common_fnc_addToInventory;
+    };
+}] call CBA_fnc_addEventHandler;
 ["ACME_nrbDraw", { isNil { _this call ACME_fnc_nrbOxygenDraw; }; }] call CBA_fnc_addEventHandler;
 ["ACME_nrbSound", { _this call ACME_fnc_nrbSoundServer; }] call CBA_fnc_addEventHandler;
 ["ACME_thoraOutput", { if (isServer) then { isNil { _this call ACME_fnc_thoraOutput; }; }; }] call CBA_fnc_addEventHandler;

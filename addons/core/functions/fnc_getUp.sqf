@@ -12,10 +12,15 @@
 // Get Up is one of the very few places where priority 2 is deliberate. Normal treatment/provider animations still
 // use the authored move graph. This function is repairing an isolated/dead/unconscious engine state, not entering a
 // treatment pose.
-params ["_patient", ["_authorized", true, [false]]];
+params ["_patient", ["_authorized", true, [false]], ["_initiator", objNull, [objNull]]];
 if (isNull _patient) exitWith {};
+// Existing Get Up actions call this with two arguments. Capture the player who actually pressed the action before
+// the request is routed to the casualty owner, so HPMK recovery goes to the correct inventory.
+if (isNull _initiator && {hasInterface} && {!isNil "ACE_player"} && {!isNull ACE_player}) then {
+    _initiator = ACE_player;
+};
 if (!local _patient) exitWith {
-    ["ACM_core_getUpRequest", [_patient, _authorized], _patient] call CBA_fnc_targetEvent;
+    ["ACM_core_getUpRequest", [_patient, _authorized, _initiator], _patient] call CBA_fnc_targetEvent;
 };
 if (!_authorized) exitWith {};
 
@@ -29,15 +34,22 @@ if (_patient getVariable ["ACME_AAJT_zone3", false]) then {
     };
 };
 
+// Get Up and an HPMK are mutually exclusive. Clear it before the rise animation and return the reusable kit to
+// the person who initiated Get Up. Self Get Up therefore returns it to the casualty; provider Get Up returns it
+// to that provider. hpmkRemove owns the one-shot state clear and cross-owner inventory return.
+if ((_patient getVariable ["ACME_hpmk_state", ""]) != "") then {
+    [_initiator, _patient, true] call ACME_fnc_hpmkRemove;
+};
+
 // Head elevation owns the casualty's physical pose. Release it first, then retry the same local transaction.
 if (_patient getVariable ["ACME_headElevated", false]) exitWith {
     [objNull, _patient] call ACME_fnc_headElevateStop;
     [{
-        params ["_p"];
+        params ["_p", "_initiator"];
         if (isNull _p || {!alive _p} || {_p getVariable ["ACME_headElevated", false]}) exitWith {};
         _p setUnitPos "AUTO";
-        [_p, true] call ACM_core_fnc_getUp;
-    }, [_patient], (missionNamespace getVariable ["ACME_headElev_releaseAnimTime", 0.8]) + 0.35] call CBA_fnc_waitAndExecute;
+        [_p, true, _initiator] call ACM_core_fnc_getUp;
+    }, [_patient, _initiator], (missionNamespace getVariable ["ACME_headElev_releaseAnimTime", 0.8]) + 0.35] call CBA_fnc_waitAndExecute;
 };
 
 private _wasLying = _patient getVariable ["ACM_core_Lying_State", false];

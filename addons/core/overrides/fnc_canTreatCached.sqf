@@ -9,6 +9,18 @@
 params [["_caller", objNull], ["_target", objNull], ["_bodyPart", ""], ["_className", ""]];
 if !([_caller, _className] call ACME_fnc_procedureActionAllowed) exitWith {false};
 
+// An HPMK is a down-casualty treatment. Manual prone is still fully mobile, so Prep/Wrap are unavailable unless
+// the casualty is medically unconscious or explicitly in ACM's lying state. The callbacks repeat this guard to
+// close the progress-bar race where a casualty becomes mobile after the menu was built.
+private _hpmkLyingState = if (isNull _target) then {false} else {_target getVariable ["ACM_core_Lying_State", false]};
+private _hpmkIsLying = if (_hpmkLyingState isEqualType true) then {_hpmkLyingState} else {_hpmkLyingState > 0};
+if (
+    !isNull _target
+    && {_className in ["ACME_PrepHPMK", "ACME_WrapHPMK"]}
+    && {!(_target getVariable ["ACE_isUnconscious", false])}
+    && {!_hpmkIsLying}
+) exitWith {false};
+
 private _state = _target getVariable ["ACME_hpmk_state", ""];
 private _part = toLower _bodyPart;
 private _hpmkActions = ["CheckResponse", "ACME_UnwrapHPMK", "ACME_ExposeChestHPMK", "ACME_CoverChestHPMK"];

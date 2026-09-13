@@ -7,6 +7,15 @@
 // _this is the ACE callback [_medic, _patient, _bodyPart].
 params ["_medic", "_patient"];
 if (!local _patient) exitWith { ["ACME_ownerCommand", [_patient, "hpmkWrap", _this], _patient] call CBA_fnc_targetEvent; };
+if (isNull _patient) exitWith {};
+
+private _lyingState = _patient getVariable ["ACM_core_Lying_State", false];
+private _isLying = if (_lyingState isEqualType true) then {_lyingState} else {_lyingState > 0};
+private _eligible = (_patient getVariable ["ACE_isUnconscious", false]) || {_isLying};
+if (!_eligible) exitWith {
+    private _receiver = _patient getVariable ["ACME_hpmk_provider", _medic];
+    [_receiver, _patient, true] call ACME_fnc_hpmkRemove;
+};
 
 // our pose first. if the head of this casualty is being held up, put it down properly with the release animation
 // and tear the elevation down before rolling them. rolling on top of an elevated head is two systems fighting

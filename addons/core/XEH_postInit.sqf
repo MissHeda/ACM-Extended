@@ -141,8 +141,8 @@ if (GVAR(ignoreIncompatibleAddonWarning)) then {
 // Phase 122: Get Up is patient-local. A provider can request it remotely, but the casualty owner owns the
 // lying flag and recovery animation transaction.
 [QGVAR(getUpRequest), {
-    params ["_patient", ["_authorized", true]];
-    [_patient, _authorized] call FUNC(getUp);
+    params ["_patient", ["_authorized", true], ["_initiator", objNull]];
+    [_patient, _authorized, _initiator] call FUNC(getUp);
 }] call CBA_fnc_addEventHandler;
 
 ["isNotInLyingState", {!((_this select 0) getVariable [QGVAR(Lying_State), false])}] call ACEFUNC(common,addCanInteractWithCondition);

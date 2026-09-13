@@ -1,13 +1,6 @@
-// manage the HPMK blanket visual without ever attaching a networked object to a wrapped patient.
-//
-// B28 invariant:
-//   WRAPPED PATIENT = client-local simple-object visual that mirrors the casualty without attachTo.
-//   DROPPED HPMK    = one server-owned, geometry-free Land_HelipadEmpty_F anchor + client-local visual.
-//
-// No server-owned object is attached to a casualty while they are wrapped. This matters because a disabled-sim
-// network object in an attachTo chain can still fight ACE drag/carry/reposition ownership during ragdoll/pose
-// transitions even when the child has no collision geometry. The visible wrapped blanket is cosmetic only and a
-// local createSimpleObject has no parent/child transform relationship with the casualty physics.
+// HPMK state/blanket safety net. Wrapped-patient world visuals are intentionally disabled elsewhere; this function
+// never creates or attaches an object to a casualty. Dropped HPMKs keep their existing shared world anchor so they
+// can still be picked up after a non-Get-Up mobility transition.
 if (!isServer) exitWith {};
 
 private _class = missionNamespace getVariable ["ACME_hpmk_blanketClass", ""];
@@ -26,24 +19,29 @@ if !(missionNamespace getVariable ["ACME_sys_hpmk", true]) exitWith {
 
 {
     private _p = _x;
-    private _wrapped = (_p getVariable ["ACME_hpmk_on", false]) && {alive _p};
+    private _state = _p getVariable ["ACME_hpmk_state", ""];
     private _legacy = _p getVariable ["ACME_hpmk_blanket", objNull];
 
-    // B28: an attached/networked blanket anchor is legacy state and is never retained on a wrapped casualty.
+    // A networked/attached blanket anchor is legacy state and is never retained on a casualty.
     if (!isNull _legacy) then { [_p] call _fnc_killLegacy; };
+    if (_state == "") then { continue; };
+    if (_p getVariable ["ACME_hpmk_returnPending", false]) then { continue; };
 
-    if (!_wrapped) then { continue; };
+    private _lyingState = _p getVariable ["ACM_core_Lying_State", false];
+    private _isLying = if (_lyingState isEqualType true) then {_lyingState} else {_lyingState > 0};
+    private _fullyMobile = alive _p && {!(_p getVariable ["ACE_isUnconscious", false])} && {!_isLying};
+    if (!_fullyMobile) then { continue; };
 
-    // A wrapped patient who gets up under their own power sheds the HPMK. Only at that moment do we create the
-    // networked anchor, because the dropped blanket needs an ACE interaction target that every client can see.
-    // Drag/carry never qualifies as "got up" because attached/dragged/carried patients fail this gate.
-    private _externallyHeld = !(isNull attachedTo _p)
-        || {_p getVariable ["ace_dragging_isDragged", false]}
-        || {_p getVariable ["ace_dragging_isCarried", false]}
-        || {_p call ace_common_fnc_isBeingDragged}
-        || {_p call ace_common_fnc_isBeingCarried};
-
-    if ((vehicle _p == _p) && {!_externallyHeld} && {(stance _p) in ["STAND", "CROUCH"]}) then {
+    if (_state == "prepped") then {
+        // A staged but not-yet-wrapped kit has no dropped blanket presentation. Cancel the prep and return the reusable
+        // kit to its recorded provider, or to the casualty if legacy state has no provider metadata.
+        private _receiver = _p getVariable ["ACME_hpmk_provider", objNull];
+        if (isNull _receiver) then { _receiver = _p; };
+        _p setVariable ["ACME_hpmk_returnPending", true, true];
+        ["ACME_ownerCommand", [_p, "hpmkRemove", [_receiver, _p, true]], _p] call CBA_fnc_targetEvent;
+    } else {
+        // For a wrapped/exposed casualty that becomes mobile by some path other than ACM Get Up, preserve the existing
+        // dropped-HPMK behavior. Explicit Get Up clears state synchronously first, so it never reaches this fallback.
         if (_class != "") then {
             private _drop = [_class, getPosATL _p] call ACME_fnc_hpmkSpawnBlanket;
             if (!isNull _drop) then {
@@ -53,9 +51,11 @@ if !(missionNamespace getVariable ["ACME_sys_hpmk", true]) exitWith {
             };
         };
         [_p, "", true, true] call ACME_fnc_hpmkStateCommit;
+        _p setVariable ["ACME_hpmk_provider", objNull, true];
+        _p setVariable ["ACME_hpmk_returnPending", false, true];
         [_p, "ACM_HPMK_Remove"] remoteExec ["ACME_fnc_remoteSay3D", 0];
         if (!isNil "ace_medical_treatment_fnc_addToLog") then {
-            [_p, "activity", "HPMK slipped off (patient got up)", []] call ace_medical_treatment_fnc_addToLog;
+            [_p, "activity", "HPMK slipped off (patient became mobile)", []] call ace_medical_treatment_fnc_addToLog;
         };
     };
 } forEach allUnits;
