@@ -31,13 +31,11 @@ if (hasInterface) then {
 
 
 // HPMK blanket visuals, client-side.
-// B28 deliberately separates wrapped and dropped presentation:
-//   - wrapped: a local simple object mirrors the casualty transform without attachTo; there is no child object.
-//   - dropped: the existing geometry-free server anchor remains, because it is the shared ACE interaction target.
-// This removes every attachTo relationship that could fight ACE drag/carry/reposition and make a casualty float.
+// Wrapped casualties deliberately receive no blanket world object at all. The HPMK remains a clinical/state
+// treatment only while it is on a patient. Dropped HPMKs retain their existing local visual and shared pickup anchor.
 if (hasInterface) then {
     ACME_hpmk_visuals = createHashMap;         // dropped anchor netId -> local simple object
-    ACME_hpmk_wrappedVisuals = createHashMap;  // patient netId -> local simple object
+    ACME_hpmk_wrappedVisuals = createHashMap;  // retained inert for compatibility; patient visuals are disabled
     [{
         private _class = missionNamespace getVariable ["ACME_hpmk_blanketClass", ""];
         private _feature = missionNamespace getVariable ["ACME_sys_hpmk", true];
@@ -68,51 +66,5 @@ if (hasInterface) then {
                 ACME_hpmk_visuals deleteAt _id;
             };
         } forEach (keys ACME_hpmk_visuals);
-
-        // Wrapped casualties: local-only presentation. A simple object is a child visual only; it has no physics,
-        // no damage, no collision and no network ownership, so ACE can attach/move/ragdoll the casualty freely.
-        private _seenWrapped = [];
-        if (_feature && {_class != ""}) then {
-            {
-                private _patient = _x;
-                if ((_patient getVariable ["ACME_hpmk_on", false]) && {alive _patient} && {vehicle _patient == _patient}) then {
-                    private _id = netId _patient;
-                    _seenWrapped pushBack _id;
-                    if (isNil { ACME_hpmk_wrappedVisuals get _id }) then {
-                        private _vis = createSimpleObject [_class, [0,0,0], true];
-                        _vis setPosWorld (getPosWorldVisual _patient);
-                        _vis setVectorDirAndUp [vectorDirVisual _patient, vectorUpVisual _patient];
-                        ACME_hpmk_wrappedVisuals set [_id, [_vis, _patient]];
-                    };
-                };
-            } forEach (allUnits select {!isNull _x && {_x distance ACE_player <= 120}});
-        };
-        {
-            private _id = _x;
-            if !(_id in _seenWrapped) then {
-                private _entry = ACME_hpmk_wrappedVisuals get _id;
-                if (!isNil "_entry") then {
-                    private _vis = _entry param [0, objNull];
-                    if (!isNull _vis) then { deleteVehicle _vis; };
-                };
-                ACME_hpmk_wrappedVisuals deleteAt _id;
-            };
-        } forEach (keys ACME_hpmk_wrappedVisuals);
     }, 1, []] call CBA_fnc_addPerFrameHandler;
-
-    // Presentation follower only. The blanket is never an attached child of the casualty, eliminating the last
-    // transform/physics relationship capable of fighting ACE drag, carry, recovery-position or patient placement.
-    // We mirror the visual transform locally instead; no simulation, collision or network ownership is involved.
-    [{
-        {
-            private _entry = ACME_hpmk_wrappedVisuals get _x;
-            if (!isNil "_entry") then {
-                _entry params [["_vis", objNull], ["_patient", objNull]];
-                if (!isNull _vis && {!isNull _patient}) then {
-                    _vis setPosWorld (getPosWorldVisual _patient);
-                    _vis setVectorDirAndUp [vectorDirVisual _patient, vectorUpVisual _patient];
-                };
-            };
-        } forEach (keys ACME_hpmk_wrappedVisuals);
-    }, 0.05, []] call CBA_fnc_addPerFrameHandler;
 };
