@@ -7,6 +7,7 @@ if !(_patient getVariable ["ACME_headElevated", false]) exitWith {};
 if !(_patient getVariable ["ACME_headElev_Suspended", false]) exitWith {};
 
 private _suspendVest = +(_patient getVariable ["ACME_headElev_suspendVestLoadout", []]);
+_patient setVariable ["ACME_headElev_suspendKeepVestOut", false, true];
 if ((count _suspendVest) == 2) then {
     private _vestClass = _suspendVest param [0, "", [""]];
     if (_vestClass != "") then {

@@ -4,8 +4,8 @@
 //
 // Direct Pressure integration: another treatment owns the provider animation the instant ACE says it started.
 // Retire DP's held-animation generation at that boundary so a tourniquet, bandage, IV action, etc. can never be
-// overwritten by the short ACME_DirectPressureHold reassert worker. DP itself remains clinically active while the
-// provider stays stationary and may resume after the treatment; any movement input hard-releases it in its own tick.
+// overwritten by the short ACME_DirectPressureHold reassert worker. Limb/head DP remains clinically active and
+// simply yields its pose to movement/treatments; torso DP is the exclusive maneuver and movement hard-releases it.
 ["ace_treatmentStarted", {
     params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
     if (hasInterface && {!isNil "ACE_player"} && {_medic isEqualTo ACE_player}

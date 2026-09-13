@@ -43,6 +43,31 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
 
     [_patient] call ACM_breathing_fnc_updateLungState;  // todo: this probably needs moving.
 
+    // Auscultation gets one owner-authoritative patient pose lease for the whole scope session. Elevated and
+    // otherwise downed casualties are held directly in the normal face-up rest. There is deliberately no
+    // roll-to-back transition here: head elevation already ran its authored lowering sequence before this dialog
+    // opened, and an ordinary downed casualty can go straight to the supine rest without the sideways roll theatre.
+    // A conscious upright casualty who was not already positioned is not forced to the ground.
+    private _lyingRaw = _patient getVariable ["ACM_core_Lying_State", false];
+    private _lying = if (_lyingRaw isEqualType true) then {_lyingRaw} else {_lyingRaw > 0};
+    private _needsSupine = (_patient getVariable ["ACE_isUnconscious", false])
+        || {_patient getVariable ["ace_medical_unconscious", false]}
+        || {_lying}
+        || {_patient getVariable ["ACME_headElevated", false]}
+        || {_patient getVariable ["ACME_headElev_Suspended", false]}
+        || {(stance _patient) == "PRONE"};
+    if (_needsSupine && {isNull objectParent _patient}) then {
+        private _serial = (missionNamespace getVariable ["ACME_stethPatientAnimSerial", 0]) + 1;
+        missionNamespace setVariable ["ACME_stethPatientAnimSerial", _serial];
+        private _token = format ["steth:%1:%2:%3:%4", clientOwner, netId _medic, netId _patient, _serial];
+        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
+        private _anim = ["", _faceUp] select ((toLowerANSI animationState _patient) != (toLowerANSI _faceUp));
+        [_patient, _anim, 2, "stethoscope", _medic, 1.6, 4, _token] call ACME_fnc_patientAnimRequest;
+        _medic setVariable ["ACME_stethPatientAnimLease", [_patient, _token, CBA_missionTime + 0.65], false];
+    } else {
+        _medic setVariable ["ACME_stethPatientAnimLease", [], false];
+    };
+
     ACM_breathing_Stethoscope_BellMoving = false;
     ACM_breathing_Stethoscope_NextBreath = -1;
     ACM_breathing_Stethoscope_NextBeat = -1;
@@ -63,6 +88,18 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
 }, {  // on cancel.
     params ["_medic", "_patient", "_bodyPart"];
 
+    // Release only this provider's animation token. A second provider auscultating the same casualty keeps their
+    // own lease and therefore cannot be interrupted by this dialog closing.
+    private _lease = _medic getVariable ["ACME_stethPatientAnimLease", []];
+    if ((count _lease) >= 2) then {
+        private _leasePatient = _lease param [0, objNull];
+        private _leaseToken = _lease param [1, ""];
+        if (!isNull _leasePatient && {_leaseToken != ""}) then {
+            [_leasePatient, _leaseToken] call ACME_fnc_patientAnimRelease;
+        };
+    };
+    _medic setVariable ["ACME_stethPatientAnimLease", [], false];
+
     stopSound ACM_breathing_Stethoscope_BreathSoundID;
     stopSound ACM_breathing_Stethoscope_BeatSoundID;
 
@@ -75,6 +112,28 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
     [-1] call ace_hearing_fnc_updateHearingProtection;
 }, {  // per frame.
     params ["_medic", "_patient", "_bodyPart"];
+
+    // CPR is a higher-order chest maneuver. If another provider starts compressions, retire auscultation instead
+    // of letting the two procedures fight over the patient.
+    if ([_patient] call ACM_core_fnc_cprActive) exitWith {
+        ACM_core_ContinuousAction_Active = false;
+    };
+
+    // Refresh the lease without replaying an animation when the casualty is already face-up. This is the critical
+    // multiplayer guard: repeated providers may request the same posture, but only the current owner token can
+    // refresh it, and no 0.6-second animation restart loop is created under the auscultation camera.
+    private _lease = _medic getVariable ["ACME_stethPatientAnimLease", []];
+    if ((count _lease) >= 3 && {CBA_missionTime >= (_lease param [2, 0])}) then {
+        private _leasePatient = _lease param [0, objNull];
+        private _leaseToken = _lease param [1, ""];
+        if (!isNull _leasePatient && {_leasePatient isEqualTo _patient} && {_leaseToken != ""}) then {
+            private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
+            private _anim = ["", _faceUp] select ((toLowerANSI animationState _patient) != (toLowerANSI _faceUp));
+            [_patient, _anim, 2, "stethoscope", _medic, 1.6, 4, _leaseToken] call ACME_fnc_patientAnimRequest;
+            _lease set [2, CBA_missionTime + 0.65];
+            _medic setVariable ["ACME_stethPatientAnimLease", _lease, false];
+        };
+    };
 
     private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
     private _ctrlBell = _display displayCtrl 81002;

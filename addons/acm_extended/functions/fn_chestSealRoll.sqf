@@ -1,10 +1,10 @@
 // Physical front/back roll used by the chest-seal Flip button.
 // This function owns ONLY the casualty. Provider theatre starts on the medic's client in fn_chestSealFlip.
-params [["_patient", objNull, [objNull]], ["_target", "front", [""]], ["_force", false, [false]]];
+params [["_patient", objNull, [objNull]], ["_target", "front", [""]], ["_force", false, [false]], ["_provider", objNull, [objNull]]];
 if (isNull _patient || {!(_target in ["front", "back"])}) exitWith {};
 
 if (!local _patient) exitWith {
-    [_patient, "chestSealRoll", [_patient, _target, _force]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealRoll", [_patient, _target, _force, _provider]] call ACME_fnc_ownerDispatch;
 };
 
 [_patient] call ACME_fnc_headElevYieldForRoll;
@@ -38,8 +38,11 @@ private _hold = if (_target isEqualTo "back") then {
 // playMoveNow, so verify the requested roll actually began. If it did not, use ACE priority 2 once as a narrowly
 // scoped state-graph repair. The token prevents an old fallback from overriding a newer flip.
 private _token = format ["%1:%2:%3", clientOwner, CBA_missionTime, random 1];
+private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
+if (!(_rollTime isEqualType 0) || {_rollTime <= 0}) then {_rollTime = 1.85;};
+private _leaseToken = [_patient, _trans, 1, "chest-seal-roll", _provider, _rollTime + 0.45, 3, _token] call ACME_fnc_patientAnimRequest;
+if (_leaseToken == "") exitWith {};
 _patient setVariable ["ACME_CS_rollToken", _token, false];
-[_patient, _trans, 1] call ACME_fnc_doAnim;
 [{
     params ["_p", "_tok", "_trans"];
     if (isNull _p || {!local _p} || {!alive _p} || {!isNull objectParent _p}) exitWith {};
@@ -49,8 +52,6 @@ _patient setVariable ["ACME_CS_rollToken", _token, false];
     };
 }, [_patient, _token, _trans], 0.15] call CBA_fnc_waitAndExecute;
 
-private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
-if (!(_rollTime isEqualType 0) || {_rollTime <= 0}) then {_rollTime = 1.85;};
 [{
     params ["_p", "_tok", "_hold", "_needsHold", "_target"];
     if (isNull _p || {!local _p}) exitWith {};

@@ -35,7 +35,13 @@ if (stance _medic == "PRONE") then {
 
 if (IS_UNCONSCIOUS(_patient) && {isNumber (_config >> "ACM_rollToBack")}) then {
     if ((getNumber (_config >> "ACM_rollToBack")) > 0) then {
-        [_patient, "AinjPpneMstpSnonWrflDnon_rolltoback", 2] call ACEFUNC(common,doAnimation);
+        if (!isNil "ACME_fnc_patientAnimRequest") then {
+            if !(_patient getVariable ["ACME_headElevated", false]) then {
+                [_patient, "AinjPpneMstpSnonWrflDnon_rolltoback", 2, format ["ai-treatment:%1", toLowerANSI _actionName], _medic, 2.5, 1] call ACME_fnc_patientAnimRequest;
+            };
+        } else {
+            [_patient, "AinjPpneMstpSnonWrflDnon_rolltoback", 2] call ACEFUNC(common,doAnimation);
+        };
     };
 };
 

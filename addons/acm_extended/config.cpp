@@ -1401,6 +1401,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         displayName = "NAR HPMK";
         descriptionShort = "Hypothermia Prevention & Management Kit. Reusable warming blanket.";
         picture = "\acm_extended\ui\items\HPMK_ca.paa";
+        nameSound = "";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
             mass = 8;
@@ -2187,6 +2188,9 @@ class CfgFunctions {
             class wrapSfxServer {};
             class markImportantSfx {};
             class directPressurePose {};
+            class patientAnimRequest {};
+            class patientAnimRelease {};
+            class treatmentPatientSettle {};
             class junctionalInjuryEntry {};
             class junctionalGuiSyncTick {};
             class aajtInjuryEntry {};
@@ -7404,9 +7408,11 @@ class ace_medical_treatment_actions {
         animationMedicProne = "AmovPknlMstpSrasWpstDnon_AmovPknlMstpSrasWpstDnon_gear";
     };
     class UseStethoscope {
-        // The launch action is only 0.001 s and should not attempt ACM's inherited gear animation. Start the
-        // optional TSP sling here instead, so the rifle is already moving to the sling while the minigame opens.
-        // Exact-class gating keeps BVM descendants from inheriting this stethoscope-specific preflight.
+        // Auscultation owns a clean supine chest-access pose. Do not inherit CheckBreathing's generic roll-to-back:
+        // elevated casualties use the authored head-lowering sequence first, then the stethoscope controller holds
+        // the normal face-up rest directly for the lifetime of the scope.
+        ACM_rollToBack = 0;
+        ACME_neverRollToBack = 1;
         animationMedic = "";
         animationMedicProne = "";
         animationMedicSelf = "";
@@ -7857,7 +7863,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 0.1;
         allowedSelections[] = {"Head","Body","LeftArm","RightArm","LeftLeg","RightLeg"};
-        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {!(_medic getVariable ['ACME_DP_Active', false])} && {!(_medic getVariable ['ACME_hang_Active', false])}";
+        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {!(_medic getVariable ['ACME_DP_Active', false])} && {!(_medic getVariable ['ACME_hang_Active', false])} && {(toLower _bodyPart != 'body') || {!(missionNamespace getVariable ['ACM_core_ContinuousAction_Active', false])}}";
         // one-shot sfx the moment the button is pressed, for hands on the wound.
         callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 0.85] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_DirectPressure'] remoteExec ['say3D', 0]}";
         callbackSuccess = "_this call ACME_fnc_directPressureStart";

@@ -6,16 +6,16 @@ disableSerialization;
 if (isNil {missionNamespace getVariable "ACME_debugMenu_r5Code"}) then {
     private _src = preprocessFileLineNumbers "\acm_extended\functions\fn_debugMenuCore.sqf";
 
-    // Slightly smaller overall presentation. Keep the user's debug-scale preference, but trim the renderer's
-    // built-in multiplier and maximum so the overlay gives more of the game view back.
-    _src = _src regexReplace ["private _scale = .*?;/", "private _scale = (((_userScale max 0.50) min 1.15) * 0.68) max 0.48 min 0.78;"];
+    // Keep the two-column diagnostic readable at the bottom. The previous compact pass forced long physiology
+    // values to wrap and made the lower rows look clipped, so restore more width and a little more scale while
+    // retaining an ultrawide cap.
+    _src = _src regexReplace ["private _scale = .*?;/", "private _scale = (((_userScale max 0.50) min 1.15) * 0.72) max 0.50 min 0.82;"];
 
-    // Always pin the overlay to the actual safe-zone left edge, including ultrawide. Width is deliberately capped
-    // to a compact two-column panel instead of scaling with the full ultrawide safeZoneW, which previously let it
-    // expand across most of the screen. The small floor keeps 16:9 and narrower layouts readable.
-    _src = _src regexReplace ["private _gap = .*?;/", "private _gap = 0.003;"];
+    // Pin to the safe-zone left edge, but give the two columns enough horizontal room that labels and numeric
+    // values stay on their intended rows. This remains bounded on ultrawide rather than growing with the display.
+    _src = _src regexReplace ["private _gap = .*?;/", "private _gap = 0.004;"];
     _src = _src regexReplace ["private _x0 = .*?;/", "private _x0 = safeZoneX;"];
-    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.42) min 0.455 max 0.385; private _w = ((_totalW - _gap) / 2) max 0.14;"];
+    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.52) min 0.58 max 0.46; private _w = ((_totalW - _gap) / 2) max 0.17;"];
 
     // The old title combined CfgPatches' r0 suffix with an additional debug r1 suffix, producing r0-r1.
     // r5 is the public diagnostic/release label for this build and is rendered as one atomic version string.

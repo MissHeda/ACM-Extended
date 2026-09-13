@@ -83,5 +83,5 @@ if (!isNull _display) then {
     };
 };
 
-[_patient, _newSide] call ACME_fnc_chestSealRoll;
+[_patient, _newSide, false, _provider] call ACME_fnc_chestSealRoll;
 [] call ACME_fnc_chestSealRender;

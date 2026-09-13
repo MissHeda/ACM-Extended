@@ -14,8 +14,9 @@
     missionNamespace setVariable ["ACME_headElev_treatmentSerial", _serial];
     private _id = format ["%1:%2:%3", clientOwner, netId _medic, _serial];
     private _token = _patient getVariable ["ACME_headElev_poseToken", ""];
-    _medic setVariable ["ACME_headElev_treatment", [_patient, _classname, _id, _token]];
-    [_patient, _medic, _id, true, _token] call ACME_fnc_headElevTreatmentEvent;
+    private _keepVestOut = toLowerANSI _classname == "usestethoscope";
+    _medic setVariable ["ACME_headElev_treatment", [_patient, _classname, _id, _token, _keepVestOut]];
+    [_patient, _medic, _id, true, _token, _keepVestOut] call ACME_fnc_headElevTreatmentEvent;
 }] call CBA_fnc_addEventHandler;
 
 // Ordinary treatments release their elevation lease on native success. UseStethoscope does not: that success is
@@ -30,7 +31,7 @@
     if (_storedClass == "usestethoscope" && {_eventClass == "usestethoscope"}) exitWith {};
     if (_storedClass != _eventClass) exitWith {};
     _medic setVariable ["ACME_headElev_treatment", []];
-    [_patient, _medic, _entry select 2, false, _entry select 3] call ACME_fnc_headElevTreatmentEvent;
+    [_patient, _medic, _entry select 2, false, _entry select 3, _entry param [4, false]] call ACME_fnc_headElevTreatmentEvent;
 }] call CBA_fnc_addEventHandler;
 
 // A normal failure closes an exact-class lease. The stethoscope controller intentionally emits
@@ -45,5 +46,5 @@
     private _scopeEnd = _storedClass == "usestethoscope" && {_eventClass in ["usestethoscope", "acm_continuousaction"]};
     if (!_scopeEnd && {_storedClass != _eventClass}) exitWith {};
     _medic setVariable ["ACME_headElev_treatment", []];
-    [_patient, _medic, _entry select 2, false, _entry select 3] call ACME_fnc_headElevTreatmentEvent;
+    [_patient, _medic, _entry select 2, false, _entry select 3, _entry param [4, false]] call ACME_fnc_headElevTreatmentEvent;
 }] call CBA_fnc_addEventHandler;

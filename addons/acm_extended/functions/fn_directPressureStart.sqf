@@ -16,8 +16,8 @@ if (_medic getVariable ["ACME_DP_Active", false]) exitWith {
 // globally synced so the machine of the casualty, where the bleed pfh runs, sees it. it is cleared in stop.
 _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], _medic, true];
 
-// Torso pressure uses the stronger two-handed pose, but direct pressure is not an exclusive continuous-action lock.
-// Providers must still be able to open the medical menu, stop pressure explicitly, and perform another intervention.
+// Torso pressure is a true exclusive maneuver: it closes the medical menu and owns the same continuous-action
+// gate as BVM until canceled. Head/limb pressure stays non-exclusive and can yield to movement or another action.
 if (_bodyPart == "body") then {
     [_medic, _patient, _bodyPart] call ACME_fnc_directPressureTorso;
 } else {

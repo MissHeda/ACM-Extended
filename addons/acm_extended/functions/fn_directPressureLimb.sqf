@@ -33,7 +33,7 @@ if (dialog) then { closeDialog 0; };
 if (isNull objectParent _medic) then {
     _medic setUnitPos "MIDDLE";
     _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
-    _medic setVariable ["ACME_DP_PoseGraceUntil", CBA_missionTime + 0.9];
+    _medic setVariable ["ACME_DP_PoseGraceUntil", CBA_missionTime + 0.15];
     [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
     _medic setVariable ["ACME_DP_InPose", true];
     _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
@@ -59,5 +59,5 @@ private _partShort = [_bodyPart, "abbr"] call ACME_fnc_bodyPartName;
  [[_medic, false, true] call ace_common_fnc_getName, _partShort]] call ACME_fnc_medLog;
 
 // 20 Hz while active so movement escape and idle-to-pose reapplication stay responsive. Clotting remains time-gated.
-private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _patient, _bodyPart, "limb"]] call CBA_fnc_addPerFrameHandler;
+private _pfh = [ACME_fnc_directPressureTick, 0, [_medic, _patient, _bodyPart, "limb"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

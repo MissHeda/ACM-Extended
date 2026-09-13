@@ -14,3 +14,5 @@ FORK_DEV.md
 /.hemttout/
 /*.zip
 /.hemttout/
+/releases/ACM-1.4.5.0.zip
+/releases/*.zip

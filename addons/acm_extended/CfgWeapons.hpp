@@ -164,6 +164,7 @@ class CfgWeapons {
         displayName = "NAR HPMK";
         descriptionShort = "Hypothermia Prevention & Management Kit. Reusable warming blanket.";
         picture = "\acm_extended\ui\items\HPMK_ca.paa";
+        nameSound = "";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
             mass = 8;

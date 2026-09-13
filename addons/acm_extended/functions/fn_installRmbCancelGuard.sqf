@@ -33,7 +33,10 @@ private _eh = _disp displayAddEventHandler ["MouseButtonDown", {
         private _u = ACE_player;
         if (isNull _u) exitWith {};
         if (_u getVariable ["ACME_hang_Active", false]) exitWith { [false] call ACME_fnc_hangBagStop; };
-        if (_u getVariable ["ACME_DP_Active", false])   exitWith { [false] call ACME_fnc_directPressureStop; };
+        if (_u getVariable ["ACME_DP_Active", false]) exitWith {
+            private _reopen = (_u getVariable ["ACME_DP_Mode", ""]) == "torso";
+            [false, _u, _reopen] call ACME_fnc_directPressureStop;
+        };
     }, []] call CBA_fnc_execNextFrame;
 
     true  // swallow RMB -> the weapon does not aim

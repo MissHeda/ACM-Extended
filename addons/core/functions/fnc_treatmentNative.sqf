@@ -71,6 +71,12 @@ if (isNumber (_config >> "ACM_rollToBack")) then {
         _rollToBack = (_bodyPart == "Body");
     };
 };
+// ACME can opt a specific action out of the generic body-part fallback. This is intentionally separate from
+// ACM_rollToBack=0 because stock ACM treats an explicit zero on Body as "use the Body default". Auscultation
+// needs no side-roll at all: head elevation lowers directly and the scope controller owns the face-up hold.
+if (isNumber (_config >> "ACME_neverRollToBack") && {(getNumber (_config >> "ACME_neverRollToBack")) > 0}) then {
+    _rollToBack = false;
+};
 
 if (isNumber (_config >> "ACM_cancelRecovery")) then {
     _cancelsRecoveryPosition = [false,true] select (getNumber (_config >> "ACM_cancelRecovery"));
@@ -103,10 +109,18 @@ if (alive _patient) then {
             };
 
             if (_patientAnim != "") then {
-                if (IS_UNCONSCIOUS(_patient)) then {
-                    [_patient, _patientAnim, 2] call ACEFUNC(common,doAnimation);
+                private _animPriority = [1, 2] select IS_UNCONSCIOUS(_patient);
+                if (!isNil "ACME_fnc_patientAnimRequest") then {
+                    private _lowerPatientAnim = toLowerANSI _patientAnim;
+                    // Head-elevation owns the lay-flat transition. Do not start a native roll underneath the authored
+                    // lowering animation; the treatment-start event will suspend the elevation on the patient owner.
+                    if !((_patient getVariable ["ACME_headElevated", false]) && {_lowerPatientAnim find "rolltoback" >= 0}) then {
+                        private _lease = ((_treatmentTime max 1.5) min 5);
+                        private _lockPriority = [2, 1] select (_lowerPatientAnim find "rolltoback" >= 0);
+                        [_patient, _patientAnim, _animPriority, format ["treatment:%1", toLowerANSI _classname], _medic, _lease, _lockPriority] call ACME_fnc_patientAnimRequest;
+                    };
                 } else {
-                    [_patient, _patientAnim, 1] call ACEFUNC(common,doAnimation);
+                    [_patient, _patientAnim, _animPriority] call ACEFUNC(common,doAnimation);
                 };
             };
         };

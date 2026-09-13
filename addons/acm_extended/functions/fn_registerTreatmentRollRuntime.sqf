@@ -14,3 +14,16 @@
         [_medic, _classname, _patient] call ACME_fnc_rollProviderStart;
     };
 }] call CBA_fnc_addEventHandler;
+
+// Final fallback, after ordinary treatment ownership has ended. Only a genuinely side-on downed casualty is
+// corrected, and the owner-side arbiter refuses the request while any special patient pose is still active.
+{
+    [_x, {
+        params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
+        if (isNull _patient || {_classname == ""} || {toLowerANSI _classname == "acm_continuousaction"}) exitWith {};
+        [{
+            params ["_p", "_m", "_c"];
+            [_p, _m, _c] call ACME_fnc_treatmentPatientSettle;
+        }, [_patient, _medic, _classname], 0.4] call CBA_fnc_waitAndExecute;
+    }] call CBA_fnc_addEventHandler;
+} forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];

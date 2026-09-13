@@ -17,7 +17,7 @@ switch (_operation) do {
     case "headElevTreatment": {_args call ACME_fnc_headElevTreatmentEvent;};
     case "headElevTilt": {_args call ACME_fnc_headElevApplyTilt;};
     case "headElevCollision": {_args call ACME_fnc_headElevCollision;};
-    case "headElevSuspend": {[_patient] call ACME_fnc_headElevSuspend;};
+    case "headElevSuspend": {_args call ACME_fnc_headElevSuspend;};
     case "headElevTryResume": {_args call ACME_fnc_headElevTryResume;};
     case "headElevResume": {[_patient] call ACME_fnc_headElevResume;};
     case "headElevStart": {_args call ACME_fnc_headElevateStart;};
@@ -57,4 +57,7 @@ switch (_operation) do {
     case "chestEffect": { _args call ACME_fnc_chestSealEffectLocal; };
     case "burp": { _args call ACME_fnc_chestSealBurp; };
     case "chestSealRoll": {_args call ACME_fnc_chestSealRoll;};
+    case "patientAnimRequest": {_args call ACME_fnc_patientAnimRequest;};
+    case "patientAnimRelease": {_args call ACME_fnc_patientAnimRelease;};
+    case "treatmentPatientSettle": {_args call ACME_fnc_treatmentPatientSettle;};
 };

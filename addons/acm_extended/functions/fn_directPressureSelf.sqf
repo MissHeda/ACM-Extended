@@ -28,5 +28,5 @@ _medic setVariable ["ACME_DP_KeyIDs", _ids];
  "%1 started Direct pressure on own %2",
  [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;
 
-private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _medic, _bodyPart, "self"]] call CBA_fnc_addPerFrameHandler;
+private _pfh = [ACME_fnc_directPressureTick, 0, [_medic, _medic, _bodyPart, "self"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];
