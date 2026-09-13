@@ -35,7 +35,8 @@ if (_stop != "") exitWith {
     [_pfhId] call CBA_fnc_removePerFrameHandler;
 };
 
-// B70: weapon stow is intentionally one-shot at action entry. Never re-stow a weapon the player manually draws.
+// Direct Pressure never owns weapon selection. No entry, resume, or tick path should call putWeaponAway or restore
+// a weapon. The selected weapon is left untouched while the CfgMoves state temporarily supplies the treatment pose.
 
 // limb and torso: the pose helper owns movement escape and treatment yielding. Any movement input retires the
 // held-animation generation immediately and exits the pose, but the clinical Direct Pressure state stays active.

@@ -1,8 +1,8 @@
 // limb and torso direct pressure: the free-movement holding pose. it is called every active tick.
 // the medic can still use the medical menu and other treatments. while stationary and looking at the patient they
 // adopt the connected direct-pressure hold. any competing treatment, movement, or look-away immediately retires the
-// held-animation reassert worker before attempting to leave the pose. Movement only releases the pose, not the
-// clinical Direct Pressure state, so the animation can reapply after the provider stops moving and settles again.
+// held-animation reassert worker. Movement only releases the pose, not the clinical Direct Pressure state, so the
+// animation can reapply after the provider stops moving and settles again.
 params ["_medic", "_patient"];
 private _inPose = _medic getVariable ["ACME_DP_InPose", false];
 
@@ -20,11 +20,9 @@ private _treating = !_entryGrace && {
 };
 if (_treating) exitWith {
     // Kill ACME_fnc_doAnimHeld's reassert generation before the tourniquet/bandage/other treatment takes over.
-    // Without this, the short DP hold worker could wake back up after the next animation had already started.
+    // Do not force an unarmed crouch here. The incoming treatment owns the next pose and forcing Wnon first is what
+    // produced the visible weapon-out/weapon-away flicker between back-to-back actions.
     _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
-    if (_inPose && {!([_medic] call ACME_fnc_animBlocked)}) then {
-        [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
-    };
     _medic setVariable ["ACME_DP_InPose", false];
     _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
 };
@@ -61,18 +59,22 @@ private _looking = if (_dv2 isEqualTo [0,0,0] || {_lk2 isEqualTo [0,0,0]}) then 
 
 if (_moving || {!_looking}) then {
     // Movement/look-away is an absolute POSE escape, not a Direct Pressure cancellation. Retire every pending held
-    // reassert first, then release the stance. Checking the actual animation as well as ACME_DP_InPose covers the
-    // race where another treatment cleared the intent flag while the engine was still physically in the DP hold.
+    // reassert first. When actual movement exists, do not inject an intermediate unarmed animation at all: the
+    // player's own movement state gets first chance to supersede the hold, preserving the selected weapon state.
     _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
     private _actual = toLower animationState _medic;
     private _ownsVisibleHold = _inPose || {_actual == "acme_directpressurehold"};
     if (_ownsVisibleHold && {!([_medic] call ACME_fnc_animBlocked)}) then {
         _medic setUnitPos "AUTO";
-        [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
+
+        if (!_moving) then {
+            // Looking away while stationary has no movement state to take over, so use the normal neutral exit.
+            [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
+        };
 
         // Narrow engine-state repair. A movement command must never be swallowed by a stale looping DP state. If the
-        // authored transition failed and the unit is STILL in the DP hold a beat later, use ACE priority 2 once to
-        // break that state. This does not end DP and does not fire if another treatment/movement animation already won.
+        // engine is STILL physically in the DP hold after movement/treatment has had a chance to win, use priority 2
+        // once to break only that stale state. This is a safety fallback, not the normal Direct Pressure exit path.
         [{
             params ["_m"];
             if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
@@ -87,8 +89,7 @@ if (_moving || {!_looking}) then {
     if (!_inPose) then {
         private _idleStart = _medic getVariable ["ACME_DP_IdleStart", _now];
         if ((_now - _idleStart) >= (missionNamespace getVariable ["ACME_DP_idleToPose", 0.8])) then {
-            // Do not re-holster here. The action already performed its one weapon-clear at entry. The short held
-            // reassert window defeats ACE's trailing treatment restore without turning this into a movement lock.
+            // Resume the ACME-owned pose directly. No weapon preflight, holster request, or weapon restore is issued.
             [_medic, "ACME_DirectPressureHold", 1.1, 1] call ACME_fnc_doAnimHeld;
             _medic setVariable ["ACME_DP_InPose", true];
             _medic setVariable ["ACME_DP_LastPoseAssert", _now];

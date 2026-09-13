@@ -1,7 +1,6 @@
-// self direct pressure. hold pressure on any of your own parts. the weapon is cleared once at action entry.
-// ACME never re-stows it later if the player manually selects a weapon during the hold. it clots the part like the
-// other modes without owning the active-maneuver lock. Any movement input is a hard release; RMB and esc stop, and
-// MMB assesses.
+// self direct pressure. hold pressure on any of your own parts without taking ownership of the global continuous-
+// action lock. Direct Pressure never issues a weapon-selection command; the player's selected weapon is left alone.
+// RMB and esc stop, MMB assesses, and the clinical pressure state remains independent of the selected weapon.
 params ["_medic", "_patient", "_bodyPart"];
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -15,8 +14,7 @@ _medic setVariable ["ACME_DP_LastPos", getPosASL _medic];
 
 if (dialog) then { closeDialog 0; };
 
-// One animation episode gets one empty-hands request. If the player later manually draws a weapon, ACME does not fight it.
-[_medic] call ACME_fnc_medicAnimationPrep;
+// No medicAnimationPrep here. Self pressure must not trigger a scripted holster/draw cycle before the action begins.
 
 ["", "Stop", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
 private _ids = [];
@@ -30,6 +28,5 @@ _medic setVariable ["ACME_DP_KeyIDs", _ids];
  "%1 started Direct pressure on own %2",
  [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;
 
-// 20 Hz while active so any bound movement input breaks pressure essentially immediately.
 private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _medic, _bodyPart, "self"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

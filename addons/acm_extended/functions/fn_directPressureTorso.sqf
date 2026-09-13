@@ -1,7 +1,7 @@
 // torso direct pressure. It uses the stronger two-handed hold pose, but it is not an exclusive ACM continuous
 // maneuver: the provider may still open the medical menu and perform another intervention. The pose yields while
-// an ACE treatment is active and resumes only after the provider settles again. Any movement input is a hard release
-// of direct pressure. RMB/ESC and the medical-menu Stop action also release pressure; MMB pauses to assess bleeding.
+// an ACE treatment is active and resumes only after the provider settles again. Movement yields the pose without
+// ending Direct Pressure. RMB/ESC and the medical-menu Stop action release pressure; MMB pauses to assess bleeding.
 params ["_medic", "_patient", "_bodyPart"];
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -19,11 +19,10 @@ _patient setVariable ["ACME_DP_TorsoMedic", _medic, true];
 
 if (dialog) then { closeDialog 0; };
 
-// Enter the connected pressure hold immediately. The old staged medic animation delayed the actual pressure
-// pose by almost two seconds and then ACE's trailing treatment-animation restore could cancel it entirely.
-// Priority 1 keeps the authored CfgMoves interpolation, while doAnimHeld survives that short restore window.
+// Enter the connected pressure hold directly. Do not call medicAnimationPrep and do not ask ACE to change the
+// selected weapon. The Direct Pressure CfgMoves state owns only the temporary body pose; the weapon selection is
+// left untouched so there is no scripted draw/holster pre-animation before hands go to the patient.
 if (isNull objectParent _medic) then {
-    [_medic] call ACME_fnc_medicAnimationPrep;
     _medic setUnitPos "MIDDLE";
     _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
     _medic setVariable ["ACME_DP_PoseGraceUntil", CBA_missionTime + 0.9];
@@ -44,7 +43,6 @@ _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_patient, "activity", "%1 started Direct pressure on %2", "%1 started Direct pressure on %2", [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;
 
-// 20 Hz while active. This is intentionally much faster than the clot timer so a remapped movement input becomes
-// an immediate safety release instead of waiting half a second for the old torso worker.
+// 20 Hz while active so movement escape and idle-to-pose reapplication are immediate while clotting stays time-gated.
 private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _patient, _bodyPart, "torso"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];
