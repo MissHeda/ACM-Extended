@@ -94,16 +94,16 @@ private _PFH = [{
     if (_padsStatus) then {
         private _lastSync = _patient getVariable [QGVAR(AED_Pads_LastSync), -1];
 
-        private _ekgHR = [_patient] call FUNC(getEKGHeartRate);
+        // The AED PFH can run every frame, but the electrical-rate cache is allowed to advance only on its own
+        // one-second cadence.  Every consumer below reads that same cached value.
+        private _ekgHR = [_patient] call FUNC(updateEKGHeartRate);
         private _rhythmState = _patient getVariable [QGVAR(Cardiac_RhythmState), ACM_Rhythm_Sinus];
 
-        private _roundedEKG = round (_ekgHR max 0);
-        private _shownEKG = round (_patient getVariable [QGVAR(AED_Pads_Display), 0]);
-        // One electrical-rate source owns the beep, the big BPM number, and waveform spacing. Publish a changed BPM
-        // immediately instead of leaving the display stale for the old 5.25-second polling interval.
-        if (_roundedEKG != _shownEKG || {_lastSync + 1 < CBA_missionTime}) then {
+        // Restore ACM's monitor sampling behavior: the large numeric HR updates once per monitor sample rather than
+        // visually racing through every intermediate value while the physiologic HR is moving.
+        if (_lastSync + 5.25 < CBA_missionTime) then {
             _patient setVariable [QGVAR(AED_Pads_LastSync), CBA_missionTime];
-            _patient setVariable [QGVAR(AED_Pads_Display), _roundedEKG, true];
+            _patient setVariable [QGVAR(AED_Pads_Display), round (_ekgHR max 0), true];
         };
 
         if ([_patient] call FUNC(AED_IsSilent)) then {
@@ -126,6 +126,15 @@ private _PFH = [{
                     _patient setVariable ["ACME_AED_ClockRhythm", _effectiveRhythm, false];
                     _hrDelay = _nominalRR;
                     _patient setVariable ["ACME_AED_NextRR", _hrDelay, false];
+
+                    // A rhythm change gets one clean clock handoff.  Preserve a recent organized beat so sinus -> VT
+                    // and similar transitions do not invent an extra QRS; if the previous epoch is stale (for example
+                    // VF -> PEA), begin a fresh organized cycle from now.
+                    if (_lastBeep < 0 || {(CBA_missionTime - _lastBeep) > ((_nominalRR max 0.25) * 1.5)}) then {
+                        _lastBeep = CBA_missionTime;
+                        _patient setVariable [QGVAR(AED_Pads_LastBeep), _lastBeep];
+                        _patient setVariable ["ACME_AED_PreviousRR", _hrDelay, false];
+                    };
                 };
                 if (!(_hrDelay isEqualType 0) || {!finite _hrDelay} || {_hrDelay <= 0}) then {_hrDelay = _nominalRR;};
 
@@ -153,11 +162,13 @@ private _PFH = [{
                 };
 
                 if ((_lastBeep + _hrDelay) <= CBA_missionTime) then {
-                    // One authoritative electrical beat event. The waveform generator consumes this exact timestamp,
-                    // while BeatSerial tells an open monitor to refresh its future strip once after the audible beep.
-                    // Keep these local: the AED provider/display lives on the same client and there is no reason to
-                    // broadcast a per-beat network event.
-                    private _beatAt = CBA_missionTime;
+                    // One authoritative electrical beat event.  The waveform generator and the sound use the same
+                    // scheduled epoch.  A normal render-frame delay therefore cannot accumulate into R-wave drift.
+                    // If the client actually hitches for a large fraction of an R-R interval, resynchronize once
+                    // instead of replaying/catching up several historical beats in rapid succession.
+                    private _dueAt = _lastBeep + _hrDelay;
+                    private _lateBy = (CBA_missionTime - _dueAt) max 0;
+                    private _beatAt = if (_lateBy <= ((_hrDelay * 0.35) min 0.20)) then {_dueAt} else {CBA_missionTime};
                     _patient setVariable [QGVAR(AED_Pads_LastBeep), _beatAt];
                     _patient setVariable ["ACME_AED_PreviousRR", _hrDelay, false];
                     // Select the next interval exactly once at the beat. Regular rhythms adopt the latest physiologic

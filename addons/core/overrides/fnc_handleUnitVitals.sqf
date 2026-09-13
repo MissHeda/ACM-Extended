@@ -39,7 +39,7 @@ if (_syncValues) then {
     _unit setVariable [QACEGVAR(medical_vitals,lastMomentValuesSynced), CBA_missionTime];
 };
 
-private _bloodVolume = ([_unit, _deltaT, _syncValues] call ACEFUNC(medical_status,getBloodVolumeChange));
+private _bloodVolume = ([_unit, _deltaT, _syncValues] call EFUNC(circulation,getBloodVolumeChange));
 _bloodVolume = 0 max _bloodVolume min DEFAULT_BLOOD_VOLUME;
 
 // @todo: replace this and the rest of the setVariable with EFUNC(common,setApproximateVariablePublic)
@@ -308,20 +308,20 @@ switch (true) do {
         };
     };
     case (!_activeGracePeriod && {_heartRate < 40 || {_heartRate > 220}}): {
+        // Keep ACM's native fatal-rate contract intact.  Extended rhythms may shape a perfusing rate below the
+        // threshold, but once the actual ACE/ACM heart rate crosses <40 or >220 this branch owns the transition.
         TRACE_2("heartRate Fatal",_unit,_heartRate);
         if (_heartRate > 220) then {
-            // Rate alone cannot turn an established supraventricular rhythm into ventricular tachycardia.
-            // rhythmGet validates native sinus + no arrest; actual native VT/VF always takes precedence.
-            // Keep the native critical-vitals event below: extreme/sustained rates, hypotension and the
-            // other native causes can still deteriorate into a real arrest through ACM's watchdog.
-            if !(([_unit] call ACME_fnc_rhythmGet) in [100,101,103,104]) then {
-                _unit setVariable [QEGVAR(circulation,Cardiac_RhythmState), ACM_Rhythm_VT, true];
-                _unit setVariable [QEGVAR(circulation,CardiacArrest_TargetRhythm), ACM_Rhythm_PVT];
-            };
+            _unit setVariable [QEGVAR(circulation,Cardiac_RhythmState), ACM_Rhythm_VT, true];
+            _unit setVariable [QEGVAR(circulation,CardiacArrest_TargetRhythm), ACM_Rhythm_PVT];
         } else {
-            // B14: drug identity does not select a permanent arrest rhythm.
-            _unit setVariable [QEGVAR(circulation,Cardiac_RhythmState), ACM_Rhythm_Asystole, true];
-            _unit setVariable [QEGVAR(circulation,CardiacArrest_TargetRhythm), ACM_Rhythm_Asystole];
+            if ([_unit, "Adenosine_IV", false] call ACEFUNC(medical_status,getMedicationCount) > 0.5) then {
+                _unit setVariable [QEGVAR(circulation,Cardiac_RhythmState), ACM_Rhythm_Asystole, true];
+                _unit setVariable [QEGVAR(circulation,CardiacArrest_TargetRhythm), ACM_Rhythm_Asystole];
+            } else {
+                _unit setVariable [QEGVAR(circulation,Cardiac_RhythmState), ACM_Rhythm_VF, true];
+                _unit setVariable [QEGVAR(circulation,CardiacArrest_TargetRhythm), ACM_Rhythm_VF];
+            };
         };
         [QGVAR(handleFatalVitals), _unit] call CBA_fnc_localEvent;
     };

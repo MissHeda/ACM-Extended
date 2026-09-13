@@ -32,6 +32,10 @@ if (_rhythm in [100,101,102,103,104]) exitWith {
     private _dt = 0.03;
     private _lastIndex = _W - 1;
     private _now = CBA_missionTime;
+    private _cursorEpoch = if (!isNull _tgtForRate) then {
+        _tgtForRate getVariable ["ACME_AED_MonitorCursorTime", _now]
+    } else {_now};
+    if (!(_cursorEpoch isEqualType 0) || {!finite _cursorEpoch}) then {_cursorEpoch = _now;};
     private _rrNominal = if (_rateHR > 0) then {60 / _rateHR} else {0.75};
     private _anchor = 0;
     if (!isNull _tgtForRate) then {
@@ -42,7 +46,7 @@ if (_rhythm in [100,101,102,103,104]) exitWith {
     private _lastBeat = if (!isNull _tgtForRate) then {
         _tgtForRate getVariable ["ACM_circulation_AED_Pads_LastBeep", -1]
     } else {-1};
-    if (_lastBeat < 0) then {_lastBeat = _now;};
+    if (_lastBeat < 0) then {_lastBeat = _cursorEpoch;};
     private _prevRR = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_AED_PreviousRR", _rrNominal]} else {_rrNominal};
     private _nextRR = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_AED_NextRR", _rrNominal]} else {_rrNominal};
     if (!(_prevRR isEqualType 0) || {!finite _prevRR} || {_prevRR <= 0}) then {_prevRR = _rrNominal;};
@@ -86,7 +90,7 @@ if (_rhythm in [100,101,102,103,104]) exitWith {
         private _templateLen = count _narrow;
 
         for "_i" from 0 to _lastIndex do {
-            private _sampleTime = _now + ((_i - _anchor) * _dt);
+            private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);
             private _elapsed = (_sampleTime - _startAt) max 0;
             private _pRaw = (_elapsed / (_entryWindow max 0.1)) max 0 min 1;
             private _p = _pRaw * _pRaw * (3 - 2 * _pRaw);
@@ -118,7 +122,7 @@ if (_rhythm in [100,101,102,103,104]) exitWith {
     };
 
     for "_i" from 0 to _lastIndex do {
-        private _sampleTime = _now + ((_i - _anchor) * _dt);
+        private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);
         private _sampleIndex = floor (_sampleTime / _dt);
         private _beatTime = _lastBeat;
         private _beatNumber = 0;

@@ -30,6 +30,7 @@ if (dialog) then { // If another dialog is open (medical menu) close it
 createDialog QGVAR(Lifepak_Monitor_Dialog);
 
 GVAR(EKG_Tick) = CBA_missionTime;
+_patient setVariable ["ACME_AED_MonitorCursorTime", GVAR(EKG_Tick), false];
 
 GVAR(AED_Monitor_Target) = _patient;
 
@@ -253,7 +254,7 @@ private _PFH = [{
             _POStepSpacing = 0;
             _COStepSpacing = 0;
         };
-        case (!(HAS_PULSE_P(_patient)) && _hr > 180): { // VT
+        case (!(HAS_PULSE_P(_patient)) && {_hr > 180} && {_rhythmState in [ACM_Rhythm_Sinus, ACM_Rhythm_VT]}): { // fallback VT only when no explicit arrest rhythm owns the EKG
             if (_padsState) then {
                 _EKGRhythm = ACM_Rhythm_VT;
             };
@@ -307,7 +308,10 @@ private _PFH = [{
     private _connectedPO = _patient getVariable [QGVAR(AED_Monitor_PulseOximeter_State), false] != _pulseOximeterState;
     private _connectedCO = _patient getVariable [QGVAR(AED_Monitor_Capnograph_State), false] != _capnographState;
 
-    private _vitalsEKG = abs (round (_patient getVariable [QGVAR(AED_Monitor_HR), 0]) - round _ekgHR) >= 1;
+    // ACM intentionally does not regenerate the strip for every 1 BPM movement.  A 10-BPM hysteresis keeps gradual
+    // physiologic changes stable; the electrical beat clock below separately refreshes only when the selected R-R
+    // interval actually changes enough to move the next R wave.
+    private _vitalsEKG = abs (round (_patient getVariable [QGVAR(AED_Monitor_HR), 0]) - round _ekgHR) > 10;
     private _vitalsPO = abs ((_patient getVariable [QGVAR(AED_Monitor_OxygenSaturation), 0]) - _oxygenSaturation) > 6;
     private _vitalsCO = abs ((_patient getVariable [QGVAR(AED_Monitor_EtCO2), 0]) - _etco2) > 10;
 
@@ -320,16 +324,23 @@ private _PFH = [{
     private _rhythmChangeCO = _CORhythm != _oldCORhythm;
     private _rhythmChangeCondition = _rhythmChangeEKG || _rhythmChangePO || _rhythmChangeCO;
 
-    // A real beep is also a clock synchronization point. Regenerate the future EKG strip once after each beep so
-    // rate changes cannot leave the audio on a new R-R epoch while the visible buffer is still on the old one.
+    // A beat itself is not a reason to rebuild the trace.  Rebuilding on every beep was the source of repeated
+    // mid-sweep splices.  Only a materially different newly-selected R-R interval needs the future strip refreshed.
     private _beatSerial = _patient getVariable ["ACME_AED_BeatSerial", 0];
-    private _beatChanged = _beatSerial != (_patient getVariable ["ACME_AED_Monitor_BeatSerial", -1]);
+    private _lastMonitorBeatSerial = _patient getVariable ["ACME_AED_Monitor_BeatSerial", -1];
+    private _beatChanged = _beatSerial != _lastMonitorBeatSerial;
+    private _nextRR = _patient getVariable ["ACME_AED_NextRR", if (_ekgHR > 0) then {60 / _ekgHR} else {0}];
+    private _monitorRR = _patient getVariable ["ACME_AED_Monitor_NextRR", -1];
+    private _effectiveRhythm = [_patient] call ACME_fnc_rhythmGet;
+    private _rrChanged = _monitorRR < 0 || {_beatChanged && {
+        abs (_nextRR - _monitorRR) > 0.025 || {_effectiveRhythm in [100,103]}
+    }};
 
     private _vitalsCondition = _vitalsEKG || _vitalsPO || _vitalsCO;
     private _connectedCondition = _connectedEKG || _connectedPO || _connectedCO;
     private _listCondition = (count _monitorArray_EKGRefresh < AED_MONITOR_WIDTH) || (count _monitorArray_PORefresh < AED_MONITOR_WIDTH) || (count _monitorArray_CORefresh < AED_MONITOR_WIDTH);
 
-    if (_stepCondition || {_beatChanged || {_vitalsCondition || {_rhythmChangeCondition || {_connectedCondition || {_listCondition}}}}}) then {
+    if (_stepCondition || {_rrChanged || {_vitalsCondition || {_rhythmChangeCondition || {_connectedCondition || {_listCondition}}}}}) then {
         _patient setVariable [QGVAR(AED_EKGRhythm), _EKGRhythm];
         _patient setVariable [QGVAR(AED_PORhythm), _PORhythm];
         _patient setVariable [QGVAR(AED_CORhythm), _CORhythm];
@@ -339,14 +350,11 @@ private _PFH = [{
         private _generatedCO = [_CORhythm, _COStepSpacing, _monitorArray_Offset, _etco2, _rr] call FUNC(displayAEDMonitor_generateCO);
 
         private _freshEKG = _generatedEKG select 0;
+        private _freshSafeEKG = _generatedEKG select 1;
         private _freshPO = _generatedPO select 0;
         private _freshCO = _generatedCO select 0;
 
-        // Blend the currently scheduled continuation into the newly generated SAME screen indices. The previous code
-        // copied refresh[0] into screen[current+1], effectively restarting a second ECG timeline in the middle of a
-        // sweep. The bridge source must be the existing REFRESH buffer, not the display array: undrawn display indices
-        // are stale values from the prior sweep, while refresh is the waveform that was actually about to be drawn.
-        // A short value morph therefore preserves endpoint continuity for every rhythm-to-rhythm transition.
+        // Generic non-ECG bridge.  PO/CO do not have a discrete R-wave clock, so a short same-index blend is enough.
         private _fnc_bridge = {
             params ["_current", "_fresh", "_start", "_columns"];
             private _out = +_current;
@@ -367,8 +375,57 @@ private _PFH = [{
             _out
         };
 
+        // ECG changes are joined only at an isoelectric/safe section.  This preserves the QRS already scheduled on
+        // the old rhythm, then hands the future strip to the new rhythm between complexes.  It prevents half of one
+        // QRS being blended into half of another and gives every rhythm a clean entry/exit path during a live sweep.
+        private _fnc_spliceEKG = {
+            params ["_current", "_fresh", "_freshSafe", "_start", ["_rhythmChange", false]];
+            private _out = +_current;
+            if (count _out < AED_MONITOR_WIDTH) then {_out resize [AED_MONITOR_WIDTH, 0];};
+            if (count _fresh < AED_MONITOR_WIDTH) exitWith {_out};
+            if (_start > AED_MONITOR_LASTINDEX) exitWith {_out};
+
+            private _splice = -1;
+            private _searchEnd = (_start + 52) min (AED_MONITOR_LASTINDEX - 2);
+            for "_i" from _start to _searchEnd do {
+                private _oldQuiet = abs (_out select _i) < 9
+                    && {abs (_out select (_i + 1)) < 9}
+                    && {abs (_out select (_i + 2)) < 11};
+                private _freshQuiet = (_freshSafe param [_i, false])
+                    && {(_freshSafe param [_i + 1, false])}
+                    && {abs (_fresh select _i) < 11};
+
+                // Chaotic rhythms have no safe array by definition.  A zero crossing is the least disruptive
+                // physiological bridge point when entering or leaving VF/torsades.
+                private _chaoticJoin = _rhythmChange
+                    && {abs (_fresh select _i) < 12}
+                    && {abs (_fresh select (_i + 1)) < 18};
+
+                if (_oldQuiet && {_freshQuiet || _chaoticJoin}) exitWith {_splice = _i;};
+            };
+
+            if (_splice < 0) then {
+                // Never wait forever.  If a continuously chaotic source offers no quiet crossing, defer a short
+                // distance past the current cursor and use a longer morph instead of cutting at the cursor itself.
+                _splice = (_start + 10) min AED_MONITOR_LASTINDEX;
+            };
+
+            private _columns = if (_rhythmChange) then {8} else {4};
+            private _endBridge = (_splice + _columns - 1) min AED_MONITOR_LASTINDEX;
+            for "_i" from _splice to AED_MONITOR_LASTINDEX do {
+                private _newValue = _fresh select _i;
+                if (_i <= _endBridge) then {
+                    private _oldValue = _out select _i;
+                    private _alpha = (_i - _splice + 1) / ((_endBridge - _splice + 1) max 1);
+                    _out set [_i, _oldValue + ((_newValue - _oldValue) * _alpha)];
+                } else {
+                    _out set [_i, _newValue];
+                };
+            };
+            _out
+        };
+
         if (_stepCondition) then {
-            // At the right edge the EKG generator anchors index 0 to "now" for the next left-to-right sweep.
             _monitorArray_EKGRefresh = _freshEKG;
             _monitorArray_PORefresh = _freshPO;
             _monitorArray_CORefresh = _freshCO;
@@ -378,10 +435,9 @@ private _PFH = [{
         } else {
             private _startIndex = (_monitorUpdateStep + 1) min AED_MONITOR_LASTINDEX;
 
-            if (_rhythmChangeEKG || {_connectedEKG || {_vitalsEKG || {_beatChanged || {count _monitorArray_EKGRefresh < AED_MONITOR_WIDTH}}}}) then {
-                private _bridgeColumns = [4, 8] select _rhythmChangeEKG;
+            if (_rhythmChangeEKG || {_connectedEKG || {_vitalsEKG || {_rrChanged || {count _monitorArray_EKGRefresh < AED_MONITOR_WIDTH}}}}) then {
                 private _ekgBasis = if (count _monitorArray_EKGRefresh >= AED_MONITOR_WIDTH) then {_monitorArray_EKGRefresh} else {_monitorArray_EKG};
-                _monitorArray_EKGRefresh = [_ekgBasis, _freshEKG, _startIndex, _bridgeColumns] call _fnc_bridge;
+                _monitorArray_EKGRefresh = [_ekgBasis, _freshEKG, _freshSafeEKG, _startIndex, _rhythmChangeEKG] call _fnc_spliceEKG;
                 _patient setVariable [QGVAR(AED_EKGRefreshDisplay), _monitorArray_EKGRefresh];
             };
 
@@ -398,36 +454,34 @@ private _PFH = [{
             };
         };
 
-        _patient setVariable ["ACME_AED_Monitor_BeatSerial", _beatSerial, false];
+        _patient setVariable ["ACME_AED_Monitor_NextRR", _nextRR, false];
         _patient setVariable [QGVAR(AED_Monitor_Pads_State), _padsState];
         _patient setVariable [QGVAR(AED_Monitor_PulseOximeter_State), _pulseOximeterState];
         _patient setVariable [QGVAR(AED_Monitor_Capnograph_State), _capnographState];
         _patient setVariable [QGVAR(AED_Monitor_OxygenSaturation), _oxygenSaturation];
         _patient setVariable [QGVAR(AED_Monitor_EtCO2), _etco2];
         _patient setVariable [QGVAR(AED_Monitor_HR), _ekgHR];
-
-        /*_monitorArray_Offset = _monitorArray_Offset + round (random [-1.4, 0, 1.4]); // TODO look at later
-        if (_monitorArray_Offset > 22) then {
-            _monitorArray_Offset = 0;
-        };*/
-        
-        //_patient setVariable [QGVAR(AED_Offset), _monitorArray_Offset, true];
     };
 
+    // Consume the serial even if the selected RR did not materially change, otherwise a stable rhythm would appear
+    // to have a perpetual pending beat refresh on every render frame.
+    _patient setVariable ["ACME_AED_Monitor_BeatSerial", _beatSerial, false];
+
     if !(isNull _dlg) then {
-        // Fixed-step sweep clock. The old loop advanced only ONE 0.03 s column whenever a render frame happened to
-        // arrive after the deadline, then reset the deadline to "now". At 60 FPS that turns 30 ms columns into ~33 ms
-        // columns and the trace steadily falls behind real time / the audible beep. Preserve the 30 ms accumulator and
-        // draw every due segment; ordinary frames are 0-2 steps, while a hitch simply catches the cursor up in one
-        // frame without stretching R-R spacing.
+        // Fixed 30 ms sweep clock.  Preserve ordinary 1-4 column timing, but never "fast-forward" dozens of columns
+        // after a client hitch.  A long catch-up visually compresses several cardiac cycles and makes the R wave appear
+        // to chase the beep.  For a >120 ms hitch we drop the stale screen time and resume from the current epoch.
         if !(GVAR(EKG_Tick) isEqualType 0) then {GVAR(EKG_Tick) = CBA_missionTime;};
-        private _stepsDue = floor (((CBA_missionTime - GVAR(EKG_Tick)) max 0) / 0.03);
-        if (_stepsDue > 0) then {
-            // Bound pathological multi-second stalls. A 32-column catch-up is nearly a full second; if the client was
-            // paused longer than that, resynchronize the time base after drawing those columns rather than spending
-            // several frames running the monitor at fast-forward speed.
-            private _rawStepsDue = _stepsDue;
-            _stepsDue = _stepsDue min 32;
+        private _rawStepsDue = floor (((CBA_missionTime - GVAR(EKG_Tick)) max 0) / 0.03);
+        if (_rawStepsDue > 0) then {
+            private _stepsDue = _rawStepsDue min 4;
+            if (_rawStepsDue > 4) then {
+                _stepsDue = 1;
+                GVAR(EKG_Tick) = CBA_missionTime - 0.03;
+                // Force the next selected-RR comparison to rebuild the undrawn future against the new time epoch.
+                _patient setVariable ["ACME_AED_Monitor_NextRR", -1, false];
+            };
+
             for "_s" from 1 to _stepsDue do {
                 if (_monitorUpdateStep < AED_MONITOR_LASTINDEX) then {
                     _monitorUpdateStep = _monitorUpdateStep + 1;
@@ -439,7 +493,9 @@ private _PFH = [{
                 [_dlg, _patient, _monitorUpdateStep] call FUNC(displayAEDMonitor_updateStep);
             };
             GVAR(EKG_Tick) = GVAR(EKG_Tick) + (_stepsDue * 0.03);
-            if (_rawStepsDue > 32) then {GVAR(EKG_Tick) = CBA_missionTime;};
+            // Cursor epoch is the time represented by the last committed screen column.  ECG generation anchors
+            // to this value, so PFH/render jitter cannot move a scheduled R wave relative to its audible beat.
+            _patient setVariable ["ACME_AED_MonitorCursorTime", GVAR(EKG_Tick), false];
         };
         
         // Update vitals displays

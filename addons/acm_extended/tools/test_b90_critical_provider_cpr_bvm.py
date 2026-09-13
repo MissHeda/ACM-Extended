@@ -78,7 +78,7 @@ def test_bvm_visual_cue_is_read_only_native_observer():
 
 
 def test_release_stamp():
-    assert 'version = "1.1.0";' in txt('config.cpp')
+    assert 'version = "1.2.0-r0";' in txt('config.cpp')
     assert 'ACME_buildBatch = "B92";' in txt('functions/fn_postInit.sqf')
 
 

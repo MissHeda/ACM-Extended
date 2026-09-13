@@ -54,7 +54,7 @@ def main():
     assert 'class ACME_HeadElevPatientGrab: AinjPpneMrunSnonWnonDb_grab' in cfg
     assert 'class ACME_HeadElevPatientRelease: AinjPpneMrunSnonWnonDb_release' in cfg
 
-    assert 'version = "1.1.0";' in cfg
+    assert 'version = "1.2.0-r0";' in cfg
     assert 'ACME_buildBatch = "B88";' in post
 
     print("B88 provider head-position animation contracts: PASS")

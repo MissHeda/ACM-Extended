@@ -4,9 +4,9 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 POST = (ROOT / "functions/fn_postInit.sqf").read_text(encoding="utf-8")
 
-# Public release stays v1.1.0; internal batch advances.
+# Public release is v1.2.0-r0; internal batch advances.
 assert 'ACME_buildBatch = "B92";' in POST
-assert 'ACME_infusion_version = "1.1.0"' in POST
+assert 'ACME_infusion_version = "1.2.0-r0"' in POST
 
 # Regression: this sentence accidentally lost // and made the entire postInit fail to compile,
 # which removed all ACE interaction actions in game.

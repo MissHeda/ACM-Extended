@@ -61,7 +61,7 @@ need('private _preflightReady' in treatment and '!_preflightReady' in treatment,
      "treatment: empty-hand/crouch immediate fast path missing")
 
 # ECG is sampled by exact time against the selected audio RR. Integer-width beat tiling is forbidden here.
-need('private _sampleTime = _now + ((_i - _anchor) * _dt);' in gen, "AED: native exact-time sampler missing")
+need('private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);' in gen, "AED: native exact-time sampler missing")
 need('ACME_AED_PreviousRR' in gen and 'ACME_AED_NextRR' in gen, "AED: waveform does not consume audio RR clock")
 need('ACME_AED_BeatSerial' in gen and 'private _beatOrdinal' in gen, "AED: stable beat morphology ordinal missing")
 need('(_rr / _dt)' in gen, "AED: morphology rate selection missing")
@@ -77,13 +77,13 @@ need('_patient setVariable ["ACME_AED_NextRR", _nextRR, false];' in handle,
 # Mid-sweep changes bridge the CURRENT scheduled continuation, not stale prior-sweep display samples.
 need('private _ekgBasis = if (count _monitorArray_EKGRefresh >= AED_MONITOR_WIDTH)' in monitor,
      "AED: bridge still starts from stale display future")
-need('[_ekgBasis, _freshEKG, _startIndex, _bridgeColumns] call _fnc_bridge' in monitor,
-     "AED: EKG same-index bridge missing")
-need('private _bridgeColumns = [4, 8] select _rhythmChangeEKG;' in monitor,
+need('private _fnc_spliceEKG' in monitor and '[_ekgBasis, _freshEKG, _freshSafeEKG, _startIndex, _rhythmChangeEKG] call _fnc_spliceEKG' in monitor,
+     "AED: safe EKG splice/bridge missing")
+need('private _columns = if (_rhythmChange) then {8} else {4};' in monitor,
      "AED: rhythm transition bridge width missing")
 
 # The sweep is an accumulator, not a frame-quantized 30 ms timer; controls render sample N -> N+1.
-need('private _stepsDue = floor (((CBA_missionTime - GVAR(EKG_Tick)) max 0) / 0.03);' in monitor,
+need('private _rawStepsDue = floor (((CBA_missionTime - GVAR(EKG_Tick)) max 0) / 0.03);' in monitor,
      "AED: fixed-step sweep accumulator missing")
 need('GVAR(EKG_Tick) = GVAR(EKG_Tick) + (_stepsDue * 0.03);' in monitor,
      "AED: sweep still discards fractional timing remainder")
@@ -95,17 +95,17 @@ need('_monitorArray_EKG set [0, _monitorArray_EKGRefresh select 0];' in step,
 # All perfusing custom rhythms and torsades are screen-time anchored; torsades must not splice array[0] mid-sweep.
 need('if (_rhythm in [100,101,102,103,104]) exitWith {' in custom,
      "AED: custom rhythms not routed through direct sampler")
-need('if (_rhythm == 102) exitWith {' in custom and 'private _sampleTime = _now + ((_i - _anchor) * _dt);' in custom,
+need('if (_rhythm == 102) exitWith {' in custom and 'private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);' in custom,
      "AED: torsades is not screen-time anchored")
 need('ACME_AED_PreviousRR' in custom and 'ACME_AED_NextRR' in custom,
      "AED: organized custom rhythms do not share the audible RR clock")
 
-# PEA is locally derived from a one-time seed/start, stays 60-100, and does not publish every fluctuation.
-need('case ACM_Rhythm_PEA' in hr and 'ACME_peaElectricalStart' in hr and 'ACME_peaVariationHz' in hr,
-     "PEA: variable electrical-rate path missing")
-need('_pea = (60 max _pea) min 100;' in hr, "PEA: 60-100 electrical-rate clamp missing")
-pea_block = hr[hr.index('case ACM_Rhythm_PEA'):hr.index('case ACM_Rhythm_VT')]
-need(', true]' not in pea_block, "PEA: getter is broadcasting recurring rate changes")
+# PEA is updated by one dedicated rate writer and the public getter is read-only.
+updater = txt("addons/circulation/functions/fnc_updateEKGHeartRate.sqf")
+need('case ACM_Rhythm_PEA' in updater and 'ACME_PEA_ElectricalGoal' in updater,
+     "PEA: controlled electrical-rate writer missing")
+need('max 60) min 100' in updater, "PEA: 60-100 electrical-rate clamp missing")
+need('setVariable' not in hr, "PEA/AED: getEKGHeartRate is no longer side-effect free")
 for path in (
     "addons/acm_extended/functions/fn_arrestLocal.sqf",
     "addons/acm_extended/functions/fn_rhythmSet.sqf",

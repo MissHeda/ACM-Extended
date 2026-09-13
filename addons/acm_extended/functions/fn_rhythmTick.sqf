@@ -19,12 +19,14 @@ private _fnc_release = {params ["_u"]; [_u] call ACME_fnc_rhythmRelease;};
     private _dt = [_u, "rhythm", 0.5, 5] call ACME_fnc_clinicalTickDelta;
     private _hrNow = _u getVariable ["ace_medical_heartRate", 80];
 
-    // Torsades uses the native pulseless-VT contract. For perfusing atrial rhythms, >220 bpm remains an
-    // atrial rhythm while the native contract holds; handleUnitVitals still starts the critical-vitals
-    // watchdog, which can cause a real arrest. Low HR or an actual native-rhythm change releases normally.
+    // Torsades uses the native pulseless-VT contract. Every other custom perfusing rhythm yields immediately at
+    // ACM's own fatal-rate boundaries. This prevents an AFib/SVT overlay from masking the native >220 VT/PVT or
+    // <40 VF/asystole transition that handleUnitVitals has already selected.
     private _isTorsades = (_code == 102);
-    private _isPerfusingAtrial = ([_u] call ACME_fnc_rhythmGet) in [100,101,103,104];
-    private _hrReleases = !_isTorsades && {(_hrNow < 40) || {!_isPerfusingAtrial && {_hrNow > (missionNamespace getVariable ["ACME_rhythmACMFatalHighHR", 220])}}};
+    private _hrReleases = !_isTorsades && {
+        (_hrNow < (missionNamespace getVariable ["ACME_rhythmACMFatalLowHR", 40]))
+        || {_hrNow > (missionNamespace getVariable ["ACME_rhythmACMFatalHighHR", 220])}
+    };
     // for torsades, its own PVT proxy, 3, is expected and must not count as having moved to an arrest rhythm. exclude
     // 3 from the arrest-list trigger while in torsades, and every other arrest and CPR code still releases it.
     private _arrestList = if (_isTorsades) then { [-1, 1, 2, 4, 5] } else { [-1, 1, 2, 3, 4, 5] };

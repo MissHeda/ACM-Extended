@@ -126,6 +126,23 @@ private _getMedEffect = {
     // _dt was measured before the independent maintenance calls.
     _state set ["lastTick", _now];
 
+    // Acid/base state is integrated on the same one-second class of cadence as ACE/ACM vital updates.  The broader
+    // circulation PFH still runs at 0.25 s for devices/infusions, but those extra passes must not advance PaCO2 or
+    // acidosis four times inside one vital-sign second.  Delta time comes from this acid clock and is capped after
+    // stalls, preserving hysteresis/elapsed-time behavior without double updates.
+    private _acidLastTick = _state getOrDefault ["acidLastTick", -1];
+    private _acidDt = 0;
+    if (_acidLastTick < 0) then {
+        _state set ["acidLastTick", _now];
+    } else {
+        private _acidElapsed = (_now - _acidLastTick) max 0;
+        if (_acidElapsed >= 1) then {
+            _acidDt = _acidElapsed min 5;
+            _state set ["acidLastTick", _now];
+        };
+    };
+    _state set ["acidTickDt", _acidDt];
+
     [_patient] call ACME_fnc_vomitDislodgeOPA;
     [_patient] call ACME_fnc_altitudeTick;
     [_patient] call ACME_fnc_ventLeashTick;
@@ -274,7 +291,7 @@ private _getMedEffect = {
     _state set ["calciumCoagMult", _coagMult];
     _state set ["hypoCoagMult", _hypoCoag];
     _state set ["acidCoagMult", _acidCoag];
-    // the combined coagulopathy is calcium times hypothermia times acidosis. the getBloodVolumeChange override
+    // the combined coagulopathy is calcium times hypothermia times acidosis. the native circulation drainer
     // reads it.
     [_patient, "ACME_ca_coagMult", (_coagMult * _hypoCoag * _acidCoag)] call ACME_fnc_setVarNet;
     _state set ["coagMult", (_coagMult * _hypoCoag * _acidCoag)];
@@ -769,7 +786,7 @@ private _getMedEffect = {
     // response, so a marginal MAP creeps while a truly collapsed one accelerates.
     private _shockDwell = _state getOrDefault ["shockDwell", 0];
     if (_effMAPpre < _acidThresh) then {
-        _shockDwell = _shockDwell + _dt;
+        _shockDwell = _shockDwell + _acidDt;
         private _acidFullMAP = missionNamespace getVariable ["ACME_circ_acidosisFullMAP", 25];
         _shockMetAcidFrac = linearConversion [_acidThresh, _acidFullMAP, _effMAPpre, 0, 1, true];
         // onset ramp. it is about 5 percent of the full rate at the moment perfusion fails, and reaches the full rate
@@ -781,14 +798,14 @@ private _getMedEffect = {
         // crash.
         private _sevExp = missionNamespace getVariable ["ACME_circ_acidosisSeverityExp", 1.6];
         private _sevCurve = _shockMetAcidFrac ^ _sevExp;
-        _shockMetAcidGain = (missionNamespace getVariable ["ACME_circ_acidosisPerSec", 0.00075]) * _sevCurve * _dwellRamp * _hypoAcidGainMult * _dt;
+        _shockMetAcidGain = (missionNamespace getVariable ["ACME_circ_acidosisPerSec", 0.00075]) * _sevCurve * _dwellRamp * _hypoAcidGainMult * _acidDt;
         _metabolicAcidosis = (_metabolicAcidosis + _shockMetAcidGain) min 1;
     } else {
         // perfusion restored. the dwell unwinds, faster than it built and not instantly, because a patient who was
         // just in deep shock re-acidifies quickly if they crash again.
-        _shockDwell = (_shockDwell - (_dt * 2)) max 0;
+        _shockDwell = (_shockDwell - (_acidDt * 2)) max 0;
         // lactate clearance is slow. fixing the shock does not fix the acidosis in seconds.
-        _shockMetAcidRecover = (missionNamespace getVariable ["ACME_circ_acidosisRecoverPerSec", 0.0030]) * _hypoAcidRecoveryMult * _dt;
+        _shockMetAcidRecover = (missionNamespace getVariable ["ACME_circ_acidosisRecoverPerSec", 0.0030]) * _hypoAcidRecoveryMult * _acidDt;
         _metabolicAcidosis = (_metabolicAcidosis - _shockMetAcidRecover) max 0;
     };
     _state set ["shockDwell", _shockDwell];
@@ -866,13 +883,23 @@ private _getMedEffect = {
         if (_inDeficit && {!_awakeOK} && {!_inReperf} && {!_arrestNow}) then {
             private _deficit = linearConversion [_crit, (missionNamespace getVariable ["ACME_do2_lethalFrac", 0.2]), _do2v, 0, 1, true];
             _metabolicAcidosis = (_metabolicAcidosis
-                + ((missionNamespace getVariable ["ACME_do2_acidosisPerSec", 0.0009]) * _deficit * _dt)) min 1;
+                + ((missionNamespace getVariable ["ACME_do2_acidosisPerSec", 0.0009]) * _deficit * _acidDt)) min 1;
         };
     };
 
     _state set ["shockMetAcidFrac", _shockMetAcidFrac];
     _state set ["shockMetAcidGain", _shockMetAcidGain];
     _state set ["shockMetAcidRecover", _shockMetAcidRecover];
+
+    // Balanced crystalloid buffering is queued by the native blood-volume admission path and consumed exactly once
+    // here.  This prevents getBloodVolumeChange and circHandle from both writing total acidosis in the same vital tick.
+    if (_acidDt > 0) then {
+        private _plasmaLyteCredit = _patient getVariable ["ACME_plasmaLyteAcidCredit", 0];
+        if (_plasmaLyteCredit > 0) then {
+            _metabolicAcidosis = (_metabolicAcidosis - _plasmaLyteCredit) max 0;
+            _patient setVariable ["ACME_plasmaLyteAcidCredit", 0, false];
+        };
+    };
 
     private _salineGivenMl = _patient getVariable ["ACME_circ_salineGivenMl", 0];
     private _salineAcidosis = 0;
@@ -886,7 +913,9 @@ private _getMedEffect = {
     };
     _state set ["salineGivenMl", _salineGivenMl];
     _state set ["salineAcidosis", _salineAcidosis];
-    _metabolicAcidosis = _metabolicAcidosis max _salineAcidosis;
+    if (_acidDt > 0) then {
+        _metabolicAcidosis = _metabolicAcidosis max _salineAcidosis;
+    };
 
     // a low CPP from TBI or ICP is a secondary metabolic acid source only when cerebral perfusion is genuinely
     // poor. this stops the TBI itself from creating acidosis directly, and still makes low-CPP physiology
@@ -911,7 +940,7 @@ private _getMedEffect = {
             private _cppTargetAcid = _tbiState getOrDefault ["cppTarget", (missionNamespace getVariable ["ACME_tbi_cppTarget", 70])];
             if (_cppVal > -998 && {_cppVal < _cppTargetAcid}) then {
                 _tbiCppFrac = linearConversion [_cppTargetAcid, (missionNamespace getVariable ["ACME_tbi_cppAcidosisFullCPP", 30]), _cppVal, 0, 1, true];
-                _tbiCppAcidGain = _tbiCppFrac * (missionNamespace getVariable ["ACME_tbi_cppAcidosisPerSec", 0.0015]) * _hypoAcidGainMult * _dt;
+                _tbiCppAcidGain = _tbiCppFrac * (missionNamespace getVariable ["ACME_tbi_cppAcidosisPerSec", 0.0015]) * _hypoAcidGainMult * _acidDt;
                 _metabolicAcidosis = (_metabolicAcidosis + _tbiCppAcidGain) min 1;
             };
         };
@@ -1023,19 +1052,19 @@ private _getMedEffect = {
             // mmhg/min was simultaneously too slow at onset and far too fast in sustained apnea, which is why acidosis
             // came on hard and never stopped.
             private _hypoDwell = _state getOrDefault ["hypoventDwell", 0];
-            _hypoDwell = _hypoDwell + _dt;
+            _hypoDwell = _hypoDwell + _acidDt;
             _state set ["hypoventDwell", _hypoDwell];
             private _fastRate = (missionNamespace getVariable ["ACME_circ_paCO2RiseFastPerMin", 19]) / 60;  // mmhg/s initially. it decays to slow, and integrates to about 12 mmhg over the first minute.
             private _slowRate = (missionNamespace getVariable ["ACME_circ_paCO2RiseSlowPerMin", 3.4]) / 60;  // mmhg/s, sustained.
             private _tau = missionNamespace getVariable ["ACME_circ_paCO2RiseTau", 30];  // seconds, for the fast to slow decay.
             private _phaseRate = _slowRate + ((_fastRate - _slowRate) * (0.5 ^ (_hypoDwell / (_tau max 1))));
             _co2Rise = _phaseRate * _respDeficit;
-            _paCO2 = (_paCO2 + (_co2Rise * _dt)) min _paCO2Max;
+            _paCO2 = (_paCO2 + (_co2Rise * _acidDt)) min _paCO2Max;
         } else {
             _state set ["hypoventDwell", 0];
             private _clearFrac = (_ventFrac max 0.5) min 1.5;
             _co2Clear = (missionNamespace getVariable ["ACME_circ_paCO2ClearPerSec", 0.40]) * _clearFrac;  // good ventilation blows CO2 off fast.
-            _paCO2 = (_paCO2 - (_co2Clear * _dt)) max _paCO2Normal;
+            _paCO2 = (_paCO2 - (_co2Clear * _acidDt)) max _paCO2Normal;
         };
     };
 
@@ -1046,10 +1075,10 @@ private _getMedEffect = {
     private _respAcidCurveExp = missionNamespace getVariable ["ACME_circ_respAcidosisCurveExp", 1.5];
     private _respAcidTarget = (linearConversion [_paStart, _paFull, _paCO2, 0, 1, true]) ^ _respAcidCurveExp;
     if (_respAcidTarget > _respAcidosis) then {
-        private _riseStep = (missionNamespace getVariable ["ACME_circ_respAcidosisPerSec", 0.006]) * ((0.35 + _respAcidTarget) min 1) * _dt;
+        private _riseStep = (missionNamespace getVariable ["ACME_circ_respAcidosisPerSec", 0.006]) * ((0.35 + _respAcidTarget) min 1) * _acidDt;
         _respAcidosis = (_respAcidosis + _riseStep) min _respAcidTarget min 1;
     } else {
-        private _fallStep = (missionNamespace getVariable ["ACME_circ_respAcidosisRecoverPerSec", 0.035]) * _dt;  // respiratory acidosis corrects quickly once a medic ventilates the patient.
+        private _fallStep = (missionNamespace getVariable ["ACME_circ_respAcidosisRecoverPerSec", 0.035]) * _acidDt;  // respiratory acidosis corrects quickly once a medic ventilates the patient.
         _respAcidosis = (_respAcidosis - _fallStep) max _respAcidTarget max 0;
     };
 

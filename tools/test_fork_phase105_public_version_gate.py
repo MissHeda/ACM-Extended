@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 105: keep public/runtime/debug version identity pinned to v1.1.0 during fork development."""
+"""Phase 105: keep public/runtime/debug version identity set to v1.2.0-r0 during fork development."""
 from pathlib import Path
 import re
 
@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / 'addons/acm_extended/config.cpp'
 START = ROOT / 'addons/acm_extended/functions/fn_initForkStartupRuntime.sqf'
 DEBUG = ROOT / 'addons/acm_extended/functions/fn_debugMenu.sqf'
-EXPECTED = '1.1.0'
+EXPECTED = '1.2.0-r0'
 
 
 def main() -> None:

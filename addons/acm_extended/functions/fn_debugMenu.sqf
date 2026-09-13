@@ -269,12 +269,13 @@ if (isNull _patient) then {
 
 private _ver = getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version");
 if (_ver == "") then { _ver = missionNamespace getVariable ["ACME_infusion_version", "?"]; };
+private _debugRevision = missionNamespace getVariable ["ACME_debugRevision", "r1"];
 private _linesL = [];
 private _linesR = [];
 private _pName = if (isNull _patient) then {"none"} else {[name _patient] call _fnSafe};
 private _targetMode = if (_patient isEqualTo (missionNamespace getVariable ["ACME_debug_lastTreatmentTarget", objNull])) then {"treating"} else {"auto"};
 
-_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2</t> %3 <t color='%4'>%5</t>", _cTitle, _ver, _pName, _cMute, _targetMode];
+_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2-%6</t> %3 <t color='%4'>%5</t>", _cTitle, _ver, _pName, _cMute, _targetMode, _debugRevision];
 _linesL pushBack format ["<t color='%1'>dbg on | force %2 | tick %3</t>", _cMute, missionNamespace getVariable ["ACME_debug_forceOverlay", false], diag_tickTime toFixed 1];
 _linesL pushBack format ["<t color='%1'>trk i%2 t%3 c%4 bp%5</t>", _cMute, count (["ACME_infusion_activePatients"] call _fnArray), count (["ACME_tbi_activePatients"] call _fnArray), count (["ACME_circ_activePatients"] call _fnArray), count (["ACME_autoBP_patients"] call _fnArray)];
 

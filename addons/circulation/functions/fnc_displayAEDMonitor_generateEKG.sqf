@@ -24,6 +24,10 @@ private _W = 176;
 private _lastIndex = _W - 1;
 private _dt = 0.03;
 private _now = CBA_missionTime;
+private _cursorEpoch = if (!isNull _target) then {
+    _target getVariable ["ACME_AED_MonitorCursorTime", _now]
+} else {_now};
+if (!(_cursorEpoch isEqualType 0) || {!finite _cursorEpoch}) then {_cursorEpoch = _now;};
 
 private _rateHR = 0;
 if (!isNull _target) then {
@@ -55,7 +59,7 @@ if (!isNull _target) then {
 };
 if (!(_previousRR isEqualType 0) || {!finite _previousRR} || {_previousRR <= 0}) then {_previousRR = _rr;};
 if (!(_nextRR isEqualType 0) || {!finite _nextRR} || {_nextRR <= 0}) then {_nextRR = _rr;};
-if (_lastBeat < 0 && {_rr > 0}) then {_lastBeat = _now;};
+if (_lastBeat < 0 && {_rr > 0}) then {_lastBeat = _cursorEpoch;};
 private _beatSerialBase = if (!isNull _target) then {_target getVariable ["ACME_AED_BeatSerial", 0]} else {0};
 
 // Stable, time-derived monitor noise. Regenerating a buffer produces the same local baseline rather than a fresh
@@ -72,7 +76,7 @@ _arr resize [_W, 0];
 _safe resize [_W, true];
 
 for "_i" from 0 to _lastIndex do {
-    private _sampleTime = _now + ((_i - _anchor) * _dt);
+    private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);
     private _sampleIndex = floor (_sampleTime / _dt);
     private _value = 0;
     private _isSafe = true;
