@@ -1,6 +1,6 @@
-// self direct pressure. hold pressure on any of your own parts without taking ownership of the global continuous-
-// action lock. Direct Pressure never issues a weapon-selection command; the player's selected weapon is left alone.
-// RMB and esc stop, MMB assesses, and the clinical pressure state remains independent of the selected weapon.
+// Self direct pressure stays non-exclusive and never takes ownership of ACM's continuous-action gate. It does not
+// issue weapon-selection commands, so the player's selected weapon state is left alone. ESC/RMB release the hold
+// without swallowing the underlying input.
 params ["_medic", "_patient", "_bodyPart"];
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -11,16 +11,15 @@ _medic setVariable ["ACME_DP_Start", CBA_missionTime];
 _medic setVariable ["ACME_DP_NextClot", CBA_missionTime + 15];
 _medic setVariable ["ACME_DP_Paused", false];
 _medic setVariable ["ACME_DP_LastPos", getPosASL _medic];
+_medic setVariable ["ACME_DP_ClinicalYield", false];
+_medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
+_medic setVariable ["ACME_DP_OwnsContinuous", false];
 
-if (dialog) then { closeDialog 0; };
-
-// No medicAnimationPrep here. Self pressure must not trigger a scripted holster/draw cycle before the action begins.
-
-["", "Stop", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
+["", "Release", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
 private _ids = [];
-_ids pushBack ([0x01, [false,false,false], { [false] call ACME_fnc_directPressureStop; }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0xF1, [false,false,false], { [false] call ACME_fnc_directPressureStop; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0xF2, [false,false,false], { call ACME_fnc_directPressureAssess; }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0x01, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0xF1, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0xF2, [false,false,false], { call ACME_fnc_directPressureAssess; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_medic, "activity",

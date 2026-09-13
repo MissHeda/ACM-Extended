@@ -1,7 +1,6 @@
-// Idempotent direct-pressure teardown for an explicit medic. It is safe after distance break, death, menu stop,
-// respawn, a stale PFH, a movement escape, or a partially-started hold. The old function hard-coded ACE_player
-// and returned immediately when ACME_DP_Active was already false, leaving stale patient markers/key handlers that
-// prevented the next hold.
+// Idempotent Direct Pressure teardown for an explicit medic. Safe after distance break, death, menu stop, respawn,
+// a stale PFH, movement, or a partially-started hold. The function intentionally clears only state owned by this
+// Direct Pressure instance and retains a legacy cleanup path for torso holds created by older runtime code.
 params [["_silent", false, [false]], ["_medic", ACE_player, [objNull]], ["_reopen", false, [false]]];
 if (isNull _medic) exitWith {};
 
@@ -13,9 +12,8 @@ private _wasInPose = _medic getVariable ["ACME_DP_InPose", false];
 private _stateBefore = toLower animationState _medic;
 private _ownsContinuous = _medic getVariable ["ACME_DP_OwnsContinuous", false];
 
-// Retire every delayed direct-pressure pose request first. ACME_DP_PoseToken belongs to the DP layer itself;
-// ACME_dah_gen owns ACME_fnc_doAnimHeld's short reassert worker. Failing to invalidate the latter allowed the
-// pressure hold to come back after a tourniquet or another treatment had already taken the provider animation.
+// Retire every delayed Direct Pressure pose request first. ACME_DP_PoseToken belongs to the DP layer itself;
+// ACME_dah_gen owns ACME_fnc_doAnimHeld's short reassert worker.
 _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
 _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
 
@@ -26,7 +24,8 @@ private _d3 = _medic getVariable ["ACME_DP_Draw3D", -1];
 if (_d3 >= 0) then {removeMissionEventHandler ["Draw3D", _d3];};
 [] call ace_interaction_fnc_hideMouseHint;
 
-// Clear only the continuous-action gate this torso hold claimed. Never tear down BVM/CPR/another owner.
+// Compatibility cleanup for a hold started before the non-exclusive rewrite. New Direct Pressure code never sets
+// ACME_DP_OwnsContinuous, so it cannot clear BVM, CPR, or another maneuver's gate.
 if (_ownsContinuous) then {
     missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
     missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog", false];
@@ -45,13 +44,12 @@ if (!isNull _patient) then {
     };
 };
 
-// Release only our decorative hold. Never clear another ACM continuous action. Torso pressure is an active
-// maneuver, so its exit must beat the looping hold on the same frame a movement/cancel input arrives. Priority 2
-// is used only for that hard maneuver exit. Limb/head pressure keeps the normal authored priority-1 transition.
-private _ownsHold = _wasInPose || {_mode == "torso"} || {_stateBefore == "acme_directpressurehold"};
+// Break only our decorative hold. Priority 2 remains a narrow safety fallback when the engine is physically still
+// inside ACME_DirectPressureHold, preventing the provider from being stranded in the looping state.
+private _ownsHold = _wasInPose || {_stateBefore == "acme_directpressurehold"};
 if (local _medic && {alive _medic} && {isNull objectParent _medic} && {_ownsHold}) then {
     _medic setUnitPos "AUTO";
-    private _exitPriority = [1, 2] select (_mode == "torso" || {_stateBefore == "acme_directpressurehold"});
+    private _exitPriority = [1, 2] select (_stateBefore == "acme_directpressurehold");
     [_medic, "AmovPknlMstpSnonWnonDnon", _exitPriority] call ACME_fnc_doAnim;
 };
 
@@ -74,6 +72,8 @@ if (local _medic && {alive _medic} && {isNull objectParent _medic} && {_ownsHold
     ["ACME_DP_Draw3D", -1],
     ["ACME_DP_PoseGraceUntil", 0],
     ["ACME_DP_LastPoseAssert", 0],
+    ["ACME_DP_ClinicalYield", false],
+    ["ACME_DP_ClinicalYieldStart", 0],
     ["ACME_DP_OwnsContinuous", false]
 ];
 
@@ -85,8 +85,8 @@ if (_wasActive) then {
     };
 };
 
-// Manual torso cancellation behaves like BVM: the medical-menu key/RMB/ESC can return to the casualty. Movement,
-// distance and hard teardown pass _reopen=false, so trying to walk never pops a menu back into the player's face.
+// Keep this only for a stale pre-rewrite torso hold that explicitly requested a reopen. New holds do not own the
+// global continuous-action gate and never use this path.
 if (_reopen && {_ownsContinuous} && {!isNull _patient} && {alive _medic} && {!(_medic getVariable ["ACE_isUnconscious", false])}) then {
     [{params ["_p"]; if (!isNull _p) then {["ACM_core_openMedicalMenu", _p] call CBA_fnc_localEvent;};}, [_patient]] call CBA_fnc_execNextFrame;
 };

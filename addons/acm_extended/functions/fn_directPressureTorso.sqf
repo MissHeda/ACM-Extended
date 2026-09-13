@@ -1,15 +1,16 @@
-// Torso direct pressure is a true active maneuver, matching ACM's BVM/CPR interaction model.
-// It closes the medical menu, owns ACM's continuous-action gate while held, and is released by ESC/RMB/H,
-// provider movement, distance break, incapacitation, or an explicit stop. Limb/head pressure remains the freer
-// resumable mode and does not take this continuous-action lock.
+// Torso direct pressure is persistent hemorrhage control, not an ACM exclusive continuous action.
+// The provider keeps access to the medical menu and ordinary treatments. Movement and real maneuvers yield the
+// hold instead of locking input, and the shared tick reapplies pressure once the provider can resume it.
 params ["_medic", "_patient", "_bodyPart"];
 if (isNull _medic || {isNull _patient}) exitWith {};
 
-// Do not stomp another continuous maneuver. The direct-pressure treatment itself has already finished by the time
-// this callback runs, so an active gate here belongs to BVM/CPR/another ACM maneuver.
+// A direct call can bypass fn_directPressureStart, so retain a defensive maneuver check and clean the clinical
+// marker if it was already written by a caller.
 if (missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]) exitWith {
+    if ((_patient getVariable [format ["ACME_DP_press_%1", _bodyPart], objNull]) isEqualTo _medic) then {
+        _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], objNull, true];
+    };
     ["Another active maneuver is already in progress.", 2, _medic] call ace_common_fnc_displayTextStructured;
-    [true, _medic, false] call ACME_fnc_directPressureStop;
 };
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -23,16 +24,10 @@ _medic setVariable ["ACME_DP_InPose", false];
 _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
 _medic setVariable ["ACME_DP_LastPos", getPosASL _medic];
 _medic setVariable ["ACME_DP_LastPoseAssert", 0];
-_medic setVariable ["ACME_DP_OwnsContinuous", true];
+_medic setVariable ["ACME_DP_ClinicalYield", false];
+_medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
+_medic setVariable ["ACME_DP_OwnsContinuous", false];
 _patient setVariable ["ACME_DP_TorsoMedic", _medic, true];
-
-// Claim the same global maneuver gate used by ACM continuous actions. This is deliberately torso-only.
-missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog", false];
-missionNamespace setVariable ["ACM_core_ContinuousAction_ShouldReopen", false];
-missionNamespace setVariable ["ACM_core_ContinuousAction_Active", true];
-missionNamespace setVariable ["ace_medical_gui_pendingReopen", false];
-
-if (dialog) then {closeDialog 0;};
 
 // Enter the connected two-handed pressure hold directly. No scripted weapon draw/holster cycle is introduced.
 if (isNull objectParent _medic) then {
@@ -44,19 +39,18 @@ if (isNull objectParent _medic) then {
     _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
 };
 
-["", "Stop", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
+["", "Release", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
 
-// ESC/RMB end the maneuver. H ends it and returns to the casualty menu. MMB keeps the existing assessment toggle.
+// Never swallow the key that is trying to close the medical UI or return control to the player. The handler releases
+// pressure, then returns false so the original ESC/RMB/H input continues through the normal ACE/CBA path.
 private _ids = [];
-_ids pushBack ([0x01, [false,false,false], { [false, ACE_player, true] call ACME_fnc_directPressureStop; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0xF1, [false,false,false], { [false, ACE_player, true] call ACME_fnc_directPressureStop; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0x23, [false,false,false], { [false, ACE_player, true] call ACME_fnc_directPressureStop; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0x01, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0xF1, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0x23, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _ids pushBack ([0xF2, [false,false,false], { call ACME_fnc_directPressureAssess; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_patient, "activity", "%1 started Direct pressure on %2", "%1 started Direct pressure on %2", [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;
 
-// Every frame rather than 20 Hz. Movement intent must release the hold before the looping CfgMoves state can eat
-// the first movement input.
 private _pfh = [ACME_fnc_directPressureTick, 0, [_medic, _patient, _bodyPart, "torso"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

@@ -1,7 +1,8 @@
-// Shared direct-pressure per-frame worker.
-// Torso pressure is an exclusive active maneuver. Limb/head pressure is non-exclusive and yields its provider pose
-// to other treatments. Any real movement attempt releases direct pressure immediately so the first movement input
-// is never swallowed by the looping treatment animation.
+// Shared Direct Pressure per-frame worker. Direct Pressure itself never owns ACM's global continuous-action gate.
+// Movement yields pressure on another casualty, while ordinary medical treatments may replace only the provider
+// animation. True ACM maneuvers suspend both the pose and the clinical pressure marker, then the hold resumes after
+// the maneuver finishes. This keeps every medical-menu action responsive without granting hemorrhage control while
+// the provider is physically performing an incompatible maneuver.
 params ["_args", "_pfhId"];
 _args params ["_medic", "_patient", "_bodyPart", "_mode"];
 
@@ -27,32 +28,41 @@ if (_stop != "") exitWith {
     [_pfhId] call CBA_fnc_removePerFrameHandler;
 };
 
-// Read movement intent every rendered frame. Torso pressure is a BVM-style maneuver, so attempting to move
-// immediately cancels it. Limb/head pressure is deliberately non-exclusive: its pose helper drops the held
-// animation on movement without killing the clinical pressure state, which keeps movement and other treatments
-// responsive instead of making the provider feel welded in place.
+// Torso, head and limb pressure share the same yield/resume pose controller. It retires the looping hold on movement
+// or when another treatment owns the provider animation and reapplies it after the provider settles again.
+if (_mode in ["torso", "limb"]) then {[_medic, _patient] call ACME_fnc_directPressurePose;};
+
 private _moveInput = (inputAction "MoveForward") + (inputAction "MoveBack")
                    + (inputAction "MoveLeft") + (inputAction "MoveRight")
                    + (inputAction "MoveFastForward") + (inputAction "MoveSlowForward")
                    + (inputAction "Evasive");
-if (_mode == "torso" && {_moveInput > 0.01}) exitWith {
-    [true, _medic, false] call ACME_fnc_directPressureStop;
-    [_pfhId] call CBA_fnc_removePerFrameHandler;
+private _moving = (_mode != "self") && {_moveInput > 0.01};
+private _maneuverActive = missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false];
+private _manualPause = _medic getVariable ["ACME_DP_Paused", false];
+private _mustYieldClinical = _moving || {_maneuverActive} || {_manualPause};
+private _yieldedClinical = _medic getVariable ["ACME_DP_ClinicalYield", false];
+
+if (_mustYieldClinical) exitWith {
+    if (!_yieldedClinical) then {
+        if ((_patient getVariable [format ["ACME_DP_press_%1", _bodyPart], objNull]) isEqualTo _medic) then {
+            _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], objNull, true];
+        };
+        _medic setVariable ["ACME_DP_ClinicalYield", true];
+        _medic setVariable ["ACME_DP_ClinicalYieldStart", CBA_missionTime];
+    };
 };
 
-// Limb/head pressure remains non-exclusive. This helper yields immediately to movement and treatments, then can
-// reapply only after the provider is stationary again.
-if (_mode == "limb") then {[_medic, _patient] call ACME_fnc_directPressurePose;};
-
-if (_medic getVariable ["ACME_DP_Paused", false]) exitWith {};
-
-// A torso hold is the continuous action itself, so its own ACM_core_ContinuousAction_Active flag must not pause its
-// clot timer. Other competing treatment ownership cannot occur while the torso maneuver owns that gate.
-if (_mode != "torso" && {
-    (_medic getVariable ["ACME_treatmentPreflightActive", false])
-    || {(_medic getVariable ["ace_medical_treatment_endInAnim", ""]) != ""}
-    || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
-}) exitWith {};
+// Reapply the synchronized pressure marker once the incompatible activity ends. Shift both clot timers by the exact
+// yielded duration so time spent walking, assessing, or performing another maneuver never counts as pressure time.
+if (_yieldedClinical) then {
+    private _yieldStart = _medic getVariable ["ACME_DP_ClinicalYieldStart", CBA_missionTime];
+    private _yieldDuration = (CBA_missionTime - _yieldStart) max 0;
+    _medic setVariable ["ACME_DP_Start", (_medic getVariable ["ACME_DP_Start", CBA_missionTime]) + _yieldDuration];
+    _medic setVariable ["ACME_DP_NextClot", (_medic getVariable ["ACME_DP_NextClot", CBA_missionTime]) + _yieldDuration];
+    _medic setVariable ["ACME_DP_ClinicalYield", false];
+    _medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
+    _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], _medic, true];
+};
 
 private _held = CBA_missionTime - (_medic getVariable ["ACME_DP_Start", CBA_missionTime]);
 if (_held < 15) exitWith {};
