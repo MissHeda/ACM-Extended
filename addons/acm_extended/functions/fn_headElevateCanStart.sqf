@@ -14,8 +14,6 @@
 params [["_patient", objNull, [objNull]], ["_medic", objNull, [objNull]]];
 if (isNull _patient || {!alive _patient}) exitWith {false};
 if (_patient isEqualTo _medic) exitWith {false};  // never on self
-private _down = (_patient getVariable ["ACE_isUnconscious", false])
-             || {_patient getVariable ["ACM_core_Lying_State", false]};
-if (!_down) exitWith {false};
 if (_patient getVariable ["ACME_headElevated", false]) exitWith {false};
+if (!isNull objectParent _patient || {!isNull attachedTo _patient}) exitWith {false};
 (_patient isKindOf "CAManBase")

@@ -61,7 +61,7 @@ private _mk = {
 // large and it will take a big cannula, and it is not a first choice: it needs the patient supine and head down,
 // it collapses on inspiration, and it moves with every breath the casualty takes.
 if (_bp == "ej") exitWith {
-    ["External Jugular", "neck vein", "lateral neck, above the clavicle", 16, 0.85, 0.25, 0.55,
+    ["External Jugular", "neck vein", "lateral neck, above the clavicle", 14, 0.85, 0.25, 0.55,
      "collapses on inspiration and moves with breathing", "EJ"] call _mk
 };
 

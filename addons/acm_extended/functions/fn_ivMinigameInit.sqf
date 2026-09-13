@@ -410,7 +410,7 @@ _display displayAddEventHandler ["KeyDown", {
 
 // the hold, palpate and wipe state.
 uiNamespace setVariable ["ACME_IV_Dragging", false];
-uiNamespace setVariable ["ACME_IV_StripHalf", ([0.045, 0.028] select _isEJ)];  // the palpable vein length, as a half. the ej is shorter, a neck-length vertical.
+uiNamespace setVariable ["ACME_IV_StripHalf", ([0.045, 0.080] select _isEJ)];  // EJ spans the usable lateral neck from below the jaw to just above the clavicle.
 uiNamespace setVariable ["ACME_IV_Palpated", false];
 uiNamespace setVariable ["ACME_IV_PalpTimer", 0];
 uiNamespace setVariable ["ACME_IV_Cleaned", false];

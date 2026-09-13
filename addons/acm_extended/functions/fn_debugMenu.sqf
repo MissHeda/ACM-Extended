@@ -8,14 +8,14 @@ if (isNil {missionNamespace getVariable "ACME_debugMenu_r5Code"}) then {
 
     // Slightly smaller overall presentation. Keep the user's debug-scale preference, but trim the renderer's
     // built-in multiplier and maximum so the overlay gives more of the game view back.
-    _src = _src regexReplace ["private _scale = .*?;/", "private _scale = (((_userScale max 0.50) min 1.15) * 0.64) max 0.46 min 0.74;"];
+    _src = _src regexReplace ["private _scale = .*?;/", "private _scale = (((_userScale max 0.50) min 1.15) * 0.68) max 0.48 min 0.78;"];
 
     // Always pin the overlay to the actual safe-zone left edge, including ultrawide. Width is deliberately capped
     // to a compact two-column panel instead of scaling with the full ultrawide safeZoneW, which previously let it
     // expand across most of the screen. The small floor keeps 16:9 and narrower layouts readable.
     _src = _src regexReplace ["private _gap = .*?;/", "private _gap = 0.003;"];
     _src = _src regexReplace ["private _x0 = .*?;/", "private _x0 = safeZoneX;"];
-    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.31) min 0.335 max 0.285; private _w = ((_totalW - _gap) / 2) max 0.10;"];
+    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.42) min 0.455 max 0.385; private _w = ((_totalW - _gap) / 2) max 0.14;"];
 
     // The old title combined CfgPatches' r0 suffix with an additional debug r1 suffix, producing r0-r1.
     // r5 is the public diagnostic/release label for this build and is rendered as one atomic version string.

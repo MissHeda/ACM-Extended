@@ -4,6 +4,6 @@ params ["_medic", "_patient", "_bodyPart", "_type", "_site", "_epoch"];
 if (isNull _patient || {!local _patient}
     || {_epoch != ([_patient] call ACME_fnc_clinicalEpoch)}) exitWith {};
 if !(_bodyPart in ["head","body","leftarm","rightarm","leftleg","rightleg"]
-    && {_site in [0,1,2]} && {_type in [1,2,5,6]}) exitWith {};
+    && {_site in [0,1,2]} && {_type in [0,1,2,5,6]}) exitWith {};
 ["ACM_circulation_setIVLocal", [_medic, _patient, _bodyPart, _type, true, _site]] call CBA_fnc_localEvent;
-[_patient, _bodyPart, _site, _type, [], _epoch] call ACME_fnc_ivEnforceSite;
+if (_type > 0) then {[_patient, _bodyPart, _site, _type, [], _epoch] call ACME_fnc_ivEnforceSite;};

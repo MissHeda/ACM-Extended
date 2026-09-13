@@ -53,6 +53,16 @@ private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [
         _woundC ctrlCommit 0;
     };
 
+    // Reapply position/texture on every body-image update. ACE can rebuild/reflow the body group during an active
+    // treatment; relying only on creation-time properties made the packed wound disappear until the menu reopened.
+    if (!isNull _ref) then {
+        _woundC ctrlSetPosition (ctrlPosition _ref);
+        _wrapC ctrlSetPosition (ctrlPosition _ref);
+    };
+    _woundC ctrlSetText ("\acm_extended\ui\items\" + _woundTex);
+    _wrapC ctrlSetText ("\acm_extended\ui\items\" + _wrapTex);
+    _woundC ctrlCommit 0;
+    _wrapC ctrlCommit 0;
     _woundC ctrlShow (_state in ["open", "packed", "xstat"]);
     _wrapC  ctrlShow (_state == "wrapped");
 } forEach _limbs;

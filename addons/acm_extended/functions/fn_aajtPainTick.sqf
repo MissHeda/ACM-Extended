@@ -24,8 +24,11 @@ private _handle = [{
         if (_same) then {_patient setVariable ["ACME_AAJT_painPFH", -1, false];};
         [_h] call CBA_fnc_removePerFrameHandler;
     };
-    if (_patient getVariable ["ACE_isUnconscious", false]) exitWith {};
-    private _target = missionNamespace getVariable ["ACME_aajt_severePainFloor", 0.82];
+    private _zone3 = _patient getVariable ["ACME_AAJT_zone3", false];
+    // Zone 3 maintains a raw severe-pain floor even while unconscious so analgesia/decay cannot erase the
+    // underlying device pain. Other AAJT placements retain the previous awake-only behavior.
+    if (!_zone3 && {_patient getVariable ["ACE_isUnconscious", false]}) exitWith {};
+    private _target = if (_zone3) then {missionNamespace getVariable ["ACME_aajt_zone3PainFloor", 0.95]} else {missionNamespace getVariable ["ACME_aajt_severePainFloor", 0.82]};
     private _cur = _patient getVariable ["ace_medical_pain", 0];
     if (_cur < _target) then {[_patient, _target - _cur] call ace_medical_fnc_adjustPainLevel;};
 }, 1.0, [_patient, clientOwner, [_patient] call ACME_fnc_clinicalEpoch]] call CBA_fnc_addPerFrameHandler;

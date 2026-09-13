@@ -7404,6 +7404,7 @@ class ace_medical_treatment_actions {
         animationMedicProne = "AmovPknlMstpSrasWpstDnon_AmovPknlMstpSrasWpstDnon_gear";
     };
     class UseStethoscope {
+        ACM_rollToBack = "false";  // Auscultation works in the casualty's current position, including Semi-Fowler's.
         // The launch action is only 0.001 s and should not attempt ACM's inherited gear animation. Start the
         // optional TSP sling here instead, so the rifle is already moving to the sling while the minigame opens.
         // Exact-class gating keeps BVM descendants from inheriting this stethoscope-specific preflight.
@@ -7816,7 +7817,7 @@ class ace_medical_treatment_actions {
         items[] = {};
         // every seal can be burped, in every mode. the valve clogs whatever the settings say and hardcore only
         // decides how fast, so gating the fix behind hardcore left a clogged seal with nothing to do about it.
-        condition = "_patient getVariable ['ACM_breathing_ChestSeal_State', false]";
+        condition = "false";  // Burping is performed only inside the chest-seal minigame.
         callbackSuccess = "_this call ACME_fnc_chestSealBurp";
         callbackFailure = "";
         callbackProgress = "";
@@ -8321,7 +8322,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 3;
         allowedSelections[] = {"Head"};
         items[] = {};
-        condition = "private _h = (_patient getVariable ['ACM_circulation_IV_Placement', []]) param [0, []]; ((_h param [0,0]) > 0) || {(_h param [1,0]) > 0}";
+        condition = "false";  // EJ removal is physical: grab the catheter hub in the IV minigame and pull it.
         callbackSuccess = "[_medic, _patient] call ACME_fnc_removeEJ";
         callbackFailure = "";
         callbackProgress = "";

@@ -15,12 +15,12 @@ while {isClass _base && {count _lineage < 64}} do {
 // Hide only ACM's redundant draw-entry actions. The syringe implementation is still used.
 if ("usesyringe_10" in _lineage) exitWith {[_category, "", true]};
 if (_name == "acme_syringekit_drawpatient") exitWith {["medication", "narc_box", false]};
+if (_name in ["acme_removeej", "acme_burpchestseal"]) exitWith {[_category, "", true]};
 // Exact actions only. BVM inherits UseStethoscope, so class lineage cannot decide its category: route every
 // BVM variant into Breathing before the stethoscope re-category runs.
 if (_name in ["usebvm", "usebvm_oxygen", "usebvm_vehicleoxygen", "usebvm_portableoxygen"]) exitWith {["airway", "ventilation", false]};
-if (_name in ["slapawake", "acme_inspectchest", "usestethoscope"]) then {
-    _category = "examine";
-};
+if (_name in ["acme_inspectchest", "usestethoscope"]) exitWith {["airway", "chest", false]};
+if (_name == "slapawake") then {_category = "examine";};
 // Dog tags are a standalone final Examine action, never a dropdown child.
 if (_name == "checkdogtags") exitWith {["examine", "", false]};
 if (_category == "examine") exitWith {

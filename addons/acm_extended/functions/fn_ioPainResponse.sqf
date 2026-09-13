@@ -3,9 +3,8 @@
  * placement: an IO insertion always establishes at least moderate pain, even if ACM's native lidocaine
  * suppression would otherwise reduce it below that floor.
  *
- * fluid: any fluid/medication pushed through an IO immediately drives raw pain to maximum severity. If the
- * casualty was conscious at the trigger, they are forced unconscious about three seconds later. Repeated flow
- * ticks share one pending syncope so a running bag cannot create a scheduler storm.
+ * fluid: any fluid/medication pushed through an IO immediately drives raw pain to maximum severity. Consciousness
+ * remains physiology-driven; the pain response itself does not hard-force a stable casualty unconscious.
  */
 params ["_patient", ["_bodyPart", "body"], ["_mode", "fluid"]];
 if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
@@ -38,31 +37,8 @@ if (_rawPain < 0.999) then {
     };
 };
 
-// Only a casualty who was conscious when the painful IO flow began gets this syncope. One outstanding collapse
-// is enough; subsequent bag ticks/push components merely keep pain at maximum without replaying the hit sound.
-if (_isUncon) exitWith {};
-private _now = CBA_missionTime;
-if (_now < (_patient getVariable ["ACME_ioSyncopePendingUntil", -1])) exitWith {};
-if (!isNil "ace_medical_feedback_fnc_playInjuredSound") then {
+// IO flow remains maximally painful, but pain alone no longer hard-forces a medically stable casualty unconscious.
+// ACE/ACM physiology owns consciousness from here, so shock, hypoxia, TBI, sedation and arrest can still knock them out.
+if (!_isUncon && {!isNil "ace_medical_feedback_fnc_playInjuredSound"}) then {
     [_patient, "hit"] call ace_medical_feedback_fnc_playInjuredSound;
 };
-
-private _delay = missionNamespace getVariable ["ACME_ioFluidSyncopeDelay", 3];
-private _serial = (_patient getVariable ["ACME_ioSyncopeSerial", 0]) + 1;
-private _clinicalEpoch = [_patient] call ACME_fnc_clinicalEpoch;
-_patient setVariable ["ACME_ioSyncopeSerial", _serial, false];
-_patient setVariable ["ACME_ioSyncopePendingUntil", _now + _delay + 0.25, false];
-
-[{
-    params ["_patient", "_serial", "_clinicalEpoch"];
-    if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
-    if ((_patient getVariable ["ACME_ioSyncopeSerial", -1]) != _serial) exitWith {};
-    _patient setVariable ["ACME_ioSyncopePendingUntil", -1, false];
-    if (_clinicalEpoch != ([_patient] call ACME_fnc_clinicalEpoch)) exitWith {};
-
-    private _alreadyOut = (_patient getVariable ["ACE_isUnconscious", false])
-        || {_patient getVariable ["ace_medical_unconscious", false]};
-    if (!_alreadyOut && {!isNil "ace_medical_status_fnc_setUnconsciousState"}) then {
-        [_patient, true] call ace_medical_status_fnc_setUnconsciousState;
-    };
-}, [_patient, _serial, _clinicalEpoch], _delay] call CBA_fnc_waitAndExecute;

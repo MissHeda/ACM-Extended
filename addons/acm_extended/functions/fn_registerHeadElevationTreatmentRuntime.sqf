@@ -2,6 +2,10 @@
 ["ace_treatmentStarted", {
     params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
     if (isNull _patient || {!local _medic} || {!(_patient getVariable ["ACME_headElevated", false])}) exitWith {};
+    private _classLower = toLowerANSI _classname;
+    // Chest assessment is observational. It must not suspend/rebuild Semi-Fowler's, which caused the patient
+    // animation/camera to restart repeatedly while auscultating a ventilated casualty.
+    if (_classLower in ["usestethoscope", "acme_inspectchest"]) exitWith {};
     private _cfg = configFile >> "ace_medical_treatment_actions" >> _classname;
     private _roll = (getNumber (_cfg >> "ACM_rollToBack")) > 0;
     private _isBody = if (_bodyPart isEqualType "") then {toLower _bodyPart == "body"} else {_bodyPart == 1};

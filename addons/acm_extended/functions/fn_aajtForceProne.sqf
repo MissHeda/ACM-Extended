@@ -24,5 +24,7 @@ if (!isNil "ace_medical_engine_fnc_setUnconsciousAnim") then {
     if (!isNil "ace_medical_engine_fnc_setUnconsciousAnim") then {[_patient, false] call ace_medical_engine_fnc_setUnconsciousAnim;};
     _patient setVariable ["ACME_AAJT_collapseOwned", false, false];
     _patient setUnitPos "DOWN";
-    [_patient, "AmovPpneMstpSnonWnonDnon", 2] call ACME_fnc_doAnim;
+    [_patient, true, true] call ACM_core_fnc_setLyingState;
+    [_patient, "ACM_LyingState", 2] call ACME_fnc_doAnim;
+    ["ACM_core_getUpPrompt", [_patient], _patient] call CBA_fnc_targetEvent;
 }, [_patient, [_patient] call ACME_fnc_clinicalEpoch], missionNamespace getVariable ["ACME_aajt_collapseTime", 0.45]] call CBA_fnc_waitAndExecute;

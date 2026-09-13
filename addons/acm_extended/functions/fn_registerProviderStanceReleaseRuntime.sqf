@@ -43,3 +43,19 @@
         }, [_medic], 0.12] call CBA_fnc_waitAndExecute;
     }] call CBA_fnc_addEventHandler;
 } forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];
+
+// Zone 3 posture control must distinguish a treatment animation from a genuine attempt to stand. These events
+// originate on the provider's client, so publish a short patient timestamp that the owner-local AAJT watcher reads.
+["ace_treatmentStarted", {
+    params ["_medic", "_patient"];
+    if (isNull _patient || {!(_patient getVariable ["ACME_AAJT_zone3", false])}) exitWith {};
+    _patient setVariable ["ACME_AAJT_treatmentGraceUntil", CBA_missionTime + 120, true];
+}] call CBA_fnc_addEventHandler;
+{
+    [_x, {
+        params ["_medic", "_patient"];
+        if (isNull _patient || {!(_patient getVariable ["ACME_AAJT_zone3", false])}) exitWith {};
+        _patient setVariable ["ACME_AAJT_treatmentGraceUntil", CBA_missionTime + 0.9, true];
+    }] call CBA_fnc_addEventHandler;
+} forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];
+

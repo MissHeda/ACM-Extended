@@ -245,11 +245,12 @@ uiNamespace setVariable ["ACME_IV_VeinSet",
                 private _blocked = false; private _reason = "";
                 if (!isNull _patient) then {
                     {
-                        _x params ["_mbp", "_mview", "_mu", "_mv", "_mkind", ["_mtex", ""]];
+                        _x params ["_mbp", "_mview", "_mu", "_mv", "_mkind", ["_mtex", ""], ["_mframe", ""], ["_mgauge", 0], ["_mmiss", -1], ["_mscale", 1], ["_msite", ""]];
                         if (_mbp == _bp && {_mview == _view}) then {
                             private _du = _stickU - _mu; private _dv = (_stickV - _mv) * (1 / _af);
                             if (sqrt ((_du * _du) + (_dv * _dv)) <= 0.03) then { _blocked = true; _reason = "used"; };
-                            if (_mkind == "removed" && {_stickV >= _mv - 0.012}) then { _blocked = true; _reason = "above"; };
+                            private _sameDrainageTrack = (!_isEJc) || {(toLowerANSI _msite) == (toLowerANSI (uiNamespace getVariable ["ACME_IV_EJAnatomicalSide", ""]))};
+                            if (_sameDrainageTrack && {_mkind == "removed"} && {_stickV >= _mv - 0.012}) then { _blocked = true; _reason = "above"; };
                         };
                     } forEach (_patient getVariable ["ACME_IV_Marks", []]);
                 };

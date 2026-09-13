@@ -9,7 +9,14 @@
     // minigame opens a frame later, so suppress the generic provider roll there too. Patient rolling remains ACM-owned.
     private _poseOwned = (_medic getVariable ["ACME_treatmentPoseState", []]) isNotEqualTo [];
     private _isStethoscope = toLower _classname == "usestethoscope";
-    if ((getNumber _cfgRollB39) > 0 && {!_poseOwned} && {!_isStethoscope}) then {
+    private _rollsPatient = (getNumber _cfgRollB39) > 0;
+    if (_rollsPatient && {!isNull _patient} && {alive _patient}
+        && {!(_patient getVariable ["ACE_isUnconscious", false])}
+        && {!(_patient getVariable ["ACM_core_Lying_State", false])}) then {
+        [_patient, true, true] call ACM_core_fnc_setLyingState;
+        ["ACM_core_getUpPrompt", [_patient], _patient] call CBA_fnc_targetEvent;
+    };
+    if (_rollsPatient && {!_poseOwned} && {!_isStethoscope}) then {
         [_medic, _classname, _patient] call ACME_fnc_rollProviderStart;
     };
 }] call CBA_fnc_addEventHandler;

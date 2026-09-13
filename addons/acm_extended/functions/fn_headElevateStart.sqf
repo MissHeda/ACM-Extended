@@ -43,6 +43,12 @@ private _poseToken = format ["%1:%2:%3", clientOwner, CBA_missionTime, _serial];
 _patient setVariable ["ACME_headElev_poseToken", _poseToken, true];
 _patient setVariable ["ACME_headElev_treatments", createHashMap, true];
 _patient setVariable ["ACME_headElevated", true, true];
+// Positioning an awake casualty is a deliberate forced-down state. Keep ACM's lying flag coherent so Get Up is
+// always available to a conscious player after any ACME patient animation puts them on the ground.
+if (!(_patient getVariable ["ACE_isUnconscious", false]) && {!(_patient getVariable ["ACM_core_Lying_State", false])}) then {
+    [_patient, true, true] call ACM_core_fnc_setLyingState;
+    ["ACM_core_getUpPrompt", [_patient], _patient] call CBA_fnc_targetEvent;
+};
 _patient setVariable ["ACME_headElev_hold", [[], [_medic, _poseToken, CBA_missionTime]] select _manual, true];
 
 // A backpack or vehicle seat needs no removed vest and no refund record.

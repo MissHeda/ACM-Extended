@@ -35,6 +35,7 @@ uiNamespace setVariable ["ACME_CS_PFH", -1];
 call ACM_GUI_fnc_resumeMedicalMenuPFH;
 uiNamespace setVariable ["ACME_CS_Dragging", false];
 uiNamespace setVariable ["ACME_CS_FlipLockedUntil", 0];
+uiNamespace setVariable ["ACME_CS_VirtualFlip", false];
 uiNamespace setVariable ["ACME_CS_FingerGlow", []];
 uiNamespace setVariable ["ACME_CS_Held", false];
 uiNamespace setVariable ["ACME_CS_SpearHeld", false];

@@ -47,6 +47,10 @@ private _type = switch (_mgauge) do {
     default { 1 };
 };
 private _medic = ACE_player;
+// EJ is only a close-up/minigame body-part name. ACM stores both jugulars on the native head row,
+// access sites 0 and 1. Sending "ej" to ACM's setter is rejected as an invalid body part and leaves
+// the real line registered after the hub is physically pulled. Normalize before the owner-safe removal.
+private _nativePart = if ((toLowerANSI _mbp) == "ej") then {"head"} else {_mbp};
 // drive ACM's LOCAL setter, not ACM_circulation_fnc_setIV.
 // setIV writes its own removal line into the activity log at circulation/functions/fnc_setIV.sqf:179, and this
 // function writes the line below, so the medic read two entries for one removal. the local setter does the same
@@ -54,7 +58,7 @@ private _medic = ACE_player;
 // setIVLocal takes [_medic, _patient, _bodyPart, _type, _iv, _accessSite] and a type of 0 IS the removal. that
 // is exactly what setIV hands it: on a removal setIV sets _setState to 0 and passes that through. every check
 // setIV runs before that point is a placement check, guarded by its _state argument, which is false here.
-["ACM_circulation_setIVLocal", [_medic, _patient, _mbp, 0, true, _siteIdx, [_patient] call ACME_fnc_clinicalEpoch], _patient] call CBA_fnc_targetEvent;
+[_patient, "ivSite", [_medic, _patient, _nativePart, 0, _siteIdx, [_patient] call ACME_fnc_clinicalEpoch]] call ACME_fnc_ownerDispatch;
 // the compromise flag belongs to the line, so it goes with it.
 // CAUTION: Do not use str on a value that is already a string. str adds quotation marks.
 // This line read toLower (str _mbp). The name became ACME_ivCompromised_"leftarm"_2 with real quotes.
@@ -74,7 +78,7 @@ if (_medic getVariable ["ACME_hang_Active", false]) then {
     // They are normalised the same way now, so the test still works and the values are clean.
     private _hangPart = _medic getVariable ["ACME_hang_Part", ""];
     private _hbp = if (_hangPart isEqualType "") then { toLower _hangPart } else { toLower (str _hangPart) };
-    if (_hp == _patient && {_hbp == _bpFlagRaw}) then {
+    if (_hp == _patient && {_hbp in [_bpFlagRaw, toLowerANSI _nativePart]}) then {
         [true] call ACME_fnc_hangBagStop;
     };
 };

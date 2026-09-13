@@ -52,11 +52,21 @@ if (_flipLocked) then {
         [] call ACME_fnc_chestSealRender;
     };
 } else {
-    private _actualSide = [_patient, _uiSide] call ACME_fnc_chestSealActualSide;
-    if (_actualSide != _uiSide) then {
-        uiNamespace setVariable ["ACME_CS_Side", _actualSide];
-        _patient setVariable ["ACME_CS_facing", _actualSide, true];
-        [] call ACME_fnc_chestSealRender;
+    private _virtual = uiNamespace getVariable ["ACME_CS_VirtualFlip", false];
+    private _awakeFree = !(_patient getVariable ["ACE_isUnconscious", false])
+        && {!(_patient getVariable ["ace_medical_unconscious", false])}
+        && {!(_patient getVariable ["ACME_obtunded", false])}
+        && {!(_patient getVariable ["ACM_core_Lying_State", false])}
+        && {(toLowerANSI (stance _patient)) in ["stand", "crouch"]}
+        && {isNull objectParent _patient};
+    if (!(_virtual && {_awakeFree})) then {
+        if (_virtual) then {uiNamespace setVariable ["ACME_CS_VirtualFlip", false];};
+        private _actualSide = [_patient, _uiSide] call ACME_fnc_chestSealActualSide;
+        if (_actualSide != _uiSide) then {
+            uiNamespace setVariable ["ACME_CS_Side", _actualSide];
+            _patient setVariable ["ACME_CS_facing", _actualSide, true];
+            [] call ACME_fnc_chestSealRender;
+        };
     };
 };
 

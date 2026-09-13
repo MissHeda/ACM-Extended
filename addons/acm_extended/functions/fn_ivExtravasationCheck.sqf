@@ -51,7 +51,8 @@ private _leaks = false;
     _x params ["_mbp", "_mview", "_mu", "_mv", "_mkind", ["_mtex", ""], ["_mframe", ""], ["_mgauge", 0], ["_mmiss", -1], ["_mscale", 1], ["_msite", "lower"]];
     // only compromised sites on the same limb count: a miss, or the hole of a removed iv. an active hub does not make a
     // distal iv leak, because both can be patent. skip the mark we are about to place, and any on other limbs.
-    if ((toLower _mbp) == _bp && {_mkind in ["miss", "removed"]}) then {
+    private _sameEJSide = (!_isEJ) || {(toLowerANSI _msite) == (toLowerANSI _newSite)};
+    if ((toLower _mbp) == _bp && {_mkind in ["miss", "removed"]} && {_sameEJSide}) then {
         private _markCanon = [_msite, _mv] call _fnc_canon;
         // a compromised site is proximal to, above, the new iv when its canonical height is smaller. a small epsilon avoids
         // flagging a hole at essentially the same height, because a re-stick right at the old spot is handled separately
