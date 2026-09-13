@@ -1,7 +1,7 @@
 // torso direct pressure. It uses the stronger two-handed hold pose, but it is not an exclusive ACM continuous
 // maneuver: the provider may still open the medical menu and perform another intervention. The pose yields while
-// an ACE treatment is active and resumes only after the provider settles again. RMB/ESC and the medical-menu Stop
-// action release pressure; MMB pauses to assess bleeding.
+// an ACE treatment is active and resumes only after the provider settles again. Any movement input is a hard release
+// of direct pressure. RMB/ESC and the medical-menu Stop action also release pressure; MMB pauses to assess bleeding.
 params ["_medic", "_patient", "_bodyPart"];
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -44,5 +44,7 @@ _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_patient, "activity", "%1 started Direct pressure on %2", "%1 started Direct pressure on %2", [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;
 
-private _pfh = [ACME_fnc_directPressureTick, 0.5, [_medic, _patient, _bodyPart, "torso"]] call CBA_fnc_addPerFrameHandler;
+// 20 Hz while active. This is intentionally much faster than the clot timer so a remapped movement input becomes
+// an immediate safety release instead of waiting half a second for the old torso worker.
+private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _patient, _bodyPart, "torso"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

@@ -1,6 +1,7 @@
-// the shared per-frame mover for direct pressure. It watches real hold-ending conditions: provider down, patient
-// gone, or distance broken. Non-torso pressure does not stop merely because another maneuver/action starts. Once
-// pressure has been held past 15 s, it makes a very-high-chance clot attempt every couple of seconds.
+// the shared per-frame mover for direct pressure. It watches hard hold-ending conditions: provider down, patient
+// gone, or distance broken. Movement does NOT end Direct Pressure. It only yields the held animation immediately;
+// once the provider stops moving and settles again, the hold may reapply after the normal idle delay.
+// Once pressure has been held past 15 s, it makes a very-high-chance clot attempt every couple of seconds.
 params ["_args", "_pfhId"];
 _args params ["_medic", "_patient", "_bodyPart", "_mode"];
 
@@ -19,14 +20,11 @@ if (_stop == "" && {isNull _patient}) then { _stop = "patient"; };
 private _leash = if (_mode == "torso") then { 2.2 } else { missionNamespace getVariable ["ACME_DP_leashDist", 1.7] };
 // Match the AED lead/leash contract: the hold is valid only while provider and patient remain in the same
 // vehicle context and inside the treatment radius. This keeps the explicit Stop Direct Pressure action while
-// making walking away, entering a vehicle, or leaving the patient's vehicle release pressure automatically.
+// making walking away far enough, entering a vehicle, or leaving the patient's vehicle release pressure.
 private _medicVehicle = objectParent _medic;
 private _patientVehicle = objectParent _patient;
 if (_stop == "" && {_medicVehicle isNotEqualTo _patientVehicle}) then { _stop = "far"; };
 if (_stop == "" && {(_medic distance _patient) > _leash}) then { _stop = "far"; };
-
-// Only torso direct pressure owns the continuous-action lock. Head/limb/self pressure intentionally coexists
-// with every other treatment and maneuver; starting something else must not cancel the one-handed hold.
 
 if (_stop != "") exitWith {
     switch (_stop) do {
@@ -39,8 +37,10 @@ if (_stop != "") exitWith {
 
 // B70: weapon stow is intentionally one-shot at action entry. Never re-stow a weapon the player manually draws.
 
-// limb and head: free movement. adopt the holding pose when idle and looking at the patient, which is
-// non-locking.
+// limb and torso: the pose helper owns movement escape and treatment yielding. Any movement input retires the
+// held-animation generation immediately and exits the pose, but the clinical Direct Pressure state stays active.
+// When the provider stops moving, faces the patient and remains idle for the configured delay, the animation can
+// reapply. This preserves the original resumable behavior without allowing the held pose to trap movement.
 if (_mode in ["limb", "torso"]) then {
     [_medic, _patient] call ACME_fnc_directPressurePose;
 };

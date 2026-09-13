@@ -1,9 +1,8 @@
-// limb and head direct pressure: the free-movement holding pose. it is called every limb tick.
-// the medic can move around freely, and if they go idle, meaning no move input and no displacement, for about 0.8 s
-// while looking toward the patient, they adopt the connected direct-pressure hold, the same as the torso. it does not
-// lock them: any move input or looking away drops the pose so they move normally.
-// the pose enters/exits through ACE doAnimation priority 1 and a connected CfgMoves state, so the engine blends it. the looking test is
-// horizontal facing and pitch-independent, so looking down at a downed patient and looking level both count.
+// limb and torso direct pressure: the free-movement holding pose. it is called every active tick.
+// the medic can still use the medical menu and other treatments. while stationary and looking at the patient they
+// adopt the connected direct-pressure hold. any competing treatment, movement, or look-away immediately retires the
+// held-animation reassert worker before attempting to leave the pose. Movement only releases the pose, not the
+// clinical Direct Pressure state, so the animation can reapply after the provider stops moving and settles again.
 params ["_medic", "_patient"];
 private _inPose = _medic getVariable ["ACME_DP_InPose", false];
 
@@ -20,6 +19,9 @@ private _treating = !_entryGrace && {
     || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
 };
 if (_treating) exitWith {
+    // Kill ACME_fnc_doAnimHeld's reassert generation before the tourniquet/bandage/other treatment takes over.
+    // Without this, the short DP hold worker could wake back up after the next animation had already started.
+    _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
     if (_inPose && {!([_medic] call ACME_fnc_animBlocked)}) then {
         [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
     };
@@ -29,15 +31,16 @@ if (_treating) exitWith {
 
 // there is no pose in a vehicle.
 if (!isNull objectParent _medic) exitWith {
+    _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
     if (_inPose) then {
-        if !([_medic] call ACME_fnc_animBlocked) then { [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim; };
         _medic setVariable ["ACME_DP_InPose", false];
     };
 };
 
 private _now = CBA_missionTime;
 
-// the movement intent: the movement keys or actual displacement since the last tick.
+// the movement intent: the movement keys or actual displacement since the last tick. inputAction respects remapped
+// keyboard/controller bindings, so the escape behavior does not depend on W/A/S/D specifically.
 private _moveInput = (inputAction "MoveForward") + (inputAction "MoveBack")
                    + (inputAction "MoveLeft") + (inputAction "MoveRight")
                    + (inputAction "MoveFastForward") + (inputAction "MoveSlowForward")
@@ -57,12 +60,28 @@ private _looking = if (_dv2 isEqualTo [0,0,0] || {_lk2 isEqualTo [0,0,0]}) then 
 };
 
 if (_moving || {!_looking}) then {
-    if (_inPose) then {
-        // Leave through the CfgMoves interpolation into a movable crouch. Player movement can
-        // immediately supersede this playMoveNow; there is no frozen switchMove state to clear.
+    // Movement/look-away is an absolute POSE escape, not a Direct Pressure cancellation. Retire every pending held
+    // reassert first, then release the stance. Checking the actual animation as well as ACME_DP_InPose covers the
+    // race where another treatment cleared the intent flag while the engine was still physically in the DP hold.
+    _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+    private _actual = toLower animationState _medic;
+    private _ownsVisibleHold = _inPose || {_actual == "acme_directpressurehold"};
+    if (_ownsVisibleHold && {!([_medic] call ACME_fnc_animBlocked)}) then {
+        _medic setUnitPos "AUTO";
         [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
-        _medic setVariable ["ACME_DP_InPose", false];
+
+        // Narrow engine-state repair. A movement command must never be swallowed by a stale looping DP state. If the
+        // authored transition failed and the unit is STILL in the DP hold a beat later, use ACE priority 2 once to
+        // break that state. This does not end DP and does not fire if another treatment/movement animation already won.
+        [{
+            params ["_m"];
+            if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
+            if ((toLower animationState _m) != "acme_directpressurehold") exitWith {};
+            _m setUnitPos "AUTO";
+            [_m, "AmovPknlMstpSnonWnonDnon", 2] call ACME_fnc_doAnim;
+        }, [_medic], 0.08] call CBA_fnc_waitAndExecute;
     };
+    _medic setVariable ["ACME_DP_InPose", false];
     _medic setVariable ["ACME_DP_IdleStart", _now];
 } else {
     if (!_inPose) then {

@@ -1,10 +1,9 @@
-// limb and head direct pressure. it is one-handed and not a full maneuver: the medic moves around freely, with no
-// leash and no forced crouch.
-// when they settle, meaning idle for about 0.8 s, while looking toward the patient, the tick, fn_directpressurepose,
-// drops them into the holding pose, which does not lock them: moving or looking away leaves it.
+// limb and head direct pressure. it is one-handed and not a full maneuver: the medic can continue medical care
+// while stationary. when they settle, meaning idle for about 0.8 s while looking toward the patient, the tick,
+// fn_directPressurePose, drops them into the holding pose. Any movement input is a hard release of direct pressure,
+// which guarantees the held pose can never trap the provider after a tourniquet or another back-to-back action.
 // because it does not set ACM_core_ContinuousAction_Active, the medic can continue every other medical action
-// while the one-handed hold remains active. RMB and esc release manually. clotting still progresses on a timer
-// while held, independent of the pose.
+// while the one-handed hold remains active. RMB and esc release manually. clotting still progresses on a timer.
 params ["_medic", "_patient", "_bodyPart"];
 
 _medic setVariable ["ACME_DP_Active", true, true];
@@ -28,8 +27,8 @@ if ([_patient, _bodyPart] call ACME_fnc_directPressureHasFracture) then {
 
 if (dialog) then { closeDialog 0; };
 
-// Enter the same visibly held/frozen pressure pose immediately. It remains non-locking: fn_directPressurePose
-// drops it as soon as the provider moves or looks away and resumes it after the provider settles again.
+// Enter the same visibly held pressure pose immediately. fn_directPressurePose yields it to another treatment;
+// fn_directPressureTick destroys the DP transaction entirely on the first movement input.
 if (isNull objectParent _medic) then {
     [_medic] call ACME_fnc_medicAnimationPrep;
     _medic setUnitPos "MIDDLE";
@@ -40,7 +39,8 @@ if (isNull objectParent _medic) then {
     _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
 };
 
-// the manual release: RMB or esc. there is no persistent mouse hint, because the medic is moving freely.
+// the manual release: RMB or esc. there is no persistent mouse hint, because the provider is not in an exclusive
+// maneuver lock.
 private _ids = [];
 _ids pushBack ([0x01, [false,false,false], { [false] call ACME_fnc_directPressureStop; }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _ids pushBack ([0xF1, [false,false,false], { [false] call ACME_fnc_directPressureStop; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
@@ -58,6 +58,6 @@ private _partShort = [_bodyPart, "abbr"] call ACME_fnc_bodyPartName;
  "%1 started Direct pressure on %2",
  [[_medic, false, true] call ace_common_fnc_getName, _partShort]] call ACME_fnc_medLog;
 
-// a faster tick, so the idle and move detection is responsive. the clotting stays time-gated inside the tick.
-private _pfh = [ACME_fnc_directPressureTick, 0.15, [_medic, _patient, _bodyPart, "limb"]] call CBA_fnc_addPerFrameHandler;
+// 20 Hz while active so movement is an immediate binding-aware release. Clotting remains time-gated in the tick.
+private _pfh = [ACME_fnc_directPressureTick, 0.05, [_medic, _patient, _bodyPart, "limb"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

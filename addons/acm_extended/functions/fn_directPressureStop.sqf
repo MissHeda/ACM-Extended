@@ -1,6 +1,7 @@
 // Idempotent direct-pressure teardown for an explicit medic. It is safe after distance break, death, menu stop,
-// respawn, a stale PFH, or a partially-started hold. The old function hard-coded ACE_player and returned immediately
-// when ACME_DP_Active was already false, leaving stale patient markers/key handlers that prevented the next hold.
+// respawn, a stale PFH, a movement escape, or a partially-started hold. The old function hard-coded ACE_player
+// and returned immediately when ACME_DP_Active was already false, leaving stale patient markers/key handlers that
+// prevented the next hold.
 params [["_silent", false, [false]], ["_medic", ACE_player, [objNull]]];
 if (isNull _medic) exitWith {};
 
@@ -9,9 +10,13 @@ private _patient = _medic getVariable ["ACME_DP_Patient", objNull];
 private _part = _medic getVariable ["ACME_DP_Part", ""];
 private _mode = _medic getVariable ["ACME_DP_Mode", ""];
 private _wasInPose = _medic getVariable ["ACME_DP_InPose", false];
+private _stateBefore = toLower animationState _medic;
 
-// Retire delayed pose requests first.
+// Retire every delayed direct-pressure pose request first. ACME_DP_PoseToken belongs to the DP layer itself;
+// ACME_dah_gen owns ACME_fnc_doAnimHeld's short reassert worker. Failing to invalidate the latter allowed the
+// pressure hold to come back after a tourniquet or another treatment had already taken the provider animation.
 _medic setVariable ["ACME_DP_PoseToken", (_medic getVariable ["ACME_DP_PoseToken", 0]) + 1];
+_medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
 
 private _pfh = _medic getVariable ["ACME_DP_PFH", -1];
 if (_pfh >= 0) then {[_pfh] call CBA_fnc_removePerFrameHandler;};
@@ -32,12 +37,21 @@ if (!isNull _patient) then {
     };
 };
 
-// Release only our decorative hold. Never clear another ACM continuous action; Phase 124 no longer owns that lock.
-if (local _medic && {alive _medic} && {isNull objectParent _medic} && {!([_medic] call ACME_fnc_animBlocked)}) then {
-    if (_wasInPose || {_mode == "torso"}) then {
-        _medic setUnitPos "MIDDLE";
-        [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
-    };
+// Release only our decorative hold. Never clear another ACM continuous action. First request the normal authored
+// transition. If the engine is still physically in ACME_DirectPressureHold on the next beat, use priority 2 as a
+// narrowly-scoped repair. That fallback is what guarantees a movement key can never leave the provider welded in
+// the pressure pose, without making ordinary treatment animation exits snap.
+private _ownsHold = _wasInPose || {_mode == "torso"} || {_stateBefore == "acme_directpressurehold"};
+if (local _medic && {alive _medic} && {isNull objectParent _medic} && {_ownsHold}) then {
+    _medic setUnitPos "AUTO";
+    [_medic, "AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;
+    [{
+        params ["_m"];
+        if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
+        if ((toLower animationState _m) != "acme_directpressurehold") exitWith {};
+        _m setUnitPos "AUTO";
+        [_m, "AmovPknlMstpSnonWnonDnon", 2] call ACME_fnc_doAnim;
+    }, [_medic], 0.08] call CBA_fnc_waitAndExecute;
 };
 
 {
