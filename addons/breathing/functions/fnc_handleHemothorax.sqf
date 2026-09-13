@@ -5,6 +5,7 @@
  *
  * Arguments:
  * 0: Patient <OBJECT>
+ * 1: Resume existing clot PFH only <BOOL>
  *
  * Return Value:
  * None
@@ -19,9 +20,8 @@ params ["_patient", ["_resumeOnly", false]];
 
 private _state = _patient getVariable [QGVAR(Hemothorax_State), 0];
 
-// Normal injury calls remain equivalent in effect to ACM's original path: create/increment the hemothorax and
-// apply the associated pain. Resume-only is used solely to restore a missing clot PFH for an already-active
-// hemothorax, so it must never make the chest injury worse just because TXA was administered.
+// Normal injury calls create/increment the hemothorax. Resume-only is used when TXA is given to an already-active
+// hemothorax whose clot PFH was lost, and must never increase injury severity simply because medication was given.
 if (_resumeOnly && {_state <= 0}) exitWith {};
 if (!_resumeOnly && {_state >= 10}) exitWith {};
 
@@ -46,28 +46,44 @@ private _PFH = [{
 
     private _hemothoraxState = _patient getVariable [QGVAR(Hemothorax_State), 0];
 
-    if (GVAR(Hardcore_HemothoraxBleeding) && _hemothoraxState <= 2) exitWith {};
-
-    private _plateletCount = _patient getVariable [QEGVAR(circulation,Platelet_Count), 3];
-    private _TXACount = ([_patient, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount)) min 2;
-
-    if (!(alive _patient) || _hemothoraxState == 0) exitWith {
+    // Retire a completed/dead episode before any setting-specific early return. This prevents stale PFHs and keeps
+    // the non-Hardcore path able to reach a true zero state.
+    if (!(alive _patient) || {_hemothoraxState <= 0}) exitWith {
         _patient setVariable [QGVAR(Hemothorax_PFH), -1];
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
 
-    if (GET_HEART_RATE(_patient) < 20 || (_plateletCount < 1 && _TXACount < 0.1) || (GET_EFF_BLOOD_VOLUME(_patient) < 3.6)) exitWith {};
-    
-    if (random 1 < ((0.25 * _plateletCount / 4) max (0.5 * (_TXACount min 1.2)))) then {
+    private _plateletCount = _patient getVariable [QEGVAR(circulation,Platelet_Count), 3];
+    private _TXACount = ([_patient, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount)) min 2;
+
+    // Hardcore intentionally leaves a low-grade residual source at state 1-2 when untreated. TXA is treatment,
+    // so it must still be allowed to complete the native clot process. With Hardcore disabled this branch never
+    // runs and state 1-2 can clot normally.
+    if (GVAR(Hardcore_HemothoraxBleeding) && {_hemothoraxState <= 2} && {_TXACount < 0.1}) exitWith {};
+
+    // Preserve ACM's circulation/platelet gates, but do not make severe hypovolemia an absolute TXA lockout.
+    // Previously a casualty below 3.6 L effective blood volume could have active TXA and still remain permanently
+    // unable to make a hemothorax clot attempt. Untreated profound shock retains the original gate.
+    if (GET_HEART_RATE(_patient) < 20
+        || {(_plateletCount < 1 && {_TXACount < 0.1})}
+        || {(GET_EFF_BLOOD_VOLUME(_patient) < 3.6) && {_TXACount < 0.1}}) exitWith {};
+
+    private _clotChance = ((0.25 * _plateletCount / 4) max (0.5 * (_TXACount min 1.2))) min 1;
+
+    if (random 1 < _clotChance) then {
         private _clearAmount = 1;
-        
+
         if (_TXACount >= 1) then {
             _clearAmount = ([2,3] select (random 1 < (0.25 * _TXACount)));
         };
 
         _hemothoraxState = (_hemothoraxState - _clearAmount) max 0;
-
         _patient setVariable [QGVAR(Hemothorax_State), _hemothoraxState, true];
+
+        if (_hemothoraxState <= 0) then {
+            _patient setVariable [QGVAR(Hemothorax_PFH), -1];
+            [_idPFH] call CBA_fnc_removePerFrameHandler;
+        };
     };
 }, _time, [_patient]] call CBA_fnc_addPerFrameHandler;
 

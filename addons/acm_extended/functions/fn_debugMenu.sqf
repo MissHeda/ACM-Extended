@@ -15,7 +15,7 @@ if (isNil {missionNamespace getVariable "ACME_debugMenu_r5Code"}) then {
     // values stay on their intended rows. This remains bounded on ultrawide rather than growing with the display.
     _src = _src regexReplace ["private _gap = .*?;/", "private _gap = 0.004;"];
     _src = _src regexReplace ["private _x0 = .*?;/", "private _x0 = safeZoneX;"];
-    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.52) min 0.58 max 0.46; private _w = ((_totalW - _gap) / 2) max 0.17;"];
+    _src = _src regexReplace ["private _w = .*?;/", "private _totalW = (safeZoneW * 0.66) min 0.78 max 0.58; private _w = ((_totalW - _gap) / 2) max 0.22;"];
 
     // The old title combined CfgPatches' r0 suffix with an additional debug r1 suffix, producing r0-r1.
     // r5 is the public diagnostic/release label for this build and is rendered as one atomic version string.

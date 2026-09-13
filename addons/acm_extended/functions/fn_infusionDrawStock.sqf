@@ -15,7 +15,15 @@ private _drawn = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Draw
 private _allowed = missionNamespace getVariable ["ACME_infusion_allowedMedications", []];
 if (_med != "") then {
     private _limit = ["limit", _med, _drawn, _display] call ACME_fnc_vialSession;
-    ACM_circulation_SyringeDraw_MaxDose = (ACM_circulation_SyringeDraw_Size min (_limit max 0)) max 0;
+    private _hardMax = (ACM_circulation_SyringeDraw_Size min (_limit max 0)) max 0;
+    ACM_circulation_SyringeDraw_MaxDose = _hardMax;
+
+    // Never allow infusion prep's state to get ahead of the physical vial even for one UI frame. skUiTick owns
+    // the continuous physical stop; this is the commit-side belt-and-suspenders clamp for the first pull.
+    if (_drawn > _hardMax + 0.0001) then {
+        ACM_circulation_SyringeDraw_DrawnAmount = _hardMax;
+        _drawn = _hardMax;
+    };
 };
 private _busy = (missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "";
 (_display displayCtrl 84003) ctrlEnable (!_busy && {_drawn > 0} && {_med in _allowed});

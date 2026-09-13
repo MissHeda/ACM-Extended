@@ -94,10 +94,15 @@ if (_body) then {call ACME_fnc_skBodyActionRender;};
 if (_stage == "") then {
     private _nativeList = _d displayCtrl 84006;
     private _sel = lbCurSel _nativeList;
-    if (_sel >= 0) then {
-        private _med = _nativeList lbData _sel;
+    // Infusion prep can select the medication through ACME's visible row before ACM's hidden native listbox has
+    // published its matching lbCurSel. The old guard therefore skipped the first physical-plunger clamp and let a
+    // 10 mL syringe travel to 10 mL even when the bound vial only contained 4 mL. The authoritative medication
+    // identity is ACM's draw-session variable; use the hidden list only as a fallback.
+    private _med = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Medication", ""];
+    if (_med == "" && {_sel >= 0}) then {_med = _nativeList lbData _sel;};
+    if (_med != "") then {
         private _holder = [ACE_player] call ACME_fnc_vialHolder;
-        if (_med != "" && {!isNull _holder}) then {
+        if (!isNull _holder) then {
             private _sizeMl = (ACM_circulation_SyringeDraw_Size max 0.1);
             private _hardMax = (["limit", _med, missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount",0], _d] call ACME_fnc_vialSession) min _sizeMl;
             _hardMax = _hardMax max 0;
