@@ -7931,7 +7931,7 @@ class ace_medical_treatment_actions {
         treatmentLocations[] = {"All"};
         medicRequired = 0;
         treatmentTime = 0.5;
-        allowedSelections[] = {"Head", "Body"};
+        allowedSelections[] = {"Head"};
         condition = "[_patient, _medic] call ACME_fnc_headElevateCanStart";
         callbackSuccess = "_this call ACME_fnc_headElevateStart";
         callbackFailure = "";
@@ -7953,7 +7953,7 @@ class ace_medical_treatment_actions {
         treatmentLocations[] = {"All"};
         medicRequired = 0;
         treatmentTime = 0.5;
-        allowedSelections[] = {"Head", "Body"};
+        allowedSelections[] = {"Head"};
         condition = "!(_patient isEqualTo _medic) && {_patient getVariable ['ACME_headElevated', false]}";
         callbackSuccess = "[_this select 0, _this select 1] call ACME_fnc_headElevateStop";
         callbackFailure = "";
@@ -8330,11 +8330,11 @@ class ace_medical_treatment_actions {
         displayName = "Apply AAJT-S (Inguinal)";
         displayNameProgress = "Applying AAJT-S...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 20;
         allowedSelections[] = {"LeftLeg","RightLeg"};
-        condition = "!(_patient getVariable ['ACME_AAJT_inguinal', false]) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
+        condition = "!(_patient getVariable ['ACME_AAJT_inguinal', false])";
         callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
         callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
@@ -8349,7 +8349,7 @@ class ace_medical_treatment_actions {
         displayName = "Remove AAJT-S (Inguinal)";
         displayNameProgress = "Removing AAJT-S...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 4;
         allowedSelections[] = {"LeftLeg","RightLeg"};
@@ -8366,11 +8366,11 @@ class ace_medical_treatment_actions {
         displayName = "Apply AAJT-S (Axilla)";
         displayNameProgress = "Applying AAJT-S...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 20;
         allowedSelections[] = {"LeftArm","RightArm"};
-        condition = "(((toLowerANSI _bodyPart) == 'leftarm' && {!(_patient getVariable ['ACME_AAJT_axillaleft', false])}) || {(toLowerANSI _bodyPart) == 'rightarm' && {!(_patient getVariable ['ACME_AAJT_axillaright', false])}}) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
+        condition = "((toLowerANSI _bodyPart) == 'leftarm' && {!(_patient getVariable ['ACME_AAJT_axillaleft', false])}) || {(toLowerANSI _bodyPart) == 'rightarm' && {!(_patient getVariable ['ACME_AAJT_axillaright', false])}}";
         callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
         callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
@@ -8385,7 +8385,7 @@ class ace_medical_treatment_actions {
         displayName = "Remove AAJT-S (Axilla)";
         displayNameProgress = "Removing AAJT-S...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 4;
         allowedSelections[] = {"LeftArm","RightArm"};
@@ -8402,11 +8402,11 @@ class ace_medical_treatment_actions {
         displayName = "Apply AAJT-S (Zone 3 REBOA)";
         displayNameProgress = "Applying AAJT-S (Zone 3 REBOA)...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 20;
         allowedSelections[] = {"Body"};
-        condition = "!(_patient getVariable ['ACME_AAJT_zone3', false]) && {([_medic, 'ACME_AAJT_S'] call ace_common_fnc_getCountOfItem) > 0}";
+        condition = "!(_patient getVariable ['ACME_AAJT_zone3', false])";
         callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, 'body'], true]";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
         callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
@@ -8421,7 +8421,7 @@ class ace_medical_treatment_actions {
         displayName = "Remove AAJT-S (Zone 3 REBOA)";
         displayNameProgress = "Removing AAJT-S (Zone 3 REBOA)...";
         category = "bandage";
-        treatmentLocations[] = {"All"};
+        treatmentLocations = 0;
         medicRequired = 0;
         treatmentTime = 4;
         allowedSelections[] = {"Body"};

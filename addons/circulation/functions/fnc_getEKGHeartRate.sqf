@@ -17,49 +17,10 @@
 
 params ["_patient"];
 
-// ACME monitor rate conditioner. The LifePak calls getEKGHeartRate from the audible beep, the large HR readout
-// and the waveform generator. Conditioning the changing organized rate here gives all three consumers the exact
-// same electrical clock instead of letting each redraw see a slightly different instantaneous value. Fixed arrest
-// and custom-rhythm rates below remain exact and bypass this helper.
-private _fnc_smoothTrackedRate = {
-    params ["_raw"];
-    if !(_raw isEqualType 0) exitWith {0};
-    _raw = _raw max 0;
-
-    private _now = CBA_missionTime;
-    private _state = _patient getVariable ["ACME_AED_TrackedHRState", []];
-    if !(_state isEqualType [] && {count _state >= 2}) exitWith {
-        _patient setVariable ["ACME_AED_TrackedHRState", [_raw, _now], false];
-        _raw
-    };
-
-    _state params ["_previous", "_lastTime"];
-    if !(_previous isEqualType 0 && {_lastTime isEqualType 0}) exitWith {
-        _patient setVariable ["ACME_AED_TrackedHRState", [_raw, _now], false];
-        _raw
-    };
-
-    private _gap = _now - _lastTime;
-    private _resetGap = missionNamespace getVariable ["ACME_monitorHRHardResetGap", 1.5];
-    if (_gap < 0 || {_gap > _resetGap} || {_previous <= 0} || {_raw <= 0}) exitWith {
-        _patient setVariable ["ACME_AED_TrackedHRState", [_raw, _now], false];
-        _raw
-    };
-
-    // Cap how quickly the displayed/electrical rate can move from one frame to the next. This is not a delayed
-    // average: it is a slew limiter, so a stable HR remains exact while a changing HR advances monotonically and
-    // the R-R/T-wave timing does not jump by whole columns on every vitals poll.
-    private _dt = (_gap max 0) min 0.25;
-    private _delta = _raw - _previous;
-    private _rise = missionNamespace getVariable ["ACME_monitorHRRiseBpmPerSec", 36];
-    private _fall = missionNamespace getVariable ["ACME_monitorHRFallBpmPerSec", 48];
-    private _limit = ((if (_delta >= 0) then {_rise} else {_fall}) max 1) * _dt;
-    private _next = _previous + ((_delta max (-_limit)) min _limit);
-    if (abs _delta < 0.20) then {_next = _raw;};
-
-    _patient setVariable ["ACME_AED_TrackedHRState", [_next, _now], false];
-    _next
-};
+// The monitor rate getter is deliberately side-effect free with respect to rate conditioning. The old slew limiter
+// mutated its state every time this function was called; the beep loop, BPM display and waveform generator can all
+// call it in the same frame, so each consumer received a slightly different rate and the trace visibly chased the
+// sound. Native ACM physiology already owns the rate evolution. Every AED consumer now reads that same value.
 
 private _fnc_generateHeartRate = { // ace_medical_vitals_fnc_updateHeartRate
     params ["_unit"];
@@ -146,18 +107,32 @@ switch (_rhythm) do {
         missionNamespace getVariable ["ACME_rhythm_pvtElectricalHR", 220]
     };
     case ACM_Rhythm_PEA: { // Pulseless Electrical Activity (Reversible)
-        // The owner selects one rate for the PEA episode. Remote monitor clients only read it. 100 BPM is the safe
-        // fallback for an old save/JIP frame that predates the seed; never reroll on every monitor/beep query.
-        private _pea = _patient getVariable ["ACME_peaElectricalHR", 100];
-        if (!(_pea isEqualType 0) || {_pea <= 0}) then {_pea = 100;};
+        // PEA fluctuates deterministically from a single networked seed/start pair. Quantizing the time input to 4 Hz
+        // gives the beep, numeric HR and waveform generator the same value when they query in the same frame, while
+        // avoiding any recurring network HR updates.
+        private _seed = _patient getVariable ["ACME_peaElectricalHR", 80];
+        if (!(_seed isEqualType 0) || {!finite _seed}) then {_seed = 80;};
+        _seed = (60 max _seed) min 100;
+        private _start = _patient getVariable ["ACME_peaElectricalStart", _patient getVariable [QGVAR(ReversibleCardiacArrest_Time), CBA_missionTime]];
+        if (!(_start isEqualType 0) || {!finite _start}) then {_start = CBA_missionTime;};
+        private _hz = (missionNamespace getVariable ["ACME_peaVariationHz", 4]) max 1;
+        private _t = floor (((CBA_missionTime - _start) max 0) * _hz) / _hz;
+        private _phase = (_seed * 17.31) mod 360;
+        private _pea = 80
+            + (11 * sin ((_phase + (_t * 21)) mod 360))
+            + (7 * sin (((_phase * 0.61) + 113 + (_t * 49)) mod 360))
+            + (3.5 * sin (((_phase * 1.37) + 47 + (_t * 83)) mod 360));
+        _pea = (60 max _pea) min 100;
         _patient setVariable [QGVAR(CardiacArrest_EKG_HR), _pea];
         _pea
     };
     case ACM_Rhythm_VT;
     default { // Sinus / organized perfusing rhythm
         private _pr = GET_HEART_RATE(_patient);
-        private _tracked = [_pr] call _fnc_smoothTrackedRate;
-        _patient setVariable [QGVAR(CardiacArrest_EKG_HR), _tracked];
-        _tracked;
+        if (!(_pr isEqualType 0) || {!finite _pr}) then {_pr = 0;};
+        _pr = _pr max 0;
+        _patient setVariable ["ACME_AED_TrackedHRState", nil, false];
+        _patient setVariable [QGVAR(CardiacArrest_EKG_HR), _pr];
+        _pr;
     };
 };

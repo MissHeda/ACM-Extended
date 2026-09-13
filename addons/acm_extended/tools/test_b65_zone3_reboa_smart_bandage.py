@@ -1,4 +1,4 @@
-"""Regression contracts for the Zone 3 AAJT-S, corpse persistence, and smart multi-bandaging batch."""
+"""Regression contracts for Zone 3 AAJT-S, corpse persistence, and the native-bandaging rollback."""
 from pathlib import Path
 import re
 
@@ -152,41 +152,20 @@ def test_ventilator_custody_is_not_destroyed_only_because_patient_died():
     assert '!alive _patient' not in request
 
 
-def test_smart_bandage_is_complete_bundle_priority_and_one_owner_event():
-    plan = text("addons/damage/functions/fnc_getSmartBandagePlan.sqf")
-    assert plan.index('"EmergencyTraumaDressing"') < plan.index('"PressureBandage"') < plan.index('"ElasticWrap"')
-    assert 'ACM_EmergencyTraumaDressing' in plan
-    assert 'ACM_PressureBandage' in plan
-    assert 'ACM_ElasticWrap' in plan
-    assert '[_medic, _item] call ace_common_fnc_getCountOfItem' in plan
-    assert '[_patient, _item] call ace_common_fnc_getCountOfItem' in plan
-    assert '_guard < 128' in plan
-    assert 'private _complete' in plan
-
+def test_experimental_smart_bandage_bundle_is_removed_and_native_acm_bandaging_is_restored():
     action = text("addons/core/ACE_Medical_Treatment_Actions.hpp")
     pressure = cfg_class(action, "PressureBandage")
-    assert 'displayName = "Bandage Wounds";' in pressure
-    assert 'consumeItem = 0;' in pressure
-    assert 'items[] = {};' in pressure
-    for fn in ('canSmartBandage', 'getSmartBandageTime', 'smartBandageStart', 'smartBandageProgress',
-               'smartBandageSuccess', 'smartBandageCancel'):
-        assert fn in pressure
+    assert 'items[] = {"ACM_PressureBandage"};' in pressure
+    assert 'consumeItem = 1;' in pressure
+    assert 'callbackSuccess = QACEFUNC(medical_treatment,bandage);' in pressure
+    assert 'smartBandage' not in pressure
+    assert 'Bandage Wounds' not in pressure
+    for name in (
+        'canSmartBandage', 'getSmartBandagePlan', 'getSmartBandageTime', 'smartBandageApplyLocal',
+        'smartBandageCancel', 'smartBandageProgress', 'smartBandageRestore', 'smartBandageStart', 'smartBandageSuccess'
+    ):
+        assert not (REPO / "addons/damage/functions" / f"fnc_{name}.sqf").exists()
 
-    start = text("addons/damage/functions/fnc_smartBandageStart.sqf")
-    assert 'ace_common_fnc_useItem' in start
-    assert 'smartBandageRestore' in start
-    success = text("addons/damage/functions/fnc_smartBandageSuccess.sqf")
-    assert success.count('CBA_fnc_targetEvent') == 1
-    local = text("addons/damage/functions/fnc_smartBandageApplyLocal.sqf")
-    assert 'ace_medical_treatment_fnc_bandageLocal' in local
-
-
-def test_smart_bandage_elastic_fallback_has_real_open_wound_effectiveness():
-    treatment = text("addons/core/ACE_Medical_Treatment.hpp")
-    elastic = cfg_class(treatment, "ElasticWrap")
-    for wound in ('Abrasion', 'Avulsion', 'Crush', 'Cut', 'Laceration', 'VelocityWound', 'PunctureWound'):
-        assert f'class {wound}' in elastic
-    assert 'effectiveness = 0.8;' in elastic
 
 
 def test_generated_nv_art_is_purged_and_only_active_iv_angle_families_remain():

@@ -32,14 +32,17 @@ ACME_rhythm_perfusingCustom = [100, 101, 103, 104];
 // see fn_rhythmset. this is the piece that lets us stop lying to ACM without losing anything.
 ACME_rhythm_acmProxy = [[102, 3]];
 
-// Electrical monitor-rate contract. PEA is normally near 100 BPM, with a minority brady-PEA phenotype. The chosen
-// PEA rate is seeded once per arrest episode on the patient owner, then networked so every monitor hears/draws it.
-ACME_peaBradyChance        = 0.25;
-ACME_peaNormalMinHR        = 90;
-ACME_peaNormalModeHR       = 100;
-ACME_peaNormalMaxHR        = 110;
-ACME_peaBradyMinHR         = 35;
-ACME_peaBradyModeHR        = 45;
-ACME_peaBradyMaxHR         = 58;
+// Electrical monitor-rate contract. PEA is an unstable organized electrical rhythm from 60-100 BPM. One seed and
+// one start timestamp are networked on entry; every machine derives the same low-frequency variation from mission
+// time, so PEA moves continuously without broadcasting a new HR every second. Legacy brady/normal keys remain for
+// old entry code, but brady selection is disabled and the seed itself is always inside the 60-100 range.
+ACME_peaBradyChance        = 0;
+ACME_peaNormalMinHR        = 60;
+ACME_peaNormalModeHR       = 80;
+ACME_peaNormalMaxHR        = 100;
+ACME_peaBradyMinHR         = 60;
+ACME_peaBradyModeHR        = 72;
+ACME_peaBradyMaxHR         = 86;
+ACME_peaVariationHz        = 4;
 ACME_rhythm_vfElectricalHR  = 170;
 ACME_rhythm_pvtElectricalHR = 220;

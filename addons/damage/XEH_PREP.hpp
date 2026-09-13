@@ -1,13 +1,4 @@
 PREP(canStitch);
-PREP(canSmartBandage);
-PREP(getSmartBandagePlan);
-PREP(getSmartBandageTime);
-PREP(smartBandageApplyLocal);
-PREP(smartBandageCancel);
-PREP(smartBandageProgress);
-PREP(smartBandageRestore);
-PREP(smartBandageStart);
-PREP(smartBandageSuccess);
 PREP(canWrap);
 PREP(clotWoundsOnBodyPart);
 PREP(getBandageTime);

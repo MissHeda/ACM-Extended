@@ -68,7 +68,16 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         && {(_bypass select 2) == _classname};
     private _headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"];
 
-    if (!_isBypass && {!_headOwned} && {local _medic} && {!isNull _medic} && {alive _medic} && {isNull objectParent _medic}) exitWith {
+    // Fast path: if the provider is already empty-handed and crouched, start the treatment immediately.
+    // The old wrapper always bounced through waitUntilAndExecute even when no transition was required, which
+    // added a perceptible one-frame click delay to every medical-menu action.
+    private _animNow = if (!isNull _medic) then {toLowerANSI animationState _medic} else {""};
+    private _visuallyEmptyNow = !isNull _medic && {
+        (currentWeapon _medic == "") || {((_animNow find "wnon") >= 0) && {((_animNow find "snon") >= 0)}}
+    };
+    private _preflightReady = _visuallyEmptyNow && {stance _medic == "CROUCH"};
+
+    if (!_isBypass && {!_headOwned} && {!_preflightReady} && {local _medic} && {!isNull _medic} && {alive _medic} && {isNull objectParent _medic}) exitWith {
         if (_medic getVariable ["ACME_treatmentPreflightActive", false]) exitWith {false};
 
         _medic setVariable ["ACME_treatmentPreflightActive", true, false];
@@ -126,11 +135,8 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         _medic setVariable ["ACME_treatmentPreflightActive", false, false];
     };
 
-    // Head positioning accepts both Head and Body in ACME, but native ACM must see Head so it does not roll the casualty.
+    // Head positioning is head-selection only. Pass the selected body part through unchanged.
     private _nativeArgs = +_this;
-    if (_classname in ["ACME_ElevateHead", "ACME_LowerHead"] && {toLowerANSI _bodyPart == "body"}) then {
-        _nativeArgs set [2, "Head"];
-    };
 
     if (_ownsProviderAnim && {local _medic}) then {
         _medic setVariable ["ACME_suppressNativeTreatmentAnim", true, false];

@@ -5,4 +5,3 @@
 
 [QGVAR(handleCoagulationPFH), LINKFUNC(handleCoagulationPFH)] call CBA_fnc_addEventHandler;
 [QGVAR(handleIBCoagulationPFH), LINKFUNC(handleIBCoagulationPFH)] call CBA_fnc_addEventHandler;
-[QGVAR(smartBandageApplyLocal), LINKFUNC(smartBandageApplyLocal)] call CBA_fnc_addEventHandler;

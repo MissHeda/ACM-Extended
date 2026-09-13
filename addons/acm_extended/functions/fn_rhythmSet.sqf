@@ -55,23 +55,25 @@ if (_code >= -1 && {_code <= 5}) then {
     [_unit, "ACME_rhythm_torsadesStart", nil] call ACME_fnc_setVarNet;
     [_unit] call ACME_fnc_rhythmRelease;
     if (_code == 5) then {
-        private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0.25]);
+        private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0]);
         private _peaHR = if (_brady) then {
             round (random [
-                missionNamespace getVariable ["ACME_peaBradyMinHR", 35],
-                missionNamespace getVariable ["ACME_peaBradyModeHR", 45],
-                missionNamespace getVariable ["ACME_peaBradyMaxHR", 58]
+                missionNamespace getVariable ["ACME_peaBradyMinHR", 60],
+                missionNamespace getVariable ["ACME_peaBradyModeHR", 72],
+                missionNamespace getVariable ["ACME_peaBradyMaxHR", 86]
             ])
         } else {
             round (random [
-                missionNamespace getVariable ["ACME_peaNormalMinHR", 90],
-                missionNamespace getVariable ["ACME_peaNormalModeHR", 100],
-                missionNamespace getVariable ["ACME_peaNormalMaxHR", 110]
+                missionNamespace getVariable ["ACME_peaNormalMinHR", 60],
+                missionNamespace getVariable ["ACME_peaNormalModeHR", 80],
+                missionNamespace getVariable ["ACME_peaNormalMaxHR", 100]
             ])
         };
         [_unit, "ACME_peaElectricalHR", _peaHR] call ACME_fnc_setVarNet;
+        [_unit, "ACME_peaElectricalStart", CBA_missionTime] call ACME_fnc_setVarNet;
     } else {
         [_unit, "ACME_peaElectricalHR", nil] call ACME_fnc_setVarNet;
+        [_unit, "ACME_peaElectricalStart", nil] call ACME_fnc_setVarNet;
     };
     [_unit, [["cardiacRhythmState", _code]], true] call ACM_circulation_fnc_setRuntimeState;
     [_unit] call _forceMonitorRefresh;

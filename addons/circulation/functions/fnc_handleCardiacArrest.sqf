@@ -55,21 +55,22 @@ if (!(_requested in [1,2,3,5]) && {_targetRhythm in [ACM_Rhythm_Sinus, ACM_Rhyth
     _targetRhythm = [ACM_Rhythm_VF,ACM_Rhythm_PVT] select (((random 100) * (GET_BLOOD_VOLUME(_patient) / BLOOD_VOLUME_CLASS_2_HEMORRHAGE)) > 50);
 };
 if (_targetRhythm == ACM_Rhythm_PEA) then {
-    private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0.25]);
+    private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0]);
     private _peaHR = if (_brady) then {
         round (random [
-            missionNamespace getVariable ["ACME_peaBradyMinHR", 35],
-            missionNamespace getVariable ["ACME_peaBradyModeHR", 45],
-            missionNamespace getVariable ["ACME_peaBradyMaxHR", 58]
+            missionNamespace getVariable ["ACME_peaBradyMinHR", 60],
+            missionNamespace getVariable ["ACME_peaBradyModeHR", 72],
+            missionNamespace getVariable ["ACME_peaBradyMaxHR", 86]
         ])
     } else {
         round (random [
-            missionNamespace getVariable ["ACME_peaNormalMinHR", 90],
-            missionNamespace getVariable ["ACME_peaNormalModeHR", 100],
-            missionNamespace getVariable ["ACME_peaNormalMaxHR", 110]
+            missionNamespace getVariable ["ACME_peaNormalMinHR", 60],
+            missionNamespace getVariable ["ACME_peaNormalModeHR", 80],
+            missionNamespace getVariable ["ACME_peaNormalMaxHR", 100]
         ])
     };
     _patient setVariable ["ACME_peaElectricalHR", _peaHR, true];
+    _patient setVariable ["ACME_peaElectricalStart", CBA_missionTime, true];
 };
 _patient setVariable [QGVAR(Cardiac_RhythmState), _targetRhythm, true];
 _patient setVariable [QGVAR(CardiacArrest_TargetRhythm), nil];

@@ -1,218 +1,201 @@
-// a CfgFunctions override of ACM_circulation_fnc_displayAEDMonitor_generateEKG.
-// ACM compiles its functions final, so a runtime reassignment cannot replace them. this compile-time override, and
-// our addon loads after ACM_circulation, is the mechanism that wins.
-// we replicate ACM's original waveforms verbatim and add three corrections.
-// a. delegation. rhythm codes of 100 and above go to our custom generator, for AFib, SVT, torsades and the rest.
-// b. the rate lock, so the waveform, the beep and the BPM agree. ACM spaces beats by a _spacing of (60/hr) times
-// 15 columns of gap, then appends the complex, so one beat is _spacing plus complexlen columns. the beep, in
-// fnc_handleaed, and the BPM number both run at the true period of 60/hr seconds, which is (60/hr)/0.03, or
-// 2000/hr columns. _spacing plus complexlen only equals 2000/hr near an hr of 73, so everywhere else the drawn
-// rate drifts off the beep and the monitor lies.
-// we instead derive the true period, as _spacing times 2.2222, because 2000/900 is 2.2222 and 1/(15*0.03) is
-// 2.2222, and set the inter-beat gap to the true period minus complexlen, so one beat is exactly 2000/hr columns
-// and the waveform ticks in lock-step with the beep and the BPM readout. at extreme tachycardia the fixed-width
-// complex cannot fit the period, so the gap floors at a small value and the rate degrades gracefully.
-// c. a time-anchored scroll. we trim the buffer front by floor(CBA_missionTime / 0.03) mod trueperiod, so column 0
-// tracks real time: the beats land at their true instants and the trace scrolls continuously and wraps, instead
-// of redrawing identical columns every sweep.
-// _this is [_rhythm, _spacing, _arrayOffset].
+// Compile-time ACM fork implementation of ACM_circulation_fnc_displayAEDMonitor_generateEKG.
+// Organized rhythms are sampled from the AED's actual electrical beat clock instead of tiling an integer-width
+// beat block. That matters because most real R-R periods are fractional monitor columns (for example 131 BPM is
+// ~15.27 columns). Rounding every beat to 15 columns accumulated phase error, then later refreshes "caught up" by
+// jumping a complex. Here every screen sample is evaluated against the exact 60/HR clock, so the R wave remains
+// phase-locked to the audible AED beep without cumulative drift. Mid-sweep refreshes therefore regenerate the same
+// timeline instead of inventing a second competing rhythm.
 params ["_rhythm", "_spacing", "_arrayOffset"];
 
-// proxy translation. ACM hands us the rhythm from its own state, ACM_circulation_Cardiac_RhythmState, and for a
-// custom rhythm that state holds a proxy rather than our code: torsades, 102, proxies as PVT, 3, so ACM treats it
-// as a shockable arrest. see fn_rhythmset.
-// if we drew straight from _rhythm we would render the proxy, so torsades would appear as PVT or vt, which is
-// exactly the bug where torsades immediately shows vt. so if the target patient of the monitor is actually in a
-// custom rhythm, draw that, because rhythmget returns 100 to 104, and let the delegation below take it to our
-// polymorphic generator. native rhythms are unaffected, because rhythmget returns the same native code.
-private _tgtRhythm = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
-if (!isNull _tgtRhythm) then {
-    private _effective = [_tgtRhythm] call ACME_fnc_rhythmGet;
-    // CPR and ACM's post-shock VF/asystole display states have visual precedence. A custom rhythm only replaces
-    // the native proxy while ACM is otherwise drawing the proxy/organized rhythm itself.
-    if (_effective >= 100 && {!(_rhythm in [-1,1,2])}) then { _rhythm = _effective; };
+private _target = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
+if (!isNull _target) then {
+    private _effective = [_target] call ACME_fnc_rhythmGet;
+    // Native CPR/post-shock visual states retain precedence over an ACME proxy rhythm.
+    if (_effective >= 100 && {!(_rhythm in [-1,1,2])}) then {_rhythm = _effective;};
 };
 
-// defensive. if ACM handed us a bad spacing, such as an hr of 0 where 60/hr upstream produced a non-finite value,
-// treat it as a flatline rather than propagating nan into the step-spacing loops.
-if (!(_spacing isEqualType 0) || {!(finite _spacing)} || {_spacing < 0}) then { _spacing = 0 };
-
-// Rhythm changes are immediate. The monitor display loop already splices a changed waveform into the remainder of
-// the active sweep, so do not defer morphology until an isoelectric segment or the next sweep.
-private _tgtLatch = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
-if (!isNull _tgtLatch) then {
-    _tgtLatch setVariable ["ACME_AED_EKGVisualRhythm", _rhythm, false];
-    _tgtLatch setVariable ["ACME_AED_EKGPendingRhythm", -999, false];
-    _tgtLatch setVariable ["ACME_AED_EKGPendingSince", -1, false];
-};
-
-// our custom rhythms: AFib-RVR at 100, atrial tach at 101, torsades at 102, controlled AFib at 103 and SVT at
-// 104.
+// ACME custom rhythms keep their dedicated morphology generator. It uses the same sweep/beep anchoring contract.
 if (_rhythm >= 100) exitWith {
     private _g = [_rhythm, _spacing, _arrayOffset] call ACME_fnc_genRhythmEKG;
-    [_tgtRhythm, _g select 0, _g select 1] call ACME_fnc_ecgArtifactApply
+    [_target, _g select 0, _g select 1] call ACME_fnc_ecgArtifactApply
 };
 
-private _maxLength = 176;
-private _dt = 0.03;  // seconds per monitor column, which is the sweep tick.
+private _W = 176;
+private _lastIndex = _W - 1;
+private _dt = 0.03;
+private _now = CBA_missionTime;
 
-// the true beat period in columns is (60 / hr) / _dt. stock ACM passes a rounded, gap-like spacing, which loses
-// precision and does not include the fixed QRS and t complex width. prefer the current monitor or display hr from
-// the target patient, then fall back to the historical spacing conversion.
-private _tgtForRate = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
 private _rateHR = 0;
-if (!isNull _tgtForRate) then {
-    _rateHR = [_tgtForRate] call ACM_circulation_fnc_getEKGHeartRate;
-    if (_rateHR <= 0 && {_rhythm in [0,4]}) then { _rateHR = _tgtForRate getVariable ["ace_medical_heartRate", 0]; };
-};
-private _scale = missionNamespace getVariable ["ACME_rhythm_ekgPeriodScale", 2.2222];
-private _truePeriod = if (_rateHR > 0) then { round ((60 / _rateHR) / _dt) } else { if (_spacing > 0) then { round ((_spacing max 1) * _scale) } else { _spacing } };
-private _blockPeriod = 0;  // one beat block in columns, set per organized rhythm. 0 means noise or flat.
-private _rPhase = 0;  // the block-phase, the column within a beat block, of the r spike, for the beep lock.
-
-private _fnc_generateStepSpacingArray = {
-    params ["_spacing"];
-    private _stepSpacingArray = [];
-    if (_spacing > 4) then {
-        for "_i" from 0 to (ceil(_spacing / 4)) do {
-            _stepSpacingArray = _stepSpacingArray + [(random [-2, 0, 2]),(random [-2, 0, 2]),(random [-2, 0, 2]),(random [-2, 0, 2])];
-        };
-    } else {
-        _stepSpacingArray = [(random [-2, 0, 2]),(random [-2, 0, 2]),(random [-2, 0, 2]),(random [-2, 0, 2])];
+if (!isNull _target) then {
+    _rateHR = [_target] call ACM_circulation_fnc_getEKGHeartRate;
+    if (_rateHR <= 0 && {_rhythm in [-1,0,4]}) then {
+        _rateHR = _target getVariable ["ace_medical_heartRate", 0];
     };
-    _stepSpacingArray resize _spacing;
-    _stepSpacingArray
+};
+if (!(_rateHR isEqualType 0) || {!finite _rateHR}) then {_rateHR = 0;};
+_rateHR = _rateHR max 0;
+private _rr = if (_rateHR > 0) then {60 / _rateHR} else {0};
+
+// During an active sweep, index _anchor is the sample that is on screen "now". At the right edge, the next
+// refresh is for a new sweep, so index 0 becomes the time anchor. This prevents the 175 -> 1 wrap from changing
+// ECG phase merely because the x-coordinate wrapped around.
+private _anchor = 0;
+if (!isNull _target) then {
+    private _step = floor (_target getVariable ["ACM_circulation_AED_UpdateStep", 0]);
+    if (_step >= 1 && {_step < _lastIndex}) then {_anchor = _step;};
 };
 
-private _generateNoisyRhythmStep = {
-    params ["_cleanRhythmStep", "_noiseRange"];
-    private _noisyRhythm = [];
-    { _noisyRhythm pushBack (random [(_x - _noiseRange), _x, (_x + _noiseRange)]); } forEach _cleanRhythmStep;
-    _noisyRhythm
+private _lastBeat = -1;
+private _previousRR = _rr;
+private _nextRR = _rr;
+if (!isNull _target) then {
+    _lastBeat = _target getVariable ["ACM_circulation_AED_Pads_LastBeep", -1];
+    _previousRR = _target getVariable ["ACME_AED_PreviousRR", _rr];
+    _nextRR = _target getVariable ["ACME_AED_NextRR", _rr];
+};
+if (!(_previousRR isEqualType 0) || {!finite _previousRR} || {_previousRR <= 0}) then {_previousRR = _rr;};
+if (!(_nextRR isEqualType 0) || {!finite _nextRR} || {_nextRR <= 0}) then {_nextRR = _rr;};
+if (_lastBeat < 0 && {_rr > 0}) then {_lastBeat = _now;};
+private _beatSerialBase = if (!isNull _target) then {_target getVariable ["ACME_AED_BeatSerial", 0]} else {0};
+
+// Stable, time-derived monitor noise. Regenerating a buffer produces the same local baseline rather than a fresh
+// random trace, which removes refresh seams while retaining a live-looking signal.
+private _fnc_noise = {
+    params ["_sampleIndex", "_amp", ["_salt", 0]];
+    (((sin (((_sampleIndex * 137.507) + _salt) mod 360)) * 0.62)
+        + ((sin (((_sampleIndex * 47.311) + 91 + _salt) mod 360)) * 0.38)) * _amp
 };
 
-private _generateSafeSpacing = {
-    params ["_count", ["_safe", false]];
-    private _array = [];
-    for "_i" from 1 to _count do { _array pushBack _safe; };
-    _array
-};
+private _arr = [];
+private _safe = [];
+_arr resize [_W, 0];
+_safe resize [_W, true];
 
-// the inter-beat gap that makes the gap plus the complex equal the true period. it is floored, so the complex
-// always fits.
-private _fnc_gapFor = { params ["_len"]; (((_truePeriod - _len) max 2)) };
+for "_i" from 0 to _lastIndex do {
+    private _sampleTime = _now + ((_i - _anchor) * _dt);
+    private _sampleIndex = floor (_sampleTime / _dt);
+    private _value = 0;
+    private _isSafe = true;
 
-private _rhythmArray = [];
-private _safeSpacingArray = [];
-
-switch (_rhythm) do {
-    case -1: {  // CPR.
-        private _cleanRhythmStep = [0,-5,-10,-20,-40 + (random 5),-45 + (random 5),-45 + (random 5),-45 + (random 5),-45 + (random 5),-45 + (random 5),-45 + (random 5),-40 + (random 5),-20,-10,-5];
-        private _noiseRange = 8;
-        private _gap = [count _cleanRhythmStep] call _fnc_gapFor;
-        _blockPeriod = (count _cleanRhythmStep) + _gap;
-        _rPhase = _gap + (_cleanRhythmStep find (selectMin _cleanRhythmStep));
-        private _repeat = ceil(176 / _blockPeriod) + 1;
-        for "_i" from 0 to _repeat do {
-            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_cleanRhythmStep, _noiseRange] call _generateNoisyRhythmStep);
-            _safeSpacingArray = _safeSpacingArray + ([_gap, true] call _generateSafeSpacing) + ([count _cleanRhythmStep] call _generateSafeSpacing);
+    switch (_rhythm) do {
+        case 1: { // Asystole: deterministic low-amplitude baseline noise.
+            _value = [_sampleIndex, 1.8, 13] call _fnc_noise;
         };
-    };
-    case 5: {  // true PEA: organized electrical complexes with no mechanical output. Broad, abnormal morphology.
-        private _cleanRhythmStep = [0,-2,-8,-20,-38,-50,-48,-36,-16,5,18,27,23,14,6,1,0];
-        private _noiseRange = 3.5;
-        private _gap = [count _cleanRhythmStep] call _fnc_gapFor;
-        _blockPeriod = (count _cleanRhythmStep) + _gap;
-        _rPhase = _gap + (_cleanRhythmStep find (selectMin _cleanRhythmStep));
-        private _repeat = ceil(176 / _blockPeriod) + 1;
-        for "_i" from 0 to _repeat do {
-            // Keep R-R spacing exact, but make each PEA complex a little less sterile: mild amplitude drift,
-            // baseline wander, and an occasional small notch/artifact in the late QRS/ST segment.
-            private _amp = random [0.90, 1.0, 1.10];
-            private _base = random [-2, 0, 2];
-            private _beat = _cleanRhythmStep apply {(_x * _amp) + _base};
-            if ((random 1) < 0.22) then {
-                private _j = 7 + floor (random 4);
-                _beat set [_j, (_beat select _j) + random [-6, 0, 6]];
+        case 2: { // VF: continuous chaotic signal. No organized QRS/beep lock is appropriate.
+            _value =
+                (sin (((_sampleIndex * 71.7) + 11) mod 360)) * 14
+                + (sin (((_sampleIndex * 31.9) + 123) mod 360)) * 9
+                + (sin (((_sampleIndex * 113.3) + 41) mod 360)) * 6;
+            _value = _value + ([_sampleIndex, 3.0, 211] call _fnc_noise);
+            _isSafe = false;
+        };
+        default {
+            // Organized electrical activity. Choose the nearest actual electrical beat, then sample the morphology
+            // relative to that beat. Beat centers stay at n * (60/HR) seconds even when that interval is fractional
+            // in 0.03-second monitor columns.
+            if (_rr <= 0) then {
+                _value = [_sampleIndex, 1.5, 7] call _fnc_noise;
+            } else {
+                // Use the exact interval that the audible scheduler selected for the immediately previous and
+                // immediately next beat. Farther-away future/past beats can use the current nominal RR; they will be
+                // replaced long before the sweep reaches them. This makes the on-screen R wave and the sound consume
+                // one clock even while HR is changing.
+                private _beatTime = _lastBeat;
+                private _beatNumber = 0;
+                if (_sampleTime >= _lastBeat) then {
+                    private _nextBeat = _lastBeat + _nextRR;
+                    if (_sampleTime <= _nextBeat) then {
+                        if (abs (_sampleTime - _nextBeat) < abs (_sampleTime - _lastBeat)) then {
+                            _beatTime = _nextBeat;
+                            _beatNumber = 1;
+                        };
+                    } else {
+                        private _n = round ((_sampleTime - _nextBeat) / (_rr max 0.05));
+                        _beatTime = _nextBeat + (_n * _rr);
+                        _beatNumber = 1 + _n;
+                    };
+                } else {
+                    private _previousBeat = _lastBeat - _previousRR;
+                    if (_sampleTime >= _previousBeat) then {
+                        if (abs (_sampleTime - _previousBeat) < abs (_sampleTime - _lastBeat)) then {
+                            _beatTime = _previousBeat;
+                            _beatNumber = -1;
+                        };
+                    } else {
+                        private _n = round ((_sampleTime - _previousBeat) / (_rr max 0.05));
+                        _beatTime = _previousBeat + (_n * _rr);
+                        _beatNumber = -1 + _n;
+                    };
+                };
+                // BeatSerial increments on the exact audible beat. Adding the relative beat number means a beat that
+                // was predicted as +1 before the beep keeps the SAME morphology after it becomes beat 0 on the next
+                // refresh. Without this, PEA/custom beat variation could visibly change shape at the beep boundary.
+                private _beatOrdinal = _beatSerialBase + _beatNumber;
+                private _deltaSec = _sampleTime - _beatTime;
+                private _offset = round (_deltaSec / _dt);
+
+                private _template = [];
+                private _rIndex = 0;
+                private _noiseAmp = 2.0;
+
+                switch (_rhythm) do {
+                    case -1: { // CPR artifact / organized compression trace.
+                        _template = [0,-5,-10,-20,-40,-45,-45,-42,-35,-24,-14,-8,-4];
+                        _rIndex = 5;
+                        _noiseAmp = 5.0;
+                    };
+                    case 5: { // PEA: organized but abnormal, with beat-to-beat morphology variability.
+                        _template = [0,-2,-8,-20,-38,-50,-48,-36,-16,5,18,27,23,14,6,1,0];
+                        _rIndex = 5;
+                        _noiseAmp = 2.6;
+                    };
+                    case 3;
+                    case 4: { // PVT / VT broad ventricular complex.
+                        _template = [5,-30,-47,-49,-49,-47,-42,-34,-24];
+                        _rIndex = 3;
+                        _noiseAmp = 2.5;
+                    };
+                    default { // Sinus / organized perfusing rhythm.
+                        if ((_rr / _dt) < 18) then {
+                            _template = [0,-4,-40,22,4,-4,2,0];
+                            _rIndex = 2;
+                        } else {
+                            _template = [0,-1,-5,2,-4,-40,25,5,0,-5,-7,-1,5,4,0.8];
+                            _rIndex = 5;
+                        };
+                        _noiseAmp = 1.8;
+                    };
+                };
+
+                private _templateIndex = _rIndex + _offset;
+                if (_templateIndex >= 0 && {_templateIndex < count _template}) then {
+                    _value = _template select _templateIndex;
+                    _isSafe = false;
+
+                    if (_rhythm == 5) then {
+                        // PEA should not look like a photocopied 100-BPM strip. Variation is deterministic per beat,
+                        // so it survives a buffer refresh without the complex changing shape underneath the sweep.
+                        private _amp = 0.84 + (0.30 * ((sin (((_beatOrdinal * 73) + 19) mod 360) + 1) / 2));
+                        private _tAmp = 0.78 + (0.44 * ((sin (((_beatOrdinal * 41) + 117) mod 360) + 1) / 2));
+                        private _base = (sin (((_beatOrdinal * 29) + 53) mod 360)) * 2.4;
+                        _value = (_value * _amp) + _base;
+                        if (_templateIndex >= 9) then {_value = (_value - _base) * _tAmp + _base;};
+                        if (_templateIndex in [4,7,8] && {abs (sin (((_beatOrdinal * 97) + 7) mod 360)) > 0.72}) then {
+                            _value = _value + ((sin (((_beatOrdinal * 131) + (_templateIndex * 17)) mod 360)) * 5.5);
+                        };
+                    };
+
+                    _value = _value + ([_sampleIndex, _noiseAmp, (_beatOrdinal * 17) + (_rhythm * 31)] call _fnc_noise);
+                } else {
+                    private _baselineAmp = if (_rhythm == 5) then {2.2} else {1.4};
+                    _value = [_sampleIndex, _baselineAmp, (_rhythm * 37)] call _fnc_noise;
+                };
             };
-            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_beat, _noiseRange] call _generateNoisyRhythmStep);
-            _safeSpacingArray = _safeSpacingArray + ([_gap, true] call _generateSafeSpacing) + ([count _cleanRhythmStep] call _generateSafeSpacing);
         };
     };
-    case 0: {  // sinus.
-        // the full-width ACM sinus is 15 columns, which cannot physically fit very fast rates on a 0.03 s per column
-        // sweep. use a compact narrow-complex beat at tachy rates, so the r-r spacing can still match the displayed
-        // hr.
-        private _cleanRhythmStep = if (_truePeriod < 18) then {
-            [0,-4,-40,22,4,-4,2,0]
-        } else {
-            [0,-1,-5,2,-4,-40,25,5,0,-5,-7,-1,5,4,0.8]
-        };
-        private _noiseRange = 3;
-        private _gap = [count _cleanRhythmStep] call _fnc_gapFor;
-        _blockPeriod = (count _cleanRhythmStep) + _gap;
-        _rPhase = _gap + (_cleanRhythmStep find (selectMin _cleanRhythmStep));
-        private _repeat = ceil(176 / _blockPeriod) + 1;
-        for "_i" from 0 to _repeat do {
-            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_cleanRhythmStep, _noiseRange] call _generateNoisyRhythmStep);
-            _safeSpacingArray = _safeSpacingArray + ([_gap, true] call _generateSafeSpacing) + ([count _cleanRhythmStep] call _generateSafeSpacing);
-        };
-    };
-    case 1: {  // asystole. it is flat noise and regenerates each pass anyway, so no phase is needed.
-        private _cleanRhythmStep = [0];
-        private _noiseRange = 3;
-        private _repeat = ceil(176 / (count _cleanRhythmStep)) + 1;
-        for "_i" from 0 to _repeat do {
-            _rhythmArray = _rhythmArray + ([_cleanRhythmStep, _noiseRange] call _generateNoisyRhythmStep);
-        };
-    };
-    case 2: {  // vf. it is chaotic noise and regenerates each pass anyway, so no phase is needed.
-        private _cleanRhythmStep = [0];
-        private _noiseRange = 30;
-        private _repeat = ceil(176 / (count _cleanRhythmStep)) + 1;
-        for "_i" from 0 to _repeat do {
-            _rhythmArray = _rhythmArray + ([_cleanRhythmStep, _noiseRange] call _generateNoisyRhythmStep);
-        };
-    };
-    case 3;  // PVT.
-    case 4: {  // vt, with broad complexes. it locks to the true period with a short gap, so the drawn rate
-              // it tracks hr. ACM tiled them back to back, which reads as a fixed rate of about 220 a minute.
-        private _cleanRhythmStep = [5,-30,-47,-49,-49,-49,-44,-39,-30];
-        private _noiseRange = 3;
-        private _gap = [count _cleanRhythmStep] call _fnc_gapFor;
-        _blockPeriod = (count _cleanRhythmStep) + _gap;
-        _rPhase = _gap + (_cleanRhythmStep find (selectMin _cleanRhythmStep));
-        private _repeat = ceil(176 / _blockPeriod) + 1;
-        for "_i" from 0 to _repeat do {
-            private _cleanRhythmStepRandomized = +_cleanRhythmStep;
-            _cleanRhythmStepRandomized set [0, ((_cleanRhythmStepRandomized select 0) + (2 - (random 4)))];
-            _rhythmArray = _rhythmArray + ([_gap] call _fnc_generateStepSpacingArray) + ([_cleanRhythmStepRandomized, _noiseRange] call _generateNoisyRhythmStep);
-            _safeSpacingArray = _safeSpacingArray + ([_gap, true] call _generateSafeSpacing) + ([count _cleanRhythmStep] call _generateSafeSpacing);
-        };
-    };
+
+    _arr set [_i, _value];
+    _safe set [_i, _isSafe];
 };
 
-// the phase: lock the r spike to ACM's own AED beep timestamp. ACM owns the audio, and ACME only aligns the
-// generated waveform buffer to ACM_circulation_AED_Pads_LastBeep.
-if (_blockPeriod > 0) then {
-    private _lastBeat = -1;
-    private _tgt = missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull];
-    if (!isNull _tgt) then {
-        _lastBeat = _tgt getVariable ["ACM_circulation_AED_Pads_LastBeep", -1];
-    };
-    if (_lastBeat >= 0) then {
-        private _beatPhase = floor ((CBA_missionTime - _lastBeat) / _dt);
-        _arrayOffset = (_rPhase + _beatPhase) mod _blockPeriod;
-    } else {
-        _arrayOffset = (floor (CBA_missionTime / _dt)) mod _blockPeriod;
-    };
-};
-if (_arrayOffset > 0) then {
-    _arrayOffset = _arrayOffset min ((count _rhythmArray) - 1);
-    _rhythmArray deleteRange [0, _arrayOffset];
-    if (_arrayOffset < count _safeSpacingArray) then { _safeSpacingArray deleteRange [0, _arrayOffset]; };
-};
-if (count _safeSpacingArray < 1) then { _safeSpacingArray resize [_maxLength, true]; };
-_rhythmArray resize [_maxLength, 0];
-
-[_tgtForRate, _rhythmArray, _safeSpacingArray] call ACME_fnc_ecgArtifactApply
+[_target, _arr, _safe] call ACME_fnc_ecgArtifactApply

@@ -40,6 +40,23 @@ private _monitorArray_EKG = _patient getVariable [QGVAR(AED_EKGDisplay), []];
 private _monitorArray_PO = _patient getVariable [QGVAR(AED_PODisplay), []];
 private _monitorArray_CO = _patient getVariable [QGVAR(AED_CODisplay), []];
 
+// At sweep wrap, sample 0 is the new left-edge time anchor. Refresh it before drawing segment 0 -> 1; leaving
+// sample 0 from the previous sweep is what created the recurring disconnected line at the left edge.
+if (_updateStep == 1) then {
+    if (count _monitorArray_EKGRefresh > 0) then {
+        if (count _monitorArray_EKG < 1) then {_monitorArray_EKG resize [1, 0];};
+        _monitorArray_EKG set [0, _monitorArray_EKGRefresh select 0];
+    };
+    if (count _monitorArray_PORefresh > 0) then {
+        if (count _monitorArray_PO < 1) then {_monitorArray_PO resize [1, 0];};
+        _monitorArray_PO set [0, _monitorArray_PORefresh select 0];
+    };
+    if (count _monitorArray_CORefresh > 0) then {
+        if (count _monitorArray_CO < 1) then {_monitorArray_CO resize [1, 0];};
+        _monitorArray_CO set [0, _monitorArray_CORefresh select 0];
+    };
+};
+
 // The left endpoint must always come from what is ACTUALLY on screen. During a mid-sweep HR/rhythm refresh the
 // refresh buffer can be regenerated underneath the already-drawn columns. Using refresh[previous] as the old
 // endpoint makes the new line begin at a value that was never drawn, which is the visible disconnected/gapped
@@ -67,6 +84,8 @@ private _padsState = [_patient, "", 1] call FUNC(hasAED);
 private _pulseOximeterState = [_patient, "", 2] call FUNC(hasAED);
 private _capnographState = [_patient, "", 4] call FUNC(hasAED);
 
-[_dlg, 0, _updateStep, _ekgPrevious, _ekgTarget, _padsState] call FUNC(displayAEDMonitor_adjustWaveform);
-[_dlg, 1, _updateStep, _poPrevious, _poTarget, _pulseOximeterState] call FUNC(displayAEDMonitor_adjustWaveform);
-[_dlg, 2, _updateStep, _coPrevious, _coTarget, _capnographState] call FUNC(displayAEDMonitor_adjustWaveform);
+// Control N renders the line from sample N to N+1. The target sample is _updateStep, therefore the line control
+// is _previousIndex. Using _updateStep rendered every ECG segment one column late relative to the beat clock.
+[_dlg, 0, _previousIndex, _ekgPrevious, _ekgTarget, _padsState] call FUNC(displayAEDMonitor_adjustWaveform);
+[_dlg, 1, _previousIndex, _poPrevious, _poTarget, _pulseOximeterState] call FUNC(displayAEDMonitor_adjustWaveform);
+[_dlg, 2, _previousIndex, _coPrevious, _coTarget, _capnographState] call FUNC(displayAEDMonitor_adjustWaveform);

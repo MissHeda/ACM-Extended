@@ -114,7 +114,20 @@ private _PFH = [{
         if (!(_patient getVariable [QGVAR(AED_InUse), false]) && !([_patient] call FUNC(AED_IsSilent)) && !([_patient] call EFUNC(core,cprActive))) then {
             if (_ekgHR > 0) then {
                 private _lastBeep = _patient getVariable [QGVAR(AED_Pads_LastBeep), -1];
-                private _hrDelay = 60 / _ekgHR;
+                private _nominalRR = 60 / _ekgHR;
+                private _effectiveRhythm = [_patient] call ACME_fnc_rhythmGet;
+                private _afibClock = _effectiveRhythm in [100, 103];
+                // One selected R-R interval owns BOTH the next audible beat and the next rendered R wave. Keep that
+                // interval fixed for the duration of a beat instead of recalculating the due time every frame from a
+                // moving HR. That removes the characteristic "R wave chases the beep" acceleration artifact.
+                private _clockRhythm = _patient getVariable ["ACME_AED_ClockRhythm", -999];
+                private _hrDelay = _patient getVariable ["ACME_AED_NextRR", _nominalRR];
+                if (_clockRhythm != _effectiveRhythm) then {
+                    _patient setVariable ["ACME_AED_ClockRhythm", _effectiveRhythm, false];
+                    _hrDelay = _nominalRR;
+                    _patient setVariable ["ACME_AED_NextRR", _hrDelay, false];
+                };
+                if (!(_hrDelay isEqualType 0) || {!finite _hrDelay} || {_hrDelay <= 0}) then {_hrDelay = _nominalRR;};
 
                 if (!(_patient getVariable [QGVAR(AED_Alarm_State), false]) && {_rhythmState in [ACM_Rhythm_VF,ACM_Rhythm_PVT]}) then {
                     _patient setVariable [QGVAR(AED_Alarm_State), true];
@@ -139,8 +152,25 @@ private _PFH = [{
                     };
                 };
 
-                if ((_lastBeep + _hrDelay) < CBA_missionTime) then {
-                    _patient setVariable [QGVAR(AED_Pads_LastBeep), CBA_missionTime];
+                if ((_lastBeep + _hrDelay) <= CBA_missionTime) then {
+                    // One authoritative electrical beat event. The waveform generator consumes this exact timestamp,
+                    // while BeatSerial tells an open monitor to refresh its future strip once after the audible beep.
+                    // Keep these local: the AED provider/display lives on the same client and there is no reason to
+                    // broadcast a per-beat network event.
+                    private _beatAt = CBA_missionTime;
+                    _patient setVariable [QGVAR(AED_Pads_LastBeep), _beatAt];
+                    _patient setVariable ["ACME_AED_PreviousRR", _hrDelay, false];
+                    // Select the next interval exactly once at the beat. Regular rhythms adopt the latest physiologic
+                    // HR here; AFib additionally applies an irregular-RR factor. The generator reads this same value.
+                    private _nextRR = _nominalRR;
+                    if (_afibClock) then {
+                        private _factor = random [0.62, 0.94, 1.42];
+                        if ((random 1) < 0.20) then {_factor = _factor + random [0.20, 0.38, 0.72];};
+                        _nextRR = (_nominalRR * _factor) max 0.24;
+                    };
+                    _patient setVariable ["ACME_AED_NextRR", _nextRR, false];
+                    _patient setVariable ["ACME_AED_LastRR", _hrDelay, false];
+                    _patient setVariable ["ACME_AED_BeatSerial", (_patient getVariable ["ACME_AED_BeatSerial", 0]) + 1, false];
 
                     private _pitch = 1;
                     if (_pulseOximeterPlacement != -1) then { // Beep pitch affected by SpO2

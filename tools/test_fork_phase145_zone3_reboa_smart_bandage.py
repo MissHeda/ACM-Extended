@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 145 guards: Zone 3 AAJT-S, one-wedge occlusion, corpse persistence and bundled smart bandaging."""
+"""Phase 145 guards: Zone 3 AAJT-S, one-wedge occlusion, corpse persistence and native ACM bandaging."""
 from pathlib import Path
 import re
 
@@ -65,21 +65,22 @@ for name in ("directPressureStart", "directPressureTick", "medicationRequest", "
     need('!alive _patient' not in txt(f"addons/acm_extended/functions/fn_{name}.sqf"),
          f"death: treatment path {name} still rejects corpse solely for death")
 
-plan = txt("addons/damage/functions/fnc_getSmartBandagePlan.sqf")
+# B95 rollback: the experimental multi-bandage transaction was removed. ACM's normal one-action-per-bandage
+# behavior is authoritative again, including its native item consumption, timing and callbacks.
 actions = txt("addons/core/ACE_Medical_Treatment_Actions.hpp")
-success = txt("addons/damage/functions/fnc_smartBandageSuccess.sqf")
-local = txt("addons/damage/functions/fnc_smartBandageApplyLocal.sqf")
-need(plan.index('"EmergencyTraumaDressing"') < plan.index('"PressureBandage"') < plan.index('"ElasticWrap"'),
-     "bandage: required ETD > pressure > elastic priority changed")
-need('[_medic, _item] call ace_common_fnc_getCountOfItem' in plan
-     and '[_patient, _item] call ace_common_fnc_getCountOfItem' in plan,
-     "bandage: medic+patient inventory pool missing")
-need('_guard < 128' in plan and 'private _complete' in plan,
-     "bandage: planner lacks loop/completeness guards")
-need('displayName = "Bandage Wounds";' in actions and 'smartBandageStart' in actions and 'smartBandageSuccess' in actions,
-     "bandage: bundled medical-menu action not wired")
-need(success.count('CBA_fnc_targetEvent') == 1, "bandage: bundle must emit one patient-owner event")
-need('ace_medical_treatment_fnc_bandageLocal' in local, "bandage: native ACE wound treatment authority bypassed")
+need('class PressureBandage: BasicBandage {' in actions, "bandage: native PressureBandage action missing")
+need('items[] = {"ACM_PressureBandage"};' in actions and 'consumeItem = 1;' in actions,
+     "bandage: native PressureBandage inventory semantics not restored")
+need('callbackSuccess = QACEFUNC(medical_treatment,bandage);' in actions,
+     "bandage: native ACE/ACM bandage callback not restored")
+need('smartBandage' not in actions and 'Bandage Wounds' not in actions,
+     "bandage: removed smart-bundle action is still wired")
+for name in (
+    "fnc_canSmartBandage.sqf", "fnc_getSmartBandagePlan.sqf", "fnc_getSmartBandageTime.sqf",
+    "fnc_smartBandageApplyLocal.sqf", "fnc_smartBandageCancel.sqf", "fnc_smartBandageProgress.sqf",
+    "fnc_smartBandageRestore.sqf", "fnc_smartBandageStart.sqf", "fnc_smartBandageSuccess.sqf",
+):
+    need(not (ROOT / "addons/damage/functions" / name).exists(), f"bandage: retired smart-bundle file remains: {name}")
 
 need(not (ROOT / "addons/acm_extended/ui/nv_close").exists(), "assets: generated NV texture directory remains")
 need(not (ROOT / "addons/acm_extended/functions/fn_minigameVisionTextures.sqf").exists(), "assets: obsolete NV mapper remains")
@@ -96,4 +97,4 @@ regs = set(re.findall(r'\bclass\s+([A-Za-z0-9_]+)\s*\{\s*\};', cfg))
 need(not (refs-files), f"paths: missing ACME function files: {sorted(refs-files)}")
 need(not (refs-regs), f"paths: unregistered ACME callbacks: {sorted(refs-regs)}")
 
-print("phase 145 Zone 3 REBOA/smart bandage/corpse persistence regression: PASS")
+print("phase 145 Zone 3 REBOA/native bandage/corpse persistence regression: PASS")

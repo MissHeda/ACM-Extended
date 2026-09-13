@@ -1,17 +1,9 @@
-// the custom ekg waveform generator for the ACME rhythm codes, 100 and above. it is faithful to ACM's own
-// generateekg structure: a clean step, which is one beat as an array of y-heights, is tiled across the 176 px
-// monitor with an inter-beat gap and per-sample noise, so the trace looks live. it returns [heightarray,
-// safespacingarray], exactly like ACM's generator.
-// there are two corrections over a naive tiling.
-// 1. the rate. ACM hands us a _spacing of (60/hr) times 15, which is the inter-beat gap it uses for sinus, where
-// the gap plus the long sinus complex happens to land near the true period at normal rates. our
-// tachyarrhythmias run fast with shorter complexes, so reusing that gap makes the QRS look too slow. we
-// back-derive the true beat period in samples and set the gap from it, so the on-screen QRS rate matches the
-// heart rate. ACME_rhythm_ekgPeriodScale tunes it.
-// 2. non-repeating. the monitor regenerates this buffer every sweep, and with a fixed phase a regular rhythm
-// redraws on the exact same columns and looks frozen and fake. we trim a random phase off the front each call,
-// so successive sweeps land the beats on different columns.
-// on the ACM screen convention: a negative y is an upward deflection, so the tall r wave is a big negative.
+// Custom ECG generator for ACME rhythm codes 100 and above. Organized custom rhythms are sampled directly
+// against the AED's absolute 30 ms screen-time axis and the same selected R-R interval used by the audible beat
+// scheduler. This keeps the R wave phase-locked to the beep even when HR changes mid-sweep. Torsades is sampled
+// from its own continuous absolute-time spindle. The legacy tiled builders remain below as a fallback surface,
+// but rhythm codes 100-104 return from the direct sampler before reaching them.
+// On the ACM screen convention, negative y is an upward deflection.
 // _this is [_rhythm, _spacing, _arrayOffset].
 params ["_rhythm", "_spacing", "_arrayOffset"];
 
@@ -31,6 +23,178 @@ if (!isNull _tgtForRate) then {
 private _scale = missionNamespace getVariable ["ACME_rhythm_ekgPeriodScale", 2.2222];
 private _period = if (_rateHR > 0) then { round ((60 / _rateHR) / 0.03) } else { round ((_spacing max 1) * _scale) };
 private _rPhase = 0;  // the block-phase of the r spike for the regular rhythms, which is the beep lock. 0 locks the beat boundary.
+
+// Perfusing custom rhythms use the same exact-time sampler as the forked native ECG. This removes fractional-column
+// drift from atrial tach/SVT, and AFib consumes the same irregular next-RR interval that fnc_handleAED uses for its
+// audible beep. The future strip is regenerated after every actual beep, so an AFib QRS cannot wander away from the
+// audio clock even though its R-R intervals are intentionally irregular.
+if (_rhythm in [100,101,102,103,104]) exitWith {
+    private _dt = 0.03;
+    private _lastIndex = _W - 1;
+    private _now = CBA_missionTime;
+    private _rrNominal = if (_rateHR > 0) then {60 / _rateHR} else {0.75};
+    private _anchor = 0;
+    if (!isNull _tgtForRate) then {
+        private _step = floor (_tgtForRate getVariable ["ACM_circulation_AED_UpdateStep", 0]);
+        if (_step >= 1 && {_step < _lastIndex}) then {_anchor = _step;};
+    };
+
+    private _lastBeat = if (!isNull _tgtForRate) then {
+        _tgtForRate getVariable ["ACM_circulation_AED_Pads_LastBeep", -1]
+    } else {-1};
+    if (_lastBeat < 0) then {_lastBeat = _now;};
+    private _prevRR = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_AED_PreviousRR", _rrNominal]} else {_rrNominal};
+    private _nextRR = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_AED_NextRR", _rrNominal]} else {_rrNominal};
+    if (!(_prevRR isEqualType 0) || {!finite _prevRR} || {_prevRR <= 0}) then {_prevRR = _rrNominal;};
+    if (!(_nextRR isEqualType 0) || {!finite _nextRR} || {_nextRR <= 0}) then {_nextRR = _rrNominal;};
+
+    private _noiseAt = {
+        params ["_idx", "_amp", ["_salt",0]];
+        (((sin (((_idx * 127.31) + _salt) mod 360)) * 0.58)
+            + ((sin (((_idx * 43.73) + 79 + _salt) mod 360)) * 0.42)) * _amp
+    };
+
+    private _out = [];
+    private _outSafe = [];
+    _out resize [_W, 0];
+    _outSafe resize [_W, true];
+    private _isAFib = _rhythm in [100,103];
+    private _beatSerialBase = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_AED_BeatSerial", 0]} else {0};
+
+    // Torsades has no normal QRS beep while the AED arrest alarm owns the audio, so its clock is absolute time rather
+    // than LastBeep. Sampling it directly at each SCREEN index is still essential: index _anchor is "now", which means
+    // a mid-sweep rhythm refresh cannot restart the torsades strip at x=0 and splice a different time three seconds
+    // later into the current cursor. The spindle, polarity twist and entry morph are deterministic in time.
+    if (_rhythm == 102) exitWith {
+        private _out = [];
+        private _outSafe = [];
+        _out resize [_W, 0];
+        _outSafe resize [_W, false];
+        private _startAt = if (!isNull _tgtForRate) then {_tgtForRate getVariable ["ACME_rhythm_torsadesStart", _now]} else {_now};
+        if (!(_startAt isEqualType 0) || {!finite _startAt}) then {_startAt = _now;};
+        private _entryMinSec = missionNamespace getVariable ["ACME_rhythm_torsadesEntryMinSec", 6];
+        private _entrySweeps = missionNamespace getVariable ["ACME_rhythm_torsadesEntrySweeps", 3];
+        private _entryWindow = _entryMinSec max (_entrySweeps * _W * _dt);
+        private _twistBeats = (missionNamespace getVariable ["ACME_rhythm_torsadesTwistBeats", 7]) max 1;
+        private _floorAmp = (missionNamespace getVariable ["ACME_rhythm_torsadesFloor", 0.12]) max 0 min 1;
+        private _rrT = _rrNominal max (_dt * 5);
+        private _narrow = [0,-4,-38,19,5,-4,2,0,0];
+        private _ventA = [0,-8,-34,-47,27,-25,13,-7,0];
+        private _ventB = [0,-13,-42,15,-37,20,-15,8,0];
+        private _ventC = [0,-5,-26,-50,22,-20,10,-9,0];
+        private _variants = [_ventA,_ventB,_ventC];
+        private _templateLen = count _narrow;
+
+        for "_i" from 0 to _lastIndex do {
+            private _sampleTime = _now + ((_i - _anchor) * _dt);
+            private _elapsed = (_sampleTime - _startAt) max 0;
+            private _pRaw = (_elapsed / (_entryWindow max 0.1)) max 0 min 1;
+            private _p = _pRaw * _pRaw * (3 - 2 * _pRaw);
+            private _beatFloat = (_sampleTime - _startAt) / _rrT;
+            private _beatIndex = floor _beatFloat;
+            private _beatPhase = _beatFloat - _beatIndex;
+            if (_beatPhase < 0) then {_beatPhase = _beatPhase + 1; _beatIndex = _beatIndex - 1;};
+            private _ti = floor (_beatPhase * _templateLen) min (_templateLen - 1);
+            private _shape = _variants select (abs _beatIndex mod (count _variants));
+            private _base = _narrow select _ti;
+            private _vent = _shape select _ti;
+            private _ectopyBoost = if ((abs _beatIndex mod 4) == 3) then {0.22 * (1 - _p)} else {0};
+            private _m = (_p + _ectopyBoost) min 1;
+            private _morph = _base + ((_vent - _base) * _m);
+
+            private _twistAngle = ((_beatIndex + _beatPhase) * (180 / _twistBeats));
+            private _env = sin _twistAngle;
+            private _twist = linearConversion [0.12, 1, _p, 0, 1, true];
+            private _targetAmp = _floorAmp + ((1 - _floorAmp) * abs _env);
+            private _amp = (1 - _twist) + (_twist * _targetAmp);
+            private _targetPol = if (_env < 0) then {-1} else {1};
+            private _pol = (1 - _twist) + (_twist * _targetPol);
+            private _sampleIndex = floor (_sampleTime / _dt);
+            private _teeth = (sin (((_sampleIndex * 149.3) + (_beatIndex * 23)) mod 360)) * (4.5 * _p);
+            private _micro = [_sampleIndex, (1.0 + (2.5 * _p)), 102 + (_beatIndex * 11)] call _noiseAt;
+            _out set [_i, (_morph * _amp * _pol) + _teeth + _micro];
+        };
+        [_out, _outSafe]
+    };
+
+    for "_i" from 0 to _lastIndex do {
+        private _sampleTime = _now + ((_i - _anchor) * _dt);
+        private _sampleIndex = floor (_sampleTime / _dt);
+        private _beatTime = _lastBeat;
+        private _beatNumber = 0;
+
+        // The immediately adjacent beats use the same selected RR values as the audible scheduler. This is used
+        // for every organized custom rhythm, not only AFib, so a changing atrial tach/SVT rate cannot create a
+        // one-cycle visual/audio disagreement. Beyond those adjacent beats, nominal RR is only a prediction.
+        if (_sampleTime >= _lastBeat) then {
+            private _nextBeat = _lastBeat + _nextRR;
+            if (_sampleTime <= _nextBeat) then {
+                if (abs (_sampleTime - _nextBeat) < abs (_sampleTime - _lastBeat)) then {
+                    _beatTime = _nextBeat;
+                    _beatNumber = 1;
+                };
+            } else {
+                private _n = round ((_sampleTime - _nextBeat) / (_rrNominal max 0.05));
+                _beatTime = _nextBeat + (_n * _rrNominal);
+                _beatNumber = 1 + _n;
+            };
+        } else {
+            private _previousBeat = _lastBeat - _prevRR;
+            if (_sampleTime >= _previousBeat) then {
+                if (abs (_sampleTime - _previousBeat) < abs (_sampleTime - _lastBeat)) then {
+                    _beatTime = _previousBeat;
+                    _beatNumber = -1;
+                };
+            } else {
+                private _n = round ((_sampleTime - _previousBeat) / (_rrNominal max 0.05));
+                _beatTime = _previousBeat + (_n * _rrNominal);
+                _beatNumber = -1 + _n;
+            };
+        };
+
+        private _beatOrdinal = _beatSerialBase + _beatNumber;
+        private _offset = round ((_sampleTime - _beatTime) / _dt);
+        private _template = [];
+        private _rIndex = 0;
+        private _baseline = 0;
+        private _noiseAmp = 1.8;
+
+        switch (_rhythm) do {
+            case 100;
+            case 103: {
+                _template = if ((_rrNominal / _dt) < 11) then {[0,-44,18,-4,0]} else {[0,-46,18,-3,-7,-9,-6,-2,0]};
+                _rIndex = 1;
+                // Persistent fibrillatory baseline, deterministic in absolute time so buffer regeneration cannot pop.
+                _baseline = (sin (((_sampleIndex * 29.7) + 17) mod 360)) * 3.2
+                    + (sin (((_sampleIndex * 53.1) + 101) mod 360)) * 2.0;
+                _noiseAmp = 1.8;
+            };
+            case 101: {
+                _template = if ((_rrNominal / _dt) < 15) then {[0,-5,-42,22,3,-3,0]} else {[0,-6,-8,-2,2,-44,25,5,-4,-2,5,8,2]};
+                _rIndex = if (count _template < 10) then {2} else {5};
+                _noiseAmp = 1.5;
+            };
+            case 104: {
+                _template = if ((_rrNominal / _dt) < 11) then {[0,-44,18,-4,0]} else {[0,-46,18,-3,-7,-9,-6,-2,0]};
+                _rIndex = 1;
+                _noiseAmp = 1.4;
+            };
+        };
+
+        private _ti = _rIndex + _offset;
+        private _value = _baseline + ([_sampleIndex, if (_isAFib) then {1.2} else {0.9}, _rhythm] call _noiseAt);
+        private _isSafe = true;
+        if (_ti >= 0 && {_ti < count _template}) then {
+            private _amp = 0.94 + (0.12 * ((sin (((_beatOrdinal * 67) + (_rhythm * 3)) mod 360) + 1) / 2));
+            _value = _baseline + ((_template select _ti) * _amp) + ([_sampleIndex, _noiseAmp, (_beatOrdinal * 19) + _rhythm] call _noiseAt);
+            _isSafe = false;
+        };
+        _out set [_i, _value];
+        _outSafe set [_i, _isSafe];
+    };
+
+    [_out, _outSafe]
+};
 
 private _noisy = {
     params ["_clean", "_n"];

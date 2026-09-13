@@ -5,21 +5,22 @@ if (_epoch < 0) then {_epoch = [_patient] call ACME_fnc_clinicalEpoch;};
 if (!local _patient) exitWith {[_patient, "arrest", [_patient, _rhythm, _epoch]] call ACME_fnc_ownerDispatch;};
 if (!alive _patient || {_epoch != ([_patient] call ACME_fnc_clinicalEpoch)} || {!(_rhythm in [1,2,3,5])}) exitWith {};
 if (_rhythm == 5) then {
-    private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0.25]);
+    private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0]);
     private _peaHR = if (_brady) then {
         round (random [
-            missionNamespace getVariable ["ACME_peaBradyMinHR", 35],
-            missionNamespace getVariable ["ACME_peaBradyModeHR", 45],
-            missionNamespace getVariable ["ACME_peaBradyMaxHR", 58]
+            missionNamespace getVariable ["ACME_peaBradyMinHR", 60],
+            missionNamespace getVariable ["ACME_peaBradyModeHR", 72],
+            missionNamespace getVariable ["ACME_peaBradyMaxHR", 86]
         ])
     } else {
         round (random [
-            missionNamespace getVariable ["ACME_peaNormalMinHR", 90],
-            missionNamespace getVariable ["ACME_peaNormalModeHR", 100],
-            missionNamespace getVariable ["ACME_peaNormalMaxHR", 110]
+            missionNamespace getVariable ["ACME_peaNormalMinHR", 60],
+            missionNamespace getVariable ["ACME_peaNormalModeHR", 80],
+            missionNamespace getVariable ["ACME_peaNormalMaxHR", 100]
         ])
     };
     _patient setVariable ["ACME_peaElectricalHR", _peaHR, true];
+    _patient setVariable ["ACME_peaElectricalStart", CBA_missionTime, true];
 };
 [_patient, _rhythm] call ACM_circulation_fnc_setCardiacArrestTargetRhythm;
 _patient setVariable ["ACME_nativeRequestedRhythm", _rhythm, false];
