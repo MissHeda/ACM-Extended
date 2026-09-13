@@ -95,6 +95,9 @@ class CfgFunctions {
             class canTreatCached { // Extended procedure/dead-patient/HPMK eligibility
                 file = QPATHTOF(overrides\fnc_canTreatCached.sqf); //ace/addons/medical_treatment/functions/fnc_canTreatCached.sqf
             };
+            class canTreat_holsterCheck { // Direct Pressure keeps treatment actions usable without weapon-state false negatives
+                file = QPATHTOF(overrides\fnc_canTreat_holsterCheck.sqf); //ace/addons/medical_treatment/functions/fnc_canTreat_holsterCheck.sqf
+            };
             class ivBagLocal { // Circulation
                 file = QPATHTOF(overrides\fnc_ivBagLocal.sqf); //ace/addons/medical_treatment/functions/fnc_ivBagLocal.sqf
             };

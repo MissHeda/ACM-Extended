@@ -15,21 +15,26 @@
  * Public: No
  */
 
-params ["_patient"];
+params ["_patient", ["_resumeOnly", false]];
 
 private _state = _patient getVariable [QGVAR(Hemothorax_State), 0];
 
-if (_state >= 10) exitWith {};
+// Normal injury calls remain equivalent in effect to ACM's original path: create/increment the hemothorax and
+// apply the associated pain. Resume-only is used solely to restore a missing clot PFH for an already-active
+// hemothorax, so it must never make the chest injury worse just because TXA was administered.
+if (_resumeOnly && {_state <= 0}) exitWith {};
+if (!_resumeOnly && {_state >= 10}) exitWith {};
 
-if (_state == 0) then {
-    _state = 5 + round (random 5);
-} else {
-    _state = _state + 1;
+if (!_resumeOnly) then {
+    if (_state == 0) then {
+        _state = 5 + round (random 5);
+    } else {
+        _state = _state + 1;
+    };
+
+    _patient setVariable [QGVAR(Hemothorax_State), _state, true];
+    [_patient, (linearConversion [1, 6, _state, 0.3, 1, true])] call ACEFUNC(medical,adjustPainLevel);
 };
-
-_patient setVariable [QGVAR(Hemothorax_State), _state, true];
-
-[_patient, (linearConversion [1, 6, _state, 0.3, 1, true])] call ACEFUNC(medical,adjustPainLevel);
 
 if (_patient getVariable [QGVAR(Hemothorax_PFH), -1] != -1) exitWith {};
 

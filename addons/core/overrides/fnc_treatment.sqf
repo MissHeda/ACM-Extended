@@ -5,6 +5,17 @@
  */
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
+// Stop Direct Pressure is state teardown, not a new treatment. It must never depend on a progress bar, provider
+// weapon state, animation state, or another canTreat pass. If the button is visible for the held patient, clicking
+// it releases pressure immediately.
+if (_classname == "ACME_StopDirectPressure") exitWith {
+    if (isNull _medic || {!local _medic}) exitWith {false};
+    if (!(_medic getVariable ["ACME_DP_Active", false])
+        || {!((_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient)}) exitWith {false};
+    [false, _medic] call ACME_fnc_directPressureStop;
+    true
+};
+
 if !([_medic, _classname] call ACME_fnc_procedureActionAllowed) exitWith {false};
 
 if (_classname != "ACME_ConnectETVent") exitWith {

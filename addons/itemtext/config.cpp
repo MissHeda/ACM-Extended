@@ -11,13 +11,6 @@ class CfgPatches {
     };
 };
 
-class CfgWeapons {
-    // Display-only patch. The item remains ACM_HPMK with all inventory, mass, medical and runtime behavior intact.
-    class ACM_HPMK {
-        descriptionShort = "Hypothermia Management & Prevention Kit";
-    };
-};
-
 // Direct Pressure owns its provider pose in the ACME runtime. Do not let the CheckPulse parent inject an ACE
 // treatment animation first, because that inherited animation can perform a weapon draw/holster transition before
 // callbackSuccess starts ACME_DirectPressureHold. Emptying all four animation properties makes the button go
