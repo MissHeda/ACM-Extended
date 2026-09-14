@@ -52,6 +52,9 @@ if (_mustYieldClinical) exitWith {
     if (!_yieldedClinical) then {
         if ((_patient getVariable [format ["ACME_DP_press_%1", _bodyPart], objNull]) isEqualTo _medic) then {
             _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], objNull, true];
+            if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
+                ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
+            };
         };
         _medic setVariable ["ACME_DP_ClinicalYield", true];
         _medic setVariable ["ACME_DP_ClinicalYieldStart", CBA_missionTime];
@@ -68,6 +71,9 @@ if (_yieldedClinical) then {
     _medic setVariable ["ACME_DP_ClinicalYield", false];
     _medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
     _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], _medic, true];
+    if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
+        ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
+    };
 };
 
 private _held = CBA_missionTime - (_medic getVariable ["ACME_DP_Start", CBA_missionTime]);

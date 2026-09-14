@@ -31,3 +31,7 @@ if (_bodyPart == "body") then {
         [_medic, _patient, _bodyPart] call ACME_fnc_directPressureLimb;
     };
 };
+
+if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
+    ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
+};

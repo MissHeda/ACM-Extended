@@ -248,6 +248,26 @@ if (_isInZeus) then {
 GET_FUNCTION(_callbackStart,_config >> "callbackStart");
 GET_FUNCTION(_callbackProgress,_config >> "callbackProgress");
 
+// B107: every true wound-bandage treatment begins temporary progressive hemostasis.  Do not key this from the
+// generic "bandage" category because splints, tourniquets and several ACME maneuvers intentionally share that
+// menu category without being wound dressings.
+private _progressiveBandageClasses = [
+    "BasicBandage",
+    "FieldDressing",
+    "PackingBandage",
+    "ElasticBandage",
+    "QuikClot",
+    "PressureBandage",
+    "EmergencyTraumaDressing",
+    "ACME_PackJunctional",
+    "ACME_WrapJunctional"
+];
+if (_classname in _progressiveBandageClasses) then {
+    private _bandageToken = format ["%1:%2:%3", owner _medic, netId _medic, round (CBA_missionTime * 1000)];
+    _medic setVariable ["ACME_BandageProgressToken", _bandageToken];
+    [QEGVAR(damage,bandageProgressStart), [_patient, _bodyPart, _classname, _treatmentTime, _bandageToken], _patient] call CBA_fnc_targetEvent;
+};
+
 if (_callbackProgress isEqualTo {}) then {
     _callbackProgress = {true};
 };

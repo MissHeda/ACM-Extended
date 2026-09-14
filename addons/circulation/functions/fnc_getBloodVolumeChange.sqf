@@ -19,11 +19,20 @@
 
 params ["_unit", "_deltaT", "_syncValues"];
 private _acmeBinding = "NA4:getBloodVolumeChange";
+private _acmeReconcile = "B106:volumeCanonical";
 if (!local _unit) exitWith {_unit getVariable ["ace_medical_bloodVolume", 6]};
 _deltaT = (_deltaT max 0) min 5; // explicit stalled-frame cap shared by the owner integration
 [_unit] call ACME_fnc_syncPremixedBags;
 
 _unit setVariable ["ACME_infusion_getBloodVolumeChangePatched", CBA_missionTime, false];
+
+// B107: progressive bandage control is time-dependent.  Re-evaluate the wound bleed rate immediately before
+// integrating blood loss so the circulation model follows the treatment timer instead of waiting for a later
+// wound-state mutation.
+private _activeBandageProgress = _unit getVariable [QEGVAR(damage,BandageProgress), createHashMap];
+if (_activeBandageProgress isEqualType createHashMap && {count _activeBandageProgress > 0}) then {
+    [_unit] call ACEFUNC(medical_status,updateWoundBloodLoss);
+};
 
 private _bloodVolume = _unit getVariable [QEGVAR(circulation,Blood_Volume), 6];
 private _plasmaVolume = _unit getVariable [QEGVAR(circulation,Plasma_Volume), 0];
@@ -48,6 +57,10 @@ private _activeVolumes = 0;
 private _bloodLoss = -_deltaT * GET_BLOOD_LOSS(_unit);
 private _internalBleeding = -_deltaT * GET_INTERNAL_BLEEDRATE(_unit);
 private _capillaryBleeding = -_deltaT * GET_CAPILLARYDAMAGE_BLEEDRATE(_unit);
+// B102: junctional hemorrhage publishes a rate instead of writing blood volume in its own PFH. Keep that
+// contribution as a separate blood-only change so junctionals retain their tuned severity without a second
+// runtime-state update in the same tick.
+private _junctionalBloodLoss = -_deltaT * ((_unit getVariable ["ACME_junctionalBleedLPS", 0]) max 0);
 
 // citrate-induced hypocalcemia from a massive transfusion is coagulopathic, because ionized calcium is factor
 // iv. circhandle owns ionized ca and publishes a coag multiplier of 1 or more, and it is applied to every
@@ -138,6 +151,7 @@ if (_plateletCount > 0.1) then {
 
 if (_bloodVolume > 0) then {
     _bloodVolumeChange = ((_bloodLoss * (1 - _plateletBleedRatio)) + ((_internalBleeding * _internalBleedingSeverity) * (1 - _plateletInternalBleedRatio)) + (_hemothoraxBleeding * (1 - _plateletBleedRatio)) + (_capillaryBleeding * (1 - _plateletBleedRatio))) / _activeVolumes;
+    _bloodVolumeChange = _bloodVolumeChange + _junctionalBloodLoss;
 };
 
 if (_plasmaVolume > 0) then {
@@ -541,6 +555,10 @@ if (_transfusionPain > 0) then {
     [_unit, (_transfusionPain min 0.8)] call ACEFUNC(medical_status,adjustPainLevel);
 };
 
+// Native ACM compartment conversion. This is deliberately slow and is NOT the patient's
+// hemodynamic volume gain. Plasma/saline already count immediately in the total circulating
+// volume returned at the end of this function. The conversion only migrates volume between
+// ACM's product compartments over time.
 if (_bloodVolume < 6) then {
     private _conversionRateModifier = ([1,2] select (_freshBloodEffectiveness > 0.83));
     if (_plasmaVolume + _plasmaVolumeChange > 0) then {
@@ -696,4 +714,10 @@ _unit setVariable [QEGVAR(circulation,Blood_Volume), _bloodVolume, _syncValues];
 _unit setVariable [QEGVAR(circulation,Plasma_Volume), _plasmaVolume, _syncValues];
 _unit setVariable [QEGVAR(circulation,Saline_Volume), _salineVolume, _syncValues];
 
-_bloodVolume + _plasmaVolume + _salineVolume min DEFAULT_BLOOD_VOLUME;
+// B103: make the ACE-facing circulating volume explicit. Every admitted milliliter of
+// compatible blood, plasma or crystalloid is represented here immediately. Do not use the
+// slow compartment-conversion rates above as a proxy for resuscitation volume.
+private _circulatingVolume = ((_bloodVolume + _plasmaVolume + _salineVolume) min DEFAULT_BLOOD_VOLUME) max 0;
+_unit setVariable ["ACME_circulatingVolume", _circulatingVolume, _syncValues];
+
+_circulatingVolume;

@@ -312,7 +312,7 @@ class CfgPatches {
             "ACM_disability"
         };
         author = "mavis";
-        version = "1.2.0-r0";
+        version = "1.2.1";
     };
 };
 

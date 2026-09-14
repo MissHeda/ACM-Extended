@@ -31,6 +31,53 @@ private _bodyPartBleeding = [0,0,0,0,0,0];
     };
 } forEach GET_OPEN_WOUNDS(_unit);
 
+// B107: a dressing controls hemorrhage progressively while it is physically being applied.  The start event
+// records the bleed reduction that the completed bandage is expected to produce.  Apply a quadratic ease-in so
+// control is modest early in the timer and accelerates as the provider gets closer to securing the dressing.
+// No wound amount is mutated here.  On interruption the record disappears and the original bleeding returns;
+// on success ACE's normal bandage callback performs the permanent wound change.
+private _bandageProgress = _unit getVariable [QEGVAR(damage,BandageProgress), createHashMap];
+if (_bandageProgress isEqualType createHashMap && {count _bandageProgress > 0}) then {
+    private _expiredBandages = [];
+    {
+        _y params ["_part", "_finalReduction", "_startedAt", "_duration", ["_bandageClass", ""]];
+        private _age = CBA_missionTime - _startedAt;
+        if (_age > (_duration + 2)) then {
+            _expiredBandages pushBack _x;
+        } else {
+            private _partIndex = ALL_BODY_PARTS find _part;
+            if (_partIndex >= 0 && {_finalReduction > 0}) then {
+                private _progress = (_age / (_duration max 0.01)) max 0 min 1;
+                private _control = _progress * _progress;
+                private _current = _bodyPartBleeding select _partIndex;
+                _bodyPartBleeding set [_partIndex, (_current - (_finalReduction * _control)) max 0];
+            };
+        };
+    } forEach _bandageProgress;
+
+    if (_expiredBandages isNotEqualTo []) then {
+        { _bandageProgress deleteAt _x; } forEach _expiredBandages;
+        _unit setVariable [QEGVAR(damage,BandageProgress), _bandageProgress, true];
+    };
+};
+
+// B102: direct pressure gets a modest immediate effect on ordinary external limb bleeding. This is deliberately
+// limb-only. Head and torso pressure keep their existing behavior unchanged. The clinical marker is cleared while
+// movement or an incompatible maneuver yields pressure, so this multiplier only exists while pressure is actually
+// being maintained.
+private _dpLimbMult = missionNamespace getVariable ["ACME_DP_limbBleedMult", 0.72];
+{
+    private _partIndex = _x;
+    private _part = ALL_BODY_PARTS select _partIndex;
+    private _provider = _unit getVariable [format ["ACME_DP_press_%1", _part], objNull];
+    if (!isNull _provider
+        && {alive _provider}
+        && {_provider getVariable ["ACME_DP_Active", false]}
+        && {!(_provider getVariable ["ACME_DP_Paused", false])}) then {
+        _bodyPartBleeding set [_partIndex, (_bodyPartBleeding select _partIndex) * _dpLimbMult];
+    };
+} forEach [2,3,4,5];
+
 // Internal bleeding
 private _bodyPartInternalBleeding = [0,0,0,0,0,0];
 {

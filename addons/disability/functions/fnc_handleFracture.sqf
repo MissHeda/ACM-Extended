@@ -17,6 +17,7 @@
  */
 
 params ["_patient", "_partIndex"];
+private _acmeReconcile = "B106:fracturePainChance";
 
 if !(GVAR(enableFractureSeverity)) exitWith {};
 
@@ -39,7 +40,7 @@ private _canReFracture = false;
 
 switch (true) do {
     case (GVAR(Hardcore_ComplexFracture) && _bodyPartDamage > FRACTURE_THRESHOLD_COMPLEX): {
-        _givePain = true;
+        _givePain = (random 1 < 0.3);
         _splintNoEffect = true;
         _targetFracture = ACM_FRACTURE_COMPLEX;
     };

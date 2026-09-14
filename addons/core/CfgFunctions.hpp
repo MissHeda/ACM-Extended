@@ -240,6 +240,14 @@ class CfgFunctions {
             };
         };
     };
+    class overwrite_ace_zeus {
+        tag = "ace_zeus";
+        class ace_zeus {
+            class moduleUnconscious { // Preserve ACE AI unconsciousness ownership semantics
+                file = QPATHTOF(overrides\fnc_moduleUnconscious.sqf); //ace/addons/zeus/functions/fnc_moduleUnconscious.sqf
+            };
+        };
+    };
     class overwrite_ace_dragging {
         tag = "ace_dragging";
         class ace_dragging {

@@ -11,6 +11,14 @@ switch (_operation) do {
     case "suctionState": {_args call ACME_fnc_suctionStateLocal;};
     case "ecgJostle": {_args call ACME_fnc_ecgJostleLocal;};
     case "medicationLine": {_args call ACME_fnc_medicationLineLocal;};
+    // Small non-bag crystalloid boluses still contribute real circulating volume. Route the mutation through
+    // the casualty owner so it cannot race the native circulation integrator on another machine.
+    case "crystalloidCredit": {
+        _args params [["_liters", 0, [0]]];
+        if (finite _liters && {_liters > 0}) then {
+            [_patient, [["salineVolume", (_patient getVariable ["ACM_circulation_Saline_Volume", 0]) + _liters]], true] call ACM_circulation_fnc_setRuntimeState;
+        };
+    };
     case "headElevHoldStart": {_args call ACME_fnc_headElevHoldStart;};
     case "headElevHoldRelease": {_args call ACME_fnc_headElevHoldRelease;};
     case "headElevHoldStop": {_args call ACME_fnc_headElevHoldStop;};

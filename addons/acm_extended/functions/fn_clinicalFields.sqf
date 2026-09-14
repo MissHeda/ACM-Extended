@@ -2288,6 +2288,16 @@
     true
   ],
   [
+    "ACME_XStat_needsSurgery",
+    "",
+    true
+  ],
+  [
+    "ACME_XStat_impaired",
+    "",
+    true
+  ],
+  [
     "ACME_Junc_XStatAt_leftarm",
     "time",
     true

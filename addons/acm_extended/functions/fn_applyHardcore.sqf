@@ -28,6 +28,7 @@ if (isNil "ACME_hcBase_captured") then {
     ACME_hcBase_nrb_flowLPM   = ACME_nrb_flowLPM;
     ACME_hcBase_CS_exitFactor = ACME_CS_exitFactor;
     ACME_hcBase_DP_treatTimeMult = ACME_DP_treatTimeMult;
+    ACME_hcBase_DP_limbBleedMult = ACME_DP_limbBleedMult;
     // the newer systems.
     ACME_hcBase_vesicant_severeFloorStage = missionNamespace getVariable ["ACME_vesicant_severeFloorStage", 2];
     ACME_hcBase_vesicant_recoverPerMin    = missionNamespace getVariable ["ACME_vesicant_recoverPerMin", 0.5];
@@ -86,9 +87,9 @@ ACME_hcEff_vent     = missionNamespace getVariable ["ACME_hc_vent", false];
 // apply, or restore the baseline.
 if (ACME_hcEff_junc) then {
     ACME_junctionalBleedNorm      = (missionNamespace getVariable ["ACME_junctionalBleedHardcoreNorm", 0.15]) * _juncBleedMult;
-    ACME_junctionalDPControl      = 0.35;  // pressure controls about 65 percent against about 85 percent.
+    ACME_junctionalDPControl      = 0.30;  // B102: about 70 percent control, slightly stronger than the old 65 percent.
     ACME_junctionalGauzeControl   = 0.65;  // gauze alone controls only about 35 percent, so dp on top matters more.
-    ACME_junctionalGauzeDPControl = 0.15;  // gauze plus dp held controls about 85 percent rather than a perfect 100, so a wrap is still needed.
+    ACME_junctionalGauzeDPControl = 0.10;  // B102: gauze plus pressure controls about 90 percent; the wrap is still definitive.
     ACME_junctionalChanceVelocity = (0.85 * _juncFreqMult) min 1.0;
     ACME_junctionalChanceAvulsion = (0.30 * _juncFreqMult) min 1.0;
 } else {
@@ -118,6 +119,7 @@ ACME_nrb_flowLPM      = if (ACME_hcEff_nrb) then { 25 } else { ACME_hcBase_nrb_f
 // compounded 1.15x on every re-apply.
 ACME_CS_exitFactor    = if (ACME_hcEff_cs) then { ACME_hcBase_CS_exitFactor * 1.15 } else { ACME_hcBase_CS_exitFactor };
 ACME_DP_treatTimeMult = if (ACME_hcEff_dp) then { 2.0 } else { ACME_hcBase_DP_treatTimeMult };
+ACME_DP_limbBleedMult = if (ACME_hcEff_dp) then { missionNamespace getVariable ["ACME_DP_limbBleedMultHardcore", 0.80] } else { ACME_hcBase_DP_limbBleedMult };
 
 // the newer systems, following ACM's hardcore philosophy that the field cannot fully fix it.
 // extravasation: severe leaks leave a worse permanent floor and recover more slowly, so the matched antidote and

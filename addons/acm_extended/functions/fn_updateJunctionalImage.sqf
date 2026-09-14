@@ -9,8 +9,8 @@
 // config-merge blanks the image, so the wraps cannot be forced beneath ACM's icons. on a wrapped limb the wrap
 // will sit over any iv, io or tourniquet icon there. see the readme note.
 // the state per limb is _target getvariable ["ACME_Junc_<part>", ""], which is "", "open", "packed" or "wrapped".
-// open and packed show the open-wound icon, meaning still bleeding and not yet secured.
-// wrapped shows the wrap icon, meaning healed and secured, and hides the open-wound icon.
+// open shows the open-wound icon. packed shows the dedicated packed-gauze icon supplied for that limb.
+// wrapped shows the pressure-wrap icon, meaning healed and secured, and hides the wound/packed icon.
 
 params ["_ctrlGroup", "_target"];
 if (isNull _ctrlGroup) exitWith {};
@@ -19,10 +19,10 @@ private _ref = _ctrlGroup controlsGroupCtrl 70113;  // idc_body_torso_io, the fu
 
 // the part, the wrapidc, the woundidc, the wraptexture and the woundtexture.
 private _limbs = [
-    ["leftarm",  7290000, 7290004, "junctionalwrap_leftarm_ca.paa",  "junctionalwound_leftarm_ca.paa"],
-    ["rightarm", 7290001, 7290005, "junctionalwrap_rightarm_ca.paa", "junctionalwound_rightarm_ca.paa"],
-    ["leftleg",  7290002, 7290006, "junctionalwrap_leftleg_ca.paa",  "junctionalwound_leftleg_ca.paa"],
-    ["rightleg", 7290003, 7290007, "junctionalwrap_rightleg_ca.paa", "junctionalwound_rightleg_ca.paa"]
+    ["leftarm",  7290000, 7290004, "junctionalwrap_leftarm_ca.paa",  "junctionalwound_leftarm_ca.paa",  "junctionalwound_packed_leftarm_ca.paa"],
+    ["rightarm", 7290001, 7290005, "junctionalwrap_rightarm_ca.paa", "junctionalwound_rightarm_ca.paa", "junctionalwound_packed_rightarm_ca.paa"],
+    ["leftleg",  7290002, 7290006, "junctionalwrap_leftleg_ca.paa",  "junctionalwound_leftleg_ca.paa",  "junctionalwound_packed_leftleg_ca.paa"],
+    ["rightleg", 7290003, 7290007, "junctionalwrap_rightleg_ca.paa", "junctionalwound_rightleg_ca.paa", "junctionalwound_packed_rightleg_ca.paa"]
 ];
 
 // israeli pressure bandage olive green. the wrap depicts a physical bandage rather than a status, so it no longer
@@ -30,9 +30,10 @@ private _limbs = [
 private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [0.38, 0.42, 0.28, 1]];
 
 {
-    _x params ["_part", "_wrapIdc", "_woundIdc", "_wrapTex", "_woundTex"];
+    _x params ["_part", "_wrapIdc", "_woundIdc", "_wrapTex", "_openTex", "_packedTex"];
 
     private _state = if (isNull _target) then { "" } else { _target getVariable [format ["ACME_Junc_%1", _part], ""] };
+    private _woundTex = [_openTex, _packedTex] select (_state == "packed");
 
     // the wrap control. it is created first so it sits below the open-wound control, and they never co-show anyway.
     private _wrapC = _ctrlGroup controlsGroupCtrl _wrapIdc;

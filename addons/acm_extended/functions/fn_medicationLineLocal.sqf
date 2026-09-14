@@ -57,6 +57,17 @@ _patient setVariable ["ACME_pendingFlush",_pending,true];
 if (_iv && {_site == -1}) then {
     [_patient, _bodyPart, if (_operation == "flush") then {"fluid"} else {"medication"}] call ACME_fnc_ioPainResponse;
 };
+// A 10 mL saline flush is real intravascular volume. Credit only the fraction that actually traverses the
+// selected catheter, so a compromised peripheral line does not magically add the extravasated portion to
+// circulating volume. This executes on the patient owner after the catheter identity and request receipt have
+// been validated, so retries cannot double-credit the flush.
+if (_operation == "flush") then {
+    private _flushFraction = [_patient, _bodyPart, _site] call ACME_fnc_medicationLineFraction;
+    private _flushAdmittedMl = 10 * ((_flushFraction max 0) min 1);
+    if (_flushAdmittedMl > 0) then {
+        [_patient, [["salineVolume", (_patient getVariable ["ACM_circulation_Saline_Volume", 0]) + (_flushAdmittedMl / 1000)]], true] call ACM_circulation_fnc_setRuntimeState;
+    };
+};
 {
     _x params ["_class","_dose","_viaIV","_label","_seconds","_preparedMixture"];
     private _fraction = if (_viaIV) then {[_patient,_bodyPart,_site] call ACME_fnc_medicationLineFraction} else {1};

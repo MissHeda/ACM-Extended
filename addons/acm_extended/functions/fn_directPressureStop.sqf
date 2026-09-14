@@ -41,6 +41,9 @@ if (!isNull _patient) then {
     };
     if (_part != "" && {(_patient getVariable [format ["ACME_DP_press_%1", _part], objNull]) isEqualTo _medic}) then {
         _patient setVariable [format ["ACME_DP_press_%1", _part], objNull, true];
+        if (_part in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
+            ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
+        };
     };
 };
 

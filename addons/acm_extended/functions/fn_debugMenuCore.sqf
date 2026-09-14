@@ -269,13 +269,12 @@ if (isNull _patient) then {
 
 private _ver = getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version");
 if (_ver == "") then { _ver = missionNamespace getVariable ["ACME_infusion_version", "?"]; };
-private _debugRevision = missionNamespace getVariable ["ACME_debugRevision", "r1"];
 private _linesL = [];
 private _linesR = [];
 private _pName = if (isNull _patient) then {"none"} else {[name _patient] call _fnSafe};
 private _targetMode = if (_patient isEqualTo (missionNamespace getVariable ["ACME_debug_lastTreatmentTarget", objNull])) then {"treating"} else {"auto"};
 
-_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2-%6</t> %3 <t color='%4'>%5</t>", _cTitle, _ver, _pName, _cMute, _targetMode, _debugRevision];
+_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2</t> %3 <t color='%4'>%5</t>", _cTitle, _ver, _pName, _cMute, _targetMode];
 _linesL pushBack format ["<t color='%1'>dbg on | force %2 | tick %3</t>", _cMute, missionNamespace getVariable ["ACME_debug_forceOverlay", false], diag_tickTime toFixed 1];
 _linesL pushBack format ["<t color='%1'>trk i%2 t%3 c%4 bp%5</t>", _cMute, count (["ACME_infusion_activePatients"] call _fnArray), count (["ACME_tbi_activePatients"] call _fnArray), count (["ACME_circ_activePatients"] call _fnArray), count (["ACME_autoBP_patients"] call _fnArray)];
 
@@ -289,10 +288,18 @@ private _aliveTxt = if (alive _patient) then {format ["<t color='%1'>alive</t>",
 private _hr = round ([_patient, "ace_medical_heartRate", 0] call _fnNum);
 private _rr = round ([_patient, "ACM_breathing_RespirationRate", 0] call _fnNum);
 private _spo2 = round ([_patient, "ace_medical_spo2", 0] call _fnNum);
-private _bv = [_patient, "ACM_circulation_Blood_Volume", -1] call _fnNum;
+// B103: do not label ACM's Blood_Volume compartment as the patient's total volume.
+// ACE bloodVolume is the immediately hemodynamically available circulating sum. Effective
+// blood volume remains ACM's distinct weighted value.
 private _normalBlood = missionNamespace getVariable ["ACME_hypo_bloodNormal", 6];
-private _bloodDeficit = if (_bv >= 0) then {(_normalBlood - _bv) max 0} else {-1};
-private _bloodPct = if (_bv >= 0 && {_normalBlood > 0}) then {round ((_bv / _normalBlood) * 100)} else {-1};
+private _circVol = [_patient, "ace_medical_bloodVolume", (_patient getVariable ["ACME_circulatingVolume", _normalBlood])] call _fnNum;
+private _bloodComp = [_patient, "ACM_circulation_Blood_Volume", _normalBlood] call _fnNum;
+private _plasmaComp = [_patient, "ACM_circulation_Plasma_Volume", 0] call _fnNum;
+private _salineComp = [_patient, "ACM_circulation_Saline_Volume", 0] call _fnNum;
+private _overloadComp = [_patient, "ACM_circulation_Overload_Volume", 0] call _fnNum;
+private _effVol = ((_bloodComp + (_plasmaComp * 0.3) - _overloadComp) min _normalBlood) max 0;
+private _bloodDeficit = if (_circVol >= 0) then {(_normalBlood - _circVol) max 0} else {-1};
+private _bloodPct = if (_circVol >= 0 && {_normalBlood > 0}) then {round ((_circVol / _normalBlood) * 100)} else {-1};
 private _sys = 0;
 private _dia = 0;
 if (!isNil "ace_medical_status_fnc_getBloodPressure") then {
@@ -320,12 +327,20 @@ _linesL pushBack ([
     ["SpO2", format ["%1%%", _spo2], [_spo2] call _fnColorSpO2, 6, 7] call _fnKV
 ] joinString "     " );
 _linesL pushBack ([
-    ["Blood", format ["%1L", _bv toFixed 2], [_bv] call _fnColorBlood, 6, 7] call _fnKV,
-    ["Pct", format ["%1%%", _bloodPct], [_bv] call _fnColorBlood, 6, 7] call _fnKV
+    ["Circ", format ["%1L", _circVol toFixed 2], [_circVol] call _fnColorBlood, 6, 7] call _fnKV,
+    ["Eff", format ["%1L", _effVol toFixed 2], [_effVol] call _fnColorBlood, 6, 7] call _fnKV
 ] joinString "     " );
 _linesL pushBack ([
-    ["Def", format ["%1L", _bloodDeficit toFixed 2], [_bv] call _fnColorBlood, 6, 7] call _fnKV,
-    ["Tgt", format ["%1L", _normalBlood toFixed 1], _cMute, 6, 7] call _fnKV
+    ["Blood", format ["%1L", _bloodComp toFixed 2], _cMute, 6, 7] call _fnKV,
+    ["Plasma", format ["%1L", _plasmaComp toFixed 2], _cMute, 6, 7] call _fnKV
+] joinString "     " );
+_linesL pushBack ([
+    ["Cryst", format ["%1L", _salineComp toFixed 2], _cMute, 6, 7] call _fnKV,
+    ["Over", format ["%1L", _overloadComp toFixed 2], _cMute, 6, 7] call _fnKV
+] joinString "     " );
+_linesL pushBack ([
+    ["Def", format ["%1L", _bloodDeficit toFixed 2], [_circVol] call _fnColorBlood, 6, 7] call _fnKV,
+    ["Pct", format ["%1%%", _bloodPct], [_circVol] call _fnColorBlood, 6, 7] call _fnKV
 ] joinString "     " );
 
 // Show each admitted drug effect separately from the shared hypnotic/adjunct result.
@@ -960,5 +975,16 @@ if (missionNamespace getVariable ["ACME_debug_showNetwork", true]) then {
 };
 
 _linesR pushBack format ["<t color='%1'>target follows active treatment</t>", _cMute];
-_ctrlL ctrlSetStructuredText parseText format ["<t size='%1' font='EtelkaMonospacePro'>%2</t>", _scale, _linesL joinString "<br/>"];
-_ctrlR ctrlSetStructuredText parseText format ["<t size='%1' font='EtelkaMonospacePro'>%2</t>", _scale, _linesR joinString "<br/>"];
+private _fnRenderDebugColumns = {
+    params ["_renderScale"];
+    _ctrlL ctrlSetStructuredText parseText format ["<t size='%1' font='EtelkaMonospacePro'>%2</t>", _renderScale, _linesL joinString "<br/>"];
+    _ctrlR ctrlSetStructuredText parseText format ["<t size='%1' font='EtelkaMonospacePro'>%2</t>", _renderScale, _linesR joinString "<br/>"];
+};
+
+[_scale] call _fnRenderDebugColumns;
+private _requiredH = (ctrlTextHeight _ctrlL) max (ctrlTextHeight _ctrlR);
+if (_requiredH > _h) then {
+    // Keep the original wide panel, but scale down only enough to keep every diagnostic row visible.
+    private _fitScale = ((_scale * (((_h * 0.985) / _requiredH) min 1)) max 0.42) min _scale;
+    [_fitScale] call _fnRenderDebugColumns;
+};

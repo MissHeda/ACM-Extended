@@ -221,7 +221,15 @@ private _pfh = [{
         };
 
         case 2: {
-            if (_holdAt < 0) exitWith {};
+            // Junctional packing/dressing is a true repeating work animation for the full progress timer.
+            // The move class is looped, but some Arma animation transitions still fall out to crouch after one
+            // native cycle. Reassert only if the junctional state actually exited, never on a fixed timer.
+            if (_holdAt < 0) exitWith {
+                if (_mode == "junctional" && {_current != toLower _main} && {_now - _stageStarted >= 0.20}) then {
+                    [_medic, _main, 1] call ACME_fnc_doAnim;
+                    _state set [4, _now];
+                };
+            };
             if (_current != toLower _main) exitWith {};
             // Owner-clock time since the requested state was first reported. This is the freeze rule the user set.
             private _elapsed = _now - _stageStarted;

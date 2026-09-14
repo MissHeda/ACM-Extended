@@ -16,6 +16,7 @@
  */
 
 params ["_vehicle"];
+private _acmeReconcile = "B106:vehicleUnloadGuard";
 
 private _type = (typeOf _vehicle);
 
@@ -186,7 +187,7 @@ private _actions = [];
                     params ["", "", "_args"];
                     _args params ["_patient", "_medic"];
 
-                    true;
+                    IS_UNCONSCIOUS(_patient);
                 },
                 {},
                 [_patient, _medic]
