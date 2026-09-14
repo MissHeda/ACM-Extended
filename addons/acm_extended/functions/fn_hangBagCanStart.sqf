@@ -5,7 +5,6 @@ params ["_medic", "_patient"];
 if (isNull _patient || {isNull _medic}) exitWith { false };
 if !(missionNamespace getVariable ["ACME_sys_hang", true]) exitWith { false };
 if (_medic getVariable ["ACME_hang_Active", false]) exitWith { false };
-if (_medic getVariable ["ACME_DP_Active", false] && {(_medic getVariable ["ACME_DP_Mode", ""]) == "torso"}) exitWith { false };
 if (!isNull objectParent _medic) exitWith { false };
 
 private _ivBags = _patient getVariable ["ACM_circulation_IV_Bags", createHashMap];

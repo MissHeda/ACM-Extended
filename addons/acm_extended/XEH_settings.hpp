@@ -243,7 +243,7 @@
 
 // junctional wounds: the bleed rate and the appearance frequency.
 // this is the bleed rate multiplier on the tuned per-part junctional arterial drain, whose baseline
-// ACME_junctionalBleedNorm is 0.45 l/min per part. 1.0 is the default balance. the change-callback writes the
+// ACME_junctionalBleedNorm is 0.10 l/min per part in normal mode and 0.15 in Hardcore. 1.0 is the default balance. the change-callback writes the
 // effective base variable the bleed pfh reads, so live changes take effect on the next tick with no
 // rebleed.
 [
@@ -255,7 +255,12 @@
     1,
     {
         params ["_value"];
-        missionNamespace setVariable ["ACME_junctionalBleedNorm", 0.45 * _value, false];
+        private _base = if (missionNamespace getVariable ["ACME_hc_junc", false]) then {
+            missionNamespace getVariable ["ACME_junctionalBleedHardcoreNorm", 0.15]
+        } else {
+            missionNamespace getVariable ["ACME_junctionalBleedBaseNorm", 0.10]
+        };
+        missionNamespace setVariable ["ACME_junctionalBleedNorm", _base * _value, false];
     }
 ] call CBA_fnc_addSetting;
 
@@ -272,8 +277,11 @@
     1,
     {
         params ["_value"];
-        missionNamespace setVariable ["ACME_junctionalChanceVelocity", (0.60 * _value) min 1.0, false];
-        missionNamespace setVariable ["ACME_junctionalChanceAvulsion", (0.15 * _value) min 1.0, false];
+        private _hardcore = missionNamespace getVariable ["ACME_hc_junc", false];
+        private _velocityBase = [0.60, 0.85] select _hardcore;
+        private _avulsionBase = [0.15, 0.30] select _hardcore;
+        missionNamespace setVariable ["ACME_junctionalChanceVelocity", (_velocityBase * _value) min 1.0, false];
+        missionNamespace setVariable ["ACME_junctionalChanceAvulsion", (_avulsionBase * _value) min 1.0, false];
     }
 ] call CBA_fnc_addSetting;
 

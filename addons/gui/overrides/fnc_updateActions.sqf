@@ -297,11 +297,13 @@ private _actionIndex = 0;
         _ctrl ctrlSetTextColor ([_textColor, 'protect'] call ACME_fnc_cbColor);
         if (_groupKey == '') then {_actionIndex = _actionIndex + 1;};
         _ctrl ctrlShow true;
-        _ctrl ctrlAddEventHandler ['ButtonClick', _statement];
-        // A header only changes local presentation. Real treatments keep ACE's reopen behavior.
+        // Mark the reopen intent BEFORE the treatment statement.  Some treatments close the medical display
+        // synchronously while their ButtonClick handler is still executing; setting this afterward is too late for
+        // onMenuClose to distinguish a real action from the player manually closing the menu.
         if (_groupKey isEqualTo '') then {
             _ctrl ctrlAddEventHandler ['ButtonClick', {ace_medical_gui_pendingReopen = true;}];
         };
+        _ctrl ctrlAddEventHandler ['ButtonClick', _statement];
 
         _shownIndex = _shownIndex + 1;
     };

@@ -57,7 +57,16 @@ if (!(_providerTime isEqualType 0) || {_providerTime < 0}) then {_providerTime =
 // Provider theatre starts once, locally. B73 routes the exact requested medic4 RTM through an ACME wrapper whose
 // move graph explicitly connects to/from empty-handed crouch, so the Flip can enter and exit without a snap.
 private _provider = uiNamespace getVariable ["ACME_CS_Medic", objNull];
-if (!isNull _provider && {local _provider}) then {[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart;};
+if (!isNull _provider && {local _provider}) then {
+    if ((_provider getVariable ["ACME_DP_Active", false])
+        && {(_provider getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
+        _provider setVariable ["ACME_DP_Paused", true, false];
+        _provider setVariable ["ACME_DP_PauseTreatmentClass", "chestsealflip", false];
+        _provider setVariable ["ACME_dah_gen", (_provider getVariable ["ACME_dah_gen", 0]) + 1, false];
+        _provider setVariable ["ACME_DP_InPose", false, false];
+    };
+    [_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart;
+};
 
 private _until = _now + (_rollTime max _providerTime);
 uiNamespace setVariable ["ACME_CS_FlipLockedUntil", _until];
@@ -79,6 +88,13 @@ if (!isNull _display) then {
             };
             uiNamespace setVariable ["ACME_CS_FlipLockedUntil", 0];
             uiNamespace setVariable ["ACME_CS_FlipTarget", ""];
+            private _provider = uiNamespace getVariable ["ACME_CS_Medic", objNull];
+            if (!isNull _provider && {local _provider}
+                && {(_provider getVariable ["ACME_DP_PauseTreatmentClass", ""]) == "chestsealflip"}) then {
+                _provider setVariable ["ACME_DP_Paused", false, false];
+                _provider setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+                _provider setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+            };
         }, [], (_rollTime max _providerTime)] call CBA_fnc_waitAndExecute;
     };
 };

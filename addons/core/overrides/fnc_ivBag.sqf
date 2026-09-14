@@ -25,9 +25,13 @@
 params ["_medic", "_patient", "_bodyPart", "_classname", "", "_usedItem", ["_iv", true], ["_accessSite", -1]];
 
 private _isFreshBlood = false;
+private _freshBloodEntry = [];
 
-if (((_classname splitString "_") select 0) == "FreshBloodBag") then {
+private _classParts = _classname splitString "_";
+if ((_classParts param [0, ""]) == "FreshBloodBag") then {
     _isFreshBlood = true;
+    private _freshBloodID = parseNumber (_classParts param [2, "-1"]);
+    _freshBloodEntry = [_freshBloodID] call EFUNC(circulation,getFreshBloodEntry);
     _usedItem = format ["%1_%2_%3", (_usedItem splitString "_" select 0), (_usedItem splitString "_" select 1), (_usedItem splitString "_" select 2)];
 };
 
@@ -44,4 +48,6 @@ private _partIndex = ALL_BODY_PARTS find toLowerANSI _bodyPart;
 
 private _accessType = [_patient, _iv, _partIndex, _accessSite] call EFUNC(circulation,getAccessType);
 
-[QACEGVAR(medical_treatment,ivBagLocal), [_patient, _bodyPart, _classname, _accessType, _iv, _accessSite, _isFreshBlood], _patient] call CBA_fnc_targetEvent;
+// Carry the donor metadata with the owner-targeted event. missionNamespace replication and CBA target events are
+// separate network paths; without this, the patient owner could receive the bag before the fresh-blood registry.
+[QACEGVAR(medical_treatment,ivBagLocal), [_patient, _bodyPart, _classname, _accessType, _iv, _accessSite, _isFreshBlood, false, _freshBloodEntry], _patient] call CBA_fnc_targetEvent;

@@ -39,6 +39,12 @@ private _moveInput = (inputAction "MoveForward") + (inputAction "MoveBack")
 private _moving = (_mode != "self") && {_moveInput > 0.01};
 private _maneuverActive = missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false];
 private _manualPause = _medic getVariable ["ACME_DP_Paused", false];
+private _pauseClass = _medic getVariable ["ACME_DP_PauseTreatmentClass", ""];
+if (_manualPause && {_maneuverActive} && {_pauseClass in ["cpr", "usebvm", "usebvm_oxygen", "usebvm_vehicleoxygen", "usebvm_portableoxygen"]}) then {
+    _medic setVariable ["ACME_DP_Paused", false, false];
+    _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+    _manualPause = false;
+};
 private _mustYieldClinical = _moving || {_maneuverActive} || {_manualPause};
 private _yieldedClinical = _medic getVariable ["ACME_DP_ClinicalYield", false];
 

@@ -67,6 +67,13 @@ private _teardown = {
         _medic selectWeapon "";
         _medic setUnitPos "MIDDLE";
     };
+    if ((_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == "hangbag") then {
+        _medic setVariable ["ACME_DP_Paused", false, false];
+        _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+        _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+        _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+    };
+
     if (!_silent && {!isNull _patient}) then {
         [{
             params ["_medic", "_patient", "_bp"];

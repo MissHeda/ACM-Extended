@@ -25,18 +25,30 @@
 {
     [_x, {
         params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
-        if (isNull _medic || {!local _medic} || {!alive _medic} || {!isNull objectParent _medic}
-            || {_classname in ["ACME_ElevateHead", "ACME_LowerHead"]}) exitWith {};
+        if (isNull _medic || {!local _medic} || {!alive _medic} || {!isNull objectParent _medic}) exitWith {};
+
+        private _classKey = toLowerANSI _classname;
+        private _headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"];
 
         // A completed/failed treatment gets a fresh quiet window before Direct Pressure is allowed to visibly resume.
-        // This is what makes back-to-back actions safe: a long tourniquet does not finish and immediately have the old
-        // pressure pose reassert on the exact frame the provider is trying to start the next intervention.
+        // Head positioning is the exception: its provider sequence continues after the ACE event, so a successful
+        // active sequence keeps the clinical pause until fn_headElevMedicSeq reaches its real end state.
         if (_medic getVariable ["ACME_DP_Active", false]) then {
-            _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
-            _medic setVariable ["ACME_DP_InPose", false];
-            _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
-            _medic setVariable ["ACME_DP_LastPoseAssert", 0];
+            private _pauseClass = _medic getVariable ["ACME_DP_PauseTreatmentClass", ""];
+            private _headStillActive = _headOwned && {_medic getVariable ["ACME_headElev_seqActive", false]};
+            if (_pauseClass != "" && {_pauseClass == _classKey} && {!_headStillActive}) then {
+                _medic setVariable ["ACME_DP_Paused", false, false];
+                _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+            };
+            if (!_headStillActive) then {
+                _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+                _medic setVariable ["ACME_DP_InPose", false];
+                _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
+                _medic setVariable ["ACME_DP_LastPoseAssert", 0];
+            };
         };
+
+        if (_headOwned) exitWith {};
 
         [{
             params ["_m"];

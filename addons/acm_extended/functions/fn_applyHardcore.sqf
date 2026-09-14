@@ -50,6 +50,8 @@ ACME_hcEff_rhythm = missionNamespace getVariable ["ACME_hc_rhythm", false];
 ACME_hcEff_circ   = missionNamespace getVariable ["ACME_hc_circ", false];
 ACME_hcEff_nrb    = missionNamespace getVariable ["ACME_hc_nrb", false];
 ACME_hcEff_transfusion = missionNamespace getVariable ["ACME_hc_transfusion", false];
+private _juncBleedMult = missionNamespace getVariable ["ACME_junctionalBleedMult", 1.0];
+private _juncFreqMult  = missionNamespace getVariable ["ACME_junctionalFreqMult", 1.0];
 
 // transfusion.
 // the citrate and calcium model already exists in fn_circhandle: the citrate load per liter, a threshold before it
@@ -83,19 +85,19 @@ ACME_hcEff_vent     = missionNamespace getVariable ["ACME_hc_vent", false];
 
 // apply, or restore the baseline.
 if (ACME_hcEff_junc) then {
-    ACME_junctionalBleedNorm      = 0.15;  // B31: heavier than normal 0.10, reduced from 0.45.
+    ACME_junctionalBleedNorm      = (missionNamespace getVariable ["ACME_junctionalBleedHardcoreNorm", 0.15]) * _juncBleedMult;
     ACME_junctionalDPControl      = 0.35;  // pressure controls about 65 percent against about 85 percent.
     ACME_junctionalGauzeControl   = 0.65;  // gauze alone controls only about 35 percent, so dp on top matters more.
     ACME_junctionalGauzeDPControl = 0.15;  // gauze plus dp held controls about 85 percent rather than a perfect 100, so a wrap is still needed.
-    ACME_junctionalChanceVelocity = 0.85;  // more gsws go junctional.
-    ACME_junctionalChanceAvulsion = 0.30;
+    ACME_junctionalChanceVelocity = (0.85 * _juncFreqMult) min 1.0;
+    ACME_junctionalChanceAvulsion = (0.30 * _juncFreqMult) min 1.0;
 } else {
-    ACME_junctionalBleedNorm      = ACME_hcBase_junctionalBleedNorm;
+    ACME_junctionalBleedNorm      = (missionNamespace getVariable ["ACME_junctionalBleedBaseNorm", 0.10]) * _juncBleedMult;
     ACME_junctionalDPControl      = ACME_hcBase_junctionalDPControl;
     ACME_junctionalGauzeControl   = ACME_hcBase_junctionalGauzeControl;
     ACME_junctionalGauzeDPControl = ACME_hcBase_junctionalGauzeDPControl;
-    ACME_junctionalChanceVelocity = ACME_hcBase_junctionalChanceVelocity;
-    ACME_junctionalChanceAvulsion = ACME_hcBase_junctionalChanceAvulsion;
+    ACME_junctionalChanceVelocity = (0.60 * _juncFreqMult) min 1.0;
+    ACME_junctionalChanceAvulsion = (0.15 * _juncFreqMult) min 1.0;
 };
 
 // TBI. hardcore shortens the compensation budget and stays pfc-safe, so it never becomes instant.

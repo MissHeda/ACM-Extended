@@ -1,5 +1,6 @@
 // stage 2 of the HPMK: wrap the prepped kit, taking the state from prepped to wrapped. this is where passive
-// rewarming begins, because ACME_hpmk_on going true drives fn_hpmktick and the ground-blanket spawner. the kit
+// rewarming begins, because ACME_hpmk_on going true drives fn_hpmktick. wrapped casualties do not receive a
+// world blanket object; only a later dropped HPMK uses a collision-free visual anchor. the kit
 // was already taken out at prep, so nothing is removed here.
 // passive external rewarming retains the body heat of the patient to let a stable patient drift their core temp
 // back up, and it does little for an unstable or non-perfusing patient, which is clinically correct, because that
@@ -17,26 +18,22 @@ if (!_eligible) exitWith {
     [_receiver, _patient, true] call ACME_fnc_hpmkRemove;
 };
 
-// our pose first. if the head of this casualty is being held up, put it down properly with the release animation
-// and tear the elevation down before rolling them. rolling on top of an elevated head is two systems fighting
-// over one body, and ours loses silently and leaves the pose stuck.
-private _pYield = if (!isNil "_patient") then { _patient } else { objNull };
-if (!isNull _pYield) then { [_pYield] call ACME_fnc_headElevYieldForRoll; };
-if (isNull _patient) exitWith {};
+// HPMK wrapping is state-only. Do not roll, attach, reposition or otherwise physically drive the casualty here.
+// On multiplayer servers the old forced roll could hand the ragdoll/animation state between owners while an
+// injured unit was intersecting terrain or another object, producing collision damage across the body and even
+// bilateral leg fractures. Existing posture is deliberately preserved.
 if ((_patient getVariable ["ACME_hpmk_state", ""]) == "wrapped") exitWith {
     ["This patient is already wrapped in an HPMK.", 2, _medic] call ACME_fnc_netNotice;
 };
+
+// Kill any legacy attached/networked blanket anchor before committing the wrapped state. Current HPMKs use no
+// world object on the casualty, so stale state from an older build must never participate in collision physics.
+["ACME_hpmkKillBlanket", [_patient]] call CBA_fnc_serverEvent;
 
 [_patient, "wrapped", true, false] call ACME_fnc_hpmkStateCommit;
 _patient setVariable ["ACME_hpmk_lastTickLocal", CBA_missionTime, false];
 if (isNil "ACME_hpmk_activePatients") then { ACME_hpmk_activePatients = []; };
 ACME_hpmk_activePatients pushBackUnique _patient;
-
-// HPMK's own roll is allowed when the procedure needs it, but obtundation never adds a special posture writer.
-private _anim = missionNamespace getVariable ["ACME_hpmk_patientAnim", "AinjPpneMstpSnonWrflDnon_rolltoback"];
-if (alive _patient && {_anim != ""} && {isNull objectParent _patient}) then {
-    [_patient, _anim, 1] call ACME_fnc_doAnim;
-};
 
 ["Wrapped in HPMK.", 3, _medic] call ACME_fnc_netNotice;
 if (!isNil "ace_medical_treatment_fnc_addToLog") then {

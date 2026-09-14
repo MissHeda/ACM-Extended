@@ -24,9 +24,12 @@ private _alive = alive _patient;
 
 private _freshBloodlist = (missionNamespace getVariable [QGVAR(FreshBloodList), createHashMap]);
 
-private _id = count _freshBloodlist;
-
-if (_id > 999) exitWith {0}; // uh oh
+// Unique fresh-blood item classes exist for IDs 1..512. Allocation is server-authoritative in B96, so scan the
+// actual registry for the first free configured ID rather than deriving an ID from HashMap count. This also keeps
+// holes safe if an entry is ever retired later. ID 0 is reserved by the compatibility seed entry.
+private _id = 1;
+while {_id <= 512 && {!((_freshBloodlist getOrDefault [_id, []]) isEqualTo [])}} do { _id = _id + 1; };
+if (_id > 512) exitWith {-1};
 
 _freshBloodlist set [_id, [_patient,_volume,_bloodType,_alive,_collectionTime]];
 

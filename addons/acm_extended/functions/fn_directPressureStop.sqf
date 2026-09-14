@@ -74,6 +74,7 @@ if (local _medic && {alive _medic} && {isNull objectParent _medic} && {_ownsHold
     ["ACME_DP_LastPoseAssert", 0],
     ["ACME_DP_ClinicalYield", false],
     ["ACME_DP_ClinicalYieldStart", 0],
+    ["ACME_DP_PauseTreatmentClass", ""],
     ["ACME_DP_OwnsContinuous", false]
 ];
 

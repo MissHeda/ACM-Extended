@@ -39,15 +39,11 @@ if (isNull objectParent _medic) then {
     _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
 };
 
-["", "Release", "Pause / assess"] call ace_interaction_fnc_showMouseHint;
-
 // Never swallow the key that is trying to close the medical UI or return control to the player. The handler releases
 // pressure, then returns false so the original ESC/RMB/H input continues through the normal ACE/CBA path.
 private _ids = [];
 _ids pushBack ([0x01, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0xF1, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _ids pushBack ([0x23, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
-_ids pushBack ([0xF2, [false,false,false], { call ACME_fnc_directPressureAssess; true }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_patient, "activity", "%1 started Direct pressure on %2", "%1 started Direct pressure on %2", [[_medic, false, true] call ace_common_fnc_getName, ([_bodyPart, "abbr"] call ACME_fnc_bodyPartName)]] call ACME_fnc_medLog;

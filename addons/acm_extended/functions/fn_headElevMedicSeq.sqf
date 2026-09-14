@@ -60,6 +60,13 @@ private _prepUntil = CBA_missionTime + ((_prepDelay max 0) max 0.05);
         _u setVariable ["ACME_headElev_medicAnimStage", -1, false];
         _u setVariable ["ACME_headElev_seqActive", false, false];
         _u setVariable ["ACME_headElev_seqMode", "", false];
+        private _dpPauseClass = _u getVariable ["ACME_DP_PauseTreatmentClass", ""];
+        if ((_u getVariable ["ACME_DP_Active", false]) && {_dpPauseClass in ["acme_elevatehead", "acme_lowerhead"]}) then {
+            _u setVariable ["ACME_DP_Paused", false, false];
+            _u setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+            _u setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+            _u setVariable ["ACME_DP_LastPoseAssert", 0, false];
+        };
         _u setVariable ["ACME_headElev_pinToken", (_u getVariable ["ACME_headElev_pinToken", 0]) + 1, false];
         ["ace_common_setAnimSpeedCoef", [_u, 1]] call CBA_fnc_globalEvent;
 

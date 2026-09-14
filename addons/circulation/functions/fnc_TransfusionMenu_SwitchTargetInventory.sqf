@@ -96,13 +96,50 @@ private _activeFreshBloodList = missionNamespace getVariable [QGVAR(FreshBloodLi
 
 if (count _activeFreshBloodList > 0) then {
     {
-        private _id = _forEachIndex;
-        (_activeFreshBloodList get _id) params ["", "_volume"];
+        // HashMap forEach exposes the real key as _x and the value as _y. _forEachIndex is only the iteration
+        // counter and is not a donor-bag ID. Using it made multiplayer/JIP registries enumerate the wrong bags.
+        private _id = _x;
+        private _entryData = _y;
+        if !(_id isEqualType 0 && {_id > 0} && {_entryData isEqualType []} && {count _entryData >= 2}) then { continue; };
+        private _volume = _entryData param [1, 0];
+        if !(_volume in [250, 500]) then { continue; };
 
-        _fluidsArray pushBack (format ["%1_%2", (["FreshBlood", _volume] call FUNC(formatFluidBagName)), _id]);
-        _fluidsArrayData pushBack (format ["%1_%2", (["FreshBlood", _volume, -1, true] call FUNC(formatFluidBagName)), _id]);
+        private _item = format ["%1_%2", (["FreshBlood", _volume] call FUNC(formatFluidBagName)), _id];
+        private _fluidData = format ["%1_%2", (["FreshBlood", _volume, -1, true] call FUNC(formatFluidBagName)), _id];
+        if (isClass (configFile >> "CfgWeapons" >> _item)) then {
+            private _i = _fluidsArray find _item;
+            if (_i < 0) then {
+                _fluidsArray pushBack _item;
+                _fluidsArrayData pushBack _fluidData;
+            } else {
+                while {count _fluidsArrayData <= _i} do { _fluidsArrayData pushBack ""; };
+                _fluidsArrayData set [_i, _fluidData];
+            };
+        };
     } forEach _activeFreshBloodList;
 };
+
+// Inventory is authoritative for whether a filled donor bag is physically present. Add any valid unique fresh-blood
+// item found there even if its public registry update arrived one frame after this menu was opened. The registry is
+// still used for blood-type metadata, but it can no longer make the actual bag disappear from the transfusion list.
+{
+    private _cfg = configFile >> "CfgWeapons" >> _x;
+    if ((getNumber (_cfg >> "uniqueBag")) <= 0) then { continue; };
+    private _parts = _x splitString "_";
+    if (count _parts < 4 || {(_parts select 0) != "ACM"} || {(_parts select 1) != "FreshBloodBag"}) then { continue; };
+    private _volume = parseNumber (_parts select 2);
+    private _id = parseNumber (_parts select 3);
+    if !(_volume in [250, 500] && {_id > 0}) then { continue; };
+    private _fluidData = format ["FreshBloodBag_%1_%2", _volume, _id];
+    private _i = _fluidsArray find _x;
+    if (_i < 0) then {
+        _fluidsArray pushBack _x;
+        _fluidsArrayData pushBack _fluidData;
+    } else {
+        while {count _fluidsArrayData <= _i} do { _fluidsArrayData pushBack ""; };
+        _fluidsArrayData set [_i, _fluidData];
+    };
+} forEach _cachedItems;
 
 private _index = _fluidsArray findIf {_x in _cachedItems};
 
@@ -121,9 +158,15 @@ private _fnc_addToInventoryPanel = {
     if ((getNumber (_config >> "uniqueBag")) > 0) then {
         ((configName _config) splitString "_") params ["","","_volume","_id"];
 
-        private _bloodType = ([(parseNumber _id)] call FUNC(getFreshBloodEntry)) select 2;
-        private _bloodTypeString = [_bloodType, 1] call FUNC(convertBloodType);
-        _name = format [C_LLSTRING(FreshBloodBag_Short), (format ["%1 (%2ml) [%3]", _bloodTypeString, _volume, _id])];
+        private _freshEntry = [(parseNumber _id)] call FUNC(getFreshBloodEntry);
+        if (_freshEntry isEqualType [] && {count _freshEntry >= 3}) then {
+            private _bloodType = _freshEntry param [2, -1];
+            private _bloodTypeString = [_bloodType, 1] call FUNC(convertBloodType);
+            _name = format [C_LLSTRING(FreshBloodBag_Short), (format ["%1 (%2ml) [%3]", _bloodTypeString, _volume, _id])];
+        } else {
+            // Registry metadata can trail an inventory transfer on MP/JIP. Keep the real bag visible while it catches up.
+            _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
+        };
     } else {
         _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
     };

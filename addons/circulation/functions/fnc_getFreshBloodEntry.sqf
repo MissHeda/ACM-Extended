@@ -23,4 +23,4 @@ params ["_id"];
 
 private _freshBloodlist = (missionNamespace getVariable [QGVAR(FreshBloodList), createHashMap]);
 
-_freshBloodlist get _id;
+_freshBloodlist getOrDefault [_id, []];

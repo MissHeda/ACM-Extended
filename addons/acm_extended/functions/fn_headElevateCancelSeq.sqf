@@ -10,6 +10,14 @@ _medic setVariable ["ACME_headElev_medicAnimToken", -1, false];
 _medic setVariable ["ACME_headElev_medicAnimStage", -1, false];
 _medic setVariable ["ACME_headElev_seqMode", "", false];
 
+private _dpPauseClass = _medic getVariable ["ACME_DP_PauseTreatmentClass", ""];
+if ((_medic getVariable ["ACME_DP_Active", false]) && {_dpPauseClass in ["acme_elevatehead", "acme_lowerhead"]}) then {
+    _medic setVariable ["ACME_DP_Paused", false, false];
+    _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+    _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+    _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+};
+
 private _kh = _medic getVariable ["ACME_headElev_seqKey", -1];
 private _disp = findDisplay 46;
 if (_kh >= 0 && {!isNull _disp}) then {

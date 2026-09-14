@@ -34,7 +34,12 @@ switch (_fluidType) do {
         _fluidType = format ["%1 %2 %3ml", LLSTRING(Blood), ([GET_NUMBER(_config >> _classname >> "bloodtype",0), 1] call FUNC(convertBloodType)), _fluidAmount];
     };
     case "FreshBlood": {
-        _fluidType = format ["%1 %2ml %3 [ID:%4]", LLSTRING(FreshBlood), _fluidAmount, [(([_freshBloodID] call FUNC(getFreshBloodEntry)) select 2), 1] call FUNC(convertBloodType), _freshBloodID];
+        private _freshEntry = [_freshBloodID] call FUNC(getFreshBloodEntry);
+        if (_freshEntry isEqualType [] && {count _freshEntry >= 3}) then {
+            _fluidType = format ["%1 %2ml %3 [ID:%4]", LLSTRING(FreshBlood), _fluidAmount, [(_freshEntry param [2, -1]), 1] call FUNC(convertBloodType), _freshBloodID];
+        } else {
+            _fluidType = format ["%1 %2ml [ID:%3]", LLSTRING(FreshBlood), _fluidAmount, _freshBloodID];
+        };
     };
     default {
         _fluidType = (format ["%1 %2ml", _fluidType, _fluidAmount]);

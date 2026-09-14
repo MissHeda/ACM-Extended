@@ -21,7 +21,7 @@
  * Public: No
  */
 
-params ["_patient", "_bodyPart", "_classname", "_accessType", ["_iv", true], "_accessSite", ["_freshBlood", false], ["_deferPremixed", false]];
+params ["_patient", "_bodyPart", "_classname", "_accessType", ["_iv", true], "_accessSite", ["_freshBlood", false], ["_deferPremixed", false], ["_freshBloodEntryNet", []]];
 
 if (!local _patient) exitWith {["ace_medical_treatment_ivBagLocal", _this, _patient] call CBA_fnc_targetEvent;};
 private _partIndex = ALL_BODY_PARTS find toLowerANSI _bodyPart;
@@ -36,11 +36,25 @@ private _isFBTK = false;
 switch (true) do {
     case (_freshBlood): {
         (_classname splitString "_") params ["", "_volume", "_id"];
-        ([(parseNumber _id)] call EFUNC(circulation,getFreshBloodEntry)) params ["", "", "_bloodType"];
+        private _idNum = parseNumber _id;
+        private _freshEntry = [_idNum] call EFUNC(circulation,getFreshBloodEntry);
 
+        // MP/JIP robustness: the target event can beat the public registry update to the patient owner. The medic
+        // includes the exact donor entry with the treatment event; use it immediately and repair the local/public
+        // registry so later metabolism, labels and locality migrations all see the same donor metadata.
+        if !(_freshEntry isEqualType [] && {count _freshEntry >= 3}) then {
+            if (_freshBloodEntryNet isEqualType [] && {count _freshBloodEntryNet >= 3}) then {
+                _freshEntry = +_freshBloodEntryNet;
+                private _freshList = missionNamespace getVariable [QEGVAR(circulation,FreshBloodList), createHashMap];
+                _freshList set [_idNum, _freshEntry];
+                missionNamespace setVariable [QEGVAR(circulation,FreshBloodList), _freshList, true];
+            };
+        };
+
+        private _bloodType = _freshEntry param [2, -1];
         _donorBloodType = _bloodType;
 
-        _IVBagsBodyPart pushBack ["FreshBlood", (parseNumber _volume), _accessType, _accessSite, _iv, _bloodType, (parseNumber _volume), (parseNumber _id)];
+        _IVBagsBodyPart pushBack ["FreshBlood", (parseNumber _volume), _accessType, _accessSite, _iv, _bloodType, (parseNumber _volume), _idNum];
     };
     case (_classname in FBTK_ARRAY_DATA): {
         _isFBTK = true;

@@ -17,7 +17,7 @@ ACME_hpmk_exposedWarmFactor = 0.80;  // while the HPMK chest is exposed for care
 ACME_warmer_tempPerLiter  = 0.8;
 // this rewarms wrapped, perfusing patients slowly toward normothermic, and prunes the dead and removed.
 [{call ACME_fnc_hpmkTick}, 5, []] call CBA_fnc_addPerFrameHandler;
-// a discarded emergency blanket under a wrapped patient who lies on the ground. it spawns and despawns as they
-// are wrapped and unwrapped, moved, carried, dragged, or put back down. set this to the exact classname of your
-// discarded emergency blanket object. "" leaves the feature inert.
+// Visual class for an HPMK that has been dropped after a wrapped casualty becomes mobile. Wrapped patients never
+// receive a world object; the dropped representation uses a collision-free network anchor plus client simpleObject.
+// Set this to the desired discarded emergency blanket model class. "" leaves dropped visuals inert.
 ACME_hpmk_blanketClass = "Land_EmergencyBlanket_02_discarded_F";

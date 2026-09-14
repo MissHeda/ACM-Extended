@@ -33,6 +33,22 @@ private _vehicle = objectParent _medic;
 
 private _target = [_medic, _patient, _vehicle] select GVAR(TransfusionMenu_Selected_Inventory);
 
+// A fresh whole-blood item is only safe to consume once its donor metadata is present locally. JIP/MP registry
+// synchronization can trail the physical inventory item briefly. Never remove the bag first and discover that its
+// ABO/time metadata is missing afterward. Ask the server to resync and leave the item untouched.
+private _itemCfg = configFile >> "CfgWeapons" >> _itemClassname;
+private _freshMetadataReady = true;
+if ((getNumber (_itemCfg >> "uniqueBag")) > 0) then {
+    private _parts = _itemClassname splitString "_";
+    private _freshID = parseNumber (_parts param [3, "-1"]);
+    private _freshEntry = [_freshID] call FUNC(getFreshBloodEntry);
+    _freshMetadataReady = _freshEntry isEqualType [] && {count _freshEntry >= 3};
+};
+if (!_freshMetadataReady) exitWith {
+    [QGVAR(requestFreshBloodRegistry), [ACE_player]] call CBA_fnc_serverEvent;
+    ["Donor blood bag data is still synchronizing. Reopen the transfusion menu in a moment.", 2.5] call ACEFUNC(common,displayTextStructured);
+};
+
 if (GVAR(TransfusionMenu_Selected_Inventory) == 2) then {
     _vehicle addItemCargoGlobal [_itemClassname, -1];
 } else {

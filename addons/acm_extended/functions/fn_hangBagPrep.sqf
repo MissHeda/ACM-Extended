@@ -5,6 +5,17 @@ params ["_medic"];
 if (isNull _medic || {!local _medic}) exitWith {};
 
 _medic setVariable ["ACME_hang_Raising", true];
+
+// Raising and holding an IV bag uses both provider arms. If Direct Pressure is active, keep the DP session alive
+// but suspend its clinical marker and looping pose until this Hang Bag maneuver is cancelled or fully lowered.
+if (_medic getVariable ["ACME_DP_Active", false]) then {
+    _medic setVariable ["ACME_DP_Paused", true, false];
+    _medic setVariable ["ACME_DP_PauseTreatmentClass", "hangbag", false];
+    _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+    _medic setVariable ["ACME_DP_InPose", false, false];
+    _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+    _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+};
 [_medic] call ACME_fnc_medicAnimationPrep;
 _medic setUnitPos "MIDDLE";
 

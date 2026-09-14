@@ -25,10 +25,35 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         true
     };
 
-    // Continuous ACM actions own their complete animation/cancellation lifecycle.
+    // Direct Pressure may coexist with ordinary treatments, but its held provider pose must never block the
+    // treatment wrapper's own empty-hands preflight.  Track whether this treatment is acting on the same casualty.
+    private _dpSamePatient = !isNull _medic
+        && {_medic getVariable ["ACME_DP_Active", false]}
+        && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient};
+
+    private _fnc_dpPauseForManeuver = {
+        params ["_m", "_classKey"];
+        if (isNull _m || {!local _m} || {!(_m getVariable ["ACME_DP_Active", false])}) exitWith {};
+        _m setVariable ["ACME_DP_Paused", true, false];
+        _m setVariable ["ACME_DP_PauseTreatmentClass", _classKey, false];
+        // Retire the looping DP pose immediately.  The incoming maneuver owns provider animation until it ends.
+        _m setVariable ["ACME_dah_gen", (_m getVariable ["ACME_dah_gen", 0]) + 1, false];
+        _m setVariable ["ACME_DP_InPose", false, false];
+        _m setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+        _m setVariable ["ACME_DP_LastPoseAssert", 0, false];
+    };
+
+    // Continuous ACM actions own their complete animation/cancellation lifecycle.  They are real physical
+    // maneuvers, so Direct Pressure yields clinically for their duration and resumes when the global maneuver ends.
     private _nativeContinuousClass = toLowerANSI _classname;
     if (_nativeContinuousClass in ["cpr", "usebvm", "usebvm_oxygen", "usebvm_vehicleoxygen", "usebvm_portableoxygen"]) exitWith {
-        _this call ACM_core_fnc_treatmentNative
+        if (_dpSamePatient) then {[_medic, _nativeContinuousClass] call _fnc_dpPauseForManeuver;};
+        private _startedContinuous = _this call ACM_core_fnc_treatmentNative;
+        if (!_startedContinuous && {_dpSamePatient} && {(_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == _nativeContinuousClass}) then {
+            _medic setVariable ["ACME_DP_Paused", false, false];
+            _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+        };
+        _startedContinuous
     };
 
     // Resolve ACME's provider-theatre policy BEFORE native treatment starts. When one of these modes is selected,
@@ -79,6 +104,13 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         && {(_bypass select 2) == _classname};
     private _headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"];
 
+    // Recovery-position changes, head positioning and any treatment that must roll a casualty out of recovery are
+    // incompatible with physically maintaining wound pressure.  Pause the clinical marker only for that maneuver.
+    private _dpPatientManeuver = _classKey in ["recoveryposition", "cancelrecoveryposition", "acme_elevatehead", "acme_lowerhead"]
+        || {(getNumber (_cfg >> "ACM_rollToBack")) > 0}
+        || {(_patient getVariable ["ACM_airway_RecoveryPosition_State", false]) && {(getNumber (_cfg >> "ACM_cancelRecovery")) > 0}};
+    if (_dpSamePatient && {_dpPatientManeuver}) then {[_medic, _classKey] call _fnc_dpPauseForManeuver;};
+
     // Fast path: if the provider is already empty-handed and crouched, start the treatment immediately.
     // The old wrapper always bounced through waitUntilAndExecute even when no transition was required, which
     // added a perceptible one-frame click delay to every medical-menu action.
@@ -86,7 +118,13 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     private _visuallyEmptyNow = !isNull _medic && {
         (currentWeapon _medic == "") || {((_animNow find "wnon") >= 0) && {((_animNow find "snon") >= 0)}}
     };
-    private _preflightReady = _visuallyEmptyNow && {stance _medic == "CROUCH"};
+    // A visible Direct Pressure hold is already an authored empty-hands crouched provider theatre.  Do not ask
+    // medicAnimationPrep to holster again while that loop is active: the loop disables weapon transitions, so the
+    // old waitUntil preflight could never become ready and every medical-menu click appeared dead.
+    private _dpPoseReady = _dpSamePatient && {
+        (_medic getVariable ["ACME_DP_InPose", false]) || {_animNow == "acme_directpressurehold"}
+    };
+    private _preflightReady = _dpPoseReady || {_visuallyEmptyNow && {stance _medic == "CROUCH"}};
 
     if (!_isBypass && {!_headOwned} && {!_preflightReady} && {local _medic} && {!isNull _medic} && {alive _medic} && {isNull objectParent _medic}) exitWith {
         if (_medic getVariable ["ACME_treatmentPreflightActive", false]) exitWith {false};
@@ -149,12 +187,25 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     // Head positioning is head-selection only. Pass the selected body part through unchanged.
     private _nativeArgs = +_this;
 
+    // Retire only the visual DP loop before native/ACME treatment animation is queued.  Ordinary treatments keep
+    // the synchronized pressure marker active; true maneuvers above set ACME_DP_Paused so the shared tick clears it.
+    if (_dpSamePatient && {local _medic}) then {
+        _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+        _medic setVariable ["ACME_DP_InPose", false, false];
+        _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+        _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+    };
+
     if (_ownsProviderAnim && {local _medic}) then {
         _medic setVariable ["ACME_suppressNativeTreatmentAnim", true, false];
     };
     private _started = _nativeArgs call ACM_core_fnc_treatmentNative;
     if (local _medic) then {
         _medic setVariable ["ACME_suppressNativeTreatmentAnim", false, false];
+    };
+    if (!_started && {_dpSamePatient} && {(_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == _classKey}) then {
+        _medic setVariable ["ACME_DP_Paused", false, false];
+        _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
     };
 
     if (_started && {local _medic} && {!isNull _medic} && {isNull objectParent _medic}) then {

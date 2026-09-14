@@ -29,10 +29,11 @@ private _fnc_completeRemoval = {
 
     if (_returnVolume > 0) then {
         if (_type == "FBTK" && _returnVolume >= 250) then {
-            private _className = ["FreshBlood", _returnVolume] call FUNC(formatFluidBagName);
-            private _freshBloodID = [GVAR(TransfusionMenu_Target), _returnVolume] call FUNC(generateFreshBloodEntry);
-            _returnedItem = [ACE_player, (format ["%1_%2", _className, _freshBloodID])] call ACEFUNC(common,addToInventory);
-            [QGVAR(updateFreshBloodBagName), [_returnVolume, _freshBloodID]] call CBA_fnc_globalEvent;
+            // B96: the donor registry and unique bag ID are owned by the server. Client-side ID generation was
+            // vulnerable to JIP clients having no FreshBloodList yet and to two medics allocating the same ID.
+            // Delivery is acknowledged back to this medic by the server event registered in XEH_postInit.
+            [QGVAR(requestFreshBloodBag), [ACE_player, GVAR(TransfusionMenu_Target), _returnVolume]] call CBA_fnc_serverEvent;
+            _returnedItem = [true];
         } else {
             _returnedItem = [ACE_player, _itemClassName] call ACEFUNC(common,addToInventory);
         };

@@ -110,18 +110,95 @@ ACM_MEDICATION_VIALS = [];
     ACM_MEDICATION_VIALS pushBack (configName _x);
 } forEach ("getNumber (_x >> 'ACM_isVial') > 0" configClasses (configFile >> "CfgWeapons"));
 
+// Fresh whole blood registry. The server is authoritative for ID allocation and keeps one compatibility seed at
+// ID 0; usable inventory classes are IDs 1..512. Clients explicitly request a snapshot on postInit/JIP rather than
+// relying on a one-time publicVariable broadcast that may have happened before they connected.
 if (isServer) then {
     missionNamespace setVariable [QGVAR(FreshBloodList), (createHashMapFromArray [[0,[objNull,250,ACM_BLOODTYPE_ON,true,CBA_missionTime]]]), true];
 };
 
 if (hasInterface || isServer) then {
     [QGVAR(updateFreshBloodBagName), {
-        params ["_size", "_id"];
+        params ["_size", "_id", ["_bloodTypeNet", -1]];
 
         private _classname = format ["ACM_FreshBloodBag_%1_%2", _size, _id];
-        private _bloodType = ([_id] call FUNC(getFreshBloodEntry)) select 2;
+        private _freshEntry = [_id] call FUNC(getFreshBloodEntry);
+        private _bloodType = if (_freshEntry isEqualType [] && {count _freshEntry >= 3}) then {_freshEntry param [2, -1]} else {_bloodTypeNet};
+        if (_bloodType < 0) exitWith {};
         private _bloodTypeString = [_bloodType, 1] call FUNC(convertBloodType);
         private _newName = format [C_LLSTRING(FreshBloodBag), (format ["%1 (%2ml) [%3]", _bloodTypeString, _size, _id])];
         [_classname, _newName] call CBA_fnc_renameInventoryItem;
     }] call CBA_fnc_addEventHandler;
+};
+
+// Send the current registry to a newly joined client, or to a client that detects an inventory item before its
+// metadata. Serialize as key/value pairs so the network payload is ordinary arrays on every supported Arma build.
+[QGVAR(requestFreshBloodRegistry), {
+    if (!isServer) exitWith {};
+    params ["_requester"];
+    if (isNull _requester) exitWith {};
+    private _freshList = missionNamespace getVariable [QGVAR(FreshBloodList), createHashMap];
+    private _pairs = [];
+    { _pairs pushBack [_x, _y]; } forEach _freshList;
+    [QGVAR(syncFreshBloodRegistry), [_pairs], _requester] call CBA_fnc_targetEvent;
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(syncFreshBloodRegistry), {
+    if (!hasInterface) exitWith {};
+    params ["_pairs"];
+    private _freshList = createHashMapFromArray _pairs;
+    missionNamespace setVariable [QGVAR(FreshBloodList), _freshList, false];
+    {
+        _x params ["_id", "_entry"];
+        if (_id > 0 && {_entry isEqualType []} && {count _entry >= 3}) then {
+            [QGVAR(updateFreshBloodBagName), [_entry param [1, 0], _id, _entry param [2, -1]]] call CBA_fnc_localEvent;
+        };
+    } forEach _pairs;
+}] call CBA_fnc_addEventHandler;
+
+// Filled FBTKs request their unique donor-bag ID from the server. This removes both the JIP ID-0 failure and
+// concurrent-client ID collisions. The exact donor entry is sent back with the item so the receiving medic has
+// valid metadata before the inventory class is exposed to the transfusion menu.
+[QGVAR(requestFreshBloodBag), {
+    if (!isServer) exitWith {};
+    params ["_medic", "_donor", "_volume"];
+    if (isNull _medic || {isNull _donor} || {!(_volume in [250, 500])}) exitWith {};
+    private _freshBloodID = [_donor, _volume] call FUNC(generateFreshBloodEntry);
+    if (_freshBloodID < 1) exitWith {
+        [QGVAR(receiveFreshBloodBag), [_medic, _volume, -1, []], _medic] call CBA_fnc_targetEvent;
+    };
+    private _freshEntry = [_freshBloodID] call FUNC(getFreshBloodEntry);
+    private _freshBloodType = _freshEntry param [2, -1];
+    [QGVAR(updateFreshBloodBagName), [_volume, _freshBloodID, _freshBloodType]] call CBA_fnc_globalEvent;
+    [QGVAR(receiveFreshBloodBag), [_medic, _volume, _freshBloodID, _freshEntry], _medic] call CBA_fnc_targetEvent;
+}] call CBA_fnc_addEventHandler;
+
+[QGVAR(receiveFreshBloodBag), {
+    if (!hasInterface) exitWith {};
+    params ["_medic", "_volume", "_id", "_entry"];
+    if (_id < 1 || {!(_entry isEqualType [])} || {count _entry < 3}) exitWith {
+        ["Unable to allocate a donor blood bag ID. The filled FBTK was not returned.", 3] call ACEFUNC(common,displayTextStructured);
+    };
+
+    // Install the donor metadata first. This guarantees the menu and ivBag callback can resolve ABO/time data even
+    // if the server's public registry update arrives after this targeted delivery event.
+    private _freshList = missionNamespace getVariable [QGVAR(FreshBloodList), createHashMap];
+    _freshList set [_id, _entry];
+    missionNamespace setVariable [QGVAR(FreshBloodList), _freshList, false];
+
+    private _className = format ["%1_%2", (["FreshBlood", _volume] call FUNC(formatFluidBagName)), _id];
+    private _returnedItem = [_medic, _className] call ACEFUNC(common,addToInventory);
+    if !(_returnedItem param [0, false]) then {
+        // Preserve the donor product instead of deleting it when the collector's inventory is full.
+        private _holder = createVehicle ["GroundWeaponHolder", _medic modelToWorld [0, 1, 0], [], 0, "CAN_COLLIDE"];
+        _holder addItemCargoGlobal [_className, 1];
+        ["Inventory full. Fresh donor blood was placed on the ground.", 2.5] call ACEFUNC(common,displayTextStructured);
+    };
+    [QGVAR(updateFreshBloodBagName), [_volume, _id, _entry param [2, -1]]] call CBA_fnc_localEvent;
+}] call CBA_fnc_addEventHandler;
+
+if (hasInterface) then {
+    [{!isNull player}, {
+        [QGVAR(requestFreshBloodRegistry), [player]] call CBA_fnc_serverEvent;
+    }, []] call CBA_fnc_waitUntilAndExecute;
 };
