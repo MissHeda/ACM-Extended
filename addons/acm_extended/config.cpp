@@ -1851,6 +1851,7 @@ class CfgFunctions {
             class clinicalRestore {};
             class clinicalReset {};
             class deathFreeze {};
+            class deadPhysiologyFreeze {};
             class fluidCommit {};
             class infusionDeliver {};
             class injuryEvent {};
@@ -9744,6 +9745,49 @@ class RscTitles {
                 y = "safezoneY + safezoneH/2 - 0.025";
                 w = 0.05;
                 h = 0.05;
+            };
+        };
+    };
+    // B125 one-handed medication push HUD. Static picture controls are intentional: dynamically-created
+    // picture controls were surviving as text/panel controls on some ultrawide clients while the PAA layers
+    // disappeared. The RscTitles resource keeps the syringe visual independent from ACE dialog rebuilds.
+    class ACME_HCPush_Display {
+        idd = 71520;
+        movingEnable = 0;
+        enableSimulation = 1;
+        duration = 1e11;
+        fadeIn = 0;
+        fadeOut = 0;
+        onLoad = "uiNamespace setVariable ['ACME_HCPush_DLG', (_this select 0)];";
+        onUnload = "uiNamespace setVariable ['ACME_HCPush_DLG', displayNull];";
+        class Controls {
+            class ACME_HCPush_Backbit: RscPicture {
+                idc = 71521;
+                text = "\acm_extended\ui\syringe\hud\syringe_10_backbit_ca.paa";
+                colorText[] = {1,1,1,1};
+                x = 0; y = 0; w = 0.1; h = 0.1;
+            };
+            class ACME_HCPush_Plunger: ACME_HCPush_Backbit {
+                idc = 71522;
+                text = "\acm_extended\ui\syringe\hud\syringe_10_plunger_ca.paa";
+            };
+            class ACME_HCPush_Barrel: ACME_HCPush_Backbit {
+                idc = 71523;
+                text = "\acm_extended\ui\syringe\hud\syringe_10_barrel_ca.paa";
+            };
+            class ACME_HCPush_Panel: RscText {
+                idc = 71524;
+                text = "";
+                colorText[] = {1,1,1,0};
+                colorBackground[] = {0.02,0.03,0.06,0.90};
+                x = 0; y = 0; w = 0.2; h = 0.05;
+            };
+            class ACME_HCPush_Text: RscStructuredText {
+                idc = 71525;
+                text = "";
+                colorText[] = {0.94,0.91,0.82,1};
+                colorBackground[] = {0,0,0,0};
+                x = 0; y = 0; w = 0.2; h = 0.05;
             };
         };
     };

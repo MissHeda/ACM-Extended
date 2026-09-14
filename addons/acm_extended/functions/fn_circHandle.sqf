@@ -1393,6 +1393,14 @@ private _getMedEffect = {
     // a tube past the carina ventilates one lung. it builds a shunt and halves the compliance.
     [_patient] call ACME_fnc_ettMainstemTick;
 
+    // B125 airway wake reconciliation. Collapse is the unconscious soft-tissue/tongue-collapse ladder, not a
+    // durable anatomical obstruction. If an old ACM worker or locality edge leaves a nonzero collapse value on a
+    // conscious casualty, clear only that collapse field. Vomit, blood, adjuncts and every other airway state stay.
+    if (!(_patient getVariable ["ACE_isUnconscious", false])
+        && {(_patient getVariable ["ACM_airway_AirwayCollapse_State", 0]) > 0}) then {
+        [_patient, [["collapse", 0]], true] call ACM_airway_fnc_setAirwayState;
+    };
+
     // nobody wakes up with a tube in, and vomiting with an OPA in ejects it.
     [_patient] call ACME_fnc_ettWakeGuard;
     [_patient] call ACME_fnc_airwayVomitOPA;

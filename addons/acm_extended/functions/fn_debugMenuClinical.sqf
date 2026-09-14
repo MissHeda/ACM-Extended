@@ -229,13 +229,29 @@ private _tubeL = _patient getVariable ["ACME_thora_tube_left", false];
 private _tubeR = _patient getVariable ["ACME_thora_tube_right", false];
 private _bvm = _patient getVariable ["ACM_breathing_isUsingBVM", false];
 private _vent = _patient getVariable ["ACME_vent_driving", false];
-private _airwayTxt = if (_ett) then {"ETT" + (if (_cuff) then {"+cuff"} else {""})} else {if (_cric) then {"CRIC"} else {if (_collapse > 0 || {_vomit > 0} || {_bloodObs > 0}) then {"OBSTRUCTED"} else {"OPEN"}}};
-private _airwayCol = if (_collapse > 0 || {_vomit > 0} || {_bloodObs > 0}) then {_cBad} else {_cGood};
+// B125: classify the airway from ACM's actual patency result, not from a raw collapse latch. A mild collapse
+// (C1) can still pass air, and a conscious casualty is explicitly patent in getAirwayState even if a stale collapse
+// value has not been reconciled yet. Vomit/blood remain true obstructions and severe loss of patency stays red.
+private _airwayPatency = if (!isNil "ACM_airway_fnc_getAirwayState") then {
+    [_patient] call ACM_airway_fnc_getAirwayState
+} else {
+    if (_vomit > 0 || {_bloodObs > 0}) then {0} else {1 - ((_collapse min 3) / 3)}
+};
+private _fluidObstruction = (_vomit > 0) || {_bloodObs > 0};
+private _airwayTxt = if (_ett) then {
+    "ETT" + (if (_cuff) then {"+cuff"} else {""})
+} else {if (_cric) then {
+    "CRIC"
+} else {if (_fluidObstruction || {_airwayPatency <= 0.20}) then {
+    "OBSTRUCTED"
+} else {if (_airwayPatency < 0.90) then {"NARROWED"} else {"OPEN"}}}};
+private _airwayCol = if (_fluidObstruction || {_airwayPatency <= 0.20}) then {_cBad} else {if (_airwayPatency < 0.90) then {_cWarn} else {_cGood}};
+private _obsCol = if (_vomit > 0 || {_bloodObs > 0} || {_collapse >= 3}) then {_cBad} else {if (_collapse > 0) then {_cWarn} else {_cGood}};
 _left pushBack (["AIRWAY / CHEST"] call _sect);
 _left pushBack (["Airway", _airwayTxt, _airwayCol, "Reflex", [_airReflex] call _yn, if (_airReflex) then {_cGood} else {_cWarn}] call _pair);
 private _adj = [];
 if (_opa != "") then {_adj pushBack "OPA";}; if (_npa != "") then {_adj pushBack "NPA";};
-_left pushBack (["Adjunct", if (_adj isEqualTo []) then {"none"} else {_adj joinString "+"}, if (_adj isEqualTo []) then {_cMute} else {_cGood}, "Obs", format ["C%1 V%2 B%3", _collapse, _vomit, _bloodObs], if (_collapse > 0 || {_vomit > 0} || {_bloodObs > 0}) then {_cBad} else {_cGood}] call _pair);
+_left pushBack (["Adjunct", if (_adj isEqualTo []) then {"none"} else {_adj joinString "+"}, if (_adj isEqualTo []) then {_cMute} else {_cGood}, "Obs", format ["C%1 V%2 B%3", _collapse, _vomit, _bloodObs], _obsCol] call _pair);
 _left pushBack (["PTX", _ptx, if (_ptx > 0) then {_cWarn} else {_cGood}, "TPTX", [_tptx] call _yn, [_tptx, true] call _ynCol] call _pair);
 _left pushBack (["Hemo", format ["%1 / %2L", _hemo, _hemoFluid toFixed 2], if (_hemo > 0 || {_hemoFluid > 0.3}) then {_cWarn} else {_cGood}, "Seal", [_seal] call _yn, if (_seal) then {_cGood} else {_cMute}] call _pair);
 _left pushBack (["Tubes", format ["L:%1 R:%2", if (_tubeL) then {"Y"} else {"-"}, if (_tubeR) then {"Y"} else {"-"}], if (_tubeL || {_tubeR}) then {_cGood} else {_cMute}, "Support", format ["BVM:%1 V:%2", if (_bvm) then {"Y"} else {"-"}, if (_vent) then {"Y"} else {"-"}], if (_bvm || {_vent}) then {_cGood} else {_cMute}] call _pair);

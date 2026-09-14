@@ -29,6 +29,7 @@ private _checks = [];
     ["ace_medical_status_fnc_getBloodVolumeChange", "B106:volumeBridge"],
     ["ACM_circulation_fnc_setIV", "B106:setIVReconciled"],
     ["ACM_airway_fnc_handleAirway", "B106:airwayWakeGuard"],
+    ["ACM_airway_fnc_handleAirwayCollapse", "B125:airwayCollapseWakeClear"],
     ["ACM_core_fnc_getUpPrompt", "B106:getUpLifecycle"],
     ["ACM_core_fnc_addVehiclePatientActions", "B106:vehicleUnloadGuard"],
     ["ACM_disability_fnc_handleFracture", "B106:fracturePainChance"],
