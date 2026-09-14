@@ -2,6 +2,11 @@
    keys are also published for diagnostics/future tuning. */
 params ["_patient","_dt"];
 private _rates = createHashMap;
+if (isNull _patient || {!local _patient}) exitWith {_rates};
+if (!alive _patient) exitWith {
+    [_patient] call ACME_fnc_deadPhysiologyFreeze;
+    _rates
+};
 if (_dt <= 0) exitWith {_rates};
 private _queue = _patient getVariable ["ACME_medicationDriveQueue",[]];
 private _keep = [];

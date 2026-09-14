@@ -2,7 +2,7 @@
    rate is clinically consequential only with Hardcore Medications; normal mode stretches custom toxicity-drive
    inputs to a safe reference window while native dose/kinetics remain unchanged. */
 params ["_patient","_class","_amount","_seconds"];
-if (isNull _patient || {!local _patient} || {_amount <= 0} || {!finite _amount}) exitWith {};
+if (isNull _patient || {!local _patient} || {!alive _patient} || {_amount <= 0} || {!finite _amount}) exitWith {};
 private _base = (_class splitString "_") select 0;
 private _tracked = _base in ["Epinephrine","Norepinephrine","Amiodarone","CalciumChloride","CalciumGluconate","Magnesium","Lidocaine","Esmolol"]
     || {_base in (missionNamespace getVariable ["ACME_infusion_pk",createHashMap])};

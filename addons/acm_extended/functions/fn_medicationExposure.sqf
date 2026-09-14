@@ -1,7 +1,7 @@
 /* B121 admitted exposure only. Hardcore Medications gates manual push-rate consequences; infusion-rate models
    remain active because their physical flow rate is part of the infusion system itself. */
 params ["_patient","_class","_amount","_iv","_reference",["_context",[]]];
-if (isNull _patient || {!local _patient} || {_amount <= 0}) exitWith {};
+if (isNull _patient || {!local _patient} || {!alive _patient} || {_amount <= 0}) exitWith {};
 private _source = _context param [3,if (missionNamespace getVariable ["ACME_vesicant_infusionDelivery",false]) then {"infusion"} else {"bolus"}];
 private _hcMed = missionNamespace getVariable ["ACME_hcEff_medications",false];
 private _totals = _patient getVariable ["ACME_medicationAdmitted",createHashMap];

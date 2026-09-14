@@ -2,7 +2,7 @@
    medication history remains the therapeutic source of truth; these short-lived loads only represent the sharper
    hemodynamic/respiratory peak that is absent from a slow push. GAME calibration, not clinical dosing guidance. */
 params ["_patient","_class","_amount","_reference",["_context",[],[[]]]];
-if (isNull _patient || {!local _patient} || {!(_context isEqualType [])} || {!(missionNamespace getVariable ["ACME_hcEff_medications",false])}) exitWith {};
+if (isNull _patient || {!local _patient} || {!alive _patient} || {!(_context isEqualType [])} || {!(missionNamespace getVariable ["ACME_hcEff_medications",false])}) exitWith {};
 private _source = _context param [3,"bolus",[""]];
 if (_source == "infusion") exitWith {};
 private _seconds = (_context param [2,5,[0]]) max 0.05;

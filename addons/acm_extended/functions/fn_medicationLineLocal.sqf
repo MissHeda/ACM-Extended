@@ -26,6 +26,16 @@ if ((_doses findIf {!(_x isEqualType []) || {count _x < 4} || {!((_x select 1) i
     || {!([_x select 0,_x select 2,true,_x param [5,false]] call ACME_fnc_medicationRouteAllowed)}}) >= 0) exitWith {[false,"unsupported component"] call _reply};
 private _iv = _operation == "flush" || {(_doses findIf {_x select 2}) >= 0};
 if (_iv && {!(_identity isEqualTo ([_patient,_bodyPart,_site] call ACME_fnc_medicationLineIdentity)) || {_identity isEqualTo []}}) exitWith {[false,"catheter removed or replaced"] call _reply};
+// B123: all treatment actions remain callable on corpses, but a truly dead patient has no medication physiology
+// to evolve. Acknowledge the transaction so provider inventory/syringe accounting completes, then stop here.
+// Do not add ACE medication records, line-rate queues, sedation state, IO pain, saline physiology or active-patient
+// enrollment. The local receipt is enough for an in-owner duplicate and avoids another replicated corpse ledger.
+if (!alive _patient) exitWith {
+    _receipts set [_id, [true, "postmortem: no physiology"]];
+    _patient setVariable ["ACME_medicationReceiptsB14", _receipts, false];
+    ["ACME_medicationAck", [_medic,_id,true,"postmortem: no physiology"], _medic] call CBA_fnc_targetEvent;
+    true
+};
 private _pending = _patient getVariable ["ACME_pendingFlush",[]];
 private _deliver = [];
 if (_operation == "flush") then {

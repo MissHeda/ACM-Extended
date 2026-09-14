@@ -19,7 +19,12 @@ if ((_patient getVariable ["ACME_AAJT_inguinal", false]) && {(_patient getVariab
 private _headState = (_patient getVariable ["ACME_headElevated", false])
     || {_patient getVariable ["ACME_headElev_vestRemoved", false]}
     || {(_patient getVariable ["ACME_headElev_propVest", ""]) != ""};
-if (!alive _patient) exitWith {if (_headState) then {[_patient] call ACME_fnc_headElevDeathRelease;};};
+if (!alive _patient) exitWith {
+    [_patient] call ACME_fnc_deadPhysiologyFreeze;
+    if (_headState) then {[_patient] call ACME_fnc_headElevDeathRelease;};
+};
+// Same-object recovery/debug resurrection must be able to arm a future death freeze again.
+_patient setVariable ["ACME_deadPhysiologyFrozenLocal", false, false];
 if (_patient getVariable ["ACME_headElevated", false]) then {[_patient] call ACME_fnc_headElevWatch;};
 {
     _x params ["_listName", "_flag"];

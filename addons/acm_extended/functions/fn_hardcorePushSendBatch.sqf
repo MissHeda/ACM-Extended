@@ -12,6 +12,17 @@ if (!_force && {_elapsed < (missionNamespace getVariable ["ACME_hcMed_pushBatchS
 private _medic = _job getOrDefault ["medic",objNull];
 private _patient = _job getOrDefault ["patient",objNull];
 if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
+// B123: keep the provider-facing one-handed plunger transaction usable on a corpse, but once the casualty is
+// engine-dead there is no physiology to update. Consume the already-moved syringe volume locally and discard the
+// physiology delta instead of generating medication requests, receipts, sedation/rate queues and ACK traffic.
+if (!alive _patient) exitWith {
+    _job set ["unsentDelta", [0,0,[]]];
+    _job set ["batchElapsed", 0];
+    _job set ["lastSend", diag_tickTime];
+    _job set ["postmortemNoPhysiology", true];
+    missionNamespace setVariable ["ACME_HCMedPushJob", _job];
+    true
+};
 private _body = _job getOrDefault ["bodyPart","body"];
 private _site = _job getOrDefault ["site",-2];
 private _virtual = _job getOrDefault ["virtual",false];
