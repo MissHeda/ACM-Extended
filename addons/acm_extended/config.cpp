@@ -2039,6 +2039,8 @@ class CfgFunctions {
             class getSalineVolumeFromItem {};
             class handleInfusions {};
             class updateTransfusionControls {};
+            class updateTransfusionAccessHotspots {};
+            class selectTransfusionAccess {};
             class updateEJTransfusionMenu {};
             class selectEJTransfusionSite {};
             class adjustDripRate {};

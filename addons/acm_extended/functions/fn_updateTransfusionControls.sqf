@@ -93,7 +93,7 @@ private _ctrlMove = _display displayCtrl 86007;
 private _ctrlRemove = _display displayCtrl 86008;
 private _ctrlPullBag = _display displayCtrl 86146;
 
-call ACME_fnc_updateEJTransfusionMenu;
+call ACME_fnc_updateTransfusionAccessHotspots;
 
 // the master gate for every bag and transfusion action button. an action that operates on a hung bag, which
 // covers pull bag, hang bag, infuse, spike and add, y tubing, flush, prep, give, inject, the native move and
@@ -235,12 +235,14 @@ private _uiX = safeZoneX + ((safeZoneW - _uiW) / 2);
 
 private _rightX = _uiX + (_uiW / 2) + (_uiW / 7.75);
 private _rightY = safeZoneY + (safeZoneH / 2) - (safeZoneH / 6);
-private _rightW = _uiW / 8.5;
-private _rightH = safeZoneH / 2.5;
+private _rightW = _uiW / 5.9;
+private _rightH = safeZoneH * 0.62;
 
 if (_rightBase isNotEqualTo []) then {
     _rightBase params ["_rx", "_ry", "_rw", "_rh"];
+    _rightX = _rx;
     _rightY = _ry;
+    _rightW = _rw;
     _rightH = _rh;
 };
 
@@ -800,9 +802,9 @@ if (!isNull _ctrlRateUp) then {_ctrlRateUp ctrlShow false;};
 if (!isNull _ctrlRateText) then {
     // attached flush to the bottom edge of ACM's transfusion window. on menubackground, x is szx plus szw/4, w is
     // szw/2, and the bottom is szy plus 0.75 times szh.
-    private _winX = _uiX + (_uiW / 4);
-    private _winW = _uiW / 2;
-    private _winBottom = safeZoneY + (safeZoneH * 0.75);
+    private _winX = _uiX + (_uiW / 2) - (_uiW * 0.35);
+    private _winW = _uiW * 0.70;
+    private _winBottom = safeZoneY + (safeZoneH * 0.865);
     _ctrlRateText ctrlSetPosition [_winX, _winBottom, _winW, _buttonH * 1.25];
     _ctrlRateText ctrlCommit 0;
     _ctrlRateText ctrlShow _hasInfusion;
