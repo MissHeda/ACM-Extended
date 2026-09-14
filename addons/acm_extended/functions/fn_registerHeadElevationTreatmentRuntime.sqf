@@ -14,7 +14,9 @@
     missionNamespace setVariable ["ACME_headElev_treatmentSerial", _serial];
     private _id = format ["%1:%2:%3", clientOwner, netId _medic, _serial];
     private _token = _patient getVariable ["ACME_headElev_poseToken", ""];
-    private _keepVestOut = toLowerANSI _classname == "usestethoscope";
+    // Gear ownership is independent now. Every temporary flat maneuver preserves the Semi-Fowler support carrier
+    // out of the way, while exact chest-access classes use the separate backpack-vest lease runtime.
+    private _keepVestOut = false;
     _medic setVariable ["ACME_headElev_treatment", [_patient, _classname, _id, _token, _keepVestOut]];
     [_patient, _medic, _id, true, _token, _keepVestOut] call ACME_fnc_headElevTreatmentEvent;
 }] call CBA_fnc_addEventHandler;

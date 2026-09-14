@@ -23,6 +23,7 @@ switch (_operation) do {
     case "headElevHoldRelease": {_args call ACME_fnc_headElevHoldRelease;};
     case "headElevHoldStop": {_args call ACME_fnc_headElevHoldStop;};
     case "headElevTreatment": {_args call ACME_fnc_headElevTreatmentEvent;};
+    case "chestAccessVestEvent": {_args call ACME_fnc_chestAccessVestEvent;};
     case "headElevTilt": {_args call ACME_fnc_headElevApplyTilt;};
     case "headElevCollision": {_args call ACME_fnc_headElevCollision;};
     case "headElevSuspend": {_args call ACME_fnc_headElevSuspend;};

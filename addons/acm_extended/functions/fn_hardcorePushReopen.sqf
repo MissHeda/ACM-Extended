@@ -15,6 +15,16 @@ uiNamespace setVariable ["ACME_SK_BodyPart",_job getOrDefault ["bodyPart","body"
 uiNamespace setVariable ["ACME_SK_OpenCarouselId",_stable];
 uiNamespace setVariable ["ACME_SK_suppressReturn",true];
 ace_medical_gui_pendingReopen = false;
+
+// If the clickable syringe is being pressed while the Windows-key ACE cursor menu is open, close that menu and
+// neutralize its pending selection first. Otherwise key-up could execute the action that happened to be under the
+// cursor after the Narc Box has already opened. The medication PFH is untouched.
+private _interaction = findDisplay 91919;
+if (!isNull _interaction) then {
+    if (!isNil "ace_interact_menu_actionSelected") then {ace_interact_menu_actionSelected = false;};
+    if (!isNil "ace_interact_menu_openedMenuType") then {ace_interact_menu_openedMenuType = -1;};
+    _interaction closeDisplay 2;
+};
 private _med = findDisplay 38580;
 if (!isNull _med) then {_med closeDisplay 2;};
 [_size,_patient,_job getOrDefault ["bodyPart","body"]] call ACME_fnc_skOpenDraw;

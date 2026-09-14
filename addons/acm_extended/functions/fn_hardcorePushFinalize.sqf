@@ -7,6 +7,9 @@ private _unsent = _job getOrDefault ["unsentDelta",[0,0,[]]];
 if ((_unsent param [0,0]) + (_unsent param [1,0]) > 0.000001) exitWith {false};
 private _medic = _job getOrDefault ["medic",objNull];
 private _stable = _job getOrDefault ["stableId",""];
+private _completed = (_job getOrDefault ["stopReason",""]) == "complete";
+private _pushLabel = _job getOrDefault ["pushLabel",_job getOrDefault ["med","Medication"]];
+if (_pushLabel == "") then {_pushLabel = "Medication";};
 if (isNull _medic || {!local _medic}) exitWith {false};
 private _store = +(_medic getVariable ["ACME_narcStore",[]]);
 private _idx = _store findIf {(_x param [11,"",[""]]) == _stable};
@@ -39,6 +42,9 @@ private _h = missionNamespace getVariable ["ACME_HCMedPushPFH",-1];
 if (_h >= 0) then {[_h] call CBA_fnc_removePerFrameHandler;};
 missionNamespace setVariable ["ACME_HCMedPushPFH",-1];
 ["clear"] call ACME_fnc_hardcorePushOverlay;
+if (_completed) then {
+    [format ["%1 pushed successfully.",_pushLabel],3,_medic] call ace_common_fnc_displayTextStructured;
+};
 if (!isNull (findDisplay 84000)) then {
     private _d = findDisplay 84000;
     {private _c=_d displayCtrl _x; if (!isNull _c) then {_c ctrlEnable true;};} forEach [84150,84151,84154,84470,84831];

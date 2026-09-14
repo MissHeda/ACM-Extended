@@ -1742,6 +1742,11 @@ class CfgFunctions {
             class initHardcoreRuntime {};
             class registerTreatmentRollRuntime {};
             class registerHeadElevationTreatmentRuntime {};
+            class registerChestAccessVestRuntime {};
+            class chestAccessVestEvent {};
+            class chestAccessVestAcquire {};
+            class chestAccessVestPark {};
+            class chestAccessVestRestore {};
             class registerMegacodeInteractionRuntime {};
             class registerVentilatorKeybindRuntime {};
             class initMinigameInteractionRuntime {};

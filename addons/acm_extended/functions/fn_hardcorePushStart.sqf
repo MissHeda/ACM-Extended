@@ -67,6 +67,31 @@ if (_kind == "epiMixB12") then {
     private _choice = uiNamespace getVariable ["ACME_SK_EpiDoseChoice",0];
     _target = ([1,2,_total] select ((_choice max 0) min 2)) min _total;
 };
+
+// B122 HUD label: use the actual medication component names, not the syringe tag or internal compound key.
+private _medName = {
+    params ["_m"];
+    private _key = format ["STR_ACM_Circulation_Medication_%1",_m];
+    private _name = localize _key;
+    if (_name == "" || {_name == _key}) then {_name = _m;};
+    _name
+};
+private _pushNames = [];
+{
+    private _source = _x param [0,"",[""]];
+    if (_source != "") then {_pushNames pushBackUnique ([_source] call _medName);};
+} forEach _sourceParts;
+private _pushLabel = _pushNames joinString " + ";
+if (_pushLabel == "") then {_pushLabel = [_med] call _medName;};
+
+// Cache the exact open Narc Box syringe geometry before this display can be closed. The persistent corner overlay
+// reuses these normalized values, which prevents the plunger from separating from the barrel at other resolutions.
+private _nativeRect = _d getVariable ["ACME_SK_CarouselNativeRect",[0,0,safeZoneW*0.02,safeZoneH*0.17]];
+private _nativeH = (_nativeRect param [3,safeZoneH*0.17,[0]]) max 0.0001;
+private _overlayAspect = ((_nativeRect param [2,safeZoneW*0.02,[0]]) / _nativeH) max 0.035 min 0.45;
+private _travel10 = _d getVariable ["ACME_SK_CarouselTravel10",_nativeH*0.195];
+private _overlayTravelNorm = (_travel10 / _nativeH) max 0.02 min 0.40;
+
 private _dur = [_row] call ACME_fnc_medicationSuggestedPushSec;
 private _durCtrl = _d displayCtrl 84831;
 if (!isNull _durCtrl) then {private _raw = ctrlText _durCtrl; if (_raw != "") then {_dur = ((parseNumber _raw) max 1) min 300;};};
@@ -87,7 +112,8 @@ private _session = format ["hcpush:%1:%2:%3",clientOwner,floor(diag_tickTime*100
 private _job = createHashMapFromArray [
     ["medic",ACE_player],["patient",_patient],["bodyPart",toLowerANSI _body],["site",_site],["route","vascular"],
     ["identity",_identity],["stableId",_stable],["size",_size],["med",_med],["kind",_kind],["virtual",_virtual],
-    ["label",_row param [3,"",[""]]],["barrelMarker",_row param [12,"",[""]]],["magClass",_magClass],["magContainer",_magContainer],
+    ["label",_row param [3,"",[""]]],["pushLabel",_pushLabel],["barrelMarker",_row param [12,"",[""]]],
+    ["overlayAspect",_overlayAspect],["overlayTravelNorm",_overlayTravelNorm],["magClass",_magClass],["magContainer",_magContainer],
     ["duration",_dur],["targetMl",_target],["rateMlSec",_target/(_dur max 0.01)],["pushedMl",0],["carryMl",0],
     ["unsentDelta",[0,0,[]]],["batchElapsed",0],["pendingAcks",0],["session",_session],["lastTick",diag_tickTime],
     ["lastSend",diag_tickTime],["nextUi",0],["flowing",true],["stopRequested",false],["finishRequested",false]

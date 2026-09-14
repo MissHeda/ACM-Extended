@@ -315,6 +315,9 @@ call ACME_fnc_registerTreatmentRollRuntime;
 // Phase 34: paired treatment-start/end ownership for head-elevation treatment suspension.
 call ACME_fnc_registerHeadElevationTreatmentRuntime;
 
+// B122: exact-class chest-access vest leases for backpack-supported patients.
+call ACME_fnc_registerChestAccessVestRuntime;
+
 // Phase 34: Megacode laptop control-panel and debug cable-tuner interaction registration.
 call ACME_fnc_registerMegacodeInteractionRuntime;
 

@@ -24,6 +24,7 @@ if (_patient getVariable ["ACME_headElevated", false]) exitWith {
 if (_patient getVariable ["ACME_headElev_vestRemoved", false]) then {
     [_patient] call ACME_fnc_headElevVestRestore;
 };
+[_patient] call ACME_fnc_chestAccessVestRestore;
 if (_patient getVariable ["ACME_headElev_vestRemoved", false]) exitWith {};
 // something has to physically prop the casualty up. a worn backpack does it directly, and if there is no backpack
 // but the casualty is wearing a plate carrier, we strip the carrier, lift them, and wedge it behind the

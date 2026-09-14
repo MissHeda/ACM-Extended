@@ -36,6 +36,8 @@ if (_patient getVariable ["ACME_headElevated", false]) then {
 // same guarantees independently: the carrier back on the body, the prop gone, the helper gone and the flags
 // gone.
 [_patient] call ACME_fnc_headElevVestRestore;
+[_patient, true] call ACME_fnc_chestAccessVestRestore;
+_patient setVariable ["ACME_chestAccess_leases", createHashMap, true];
 private _hePropObj = _patient getVariable ["ACME_headElev_propObj", objNull];
 if (!isNull _hePropObj) then { detach _hePropObj; deleteVehicle _hePropObj; };
 private _heHelper = _patient getVariable ["ACME_headElev_helper", objNull];
