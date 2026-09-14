@@ -57,25 +57,25 @@ private _travelNorm = ((_job getOrDefault ["overlayTravelNorm",0.195]) max 0.02)
 private _sizeRatio = switch (_size) do {case 1:{10.2/10.5}; case 3:{9.83/10.5}; case 5:{10.3/10.5}; default{1};};
 private _frac = ((_remaining / (_size max 0.01)) max 0) min 1;
 
-// Build a compact cluster that is anchored entirely inside the visible safe-zone instead of placing the syringe
-// beneath the text. This avoids lower-edge clipping on very wide displays while retaining a large watchable syringe.
+// B127: stack the horizontal syringe directly above the medication/status bar. The PAA layers stay on a
+// physically-square canvas so rotation cannot stretch them on ultrawide displays. Only the plunger translates;
+// the barrel/backbit remain fixed. The click target is calculated separately around the visible horizontal body.
 private _pxAspect = pixelW / (pixelH max 0.000001);
-private _h = safeZoneH * 0.205;
-private _w = _h * _pxAspect;
-private _travel = _h * _travelNorm * _sizeRatio;
-private _fullH = _h + _travel;
+private _canvasH = safeZoneH * 0.225;
+private _canvasW = _canvasH * _pxAspect;
+private _travelX = _canvasW * _travelNorm * _sizeRatio;
 private _screenPadY = safeZoneH * 0.030;
 private _screenPadX = _screenPadY * _pxAspect;
-private _gap = safeZoneH * 0.015 * _pxAspect;
+private _gapY = safeZoneH * 0.009;
 private _tw = safeZoneH * 0.365 * _pxAspect;
 private _th = safeZoneH * 0.066;
 private _right = safeZoneX + safeZoneW - _screenPadX;
 private _bottom = safeZoneY + safeZoneH - _screenPadY;
 private _tx = _right - _tw;
 private _ty = _bottom - _th;
-private _x = _tx - _gap - _w;
-private _y = _bottom - _fullH;
-
+private _cx = _tx + (_tw * 0.5);
+private _x = _cx - (_canvasW * 0.5);
+private _y = _ty - _gapY - _canvasH;
 private _rate = (_job getOrDefault ["rateMlSec",0]) max 0;
 private _totalSec = ceil ((_job getOrDefault ["duration",0]) max 0);
 private _targetLeft = ((_job getOrDefault ["targetMl",0]) - (_job getOrDefault ["pushedMl",0])) max 0;
@@ -101,9 +101,14 @@ if (!isNull _hud) then {
     _pl ctrlSetText _plTex;
     _bar ctrlSetText _barTex;
     {_x ctrlSetTextColor [1,1,1,1]; _x ctrlSetFade 0;} forEach [_back,_pl,_bar];
-    _back ctrlSetPosition [_x,_y,_w,_h];
-    _pl ctrlSetPosition [_x,_y + (_travel*_frac),_w,_h];
-    _bar ctrlSetPosition [_x,_y,_w,_h];
+    _back ctrlSetPosition [_x,_y,_canvasW,_canvasH];
+    _pl ctrlSetPosition [_x - (_travelX*_frac),_y,_canvasW,_canvasH];
+    _bar ctrlSetPosition [_x,_y,_canvasW,_canvasH];
+    // Rotate all three layers together around their own centers. 90 degrees makes the syringe horizontal;
+    // the plunger's X translation mirrors the former vertical travel after rotation.
+    _back ctrlSetAngle [90,0.5,0.5];
+    _pl ctrlSetAngle [90,0.5,0.5];
+    _bar ctrlSetAngle [90,0.5,0.5];
 
     _panel ctrlSetPosition [_tx,_ty,_tw,_th];
     _panel ctrlSetBackgroundColor [0.02,0.03,0.06,0.90];
@@ -117,9 +122,19 @@ if (!isNull _hud) then {
 };
 
 // Clickability belongs to whichever UI display currently owns the mouse. The title resource is presentation-only.
-private _hitXPad = (_w*0.28) max (8*pixelW);
-private _hitYPad = (_h*0.05) max (6*pixelH);
-private _hitPos = [_x-_hitXPad,_y-_hitYPad,_w+2*_hitXPad,_fullH+2*_hitYPad];
+// The syringe art itself has generous transparent margins inside its square texture, so keep the hit target to a
+// slim horizontal strip around the visible syringe rather than using the entire square canvas. This puts the
+// transparent button behind the syringe with only modest padding around its visible silhouette.
+private _hitW = _canvasW * 0.86;
+private _hitH = _canvasH * 0.30;
+private _hitXPad = (8*pixelW) max (_canvasW*0.018);
+private _hitYPad = (5*pixelH) max (_canvasH*0.018);
+private _hitPos = [
+    _cx - (_hitW*0.5) - _hitXPad,
+    _y + (_canvasH*0.5) - (_hitH*0.5) - _hitYPad,
+    _hitW + (2*_hitXPad),
+    _hitH + (2*_hitYPad)
+];
 {
     private _disp = findDisplay _x;
     if (!isNull _disp) then {
