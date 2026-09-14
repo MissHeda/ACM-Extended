@@ -55,7 +55,7 @@ if (GVAR(TransfusionMenu_Selected_Inventory) == 2) then {
     _target removeItem _itemClassname;
 };
 
-private _itemClassNameString = getText (configFile >> "CfgWeapons" >> _itemClassName >> "displayName");
+private _itemClassNameString = getText (configFile >> "CfgWeapons" >> _itemClassname >> "displayName");
 
 [[_medic, _patient, _target, _itemClassname, _actionClassname, _vehicle], {
     params ["_medic", "_patient", "_target", "_itemClassname", "_actionClassname"];

@@ -165,10 +165,14 @@ private _fnc_addToInventoryPanel = {
             _name = format [C_LLSTRING(FreshBloodBag_Short), (format ["%1 (%2ml) [%3]", _bloodTypeString, _volume, _id])];
         } else {
             // Registry metadata can trail an inventory transfer on MP/JIP. Keep the real bag visible while it catches up.
-            _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
+            private _shortName = getText (_config >> "shortName");
+            _name = if (_shortName != "") then {_shortName} else {getText (_config >> "displayName")};
+            if (_name == "") then {_name = _entry;};
         };
     } else {
-        _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
+        private _shortName = getText (_config >> "shortName");
+        _name = if (_shortName != "") then {_shortName} else {getText (_config >> "displayName")};
+        if (_name == "") then {_name = _entry;};
     };
 
     private _i = _ctrlInventoryPanel lbAdd _name;

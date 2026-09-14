@@ -58,7 +58,7 @@ _ctrlL ctrlCommit 0;
 _ctrlR ctrlCommit 0;
 
 private _userScale = missionNamespace getVariable ["ACME_debug_scale", 1];
-private _scale = (((_userScale max 0.50) min 1.15) * 0.58) max 0.43 min 0.66;
+private _scale = (((_userScale max 0.50) min 1.15) * 0.54) max 0.39 min 0.62;
 
 private _cTitle = "#D9A441";
 private _cSect  = "#F0E7D2";
@@ -79,13 +79,40 @@ private _safe = {
 };
 private _yn = {params ["_v"]; if (_v) then {"yes"} else {"no"};};
 private _ynCol = {params ["_v", ["_badWhenTrue", false]]; if (_badWhenTrue) exitWith {if (_v) then {_cBad} else {_cGood}}; if (_v) then {_cGood} else {_cMute};};
+private _padRight = {
+    params ["_s", "_w"];
+    if !(_s isEqualType "") then {_s = str _s;};
+    while {count _s < _w} do {_s = _s + " ";};
+    if ((count _s) > _w) then {_s = _s select [0, _w];};
+    _s
+};
+private _alignValue = {
+    params ["_v", ["_w", 12]];
+    private _s = if (_v isEqualType "") then {_v} else {str _v};
+    // Match the original debug layout: right-align the integer/whole-token side so ones, tens and hundreds share
+    // one vertical column. Decimal/unit suffixes then trail to the right inside a constant-width value field.
+    private _integerW = (_w - 4) max 1;
+    private _dot = _s find ".";
+    private _integer = if (_dot > -1) then {_s select [0, _dot]} else {_s};
+    private _suffix = if (_dot > -1) then {_s select [_dot]} else {""};
+    while {count _integer < _integerW} do {_integer = " " + _integer;};
+    private _txt = _integer + _suffix;
+    while {count _txt < _w} do {_txt = _txt + " ";};
+    _txt
+};
 private _pair = {
     params ["_a", "_av", "_ac", "_b", "_bv", "_bc"];
-    format ["<t color='%7'>%1</t> <t color='%3'>%2</t>   <t color='%7'>%4</t> <t color='%6'>%5</t>", _a, [_av] call _safe, _ac, _b, [_bv] call _safe, _bc, _cLabel]
+    private _aTxt = [_a, 7] call _padRight;
+    private _bTxt = [_b, 7] call _padRight;
+    private _avTxt = [([_av, 12] call _alignValue)] call _safe;
+    private _bvTxt = [([_bv, 12] call _alignValue)] call _safe;
+    format ["<t color='%7'>%1</t> <t color='%3'>%2</t>  <t color='%7'>%4</t> <t color='%6'>%5</t>", _aTxt, _avTxt, _ac, _bTxt, _bvTxt, _bc, _cLabel]
 };
 private _one = {
     params ["_a", "_av", "_ac"];
-    format ["<t color='%4'>%1</t> <t color='%3'>%2</t>", _a, [_av] call _safe, _ac, _cLabel]
+    private _aTxt = [_a, 7] call _padRight;
+    private _avTxt = [([_av, 12] call _alignValue)] call _safe;
+    format ["<t color='%4'>%1</t> <t color='%3'>%2</t>", _aTxt, _avTxt, _ac, _cLabel]
 };
 private _sect = {params ["_s"]; format ["<t color='%1'>%2</t>", _cSect, _s];};
 private _arr = {params ["_name"]; private _v = missionNamespace getVariable [_name, []]; if (_v isEqualType []) then {_v} else {[]};};
@@ -355,6 +382,6 @@ private _render = {
 [_scale] call _render;
 private _need = (ctrlTextHeight _ctrlL) max (ctrlTextHeight _ctrlR);
 if (_need > _h) then {
-    private _fit = ((_scale * (((_h * 0.985) / _need) min 1)) max 0.36) min _scale;
+    private _fit = ((_scale * (((_h * 0.985) / _need) min 1)) max 0.34) min _scale;
     [_fit] call _render;
 };

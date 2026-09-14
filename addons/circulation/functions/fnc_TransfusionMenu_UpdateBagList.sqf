@@ -59,10 +59,14 @@ if !(_update) then {
                 private _bloodTypeString = [_bloodType, 1] call FUNC(convertBloodType);
                 _name = format [C_LLSTRING(FreshBloodBag_Short), (format ["%1 (%2ml) [%3]", _bloodTypeString, _volume, _id])];
             } else {
-                _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
+                private _shortName = getText (_config >> "shortName");
+                _name = if (_shortName != "") then {_shortName} else {getText (_config >> "displayName")};
+                if (_name == "") then {_name = _itemClassName;};
             };
         } else {
-            _name = [(getText (_config >> "displayName")), (getText (_config >> "shortName"))] select (isText (_config >> "shortName"));
+            private _shortName = getText (_config >> "shortName");
+            _name = if (_shortName != "") then {_shortName} else {getText (_config >> "displayName")};
+            if (_name == "") then {_name = _itemClassName;};
         };
         private _i = _ctrlBagPanel lbAdd _name;  
         _ctrlBagPanel lbSetPicture [_i, getText (_config >> "picture")];
