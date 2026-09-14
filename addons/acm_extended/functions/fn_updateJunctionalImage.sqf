@@ -89,7 +89,9 @@ private _tqTop = [
     } else {
         _top ctrlSetPosition (ctrlPosition _source);
         _top ctrlSetText (ctrlText _source);
-        _top ctrlSetTextColor [1,1,1,1];
+        // Match ACE's native body-map tourniquet tint exactly. B111's top-layer copy used white, which made
+        // the overlay stack correct but visually regressed the tourniquets.
+        _top ctrlSetTextColor [0, 0, 0.8, 1];
         _top ctrlCommit 0;
         _top ctrlShow (ctrlShown _source);
     };

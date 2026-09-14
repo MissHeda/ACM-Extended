@@ -360,7 +360,7 @@
 // read the same live setting; no startup write silently overrides a server's customization.
 [
     "ACME_ket_induceThreshold", "SLIDER",
-    ["Ketamine: induction threshold", "Legacy IV-equivalent ketamine load for AI induction. Default 7 equals approximately 1.75 mg/kg IV or 3 mg/kg IM at full modeled effect, without other sedatives. Game tuning, not a clinical dosing tool. Propofol and midazolam contribute through a shared normalized hypnosis model; small analgesic doses alone do not cause induction."],
+    ["Ketamine: induction threshold", "Legacy IV-equivalent ketamine load for AI induction. Default 7 equals approximately 1.75 mg/kg IV or 4.4 mg/kg IM at full modeled effect, without other sedatives. Game tuning, not a clinical dosing tool. Propofol and midazolam contribute through a shared normalized hypnosis model; small analgesic doses alone do not cause induction."],
     ["ACM Extended: Airway", "Ketamine sedation"],
     [2, 25, 7, 1],
     1,

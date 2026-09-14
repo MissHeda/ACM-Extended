@@ -152,12 +152,28 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
     private _dpSamePatient = (_medic getVariable ["ACME_DP_Active", false])
         && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient};
 
-    // Adjust animation based on the provider's visible treatment state, not the stale selected weapon under DP.
-    private _wpn = if (_dpSamePatient) then {
+    // B112: animation state is the visual truth. Arma can keep currentWeapon pointed at the rifle for a short time
+    // after ACME has already transitioned into a Wnon/Snon medical pose. If native treatment uses that stale weapon
+    // value, its generated end pose redraws the rifle as soon as the treatment finishes. An explicitly Wnon treatment
+    // (AAJT-S is one example) is also unambiguously an empty-hands treatment even if currentWeapon has not settled.
+    private _providerAnimState = toLowerANSI animationState _medic;
+    private _visuallyUnarmed = ((_providerAnimState find "wnon") >= 0) && {((_providerAnimState find "snon") >= 0)};
+    private _requestedAnimState = toLowerANSI _medicAnim;
+    private _treatmentExplicitUnarmed = (_medicAnim != "") && {(_requestedAnimState find "wnon") >= 0};
+
+    private _wpn = if (_dpSamePatient || {_visuallyUnarmed} || {_treatmentExplicitUnarmed}) then {
         "non"
     } else {
         ["non", "rfl", "lnr", "pst"] param [["", primaryWeapon _medic, secondaryWeapon _medic, handgunWeapon _medic] find currentWeapon _medic, "non"]
     };
+
+    // Keep the engine's selected-weapon state consistent with the authored Wnon theatre. This happens only after the
+    // provider is already visually unarmed / the treatment explicitly requests Wnon, so it adds no second holster
+    // animation. It simply prevents the engine from restoring the stale rifle selection at the end of the move.
+    if (_wpn == "non" && {local _medic} && {currentWeapon _medic != ""}) then {
+        _medic selectWeapon "";
+    };
+
     _medicAnim = [_medicAnim, "[wpn]", _wpn] call CBA_fnc_replace;
 
     // This animation is missing, use alternative
@@ -177,7 +193,7 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
         _animDuration = _animDuration + 0.5;
 
         // Fix problems with lowered weapon transitions by raising the weapon first
-        if (!_dpSamePatient && {currentWeapon _medic != ""} && {_medicAnim != ""}) then {
+        if (_wpn != "non" && {!_dpSamePatient} && {currentWeapon _medic != ""} && {_medicAnim != ""}) then {
             _medic action ["WeaponInHand", _medic];
         };
     };
