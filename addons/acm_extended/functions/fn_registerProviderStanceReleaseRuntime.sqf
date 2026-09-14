@@ -33,6 +33,14 @@
 
         private _classKey = toLowerANSI _classname;
         private _headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"];
+        // CheckPulse is intentionally a near-instant ACE treatment whose success callback opens ACME's longer-lived
+        // pulse/watch minigame. ACE emits ace_treatmentSucceded only AFTER that callback returns. If the generic DP
+        // completion path clears TreatmentBusy and reopens the medical menu here, it immediately destroys the pulse
+        // minigame that just started. Keep DP animation-passive until fnc_feelPulse performs its real cleanup.
+        private _pulseStillOwnsProvider = (_classKey == "checkpulse")
+            && {uiNamespace getVariable ["ACME_PulseCheckActive", false]}
+            && {(uiNamespace getVariable ["ACME_PulseCheckMedic", objNull]) isEqualTo _medic}
+            && {(uiNamespace getVariable ["ACME_PulseCheckPatient", objNull]) isEqualTo _patient};
 
         // A completed/failed treatment gets a fresh quiet window before Direct Pressure is allowed to visibly resume.
         // Head positioning is the exception: its provider sequence continues after the ACE event, so a successful
@@ -45,7 +53,7 @@
                 _medic setVariable ["ACME_DP_Paused", false, false];
                 _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
             };
-            if (!_headStillActive) then {
+            if (!_headStillActive && {!_pulseStillOwnsProvider}) then {
                 _medic setVariable ["ACME_DP_TreatmentBusy", false, false];
                 _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
                 _medic setVariable ["ACME_DP_InPose", false];

@@ -94,7 +94,19 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
         uiNamespace setVariable ["ACME_PulseCheckMedic",objNull];
         uiNamespace setVariable ["ACME_PulseCheckPatient",objNull];
         uiNamespace setVariable ["ACME_PulseCheckStartedAt",-1];
+        // End the pulse/stethoscope pose before handing animation ownership back to Direct Pressure. CheckPulse's
+        // ACE success event deliberately leaves ACME_DP_TreatmentBusy set while this minigame is alive. Clearing it
+        // any earlier lets the DP PFH reassert its hold over the pulse pose and makes Feel Pulse instantly disappear.
         [_medic,"pulse",_epoch] call ACME_fnc_treatmentPoseStop;
+        if (local _medic
+            && {_medic getVariable ["ACME_DP_Active", false]}
+            && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
+            _medic setVariable ["ACME_DP_TreatmentBusy", false, false];
+            _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+            _medic setVariable ["ACME_DP_InPose", false, false];
+            _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+            _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+        };
         if (_escaped) then {[_patient,"examine"] call ACME_fnc_reopenMedicalMenu;};
     };
     private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];

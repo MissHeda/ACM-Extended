@@ -83,7 +83,18 @@ _medic setVariable ["ACME_treatmentPoseEpoch", _epoch, true];
 _medic setVariable ["ACME_treatmentPoseEpisode", [_epoch, true], true];
 private _exclusion = format ["ACME_treatmentPose_%1_%2", netId _medic, _epoch];
 private _actionStarted = CBA_missionTime;
-private _prepDelay = [_medic] call ACME_fnc_medicAnimationPrep;
+// B101: when another intervention takes animation ownership from an active Direct Pressure hold, the provider is
+// already in ACME's authored empty-hands medical theatre. currentWeapon may still report the selected rifle even
+// though the visible DP state has weapons disabled. Do not run medicAnimationPrep again in that handoff or Arma
+// plays a pointless weapon-away transition between DP and the incoming treatment pose.
+private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
+    && {(_medic getVariable ["ACME_DP_TreatmentBusy", false])};
+private _prepDelay = if (_dpPoseHandoff) then {
+    _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime], false];
+    0
+} else {
+    [_medic] call ACME_fnc_medicAnimationPrep
+};
 if !(_prepDelay isEqualType 0) then {_prepDelay = 0;};
 private _prepUntil = _actionStarted + (_prepDelay max 0);
 
