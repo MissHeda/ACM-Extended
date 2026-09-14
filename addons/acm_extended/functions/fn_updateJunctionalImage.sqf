@@ -68,6 +68,33 @@ private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [
     _wrapC  ctrlShow (_state == "wrapped");
 } forEach _limbs;
 
+// Standard tourniquet controls are config-created before these runtime junctional wraps, so the wrap would
+// otherwise render on top of a tourniquet. Mirror the four native tourniquet pictures into a dedicated top layer.
+// The source control remains untouched for ACE/ACM state logic; this copy is presentation-only.
+private _tqTop = [
+    [6035, 7290014],
+    [6040, 7290015],
+    [6045, 7290016],
+    [6050, 7290017]
+];
+{
+    _x params ["_sourceIdc", "_topIdc"];
+    private _source = _ctrlGroup controlsGroupCtrl _sourceIdc;
+    private _top = _ctrlGroup controlsGroupCtrl _topIdc;
+    if (isNull _top) then {
+        _top = (ctrlParent _ctrlGroup) ctrlCreate ["RscPicture", _topIdc, _ctrlGroup];
+    };
+    if (isNull _source) then {
+        _top ctrlShow false;
+    } else {
+        _top ctrlSetPosition (ctrlPosition _source);
+        _top ctrlSetText (ctrlText _source);
+        _top ctrlSetTextColor [1,1,1,1];
+        _top ctrlCommit 0;
+        _top ctrlShow (ctrlShown _source);
+    };
+} forEach _tqTop;
+
 // the NAR AAJT-s overlays.
 // they are created after the wound and wrap controls, and being runtime controls they sit above all of ACM's config
 // icons, the iv, io and tourniquet and the AED pads, so the device always sits on top, as required. the inguinal

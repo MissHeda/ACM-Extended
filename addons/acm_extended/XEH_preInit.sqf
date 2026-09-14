@@ -16,6 +16,12 @@ private _cDbg  = "ACM Extended: Debug";  // the debug overlay.
 private _cVent = "ACM Extended: Ventilator";
 private _cAir  = "ACM Extended: Airway";
 
+
+// Keep ACME's patient-state dump next to ACE's own pause-menu diagnostics. This is intentionally client-only.
+if (hasInterface) then {
+    [["ACME DEBUG TO CLIPBOARD", "Copies the current ACME/ACM patient state, physiology, and raw medical variables to the clipboard and RPT."], "ACME_MainMenuHelperDumpDebug"] call CBA_fnc_addPauseMenuOption;
+};
+
 private _settings = [
     ["ACME_ptx_stableSec", "SLIDER",
         ["Pneumothorax stability interval", "Seconds of controlled air accumulation before the internal model records stability. Does not display a provider notification."],

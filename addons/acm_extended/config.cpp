@@ -13,6 +13,13 @@ class Extended_PostInit_EventHandlers {
     };
 };
 
+// Pause-menu bridge for ACME's patient-focused diagnostic dump. CBA opens this empty display, the onLoad
+// handler writes the snapshot, then closes immediately, mirroring ACE's own Debug To Clipboard option.
+class RscDisplayEmpty;
+class ACME_MainMenuHelperDumpDebug: RscDisplayEmpty {
+    onLoad = "[] call ACME_fnc_debugDumpToClipboard; (_this select 0) closeDisplay 0;";
+};
+
 // the hang bag uses a dedicated copy of the crew-aid loop with forced freelook.
 // ACE uses the same cfgmoves flags for its seated states. the body stays fixed and the head and camera stay
 // free.
@@ -2399,6 +2406,7 @@ class CfgFunctions {
             class remove18g {};
             class syncPremixedBags {};
             class debugMenu {};
+            class debugDumpToClipboard {};
             class debugEnabled {};
             class autoBPCondition {};
             class toggleAutoBP {};

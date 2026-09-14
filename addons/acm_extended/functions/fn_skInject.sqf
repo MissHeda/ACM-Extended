@@ -414,7 +414,15 @@ private _routeIM = _display ctrlCreate ["ACME_SK_PulseButton", 84154];
 _routeIM ctrlSetPosition [_tx + _routeHalf + _routeGap, _routeY, _routeHalf, _th];
 _routeIM ctrlSetText "IM";
 _routeIM ctrlSetTooltip "Use an intramuscular injection site";
-_routeIM ctrlAddEventHandler ["ButtonClick", {uiNamespace setVariable ["ACME_SK_Route", "im"]; uiNamespace setVariable ["ACME_SK_PendingInjection",[]]; call ACME_fnc_skBuildHotspots; call ACME_fnc_skBodyActionRender;}];
+_routeIM ctrlAddEventHandler ["ButtonClick", {
+    // IM cannot use a saline-flush route. Clear any stale flush selection before changing route so a previous
+    // preparation session cannot immediately force the body map back to vascular mode.
+    uiNamespace setVariable ["ACME_SK_SelFlush", ""];
+    uiNamespace setVariable ["ACME_SK_Route", "im"];
+    uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
+    call ACME_fnc_skBuildHotspots;
+    call ACME_fnc_skBodyActionRender;
+}];
 _routeIM ctrlShow false;
 _routeIM ctrlCommit 0;
 
