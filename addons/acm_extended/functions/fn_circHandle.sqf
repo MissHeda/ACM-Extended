@@ -1353,7 +1353,11 @@ private _getMedEffect = {
             // injury into severity only, and fn_tbihandle then converts that into ICP through the normal capped,
             // time-gated pathway.
             private _ichSeverityAdd = 0.05 * _ichRate * (_overshoot / 20) * _dt;
-            _tbi set ["severity", ((_tbi getOrDefault ["severity", 0]) + _ichSeverityAdd) min 1];
+            private _newTbiSeverity = ((_tbi getOrDefault ["severity", 0]) + _ichSeverityAdd) min 1;
+            _tbi set ["severity", _newTbiSeverity];
+            // This is a new intracranial structural insult, not merely a transient physiology penalty. Preserve it
+            // in the high-water structural grade while still allowing the acute burden itself to recover later.
+            _tbi set ["structuralSeverity", (_tbi getOrDefault ["structuralSeverity", _newTbiSeverity]) max _newTbiSeverity];
             _tbi set ["ichSecondarySeverityAdd", _ichSeverityAdd];
             [_patient, _tbi] call ACME_fnc_tbiStateCommit;
         };

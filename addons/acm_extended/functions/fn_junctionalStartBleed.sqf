@@ -134,6 +134,16 @@ private _handle = [{
             if !(_vaso isEqualType 0) then { _vaso = 0 };
             private _able = (missionNamespace getVariable ["ACME_junctionalCompFloorFrac", 0.4])
                 + ((1 - (missionNamespace getVariable ["ACME_junctionalCompFloorFrac", 0.4])) * ((_vaso / 50) max 0 min 1));
+            // Severe TBI/brainstem autonomic failure reduces the separate transient spasm/plug response. Signed TBI
+            // tone is intentionally not applied here because total peripheral resistance below already contains it.
+            if (_unit getVariable ["ACME_tbi_HasTBI", false]) then {
+                private _tbiState = _unit getVariable ["ACME_tbi_State", createHashMap];
+                if ((count _tbiState) > 0) then {
+                    private _autoInt = (_tbiState getOrDefault ["autonomicIntegrity", 1]) max 0 min 1;
+                    private _minAbility = missionNamespace getVariable ["ACME_tbi_autonomicJuncMinAbility", 0.25];
+                    _able = _able * (_minAbility + ((1 - _minAbility) * _autoInt));
+                };
+            };
             private _depth = (missionNamespace getVariable ["ACME_junctionalCompDepth", 0.55]) * _shape * _able;
             _partNorm = _partNorm * ((1 - _depth) max 0.05);
 

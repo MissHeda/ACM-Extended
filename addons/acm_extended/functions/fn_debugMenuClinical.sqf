@@ -245,13 +245,19 @@ private _tbi = _patient getVariable ["ACME_tbi_State", createHashMap];
 private _icp = _tbi getOrDefault ["icp", 0];
 private _cpp = _map - _icp;
 private _tbiSev = _tbi getOrDefault ["severity", 0];
+private _tbiStruct = _tbi getOrDefault ["structuralSeverity", _tbiSev];
+private _tbiAutoreg = _tbi getOrDefault ["autoregIntegrity", 1];
+private _tbiAutoInt = _tbi getOrDefault ["autonomicIntegrity", 1];
+private _tbiTone = _tbi getOrDefault ["autonomicTone", 0];
 private _hern = _tbi getOrDefault ["herniating", false];
 private _cush = _tbi getOrDefault ["cushing", false];
 private _obt = _patient getVariable ["ACME_obtunded", false];
 _left pushBack (["NEURO / TBI"] call _sect);
-_left pushBack (["TBI", _tbiSev toFixed 2, if (_tbiSev >= 0.65) then {_cBad} else {if (_tbiSev >= 0.30) then {_cWarn} else {_cGood}}, "ICP", round _icp, if (_icp >= 30) then {_cBad} else {if (_icp > 20) then {_cWarn} else {_cGood}}] call _pair);
-_left pushBack (["CPP", round _cpp, if (_cpp < 50) then {_cBad} else {if (_cpp < 70) then {_cWarn} else {_cGood}}, "Obtund", [_obt] call _yn, if (_obt) then {_cWarn} else {_cMute}] call _pair);
+_left pushBack (["Acute", _tbiSev toFixed 2, if (_tbiSev >= 0.65) then {_cBad} else {if (_tbiSev >= 0.30) then {_cWarn} else {_cGood}}, "Struct", _tbiStruct toFixed 2, if (_tbiStruct >= 0.80) then {_cBad} else {if (_tbiStruct >= 0.60) then {_cWarn} else {_cLabel}}] call _pair);
+_left pushBack (["ICP", round _icp, if (_icp >= 30) then {_cBad} else {if (_icp > 20) then {_cWarn} else {_cGood}}, "CPP", round _cpp, if (_cpp < 50) then {_cBad} else {if (_cpp < 70) then {_cWarn} else {_cGood}}] call _pair);
+_left pushBack (["Autoreg", _tbiAutoreg toFixed 2, if (_tbiAutoreg < 0.40) then {_cBad} else {if (_tbiAutoreg < 0.70) then {_cWarn} else {_cGood}}, "Auto", format ["%1 / %2", _tbiAutoInt toFixed 2, _tbiTone toFixed 2], if (_tbiTone < -0.35) then {_cBad} else {if (abs _tbiTone > 0.55) then {_cWarn} else {_cLabel}}] call _pair);
 _left pushBack (["Hern", [_hern] call _yn, [_hern, true] call _ynCol, "Cushing", [_cush] call _yn, [_cush, true] call _ynCol] call _pair);
+_left pushBack (["Obtund", [_obt] call _yn, if (_obt) then {_cWarn} else {_cMute}, "PerfOK", [(_tbi getOrDefault ["perfusionOK", true])] call _yn, if (_tbi getOrDefault ["perfusionOK", true]) then {_cGood} else {_cWarn}] call _pair);
 
 // Resuscitation / rhythm.
 private _nativeRh = _patient getVariable ["ACM_circulation_Cardiac_RhythmState", 0];
