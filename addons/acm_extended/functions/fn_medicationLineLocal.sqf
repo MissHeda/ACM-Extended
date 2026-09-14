@@ -52,8 +52,8 @@ if (_operation == "flush") then {
 _receipts set [_id,[true,"accepted"]];
 _patient setVariable ["ACME_medicationReceiptsB14",_receipts,true];
 _patient setVariable ["ACME_pendingFlush",_pending,true];
-// The exact IO line has route-specific pain behavior. Medication pushes cause a transient severe-pain response
-// only; saline flushes count as fluid pressure, but syncope still requires >3 s of continuous admitted fluid.
+// The exact IO line has route-specific pain behavior. Medication pushes cause the severe pressure-pain response
+// only; a saline flush is actual IO fluid flow and schedules the same configured delayed syncope as other IO fluid.
 if (_iv && {_site == -1}) then {
     [_patient, _bodyPart, if (_operation == "flush") then {"fluid"} else {"medication"}] call ACME_fnc_ioPainResponse;
 };

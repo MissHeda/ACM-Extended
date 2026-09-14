@@ -112,18 +112,9 @@ if (_totalBags > 0) then {
     if (_FBTKBags > 0) then {
         _entries pushBack [format [LELSTRING(circulation,GUI_CollectingBlood), floor _FBTKBags], [1, 1, 1, 1]];
     };
-    if (_freshBloodBags > 0) then {
-        _entries pushBack [format [LELSTRING(circulation,GUI_TransfusingFreshBlood), floor _freshBloodBags], [1, 1, 1, 1]];
-    };
-    if (_bloodBags > 0) then {
-        _entries pushBack [format [LELSTRING(circulation,GUI_TransfusingBlood), floor _bloodBags], [1, 1, 1, 1]];
-    };
-    if (_plasmaBags > 0) then {
-        _entries pushBack [format [LELSTRING(circulation,GUI_TransfusingPlasma), floor _plasmaBags], [1, 1, 1, 1]];
-    };
-    if (_salineBags > 0) then {
-        _entries pushBack [format [LELSTRING(circulation,GUI_TransfusingSaline), floor _salineBags], [1, 1, 1, 1]];
-    };
+    // B115: connected transfusion contents are already annotated at the exact IV/IO site in the transfusion
+    // body map. Do not duplicate Blood/Plasma/Saline/Fresh Blood as global injury-list status rows. FBTK collection
+    // remains because it is a donor/collection state rather than a hung transfusion.
 } else {
     if (GVAR(showInactiveStatuses)) then {_entries pushBack [localize ACELSTRING(medical_treatment,Status_NoIv), _nonissueColor];};
 };

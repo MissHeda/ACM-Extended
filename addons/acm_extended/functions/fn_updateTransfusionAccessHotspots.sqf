@@ -81,19 +81,27 @@ private _partLabel = {
     private _image = if (_imageIDC >= 0) then {_display displayCtrl _imageIDC} else {controlNull};
     if (_isEJ && {isNull _image}) then {
         _image = _display ctrlCreate ["RscPictureKeepAspect", _imageIDC];
-        _image ctrlSetText (["\\acm_extended\\ui\\iv\\iv_ej_left_ca.paa", "\\acm_extended\\ui\\iv\\iv_ej_right_ca.paa"] select (_site max 0 min 1));
     };
     if (_isEJ && {!isNull _image}) then {
+        // SQF does not use C-style backslash escaping. B113 accidentally emitted literal double backslashes here,
+        // which made Arma look for a non-existent \\acm_extended\\... path even though both PAA files exist.
+        // Reassert the correct path even when a runtime control survived a UI refresh in the same mission.
+        _image ctrlSetText (["\acm_extended\ui\iv\iv_ej_left_ca.paa", "\acm_extended\ui\iv\iv_ej_right_ca.paa"] select (_site max 0 min 1));
         _image ctrlSetPosition [_outerX,_outerY,_outerW,_outerH];
         _image ctrlCommit 0;
         _image ctrlShow _has;
     };
 
     _uv params ["_u", "_v", "_uw", "_uh"];
-    private _hx = _drawX + (_u * _drawW) - (2 * pixelW);
-    private _hy = _drawY + (_v * _drawH) - (2 * pixelH);
-    private _hw = (_uw * _drawW) + (4 * pixelW);
-    private _hh = (_uh * _drawH) + (4 * pixelH);
+    // The measured alpha bounds remain authoritative, with a small physical-pixel margin so the catheter is easy
+    // to click without turning the entire limb into a hidden button. Every established site remains independently
+    // selectable, including both EJs and each individual peripheral-IV position.
+    private _padX = 6 * pixelW;
+    private _padY = 6 * pixelH;
+    private _hx = _drawX + (_u * _drawW) - _padX;
+    private _hy = _drawY + (_v * _drawH) - _padY;
+    private _hw = (_uw * _drawW) + (2 * _padX);
+    private _hh = (_uh * _drawH) + (2 * _padY);
 
     private _hotIDC = 86900 + _forEachIndex;
     private _hot = _display displayCtrl _hotIDC;

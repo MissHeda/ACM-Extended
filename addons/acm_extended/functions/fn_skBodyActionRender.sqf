@@ -7,13 +7,43 @@ if (isNull _d) exitWith {};
 private _back = _d displayCtrl 84819;
 private _btn = _d displayCtrl 84820;
 if (isNull _back || {isNull _btn}) exitWith {};
+
+// B115: optional manual IV/IO push duration. These controls are runtime-owned so the existing Narc Box config and
+// all preparation-page layouts remain untouched. Blank means the original 3-second push.
+private _durLabel = _d displayCtrl 84830;
+if (isNull _durLabel) then {
+    _durLabel = _d ctrlCreate ["RscText", 84830];
+    _durLabel ctrlSetText "Seconds to Push over:";
+    _durLabel ctrlSetTextColor [0.94,0.91,0.82,1];
+    _durLabel ctrlSetBackgroundColor [0.043,0.082,0.188,0.90];
+    _durLabel ctrlEnable false;
+};
+private _durEdit = _d displayCtrl 84831;
+if (isNull _durEdit) then {
+    _durEdit = _d ctrlCreate ["RscEdit", 84831];
+    _durEdit ctrlSetText "";
+    _durEdit ctrlSetTextColor [1,1,1,1];
+    _durEdit ctrlSetBackgroundColor [0.02,0.03,0.06,0.94];
+    _durEdit ctrlSetTooltip "Whole seconds to push the medication over (1-300). Leave blank for 3 seconds.";
+    _durEdit ctrlAddEventHandler ["KeyUp", {
+        params ["_ctrl"];
+        private _raw = ctrlText _ctrl;
+        private _clean = toString ((toArray _raw) select {_x >= 48 && {_x <= 57}});
+        if (_clean != _raw) then {_ctrl ctrlSetText _clean;};
+    }];
+};
 private _body = (uiNamespace getVariable ["ACME_SK_View","syringe"]) == "body";
 private _editMode = uiNamespace getVariable ["ACME_SK_TagEditMode",false];
 private _busy = uiNamespace getVariable ["ACME_SK_InjectionBusy",false];
 private _store = [ACE_player] call ACME_fnc_skStoreEnsureIds;
 private _idx = [_store,false] call ACME_fnc_skSelectedIndex;
 private _usable = _body && {!_editMode} && {_idx >= 0} && {_idx < count _store} && {(uiNamespace getVariable ["ACME_SK_SelFlush",""]) == ""};
-if (!_usable) exitWith {_back ctrlShow false; _btn ctrlShow false;};
+if (!_usable) exitWith {
+    _back ctrlShow false;
+    _btn ctrlShow false;
+    _durLabel ctrlShow false;
+    _durEdit ctrlShow false;
+};
 
 private _view = _d displayCtrl 84150;
 private _vr = +(ctrlPosition _view);
@@ -21,6 +51,18 @@ private _gap = safeZoneH * 0.006;
 private _r = [_vr select 0, (_vr select 1) - (_vr select 3) - _gap, _vr select 2, _vr select 3];
 _back ctrlSetPosition _r; _btn ctrlSetPosition _r;
 _back ctrlCommit 0; _btn ctrlCommit 0;
+
+private _durGap = 2 * pixelW;
+private _durH = (_r select 3) * 0.82;
+private _durY = (_r select 1) - _durH - (_gap * 0.65);
+private _editW = (_r select 2) * 0.23;
+private _labelW = (_r select 2) - _editW - _durGap;
+_durLabel ctrlSetPosition [_r select 0, _durY, _labelW, _durH];
+_durEdit ctrlSetPosition [(_r select 0) + _labelW + _durGap, _durY, _editW, _durH];
+_durLabel ctrlSetFontHeight (_durH * 0.63);
+_durEdit ctrlSetFontHeight (_durH * 0.63);
+_durLabel ctrlCommit 0;
+_durEdit ctrlCommit 0;
 
 private _entry = _store select _idx;
 private _id = _entry param [11,"",[""]];
@@ -53,7 +95,13 @@ if (_pending isEqualType [] && {count _pending >= 3}) then {
     _btn ctrlSetTooltip "Confirm administration of the currently selected syringe at the selected site";
     _btn ctrlEnable (!_busy && {_total > 0});
     _back ctrlSetBackgroundColor (["success",0.82] call ACME_fnc_a11yColor);
+    private _showDuration = _route != "im";
+    _durLabel ctrlShow _showDuration;
+    _durEdit ctrlShow _showDuration;
+    _durEdit ctrlEnable (_showDuration && {!_busy});
 } else {
+    _durLabel ctrlShow false;
+    _durEdit ctrlShow false;
     private _armed = uiNamespace getVariable ["ACME_SK_DiscardArmedId",""];
     if (_armed != _id) then {uiNamespace setVariable ["ACME_SK_DiscardArmedId",""]; _armed = "";};
     _btn ctrlSetText (if (_armed == _id) then {"Confirm discard?"} else {"Discard Syringe"});

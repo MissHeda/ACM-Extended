@@ -58,6 +58,8 @@ if (_body) then {
     (_display displayCtrl 84810) ctrlShow false;
     (_display displayCtrl 84819) ctrlShow false;
     (_display displayCtrl 84820) ctrlShow false;
+    (_display displayCtrl 84830) ctrlShow false;
+    (_display displayCtrl 84831) ctrlShow false;
     uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
     uiNamespace setVariable ["ACME_SK_DiscardArmedId",""];
     uiNamespace setVariable ["ACME_SK_TagEditMode", false];

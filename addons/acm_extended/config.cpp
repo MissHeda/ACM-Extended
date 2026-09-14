@@ -8198,7 +8198,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 4;
         allowedSelections[] = {"Head"};
         items[] = {};
-        condition = "([_medic, 'ACME_Extubate'] call ACME_fnc_procedureActionAllowed) && {(_patient getVariable ['ACME_ETT_Inserted', false]) && {!(_patient getVariable ['ACME_ETT_Secured', false])} && {!(_patient getVariable ['ACME_ETT_CuffInflated', false])}}";
+        // Keep Extubate visible whenever a tube is actually seated and not collar-secured. Cuff state must not
+        // hide the action; fn_laryngoExtubate gives the explicit "deflate cuff" refusal if it is still inflated.
+        condition = "([_medic, 'ACME_Extubate'] call ACME_fnc_procedureActionAllowed) && {(_patient getVariable ['ACME_ETT_Inserted', false]) && {!(_patient getVariable ['ACME_ETT_Secured', false])}}";
         callbackSuccess = "[_medic, _patient] call ACME_fnc_laryngoExtubate";
         callbackFailure = "";
         callbackProgress = "";

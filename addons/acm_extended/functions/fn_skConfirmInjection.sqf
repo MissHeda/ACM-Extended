@@ -1,7 +1,7 @@
-/* B68: Body Map syringe administration animation.
-   Clicking a valid IV/IO or IM site promotes the carousel, locks selection, and drives the selected syringe
-   plunger toward its post-dose position over exactly 3 seconds while syringe_push.ogg plays.  Medication is only
-   committed after the visual push completes, so an invalidated access/patient never consumes the syringe. */
+/* B115: Body Map syringe administration animation.
+   IV/IO pushes use the optional numeric duration above the Push button (blank = original 3 seconds). IM retains
+   the original 3-second injection. Medication is committed only after the visual push completes, and the same
+   duration is passed into ACME's rate-sensitive medication exposure model. */
 disableSerialization;
 private _d = findDisplay 84000;
 if (isNull _d || {(uiNamespace getVariable ["ACME_SK_View","syringe"]) != "body"}) exitWith {false};
@@ -37,6 +37,14 @@ if (_stableId == "") exitWith {
 };
 _entry params ["_med",["_size",10],["_amt",0],["_label",""],["_nsMl",0]];
 private _total = (_amt + _nsMl) max 0;
+private _pushSec = 3;
+if (_route != "im") then {
+    private _durCtrl = _d displayCtrl 84831;
+    if (!isNull _durCtrl) then {
+        private _txt = ctrlText _durCtrl;
+        if (_txt != "") then {_pushSec = ((parseNumber _txt) max 1) min 300;};
+    };
+};
 if (_total <= 0) exitWith {
     uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
     call ACME_fnc_skBodyActionRender;
@@ -64,10 +72,10 @@ _d setVariable ["ACME_SK_InjectionRoute",_route];
 [0.12] call ACME_fnc_skDynamicLayout;
 [0.12] call ACME_fnc_skCarouselRender;
 call ACME_fnc_skBuildHotspots;
-{private _c=_d displayCtrl _x; if (!isNull _c) then {_c ctrlEnable false;};} forEach [84150,84151,84154,84470,84820];
+{private _c=_d displayCtrl _x; if (!isNull _c) then {_c ctrlEnable false;};} forEach [84150,84151,84154,84470,84820,84831];
 
 [{
-    params ["_stableId","_size","_remainingFrac","_bodyPart","_siteIdx","_route"];
+    params ["_stableId","_size","_remainingFrac","_bodyPart","_siteIdx","_route","_pushSec"];
     disableSerialization;
     private _d = findDisplay 84000;
     if (isNull _d || {!(uiNamespace getVariable ["ACME_SK_InjectionBusy",false])}) exitWith {
@@ -93,11 +101,11 @@ call ACME_fnc_skBuildHotspots;
         private _sizeRatio = switch (_size) do {case 1:{10.2/10.5};case 3:{9.83/10.5};case 5:{10.3/10.5};default{1};};
         private _targetY = (_br select 1) + (_travel10 * _sizeRatio * _remainingFrac * ((_br select 3) / (((_native select 3) max 0.001))));
         _pl ctrlSetPosition [_br select 0,_targetY,_br select 2,_br select 3];
-        _pl ctrlCommit 3.0;
+        _pl ctrlCommit _pushSec;
     };
 
     [{
-        params ["_stableId","_bodyPart","_siteIdx","_route"];
+        params ["_stableId","_bodyPart","_siteIdx","_route","_pushSec"];
         disableSerialization;
         private _d = findDisplay 84000;
         if (isNull _d) exitWith {
@@ -112,17 +120,17 @@ call ACME_fnc_skBuildHotspots;
             uiNamespace setVariable ["ACME_SK_InjectionBusy",false];
             uiNamespace setVariable ["ACME_SK_CarouselBusy",false];
             uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
-            [_bodyPart] call ACME_fnc_skInjectSite;
+            [_bodyPart,_pushSec] call ACME_fnc_skInjectSite;
         } else {
             uiNamespace setVariable ["ACME_SK_InjectionBusy",false];
             uiNamespace setVariable ["ACME_SK_CarouselBusy",false];
             uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
         };
         uiNamespace setVariable ["ACME_SK_CarouselCollapseAt",diag_tickTime + 1.00];
-        {private _c=_d displayCtrl _x; if (!isNull _c) then {_c ctrlEnable true;};} forEach [84150,84151,84154,84470,84820];
+        {private _c=_d displayCtrl _x; if (!isNull _c) then {_c ctrlEnable true;};} forEach [84150,84151,84154,84470,84820,84831];
         [0.10] call ACME_fnc_skCarouselRender;
         call ACME_fnc_skBuildHotspots;
         call ACME_fnc_skBodyActionRender;
-    },[_stableId,_bodyPart,_siteIdx,_route],3.0] call CBA_fnc_waitAndExecute;
-},[_stableId,_size,_remainingFrac,_bodyPart,_siteIdx,_route],0.14] call CBA_fnc_waitAndExecute;
+    },[_stableId,_bodyPart,_siteIdx,_route,_pushSec],_pushSec] call CBA_fnc_waitAndExecute;
+},[_stableId,_size,_remainingFrac,_bodyPart,_siteIdx,_route,_pushSec],0.14] call CBA_fnc_waitAndExecute;
 true
