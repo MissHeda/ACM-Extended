@@ -7,6 +7,7 @@ if !(_job isEqualType createHashMap && {count _job > 0}) exitWith {
     if (_h >= 0) then {[_h] call CBA_fnc_removePerFrameHandler; missionNamespace setVariable ["ACME_HCMedPushPFH",-1];};
 };
 if !(_job getOrDefault ["flowing",false]) exitWith {call ACME_fnc_hardcorePushFinalize;};
+if !(missionNamespace getVariable ["ACME_hcEff_medications",false]) exitWith {["hardcore-disabled"] call ACME_fnc_hardcorePushStop;};
 private _medic = _job getOrDefault ["medic",objNull];
 private _patient = _job getOrDefault ["patient",objNull];
 if (isNull _medic || {isNull _patient} || {!local _medic} || {!alive _medic} || {_medic getVariable ["ACE_isUnconscious",false]}) exitWith {["provider"] call ACME_fnc_hardcorePushStop;};

@@ -40,14 +40,8 @@ if (_stableId == "") exitWith {
 };
 _entry params ["_med",["_size",10],["_amt",0],["_label",""],["_nsMl",0]];
 private _total = (_amt + _nsMl) max 0;
+// B124: non-Hardcore medication administration always uses ACM's original three-second push.
 private _pushSec = 3;
-if (_route != "im") then {
-    private _durCtrl = _d displayCtrl 84831;
-    if (!isNull _durCtrl) then {
-        private _txt = ctrlText _durCtrl;
-        if (_txt != "") then {_pushSec = ((parseNumber _txt) max 1) min 300;};
-    };
-};
 if (_total <= 0) exitWith {
     uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
     call ACME_fnc_skBodyActionRender;

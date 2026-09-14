@@ -1,9 +1,9 @@
-/* B122: persistent one-handed syringe overlay. Presentation is independent from treatment state. The same overlay
-   is painted on the gameplay, ACE interaction-menu, and ACE medical-menu displays so opening Windows interaction
-   or the medical GUI cannot hide the active push or make the syringe unclickable. */
+/* B124: persistent one-handed syringe HUD. Treatment state is independent from display state. The HUD is
+   rebuilt on the gameplay/ACE displays as needed and uses the same square PAA canvas geometry as ACM's native
+   syringe so the barrel, backbit and moving plunger stay aligned on every aspect ratio. */
 disableSerialization;
 params [["_mode","update",[""]]];
-private _ids = [98970,98971,98972,98973,98974];
+private _ids = [98970,98971,98972,98973,98974,98975];
 private _displayIds = [46,91919,38580];
 private _clear = {
     {
@@ -24,7 +24,7 @@ if !(_job isEqualType createHashMap && {count _job > 0} && {_job getOrDefault ["
     false
 };
 
-// The full Narc Box owns the syringe art while open. Flow continues, but the corner duplicate disappears.
+// The full Narc Box owns the syringe art while it is open. Flow continues without the duplicate corner HUD.
 if (!isNull (findDisplay 84000)) exitWith {call _clear; true};
 
 private _medic = _job getOrDefault ["medic",objNull];
@@ -50,28 +50,28 @@ private _barTex = if (_marker == "flush") then {
 private _backTex = format ["\x\ACM\addons\circulation\ui\syringe\syringe_%1_backbit_ca.paa",_size];
 private _plTex = format ["\x\ACM\addons\circulation\ui\syringe\syringe_%1_plunger_ca.paa",_size];
 
-// Geometry is derived from the real Narc Box syringe canvas captured at push start. This keeps the barrel/plunger
-// relationship identical across aspect ratios instead of guessing a second set of offsets for the HUD.
-private _aspect = ((_job getOrDefault ["overlayAspect",0.115]) max 0.035) min 0.45;
 private _travelNorm = ((_job getOrDefault ["overlayTravelNorm",0.195]) max 0.02) min 0.40;
 private _sizeRatio = switch (_size) do {case 1:{10.2/10.5}; case 3:{9.83/10.5}; case 5:{10.3/10.5}; default{1};};
 private _frac = ((_remaining / (_size max 0.01)) max 0) min 1;
 
-// Size is anchored to safeZoneH and width follows the captured syringe aspect, so ultrawide and 4:3 use the same
-// physical visual scale. B122 enlarges the previous 15.5%-height overlay to 19.5%.
-private _h = safeZoneH * 0.195;
-private _w = _h * _aspect;
+// The PAA layers live on a square canvas. Convert vertical GUI units to the exact width that gives the same number
+// of physical pixels horizontally. This prevents the ultrawide squashing that made the syringe effectively vanish.
+private _pxAspect = pixelW / (pixelH max 0.000001);
+private _h = safeZoneH * 0.245;
+private _w = _h * _pxAspect;
 private _travel = _h * _travelNorm * _sizeRatio;
-private _right = safeZoneX + safeZoneW - safeZoneW*0.020;
+private _padScreen = safeZoneH * 0.028;
+private _right = safeZoneX + safeZoneW - (_padScreen * _pxAspect);
+private _bottom = safeZoneY + safeZoneH - _padScreen;
 private _x = _right - _w;
-private _y = safeZoneY + safeZoneH - _h - _travel - safeZoneH*0.045;
+private _y = _bottom - _h - _travel;
 
-// Text panel uses a height-derived physical width corrected by pixel aspect. It therefore does not become huge on
-// 32:9 or cramped on 4:3. Two lines keep the medication name readable without shrinking the syringe itself.
-private _tw = ((safeZoneH * 0.50) * (pixelW / (pixelH max 0.000001))) min (safeZoneW*0.32);
-private _th = safeZoneH * 0.052;
+// Compact two-line label, right aligned with the syringe. Width is height-derived so it stays the same physical
+// size on 4:3, 16:9, 21:9 and 32:9 rather than stretching with safeZoneW.
+private _tw = safeZoneH * 0.40 * _pxAspect;
+private _th = safeZoneH * 0.062;
 private _tx = _right - _tw;
-private _ty = _y - _th - safeZoneH*0.007;
+private _ty = _y - _th - safeZoneH*0.010;
 
 private _rate = (_job getOrDefault ["rateMlSec",0]) max 0;
 private _totalSec = ceil ((_job getOrDefault ["duration",0]) max 0);
@@ -84,42 +84,55 @@ if (_label == "") then {_label = "Medication";};
 private _paint = {
     params ["_disp"];
     if (isNull _disp) exitWith {};
+
     private _bar = _disp displayCtrl 98970;
     if (isNull _bar) then {
-        _bar = _disp ctrlCreate ["RscPictureKeepAspect",98970];
-        private _back = _disp ctrlCreate ["RscPictureKeepAspect",98971];
-        private _pl = _disp ctrlCreate ["RscPictureKeepAspect",98972];
+        // Native order is backbit -> plunger -> barrel. Keep the same z-order so the barrel remains visible.
+        private _back = _disp ctrlCreate ["RscPicture",98971];
+        private _pl = _disp ctrlCreate ["RscPicture",98972];
+        _bar = _disp ctrlCreate ["RscPicture",98970];
+        private _panel = _disp ctrlCreate ["RscText",98975];
         private _txt = _disp ctrlCreate ["RscStructuredText",98973];
         private _hit = _disp ctrlCreate ["RscButton",98974];
-        _txt ctrlSetBackgroundColor [0.02,0.03,0.06,0.88];
+        {_x ctrlSetTextColor [1,1,1,1];} forEach [_back,_pl,_bar];
+        _panel ctrlSetBackgroundColor [0.02,0.03,0.06,0.90];
+        _panel ctrlEnable false;
+        _txt ctrlSetBackgroundColor [0,0,0,0];
         _txt ctrlSetTextColor [0.94,0.91,0.82,1];
+        _txt ctrlEnable false;
         _hit ctrlSetText "";
         _hit ctrlSetBackgroundColor [0,0,0,0];
         _hit ctrlSetTooltip "Open Narc Box at the active syringe push";
         _hit ctrlAddEventHandler ["ButtonClick",{call ACME_fnc_hardcorePushReopen;}];
     };
+
     private _back = _disp displayCtrl 98971;
     private _pl = _disp displayCtrl 98972;
     private _txt = _disp displayCtrl 98973;
     private _hit = _disp displayCtrl 98974;
+    private _panel = _disp displayCtrl 98975;
 
-    _bar ctrlSetText _barTex;
     _back ctrlSetText _backTex;
     _pl ctrlSetText _plTex;
-    _bar ctrlSetPosition [_x,_y,_w,_h];
+    _bar ctrlSetText _barTex;
     _back ctrlSetPosition [_x,_y,_w,_h];
     _pl ctrlSetPosition [_x,_y + (_travel*_frac),_w,_h];
-    _txt ctrlSetPosition [_tx,_ty,_tw,_th];
-    _txt ctrlSetFontHeight (_th*0.30);
+    _bar ctrlSetPosition [_x,_y,_w,_h];
+
+    _panel ctrlSetPosition [_tx,_ty,_tw,_th];
+    // Give StructuredText explicit internal top/bottom padding so both lines sit visually centered in the bar.
+    _txt ctrlSetPosition [_tx,_ty + _th*0.10,_tw,_th*0.82];
+    _txt ctrlSetFontHeight (_th*0.43);
     _txt ctrlSetStructuredText parseText format [
-        "<t align='center' color='#F0E9D1' size='0.92'>%1</t><br/><t align='center' color='#FFFFFF' size='0.78'>%2s / %3s  |  %4 mL remaining</t>",
+        "<t align='center' color='#F0E9D1' size='1.02'>%1</t><br/><t align='center' color='#FFFFFF' size='0.90'>%2s / %3s  |  %4 mL</t>",
         _label,_leftSec,_totalSec,_remaining toFixed 2
     ];
-    // Click the syringe itself (including the moving plunger), not an invisible screen-wide panel.
-    private _padX = (_w*0.45) max (8*pixelW);
-    private _padY = (_h*0.04) max (6*pixelH);
+
+    // Click the visible syringe/plunger stack. Keep the label separate so a Windows-key menu cannot steal this hitbox.
+    private _padX = (_w*0.18) max (8*pixelW);
+    private _padY = (_h*0.035) max (6*pixelH);
     _hit ctrlSetPosition [_x-_padX,_y-_padY,_w+2*_padX,_h+_travel+2*_padY];
-    {_x ctrlShow true; _x ctrlCommit 0;} forEach [_bar,_back,_pl,_txt,_hit];
+    {_x ctrlShow true; _x ctrlCommit 0;} forEach [_back,_pl,_bar,_panel,_txt,_hit];
 };
 
 private _painted = false;
