@@ -297,15 +297,12 @@ private _actionIndex = 0;
         _ctrl ctrlSetTextColor ([_textColor, 'protect'] call ACME_fnc_cbColor);
         if (_groupKey == '') then {_actionIndex = _actionIndex + 1;};
         _ctrl ctrlShow true;
-        // Mark the reopen intent BEFORE the treatment statement.  Some treatments close the medical display
-        // synchronously while their ButtonClick handler is still executing; setting this afterward is too late for
-        // onMenuClose to distinguish a real action from the player manually closing the menu.
-        // Apply/Stop Direct Pressure repaint this same display in place. They never open a progress dialog, so do
-        // not arm ACE's close/reopen path for those two rows. Every normal treatment keeps the native behavior.
+        // Match ACE's normal treatment lifecycle exactly: run the treatment statement first, then arm the reopen
+        // flag. Direct Pressure Apply/Stop are immediate in-place state toggles, so they never touch pendingReopen.
+        _ctrl ctrlAddEventHandler ['ButtonClick', _statement];
         if (_groupKey isEqualTo '' && {!(_actionClass in ['acme_directpressure', 'acme_stopdirectpressure'])}) then {
             _ctrl ctrlAddEventHandler ['ButtonClick', {ace_medical_gui_pendingReopen = true;}];
         };
-        _ctrl ctrlAddEventHandler ['ButtonClick', _statement];
 
         _shownIndex = _shownIndex + 1;
     };

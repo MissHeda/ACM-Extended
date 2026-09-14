@@ -199,6 +199,11 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             _m setVariable ["ACME_treatmentPreflightActive", false, false];
             _m setVariable ["ACME_treatmentPreflightBypass", [_args select 1, _args select 2, _args select 3], false];
             _args call ace_medical_treatment_fnc_treatment;
+            // This recursive call starts the progress dialog after the original ButtonClick event has already
+            // finished. Mirror ACE's native event order by arming reopen AFTER progressBar closes the medical menu.
+            if (hasInterface && {!isNil "ACE_player"} && {_m isEqualTo ACE_player}) then {
+                ace_medical_gui_pendingReopen = true;
+            };
             _m setVariable ["ACME_treatmentPreflightBypass", [], false];
             _m setVariable ["ACME_treatmentPreflightToken", "", false];
         }, [_medic, _args, _token], 3.0, {
@@ -228,6 +233,10 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
     };
 
+    if (_dpSamePatient && {local _medic}) then {
+        // From this point until ACE emits treatment success/failure, Direct Pressure is animation-passive.
+        _medic setVariable ["ACME_DP_TreatmentBusy", true, false];
+    };
     if (_ownsProviderAnim && {local _medic}) then {
         _medic setVariable ["ACME_suppressNativeTreatmentAnim", true, false];
     };
@@ -235,18 +244,15 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     if (local _medic) then {
         _medic setVariable ["ACME_suppressNativeTreatmentAnim", false, false];
     };
-    if (!_started && {_dpSamePatient} && {(_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == _classKey}) then {
-        _medic setVariable ["ACME_DP_Paused", false, false];
-        _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+    if (!_started && {_dpSamePatient}) then {
+        _medic setVariable ["ACME_DP_TreatmentBusy", false, false];
+        if ((_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == _classKey) then {
+            _medic setVariable ["ACME_DP_Paused", false, false];
+            _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+        };
     };
 
     if (_started && {local _medic} && {!isNull _medic} && {isNull objectParent _medic}) then {
-        // Every finite ACME-owned provider animation exits to empty-handed crouch.
-        private _end = _medic getVariable ["ace_medical_treatment_endInAnim", ""];
-        if (_end != "") then {
-            _medic setVariable ["ace_medical_treatment_endInAnim", "AmovPknlMstpSnonWnonDnon"];
-        };
-
         if (_mode != "") then {
             [{
                 params ["_m", "_mode", "_window"];
@@ -262,15 +268,6 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                         [_m, _anim, 1] call ACME_fnc_doAnim;
                     };
                 }, [_medic, _exactAnim]] call CBA_fnc_execNextFrame;
-            } else {
-                if (_category != "bandage" && {_medic getVariable ["ACME_DP_Active", false]} && {random 1 < 0.30}) then {
-                    [{
-                        params ["_m"];
-                        if (!isNull _m && {alive _m} && {local _m}) then {
-                            [_m, "directPressureAction", 1.6] call ACME_fnc_treatmentGesture;
-                        };
-                    }, [_medic]] call CBA_fnc_execNextFrame;
-                };
             };
         };
     };

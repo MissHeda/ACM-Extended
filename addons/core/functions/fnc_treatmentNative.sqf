@@ -145,8 +145,19 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
 
     _medic setVariable [QACEGVAR(medical_treatment,selectedWeaponOnTreatment), weaponState _medic];
 
-    // Adjust animation based on the current weapon of the medic
-    private _wpn = ["non", "rfl", "lnr", "pst"] param [["", primaryWeapon _medic, secondaryWeapon _medic, handgunWeapon _medic] find currentWeapon _medic, "non"];
+    // Direct Pressure is already an authored empty-hands hold. currentWeapon still reports the player's selected
+    // rifle while that Wnon pose is visible, which previously made the next bandage pick a rifle animation/end pose.
+    // Treat the provider as visually unarmed for the duration of treatments on the same casualty. This changes only
+    // animation selection; it never changes the player's selected weapon and therefore never creates a holster/draw loop.
+    private _dpSamePatient = (_medic getVariable ["ACME_DP_Active", false])
+        && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient};
+
+    // Adjust animation based on the provider's visible treatment state, not the stale selected weapon under DP.
+    private _wpn = if (_dpSamePatient) then {
+        "non"
+    } else {
+        ["non", "rfl", "lnr", "pst"] param [["", primaryWeapon _medic, secondaryWeapon _medic, handgunWeapon _medic] find currentWeapon _medic, "non"]
+    };
     _medicAnim = [_medicAnim, "[wpn]", _wpn] call CBA_fnc_replace;
 
     // This animation is missing, use alternative
@@ -166,7 +177,7 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
         _animDuration = _animDuration + 0.5;
 
         // Fix problems with lowered weapon transitions by raising the weapon first
-        if (currentWeapon _medic != "" && {_medicAnim != ""}) then {
+        if (!_dpSamePatient && {currentWeapon _medic != ""} && {_medicAnim != ""}) then {
             _medic action ["WeaponInHand", _medic];
         };
     };

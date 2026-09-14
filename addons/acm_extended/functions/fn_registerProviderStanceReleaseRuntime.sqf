@@ -15,7 +15,11 @@
     };
     if (isNull _medic || {!local _medic} || {!(_medic getVariable ["ACME_DP_Active", false])}) exitWith {};
     if (_classname == "ACME_DirectPressure") exitWith {};
+    if !((_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient) exitWith {};
 
+    // A normal treatment owns provider animation until ACE reports success/failure. DP remains clinically active,
+    // but its visual hold becomes completely passive so it cannot overwrite the intervention animation.
+    _medic setVariable ["ACME_DP_TreatmentBusy", true, false];
     _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
     _medic setVariable ["ACME_DP_InPose", false];
     _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
@@ -33,7 +37,8 @@
         // A completed/failed treatment gets a fresh quiet window before Direct Pressure is allowed to visibly resume.
         // Head positioning is the exception: its provider sequence continues after the ACE event, so a successful
         // active sequence keeps the clinical pause until fn_headElevMedicSeq reaches its real end state.
-        if (_medic getVariable ["ACME_DP_Active", false]) then {
+        if ((_medic getVariable ["ACME_DP_Active", false])
+            && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
             private _pauseClass = _medic getVariable ["ACME_DP_PauseTreatmentClass", ""];
             private _headStillActive = _headOwned && {_medic getVariable ["ACME_headElev_seqActive", false]};
             if (_pauseClass != "" && {_pauseClass == _classKey} && {!_headStillActive}) then {
@@ -41,10 +46,26 @@
                 _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
             };
             if (!_headStillActive) then {
+                _medic setVariable ["ACME_DP_TreatmentBusy", false, false];
                 _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
                 _medic setVariable ["ACME_DP_InPose", false];
                 _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
                 _medic setVariable ["ACME_DP_LastPoseAssert", 0];
+
+                // DP treatments always return to the same casualty's medical menu. ACE's native pendingReopen does
+                // this in the normal case; this guarded fallback covers the preflight path without altering global
+                // menu behavior for any other intervention.
+                [{
+                    params ["_m", "_p"];
+                    if (isNull _m || {isNull _p} || {!local _m}
+                        || {!(_m getVariable ["ACME_DP_Active", false])}
+                        || {!((_m getVariable ["ACME_DP_Patient", objNull]) isEqualTo _p)}) exitWith {};
+                    private _menu = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
+                    private _progress = uiNamespace getVariable ["ace_common_dlgProgress", displayNull];
+                    if (isNull _menu && {isNull _progress}) then {
+                        ["ACM_core_openMedicalMenu", _p] call CBA_fnc_localEvent;
+                    };
+                }, [_medic, _patient], 0.05] call CBA_fnc_waitAndExecute;
             };
         };
 

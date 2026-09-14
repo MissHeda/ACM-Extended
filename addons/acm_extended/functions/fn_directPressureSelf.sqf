@@ -17,6 +17,7 @@ _medic setVariable ["ACME_DP_OwnsContinuous", false];
 
 private _ids = [];
 _ids pushBack ([0x01, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
+_ids pushBack ([0x23, [false,false,false], { [false, ACE_player, false] call ACME_fnc_directPressureStop; false }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
 _medic setVariable ["ACME_DP_KeyIDs", _ids];
 
 [_medic, "activity",

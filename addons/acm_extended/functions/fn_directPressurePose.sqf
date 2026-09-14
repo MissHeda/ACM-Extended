@@ -14,7 +14,8 @@ private _entryGrace = CBA_missionTime < (_medic getVariable ["ACME_DP_PoseGraceU
 // A plain open medical menu is NOT a competing treatment. Stop Direct Pressure has to remain usable while the
 // provider visibly keeps pressure on the wound. Yield only when another treatment actually owns the provider pose.
 private _treating = !_entryGrace && {
-    (_medic getVariable ["ACME_treatmentPreflightActive", false])
+    (_medic getVariable ["ACME_DP_TreatmentBusy", false])
+    || {(_medic getVariable ["ACME_treatmentPreflightActive", false])}
     || {(_medic getVariable ["ace_medical_treatment_endInAnim", ""]) != ""}
     || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
 };
