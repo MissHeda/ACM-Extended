@@ -514,6 +514,10 @@ call ACME_fnc_skListRefresh;
 // fn_skPendingTagEnsure then creates them idempotently with artwork -> selector -> dropdown z-order.
 
 call ACME_fnc_skSetView;
+// B121: if a one-handed Hardcore push survived this dialog being closed, reopening the Narc Box is only a
+// presentation change. Rebuild the exact patient/site/syringe context without touching the running PFH.
+private _hcPushJobB121 = missionNamespace getVariable ["ACME_HCMedPushJob",createHashMap];
+if (_hcPushJobB121 isEqualType createHashMap && {count _hcPushJobB121 > 0}) then {call ACME_fnc_hardcorePushRestoreUi;};
 // Native syringe controls can finish their first layout a frame after our runtime controls are created.
 // Repaint the always-present Select Syringe Tag control again after that layout so it cannot disappear on first open.
 [{if (!isNull (findDisplay 84000)) then {call ACME_fnc_skPendingTagRender;};}, [], 0.03] call CBA_fnc_waitAndExecute;

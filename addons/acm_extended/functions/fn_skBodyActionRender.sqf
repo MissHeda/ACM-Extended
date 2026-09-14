@@ -67,8 +67,33 @@ _durEdit ctrlCommit 0;
 private _entry = _store select _idx;
 private _id = _entry param [11,"",[""]];
 private _pending = uiNamespace getVariable ["ACME_SK_PendingInjection",[]];
+// B121: an active Hardcore push owns this exact stable syringe. The normal green confirmation becomes a red
+// Stop Push control. It remains clickable even though carousel/site controls are deliberately locked.
+private _hcJob = missionNamespace getVariable ["ACME_HCMedPushJob",createHashMap];
+private _hcOwns = _hcJob isEqualType createHashMap && {count _hcJob > 0} && {(_hcJob getOrDefault ["stableId",""]) == _id};
+if (_hcOwns) exitWith {
+    private _flowing = _hcJob getOrDefault ["flowing",false];
+    _btn ctrlSetText (if (_flowing) then {"Stop Push"} else {"Stopping..."});
+    _btn ctrlSetTooltip (if (_flowing) then {"Stop the active medication push and preserve the exact remaining syringe volume"} else {"Settling the last delivered medication volume"});
+    _btn ctrlEnable _flowing;
+    _back ctrlSetBackgroundColor (["danger",0.90] call ACME_fnc_a11yColor);
+    _durLabel ctrlShow true;
+    _durEdit ctrlShow true;
+    _durEdit ctrlEnable false;
+    _durEdit ctrlSetText str (round (_hcJob getOrDefault ["duration",3]));
+    _back ctrlShow true;
+    _btn ctrlShow true;
+    _btn ctrlCommit 0;
+};
 if (_pending isEqualType [] && {count _pending >= 3}) then {
     _pending params ["_part","_site","_route"];
+    if ((missionNamespace getVariable ["ACME_hcEff_medications",false]) && {_route != "im"}) then {
+        private _defaultFor = _d getVariable ["ACME_HCMedPushDefaultFor",""];
+        if (_defaultFor != _id) then {
+            _durEdit ctrlSetText str ([_entry] call ACME_fnc_medicationSuggestedPushSec);
+            _d setVariable ["ACME_HCMedPushDefaultFor",_id];
+        };
+    };
     private _total = ((_entry param [2,0,[0]]) + (_entry param [4,0,[0]])) max 0;
     private _ml = _total;
     if ((_entry param [6,"",[""]]) == "epiMixB12") then {

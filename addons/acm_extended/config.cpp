@@ -1789,6 +1789,7 @@ class CfgFunctions {
             class medicationInteractions {};
             class medicationDriveAdd {};
             class medicationDriveTick {};
+            class hardcoreMedicationRateEffect {};
             class ecgJostleLocal {};
             class ecgJostleRequest {};
             class ecgArtifactStrength {};
@@ -2159,6 +2160,17 @@ class CfgFunctions {
             class skInjectSite {};
             class skBeginInjection {};
             class skConfirmInjection {};
+            class medicationSuggestedPushSec {};
+            class hardcorePushStart {};
+            class hardcorePushTick {};
+            class hardcorePushSendBatch {};
+            class hardcorePushStop {};
+            class hardcorePushFinalize {};
+            class hardcorePushAck {};
+            class hardcorePushRestoreDelta {};
+            class hardcorePushOverlay {};
+            class hardcorePushReopen {};
+            class hardcorePushRestoreUi {};
             class skBodyActionRender {};
             class skBodyActionClick {};
             class skDiscardSelected {};

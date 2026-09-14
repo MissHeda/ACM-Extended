@@ -11,6 +11,9 @@ if (uiNamespace getVariable ["ACME_SK_TagEditMode",false]) exitWith {false};
 private _pending = uiNamespace getVariable ["ACME_SK_PendingInjection",[]];
 if (!(_pending isEqualType []) || {count _pending < 3}) exitWith {false};
 _pending params ["_bodyPart","_siteIdx","_route"];
+// B121 Hardcore Medications replaces the display-bound animation with a persistent transaction.
+// The worker survives every menu close/reopen; only Stop Push, leash/access loss or completion ends flow.
+if ((missionNamespace getVariable ["ACME_hcEff_medications",false]) && {_route != "im"}) exitWith {call ACME_fnc_hardcorePushStart};
 uiNamespace setVariable ["ACME_SK_SiteIdx",_siteIdx];
 uiNamespace setVariable ["ACME_SK_Route",_route];
 private _patient = uiNamespace getVariable ["ACME_SK_Patient",objNull];

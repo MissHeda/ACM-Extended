@@ -51,6 +51,7 @@ ACME_hcEff_rhythm = missionNamespace getVariable ["ACME_hc_rhythm", false];
 ACME_hcEff_circ   = missionNamespace getVariable ["ACME_hc_circ", false];
 ACME_hcEff_nrb    = missionNamespace getVariable ["ACME_hc_nrb", false];
 ACME_hcEff_transfusion = missionNamespace getVariable ["ACME_hc_transfusion", false];
+ACME_hcEff_medications = missionNamespace getVariable ["ACME_hc_medications", false];
 private _juncBleedMult = missionNamespace getVariable ["ACME_junctionalBleedMult", 1.0];
 private _juncFreqMult  = missionNamespace getVariable ["ACME_junctionalFreqMult", 1.0];
 

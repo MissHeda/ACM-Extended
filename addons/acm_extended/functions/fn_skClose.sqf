@@ -27,6 +27,10 @@ call ACME_fnc_restoreMedicationList;
 private _return = _display getVariable ["ACME_SK_Return", []];
 private _patient = _display getVariable ["ACME_SK_ReturnPatient", objNull];
 private _suppressReturn = uiNamespace getVariable ["ACME_SK_suppressReturn", false];
+// B121: closing the Narc Box during a one-handed push means genuinely closing the UI. Do not force the ACE
+// medical menu back open underneath the corner syringe. The persistent push PFH is deliberately untouched.
+private _hcPushClose = missionNamespace getVariable ["ACME_HCMedPushJob",createHashMap];
+if (_hcPushClose isEqualType createHashMap && {count _hcPushClose > 0} && {_hcPushClose getOrDefault ["flowing",false]}) then {_suppressReturn = true;};
 ACME_infusion_pendingContext = nil;
 missionNamespace setVariable ["ACME_infusion_bagTally", []];
 uiNamespace setVariable ["ACME_SK_suppressReturn", false];
