@@ -2667,6 +2667,7 @@ class CfgFunctions {
             class laryngoConsequence {};
             class laryngoConsequenceLocal {};
             class laryngoReflexChance {};
+            class laryngoIrritationTick {};
             class infusionClampLocal {};
 
             class propofolOnBoard {};
@@ -8170,10 +8171,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.1;
         allowedSelections[] = {"Head"};
         items[] = {};
-        // B71: Orotracheal intubation is not offered to an awake/perfusing casualty. The action appears only once
-        // the patient is medically unconscious (or in cardiac arrest), with the required laryngoscope/tube and no
-        // conflicting ventilatable airway already in place.
-        condition = "([_medic, 'ACME_IntubateStart'] call ACME_fnc_procedureActionAllowed) && {(_patient getVariable ['ACE_isUnconscious', false]) || {(_patient getVariable ['ace_medical_unconscious', false])} || {(_patient getVariable ['ace_medical_inCardiacArrest', false])}} && {([_medic, 'ACME_Laryngoscope'] call ace_common_fnc_getCountOfItem) > 0} && {([_medic, 'ACME_ETTube'] call ace_common_fnc_getCountOfItem) > 0} && {!(_patient getVariable ['ACME_ETT_Inserted', false])} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral', '']) isEqualTo ''} && {!(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])}";
+        // B120: Orotracheal intubation may be attempted on a perfusing casualty. Airway reflex, sedation and
+        // paralysis are handled inside the procedure rather than hiding the action from the menu.
+        condition = "([_medic, 'ACME_IntubateStart'] call ACME_fnc_procedureActionAllowed) && {([_medic, 'ACME_Laryngoscope'] call ace_common_fnc_getCountOfItem) > 0} && {([_medic, 'ACME_ETTube'] call ace_common_fnc_getCountOfItem) > 0} && {!(_patient getVariable ['ACME_ETT_Inserted', false])} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral', '']) isEqualTo ''} && {!(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])}";
         callbackSuccess = "[_medic, _patient, toLower _bodyPart] call ACME_fnc_laryngoOpen";
         callbackFailure = "";
         callbackProgress = "";
@@ -8200,9 +8200,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 4;
         allowedSelections[] = {"Head"};
         items[] = {};
-        // Keep Extubate visible whenever a tube is actually seated and not collar-secured. Cuff state must not
-        // hide the action; fn_laryngoExtubate gives the explicit "deflate cuff" refusal if it is still inflated.
-        condition = "([_medic, 'ACME_Extubate'] call ACME_fnc_procedureActionAllowed) && {(_patient getVariable ['ACME_ETT_Inserted', false]) && {!(_patient getVariable ['ACME_ETT_Secured', false])}}";
+        // B120: Extubate is the deliberate removal workflow and remains visible for any inserted ET tube.
+        // Its treatment includes releasing securement and cuff state before withdrawing the tube.
+        condition = "([_medic, 'ACME_Extubate'] call ACME_fnc_procedureActionAllowed) && {(_patient getVariable ['ACME_ETT_Inserted', false])}";
         callbackSuccess = "[_medic, _patient] call ACME_fnc_laryngoExtubate";
         callbackFailure = "";
         callbackProgress = "";

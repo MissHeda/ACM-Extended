@@ -69,7 +69,8 @@ private _needs = (_patient getVariable ["ace_medical_inCardiacArrest", false])
     || {count (_patient getVariable ["ACME_yFlushJobs", createHashMap]) > 0}
     || {count (_patient getVariable ["ACME_suctionSessions", []]) > 0}
     || {(_patient getVariable ["ACME_suctionExposure", 0]) > 0}
-    || {(_patient getVariable ["ACME_o2Drain_suction", 0]) > 0};
+    || {(_patient getVariable ["ACME_o2Drain_suction", 0]) > 0}
+    || {(_patient getVariable ["ACME_laryngo_irritationUntil", 0]) > CBA_missionTime};
 private _registry = missionNamespace getVariable ["ACME_clinical_activePatients", []];
 if (_needs) then {_registry pushBackUnique _patient;} else {_registry = _registry - [_patient];};
 missionNamespace setVariable ["ACME_clinical_activePatients", _registry];

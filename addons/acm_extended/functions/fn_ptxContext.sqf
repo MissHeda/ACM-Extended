@@ -75,7 +75,7 @@ private _thoraSeal = false;
     if !(_incision isEqualType []) then {_incision = [];};
     _hasSideState = _hasSideState || {_tract != ""} || {_tube} || {_sealed} || {count _incision == 3};
     _hasDefinitiveDrain = _hasDefinitiveDrain || {_tube} || {_tract == "finger" && {!_sealed}};
-    _thoraSeal = _thoraSeal || {_tract == "finger" && {_sealed} && {!_tube}};
+    _thoraSeal = _thoraSeal || {_tract in ["finger", "sealed"] && {_sealed} && {!_tube}};
 } forEach ["left", "right"];
 if (!_hasSideState) then {
     private _nativeThora = _patient getVariable ["ACM_breathing_Thoracostomy_State", 0];

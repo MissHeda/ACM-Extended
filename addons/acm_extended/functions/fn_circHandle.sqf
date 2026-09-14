@@ -108,6 +108,7 @@ private _getMedEffect = {
     [_patient] call ACME_fnc_ettAirwayProtect;
     [_patient] call ACME_fnc_sugammadexTick;
     [_patient] call ACME_fnc_rocuroniumTick;
+    [_patient] call ACME_fnc_laryngoIrritationTick;
 
     // running ventilator. if this patient is intubated, configured and connected to a running vent, the vent
     // breathes for them and keeps ACM's BVM oxygenation alive at the set rate and FiO2. that matters most for a

@@ -46,6 +46,8 @@
   ["ACME_laryngo_lastGagAt", "cba", true],
   ["ACME_laryngo_missTolerance", "", true],
   ["ACME_laryngo_gagMisses", "", true],
+  ["ACME_laryngo_irritationUntil", "cba", true],
+  ["ACME_laryngo_irritationNext", "cba", true],
   ["ACME_laryngo_teethBroken", "", true],
   ["ACME_laryngo_fluidKind", "", true],
   ["ACME_laryngo_fluidStage", "", true],
