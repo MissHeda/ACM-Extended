@@ -5,6 +5,37 @@
  */
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
+// Direct Pressure is an immediate medical-menu state toggle, not an ACE timed treatment. Running it through the
+// normal treatment pipeline closes the medical menu for the progress dialog and invokes the generic weapon/stance
+// preflight before callbackSuccess. Apply/Stop therefore execute here and repaint the existing menu in place.
+private _fnc_refreshDirectPressureMenu = {
+    params ["_m", "_p"];
+    if (!hasInterface || {isNil "ACE_player"} || {_m isNotEqualTo ACE_player}) exitWith {};
+    ace_medical_gui_pendingReopen = false;
+    [{
+        params ["_patient"];
+        private _display = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
+        if (!isNull _display
+            && {(missionNamespace getVariable ["ace_medical_gui_target", objNull]) isEqualTo _patient}
+            && {!isNil "ace_medical_gui_fnc_updateActions"}) then {
+            [_display] call ace_medical_gui_fnc_updateActions;
+        };
+    }, [_p]] call CBA_fnc_execNextFrame;
+};
+
+if (_classname == "ACME_DirectPressure") exitWith {
+    if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
+    if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
+
+    // Preserve the existing hands-on-wound one-shot, but do not create a progress bar or treatment animation.
+    [_patient, 0.85] call ACME_fnc_markImportantSfx;
+    [_medic, "ACME_DirectPressure"] remoteExec ["say3D", 0];
+
+    [_medic, _patient, _bodyPart] call ACME_fnc_directPressureStart;
+    [_medic, _patient] call _fnc_refreshDirectPressureMenu;
+    _medic getVariable ["ACME_DP_Active", false]
+};
+
 // Stop Direct Pressure is state teardown, not a new treatment. It must never depend on a progress bar, provider
 // weapon state, animation state, or another canTreat pass. If the button is visible for the held patient, clicking
 // it releases pressure immediately.
@@ -13,6 +44,7 @@ if (_classname == "ACME_StopDirectPressure") exitWith {
     if (!(_medic getVariable ["ACME_DP_Active", false])
         || {!((_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient)}) exitWith {false};
     [false, _medic] call ACME_fnc_directPressureStop;
+    [_medic, _patient] call _fnc_refreshDirectPressureMenu;
     true
 };
 

@@ -39,6 +39,11 @@ if (isNull objectParent _medic) then {
     _medic setVariable ["ACME_DP_LastPoseAssert", CBA_missionTime];
 };
 
+// Chest pressure keeps the medical menu available, so LMB remains free for treatment buttons. RMB is the dedicated
+// cancellation input and is already consumed by ACME's persistent RMB guard; expose that binding exactly like the
+// BVM/CPR continuous-action hints do.
+["", "Stop Direct Pressure", ""] call ace_interaction_fnc_showMouseHint;
+
 // Never swallow the key that is trying to close the medical UI or return control to the player. The handler releases
 // pressure, then returns false so the original ESC/RMB/H input continues through the normal ACE/CBA path.
 private _ids = [];

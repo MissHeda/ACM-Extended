@@ -300,7 +300,9 @@ private _actionIndex = 0;
         // Mark the reopen intent BEFORE the treatment statement.  Some treatments close the medical display
         // synchronously while their ButtonClick handler is still executing; setting this afterward is too late for
         // onMenuClose to distinguish a real action from the player manually closing the menu.
-        if (_groupKey isEqualTo '') then {
+        // Apply/Stop Direct Pressure repaint this same display in place. They never open a progress dialog, so do
+        // not arm ACE's close/reopen path for those two rows. Every normal treatment keeps the native behavior.
+        if (_groupKey isEqualTo '' && {!(_actionClass in ['acme_directpressure', 'acme_stopdirectpressure'])}) then {
             _ctrl ctrlAddEventHandler ['ButtonClick', {ace_medical_gui_pendingReopen = true;}];
         };
         _ctrl ctrlAddEventHandler ['ButtonClick', _statement];
