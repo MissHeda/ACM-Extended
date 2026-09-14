@@ -45,8 +45,9 @@ _ctrlR ctrlShow true;
 private _canvas = call ACME_fnc_uiCanvas;
 _canvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
 private _gap = 0.0035;
-// About 40% of the authored 16:9 canvas. On ultrawide this remains a compact left-side block rather than expanding with the monitor.
-private _totalW = ((_uiW * 0.40) max 0.38) min 0.46;
+// B116: keep the entire clinical snapshot on one screenshot. The panel is narrower than B114 and the font
+// starts smaller; only the network/engineering page is allowed to live elsewhere.
+private _totalW = ((_uiW * 0.36) max 0.34) min 0.42;
 private _w = (_totalW - _gap) / 2;
 private _x = safeZoneXAbs + 0.002;
 private _y = safeZoneY + 0.014;
@@ -57,7 +58,7 @@ _ctrlL ctrlCommit 0;
 _ctrlR ctrlCommit 0;
 
 private _userScale = missionNamespace getVariable ["ACME_debug_scale", 1];
-private _scale = (((_userScale max 0.50) min 1.15) * 0.67) max 0.50 min 0.76;
+private _scale = (((_userScale max 0.50) min 1.15) * 0.58) max 0.43 min 0.66;
 
 private _cTitle = "#D9A441";
 private _cSect  = "#F0E7D2";
@@ -111,10 +112,10 @@ private _batch = missionNamespace getVariable ["ACME_buildBatch", "?"];
 private _left = [];
 private _right = [];
 private _pName = if (isNull _patient) then {"NO PATIENT"} else {name _patient};
-_left pushBack format ["<t color='%1' size='1.02'>ACME DEBUG v%2</t>  <t color='%3'>CLINICAL 1/2</t>", _cTitle, _ver, _cSect];
+_left pushBack format ["<t color='%1' size='1.02'>ACME DEBUG v%2</t>  <t color='%1'>CLINICAL 1/2</t>", _cTitle, _ver];
 _left pushBack format ["<t color='%1'>%2  |  %3  |  Ctrl+PgUp/PgDn</t>", _cMute, [_pName] call _safe, _batch];
 _right pushBack format ["<t color='%1' size='1.02'>AT A GLANCE</t>", _cTitle];
-_right pushBack format ["<t color='%1'>Page 2: details / network / raw state</t>", _cMute];
+_right pushBack format ["<t color='%1'>Page 2: NETWORK 2/2</t>", _cTitle];
 
 if (isNull _patient) exitWith {
     _left pushBack (["Patient", "none", _cWarn] call _one);
@@ -137,6 +138,7 @@ private _pain = _patient getVariable ["ace_medical_pain", 0];
 private _uncon = _patient getVariable ["ACE_isUnconscious", false];
 private _arrest = _patient getVariable ["ace_medical_inCardiacArrest", false];
 private _crit = _patient getVariable ["ACM_core_CriticalVitals_State", false];
+private _coLMin = if (!isNil "ace_medical_status_fnc_getCardiacOutput") then {([_patient] call ace_medical_status_fnc_getCardiacOutput) * 60} else {0};
 
 private _hrC = if (_hr <= 0 || {_hr < 40} || {_hr >= 180}) then {_cBad} else {if (_hr < 60 || {_hr >= 130}) then {_cWarn} else {_cGood}};
 private _bpC = if (_sys <= 0 || {_sys < 80}) then {_cBad} else {if (_sys < 90 || {_sys > 160}) then {_cWarn} else {_cGood}};
@@ -152,7 +154,7 @@ _left pushBack (["SpO2", format ["%1%%", _spo2], _spC, "EtCO2", if (_etco2 < 0) 
 _left pushBack (["Temp", format ["%1 C", _temp toFixed 1], _tempC, "Pain", format ["%1%%", round (_pain * 100)], if (_pain > 0.8) then {_cBad} else {if (_pain > 0.4) then {_cWarn} else {_cGood}}] call _pair);
 private _stateTxt = if (!alive _patient) then {"DEAD"} else {if (_arrest) then {"ARREST"} else {if (_uncon) then {"UNCON"} else {if (_crit) then {"CRITICAL"} else {"awake"}}}};
 private _stateCol = if (!alive _patient || {_arrest}) then {_cCrit} else {if (_uncon || {_crit}) then {_cWarn} else {_cGood}};
-_left pushBack (["State", _stateTxt, _stateCol, "Rhythm", _patient getVariable ["ACME_rhythm_active", _patient getVariable ["ACM_circulation_Cardiac_RhythmState", 0]], _cLabel] call _pair);
+_left pushBack (["State", _stateTxt, _stateCol, "CO", format ["%1 L/min", _coLMin toFixed 1], if (_coLMin <= 0.01) then {_cBad} else {if (_coLMin < 3) then {_cWarn} else {_cGood}}] call _pair);
 
 // Perfusion / hemorrhage.
 private _normalBlood = missionNamespace getVariable ["ACME_hypo_bloodNormal", 6];
@@ -255,12 +257,11 @@ _right pushBack (["TQ", _tqCount, if (_tqCount > 0) then {_cWarn} else {_cMute},
 _right pushBack (["Junc", if (_jTxt isEqualTo []) then {"none"} else {_jTxt joinString ","}, if (_jTxt isEqualTo []) then {_cMute} else {_cWarn}] call _one);
 _right pushBack (["AAJT", if (_aajt isEqualTo []) then {"none"} else {_aajt joinString "+"}, if (_aajt isEqualTo []) then {_cMute} else {_cWarn}, "XStat", [_xstat] call _yn, if (_xstat) then {_cWarn} else {_cMute}] call _pair);
 private _hpmk = _patient getVariable ["ACME_hpmk_state", ""];
-_right pushBack (["HPMK", if (_hpmk == "") then {"none"} else {_hpmk}, if (_hpmk in ["wrapped","exposed"]) then {_cGood} else {_cMute}, "ETT", [_ett] call _yn, if (_ett) then {_cGood} else {_cMute}] call _pair);
 private _fract = _patient getVariable ["ACM_disability_Fracture_State", [0,0,0,0,0,0]];
 private _splints = _patient getVariable ["ace_medical_treatment_splints", [0,0,0,0,0,0]];
 private _fractN = {_x > 0} count _fract;
 private _splintN = {_x > 0} count _splints;
-_right pushBack (["Fract", _fractN, if (_fractN > 0) then {_cWarn} else {_cMute}, "Splint", _splintN, if (_splintN > 0) then {_cGood} else {_cMute}] call _pair);
+_right pushBack (["HPMK", if (_hpmk == "") then {"none"} else {_hpmk}, if (_hpmk in ["wrapped","exposed"]) then {_cGood} else {_cMute}, "Fr/Spl", format ["%1/%2", _fractN, _splintN], if (_fractN > _splintN) then {_cWarn} else {if (_fractN > 0) then {_cGood} else {_cMute}}] call _pair);
 
 // Sedation and paralysis. Keep one compact block even when empty so a screenshot proves the state was checked.
 ([_patient] call ACME_fnc_sedationComponents) params ["_ket", "_prop", "_mid", "_fent", "_adjunct", "_sed"];
@@ -322,13 +323,12 @@ _right pushBack (["FLUIDS / INFUSIONS"] call _sect);
 if (_fluidRows isEqualTo []) then {
     _right pushBack (["Bags", 0, _cGood, "Pressor", _pressor toFixed 2, if (_pressor > 0) then {_cGood} else {_cMute}] call _pair);
 } else {
-    private _lim = (count _fluidRows) min 4;
-    for "_i" from 0 to (_lim - 1) do {
+    // Every active bag stays on the clinical screenshot. Font fitting below handles unusually busy patients.
+    for "_i" from 0 to ((count _fluidRows) - 1) do {
         (_fluidRows select _i) params ["_what", "_where", "_rem", "_rate"];
-        private _tail = if (_rate >= 0) then {format ["%1 mL | %2 gtt", _rem toFixed 0, round _rate]} else {format ["%1 mL", _rem toFixed 0]};
-        _right pushBack format ["<t color='%1'>%2 @ %3</t> <t color='%4'>%5</t>", _cLabel, [_what] call _safe, [_where] call _safe, if (_rate == 0) then {_cWarn} else {_cGood}, _tail];
+        private _tail = if (_rate >= 0) then {format ["%1mL/%2g", _rem toFixed 0, round _rate]} else {format ["%1mL", _rem toFixed 0]};
+        _right pushBack format ["<t color='%1'>%2@%3</t> <t color='%4'>%5</t>", _cLabel, [_what] call _safe, [_where] call _safe, if (_rate == 0) then {_cWarn} else {_cGood}, _tail];
     };
-    if ((count _fluidRows) > 4) then {_right pushBack format ["<t color='%1'>+%2 more bags on page 2</t>", _cMute, (count _fluidRows) - 4];};
 };
 
 // Metabolic/coagulation summary.
@@ -339,6 +339,13 @@ private _shock = _patient getVariable ["ACME_circ_shockSeverity", 0];
 _right pushBack (["METABOLIC"] call _sect);
 _right pushBack (["Acid", _acid toFixed 2, if (_acid >= 0.65) then {_cBad} else {if (_acid >= 0.30) then {_cWarn} else {_cGood}}, "PaCO2", _paCO2 toFixed 0, if (_paCO2 > 70) then {_cBad} else {if (_paCO2 > 50) then {_cWarn} else {_cGood}}] call _pair);
 _right pushBack (["Coag", _coag toFixed 2, if (_coag > 1.5) then {_cBad} else {if (_coag > 1.1) then {_cWarn} else {_cGood}}, "Shock", _shock toFixed 2, if (_shock > 0.6) then {_cBad} else {if (_shock > 0.2) then {_cWarn} else {_cGood}}] call _pair);
+private _cbrnExp = _patient getVariable ["ACM_cbrn_Exposed_State", false];
+private _cbrnCont = _patient getVariable ["ACM_cbrn_Contaminated_State", false];
+private _cbrnAir = _patient getVariable ["ACM_cbrn_AirwayInflammation", 0];
+private _cbrnLung = _patient getVariable ["ACM_cbrn_LungTissueDamage", 0];
+if (_cbrnExp || {_cbrnCont} || {_cbrnAir > 0} || {_cbrnLung > 0}) then {
+    _right pushBack (["CBRN", format ["E:%1 C:%2", if (_cbrnExp) then {"Y"} else {"-"}, if (_cbrnCont) then {"Y"} else {"-"}], _cWarn, "Air/Lung", format ["%1/%2", _cbrnAir toFixed 1, _cbrnLung toFixed 1], _cWarn] call _pair);
+};
 
 private _render = {
     params ["_s"];
@@ -348,6 +355,6 @@ private _render = {
 [_scale] call _render;
 private _need = (ctrlTextHeight _ctrlL) max (ctrlTextHeight _ctrlR);
 if (_need > _h) then {
-    private _fit = ((_scale * (((_h * 0.985) / _need) min 1)) max 0.43) min _scale;
+    private _fit = ((_scale * (((_h * 0.985) / _need) min 1)) max 0.36) min _scale;
     [_fit] call _render;
 };

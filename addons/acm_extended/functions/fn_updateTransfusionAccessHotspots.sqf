@@ -83,10 +83,9 @@ private _partLabel = {
         _image = _display ctrlCreate ["RscPictureKeepAspect", _imageIDC];
     };
     if (_isEJ && {!isNull _image}) then {
-        // SQF does not use C-style backslash escaping. B113 accidentally emitted literal double backslashes here,
-        // which made Arma look for a non-existent \\acm_extended\\... path even though both PAA files exist.
-        // Reassert the correct path even when a runtime control survived a UI refresh in the same mission.
-        _image ctrlSetText (["\acm_extended\ui\iv\iv_ej_left_ca.paa", "\acm_extended\ui\iv\iv_ej_right_ca.paa"] select (_site max 0 min 1));
+        // Build the PBO path from the literal backslash character. This guarantees one separator per component
+        // even if a source/preprocessor path has been escaped by an external build step.
+        _image ctrlSetText ([_site] call ACME_fnc_ejTexturePath);
         _image ctrlSetPosition [_outerX,_outerY,_outerW,_outerH];
         _image ctrlCommit 0;
         _image ctrlShow _has;

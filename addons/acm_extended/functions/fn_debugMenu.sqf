@@ -1,4 +1,4 @@
-// Two-page debug dispatcher. Page 0 is the screenshot-friendly clinical overview; page 1 is the full engineering/network view.
+// Two-page debug dispatcher. Page 0 is the screenshot-friendly clinical overview; page 1 is network/engineering state only.
 disableSerialization;
 
 private _page = uiNamespace getVariable ["ACME_debug_page", 0];
@@ -9,8 +9,4 @@ if (_page == 0) exitWith {
     call ACME_fnc_debugMenuClinical;
 };
 
-if (isNil {missionNamespace getVariable "ACME_debugMenu_v121B114DetailsCode"}) then {
-    private _src = preprocessFileLineNumbers "\acm_extended\functions\fn_debugMenuCore.sqf";
-    missionNamespace setVariable ["ACME_debugMenu_v121B114DetailsCode", compile _src];
-};
-call (missionNamespace getVariable ["ACME_debugMenu_v121B114DetailsCode", {}]);
+call ACME_fnc_debugMenuNetwork;

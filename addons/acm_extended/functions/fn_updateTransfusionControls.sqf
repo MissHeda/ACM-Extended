@@ -224,11 +224,26 @@ if ((uiNamespace getVariable ["ACME_infusion_LayoutDisplay", displayNull]) != _d
     if (!isNull _x) then { _x ctrlShow false; };
 } forEach [_ctrlDrop, _ctrlRateDown, _ctrlRateUp, _ctrlRateText, _ctrlActiveInfTitle, _ctrlAdjust];
 
-private _leftBase = uiNamespace getVariable ["ACME_infusion_BaseLeftListPos", []];
-private _rightBase = uiNamespace getVariable ["ACME_infusion_BaseRightListPos", []];
-private _moveBase = uiNamespace getVariable ["ACME_infusion_BaseMovePos", []];
-private _removeBase = uiNamespace getVariable ["ACME_infusion_BaseRemovePos", []];
-private _stopBase = uiNamespace getVariable ["ACME_infusion_BaseStopPos", []];
+private _leftBase = +(uiNamespace getVariable ["ACME_infusion_BaseLeftListPos", []]);
+private _rightBase = +(uiNamespace getVariable ["ACME_infusion_BaseRightListPos", []]);
+private _moveBase = +(uiNamespace getVariable ["ACME_infusion_BaseMovePos", []]);
+private _removeBase = +(uiNamespace getVariable ["ACME_infusion_BaseRemovePos", []]);
+private _stopBase = +(uiNamespace getVariable ["ACME_infusion_BaseStopPos", []]);
+
+// B116: the native Stop IV Transfusion row sat too close to the enlarged list beneath it. Move the stop row and
+// the entire left-list stack down together, preserving the gap instead of letting the button cover the first line.
+private _stopNudge = safeZoneH * 0.008;
+if (_stopBase isNotEqualTo []) then {
+    _stopBase set [1, (_stopBase select 1) + _stopNudge];
+    if (!isNull _ctrlNativeStop) then {
+        _ctrlNativeStop ctrlSetPosition _stopBase;
+        _ctrlNativeStop ctrlCommit 0;
+    };
+};
+if (_leftBase isNotEqualTo []) then {
+    _leftBase set [1, (_leftBase select 1) + _stopNudge];
+    _leftBase set [3, ((_leftBase select 3) - _stopNudge) max (safeZoneH * 0.20)];
+};
 
 private _uiW = safeZoneW min (safeZoneH * 1.7777778);
 private _uiX = safeZoneX + ((safeZoneW - _uiW) / 2);

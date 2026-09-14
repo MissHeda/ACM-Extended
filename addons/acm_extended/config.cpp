@@ -2410,6 +2410,8 @@ class CfgFunctions {
             class syncPremixedBags {};
             class debugMenu {};
             class debugMenuClinical {};
+            class debugMenuNetwork {};
+            class ejTexturePath {};
             class debugDumpToClipboard {};
             class debugEnabled {};
             class autoBPCondition {};

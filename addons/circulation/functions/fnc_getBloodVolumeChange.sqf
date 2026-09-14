@@ -94,6 +94,14 @@ if (_acmePermHypo != 1) then {
 };
 
 private _inCardiacArrest = IN_CRDC_ARRST(_unit);
+// B116: fluid admission requires forward circulation. Use actual mechanical cardiac output as the native guard,
+// with CPR as the only substitute in arrest. The ordinary gauge/site flow curve remains unchanged whenever
+// forward output exists; this is a zero-output safety gate, not a new arbitrary resuscitation-rate curve.
+private _cprActiveForFlow = [_unit] call EFUNC(core,cprActive);
+private _nativeCOForFlow = [_unit] call ACEFUNC(medical_status,getCardiacOutput);
+if (!(_nativeCOForFlow isEqualType 0) || {!finite _nativeCOForFlow}) then {_nativeCOForFlow = 0;};
+private _fluidPerfusionOpen = _cprActiveForFlow || {!_inCardiacArrest && {_nativeCOForFlow > 0.0001}};
+_unit setVariable ["ACME_fluidFlowPerfusionBlocked", !_fluidPerfusionOpen, false];
 
 private _TXAEffect = ([_unit, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount));
 
@@ -194,10 +202,12 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
     private _activeBagTypesIV = _unit getVariable [QEGVAR(circulation,ActiveFluidBags_IV), ACM_IV_PLACEMENT_DEFAULT_1];
     private _activeBagTypesIO = _unit getVariable [QEGVAR(circulation,ActiveFluidBags_IO), ACM_IO_PLACEMENT_DEFAULT_1];
 
-    if (IN_CRDC_ARRST(_unit)) then {
-        _IVFlowMultiplier = EGVAR(circulation,cardiacArrestBleedRate);
-        _IOFlowMultiplier = 0.9;
-        if (alive (_unit getVariable [QACEGVAR(medical,CPR_provider), objNull])) then {
+    if (!_fluidPerfusionOpen) then {
+        _IVFlowMultiplier = 0;
+        _IOFlowMultiplier = 0;
+    } else {
+        if (_inCardiacArrest && {_cprActiveForFlow}) then {
+            // Preserve ACM's reduced arrest-flow calibration once CPR is actually producing forward perfusion.
             _IVFlowMultiplier = 0.9;
             _IOFlowMultiplier = 1;
         };
@@ -346,6 +356,10 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
                         };
                     };
                 };
+
+                // Final perfusion gate after every fixed-rate override, including the blood warmer. No CPR means
+                // no forward circulation in arrest, therefore no bag volume may be consumed or credited.
+                if (!_fluidPerfusionOpen) then {_bagChange = 0;};
 
                 if (_iv && EGVAR(circulation,IVComplications)) then {
                     private _comp = (GET_IV_COMPLICATIONS_FLOW_X(_unit,_partIndex,_accessSite)) max 0 min 2;
