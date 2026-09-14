@@ -299,7 +299,8 @@ private _linesS = [];
 private _pName = if (isNull _patient) then {"none"} else {[name _patient] call _fnSafe};
 private _targetMode = if (_patient isEqualTo (missionNamespace getVariable ["ACME_debug_lastTreatmentTarget", objNull])) then {"treating"} else {"auto"};
 
-_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2</t> %3 <t color='%4'>%5</t>", _cTitle, _ver, _pName, _cMute, _targetMode];
+_linesL pushBack format ["<t color='%1' size='1.00'>ACME DEBUG v%2</t> <t color='%3'>DETAILS 2/2</t>", _cTitle, _ver, _cSect];
+_linesL pushBack format ["<t color='%1'>%2 | %3 | Ctrl+PgUp/PgDn</t>", _cMute, _pName, _targetMode];
 _linesL pushBack format ["<t color='%1'>dbg on | force %2 | tick %3</t>", _cMute, missionNamespace getVariable ["ACME_debug_forceOverlay", false], diag_tickTime toFixed 1];
 _linesL pushBack format ["<t color='%1'>trk i%2 t%3 c%4 bp%5</t>", _cMute, count (["ACME_infusion_activePatients"] call _fnArray), count (["ACME_tbi_activePatients"] call _fnArray), count (["ACME_circ_activePatients"] call _fnArray), count (["ACME_autoBP_patients"] call _fnArray)];
 

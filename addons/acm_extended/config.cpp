@@ -1750,6 +1750,7 @@ class CfgFunctions {
             class registerSyringeLifecycleRuntime {};
             class initForkStartupRuntime {};
             class registerDebugWatchdogRuntime {};
+            class registerDebugPageKeybindRuntime {};
             class registerThoracicMenuPresentationRuntime {};
             class registerMedicalMenuOpenRuntime {};
             class registerClinicalMenuPresentationRuntime {};
@@ -2408,6 +2409,7 @@ class CfgFunctions {
             class remove18g {};
             class syncPremixedBags {};
             class debugMenu {};
+            class debugMenuClinical {};
             class debugDumpToClipboard {};
             class debugEnabled {};
             class autoBPCondition {};
