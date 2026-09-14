@@ -8,21 +8,13 @@ private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
 if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] call ACME_fnc_ecgJostleRequest;};
 // NA2: no clinical writes on unload. Pending actions resolve independently of this display.
 
-// leave the patient exactly on the side and orientation they were on when the provider exits the minigame. do not
-// force a roll back to the front.
-
-// if the head was elevated when we opened, because we lowered them flat for the procedure, resume the
-// head-elevation system without using a forced chest-seal roll-back delay.
-// the exception is that if the patient is mid-seizure, do not raise them here. the seizure owns the flat pose and
-// re-elevates them itself once it and its cooldown finish, in fn_lidotoxtick. raising a still-convulsing patient
-// would just fight that.
-if (!isNull _patient
-    && {_patient getVariable ["ACME_headElev_Suspended", false]}
-    && {((_patient getVariable ["ACME_lido_seizureState", ""]) in ["", "postictal"])}
-) then {
-    _patient setVariable ["ACME_headElev_ResumePending", true, true];
-    [{ _this call ACME_fnc_headElevTryResume }, _patient, missionNamespace getVariable ["ACME_headElev_resumeDelay", 0.75]] call CBA_fnc_waitAndExecute;
+// Restore the casualty through the same owner-local procedure transaction that prepared them. It returns them to
+// the side they had before the minigame, gives the carrier back, then resumes an existing Semi-Fowler placement.
+private _sessionToken = uiNamespace getVariable ["ACME_CS_SessionToken", ""];
+if (!isNull _patient && {_sessionToken != ""}) then {
+    [_patient, "chestSealPatientEnd", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
 };
+uiNamespace setVariable ["ACME_CS_SessionToken", ""];
 
 private _pfh = uiNamespace getVariable ["ACME_CS_PFH", -1];
 if (_pfh >= 0) then { [_pfh] call CBA_fnc_removePerFrameHandler; };

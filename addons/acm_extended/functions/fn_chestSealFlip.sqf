@@ -24,7 +24,9 @@ private _dead = (!alive _patient) || {(lifeState _patient) isEqualTo "DEAD"};
 private _self = _patient isEqualTo (uiNamespace getVariable ["ACME_CS_Medic", objNull]);
 private _isUncon = (_patient getVariable ["ACE_isUnconscious", false]) || {_patient getVariable ["ace_medical_unconscious", false]};
 private _isObtunded = _patient getVariable ["ACME_obtunded", false];
-private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"} || {_patient getVariable ["ACM_core_Lying_State", false]};
+private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"}
+    || {_patient getVariable ["ACM_core_Lying_State", false]}
+    || {_patient getVariable ["ACME_CS_ProcedureGrounded", false]};
 private _willAnimate = (!_dead) && {!_self} && {_isGrounded} && {isNull objectParent _patient};
 
 // An awake casualty who is standing/crouched under their own control must never be forced to the floor just so

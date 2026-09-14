@@ -2212,6 +2212,9 @@ class CfgFunctions {
             class ccApply {};
             class assessBleeding {};
             class chestSealOpen {};
+            class chestSealPatientBegin {};
+            class chestSealPatientEnd {};
+            class chestSealParkCarrier {};
             class chestSealInit {};
             class chestSealGenHoles {};
             class chestSealBumpVer {};

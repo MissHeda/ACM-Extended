@@ -13,7 +13,7 @@ ACME_rollProviderDuration = 2.2;  // exact provider Flip/roll theatre requested;
 ACME_poseHoldAt = createHashMapFromArray [
     ["roll", 2.2],         // Patient Flip and every ACM/ACME front-back roll: AinvPknlMstpSnonWnonDnon_medic4 to 2.2 s.
     ["inspect", 2.2],      // Inspect Chest: the same medic4 motion, frozen at 2.2 s until the inspection ends.
-    ["pulse", 0.691],      // Check Pulse: AinvPknlMstpSnonWrflDnon_medic1 to exactly 0.691 s.
+    ["pulse", 0.421],      // Check Pulse: same ACME_StethoscopeWork hold as auscultation.
     ["stethoscope", 0.421] // Auscultation: ACME_StethoscopeWork to the authored 0.421 s sample.
 ];
 ACME_poseStopAfterHold = createHashMapFromArray [

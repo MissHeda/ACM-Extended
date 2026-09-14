@@ -6,7 +6,7 @@
  *   roll                 AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s, then the exit blend
  *   inspect              AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s until the 6 s inspection ends
  *   stethoscope          ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
- *   pulse                AinvPknlMstpSnonWrflDnon_medic1, frozen at 0.691 s until the minigame exits
+ *   pulse                ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
  *   chestSeal            AinvPknlMstpSnonWnonDnon_medic3
  *   ncdSeat              AinvPknlMstpSnonWrflDnon_medic1
  *   torsoBandage         AinvPknlMstpSnonWrflDnon_medic4
@@ -59,7 +59,7 @@ private _main = switch (_mode) do {
     case "stethoscope": {"ACME_StethoscopeWork"};
     case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
     case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
-    case "pulse": {"AinvPknlMstpSnonWrflDnon_medic1"};
+    case "pulse": {"ACME_StethoscopeWork"};
     case "torsoBandage": {"AinvPknlMstpSnonWrflDnon_medic4"};
     case "headBandageLeft": {"AinvPknlMstpSnonWrflDnon_medic0"};
     case "headBandageRight": {"AinvPknlMstpSnonWrflDr_medic2_old"};

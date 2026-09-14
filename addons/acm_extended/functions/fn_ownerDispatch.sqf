@@ -57,6 +57,8 @@ switch (_operation) do {
     case "chestEffect": { _args call ACME_fnc_chestSealEffectLocal; };
     case "burp": { _args call ACME_fnc_chestSealBurp; };
     case "chestSealRoll": {_args call ACME_fnc_chestSealRoll;};
+    case "chestSealPatientBegin": {_args call ACME_fnc_chestSealPatientBegin;};
+    case "chestSealPatientEnd": {_args call ACME_fnc_chestSealPatientEnd;};
     case "patientAnimRequest": {_args call ACME_fnc_patientAnimRequest;};
     case "patientAnimRelease": {_args call ACME_fnc_patientAnimRelease;};
     case "treatmentPatientSettle": {_args call ACME_fnc_treatmentPatientSettle;};

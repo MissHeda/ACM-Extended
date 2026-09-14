@@ -1,6 +1,6 @@
-/* B52 pulse palpation minigame.
- * Keeps ACM's pulse visual, but owns Escape explicitly and uses the requested provider pose:
- * AinvPknlMstpSnonWrflDnon_medic1 -> freeze at exactly 0.691 s -> clean crouched exit.
+/* B100 pulse palpation minigame.
+ * Keeps ACM's pulse visual, owns Escape explicitly, uses the exact auscultation pose/hold, and opens a watch
+ * control for the duration of the check. The watch control is deleted before the pulse layer exits.
  */
 params ["_medic","_patient","_bodyPart"];
 if (isNull _medic || {isNull _patient}) exitWith {};
@@ -28,7 +28,15 @@ ace_medical_gui_pendingReopen = false;
 if (dialog) then {closeDialog 0;};
 "ACM_FeelPulse" cutRsc ["RscFeelPulse","PLAIN",0,false];
 private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];
-if (!isNull _disp) then {(_disp displayCtrl 80001) ctrlSetText format ["%1 (%2)",[_patient,false,true] call ace_common_fnc_getName,_site];};
+private _watch = controlNull;
+if (!isNull _disp) then {
+    (_disp displayCtrl 80001) ctrlSetText format ["%1 (%2)",[_patient,false,true] call ace_common_fnc_getName,_site];
+    // Use the engine's watch control directly on the pulse layer. It does not create another display, so Escape
+    // remains owned by this pulse check and cannot leave a watch UI behind.
+    _watch = _disp ctrlCreate ["RscWatch", 80003];
+    if (!isNull _watch) then {_watch ctrlShow true;};
+};
+uiNamespace setVariable ["ACME_PulseWatchCtrl", _watch];
 uiNamespace setVariable ["ACME_PulseCheckActive",true];
 uiNamespace setVariable ["ACME_PulseCheckEscape",false];
 uiNamespace setVariable ["ACME_PulseCheckCancel",false];
@@ -75,14 +83,19 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
         [_pfh] call CBA_fnc_removePerFrameHandler;
         [_esc,"keydown"] call CBA_fnc_removeKeyHandler;
         if (!isNull _mainDisplay && {_escEH >= 0}) then {_mainDisplay displayRemoveEventHandler ["KeyDown", _escEH];};
+        private _escaped = uiNamespace getVariable ["ACME_PulseCheckEscape",false];
+        private _watchCtrl = uiNamespace getVariable ["ACME_PulseWatchCtrl", controlNull];
+        if (!isNull _watchCtrl) then {ctrlDelete _watchCtrl;};
+        uiNamespace setVariable ["ACME_PulseWatchCtrl", controlNull];
         "ACM_FeelPulse" cutText ["","PLAIN",0,false];
         uiNamespace setVariable ["ACME_PulseCheckActive",false];
+        uiNamespace setVariable ["ACME_PulseCheckEscape",false];
         uiNamespace setVariable ["ACME_PulseCheckCancel",false];
         uiNamespace setVariable ["ACME_PulseCheckMedic",objNull];
         uiNamespace setVariable ["ACME_PulseCheckPatient",objNull];
         uiNamespace setVariable ["ACME_PulseCheckStartedAt",-1];
         [_medic,"pulse",_epoch] call ACME_fnc_treatmentPoseStop;
-        if (uiNamespace getVariable ["ACME_PulseCheckEscape",false]) then {[_patient,"examine"] call ACME_fnc_reopenMedicalMenu;};
+        if (_escaped) then {[_patient,"examine"] call ACME_fnc_reopenMedicalMenu;};
     };
     private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];
     if (isNull _disp) exitWith {};
