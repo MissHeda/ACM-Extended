@@ -28,9 +28,16 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
 
     "ACM_HeadTilt" cutRsc ["RscHeadTilt", "PLAIN", 0, false];
 
-    GVAR(HeadTiltCancel_MouseID) = [0xF0, [false, false, false], {
-        EGVAR(core,ContinuousAction_Active) = false;
-    }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
+    // B127: the mouse cancel belongs to the continuous-action generation which accepted this maneuver. Remove any
+    // stranded old handler first, then make the new one harmless as soon as another continuous action takes over.
+    private _oldID = missionNamespace getVariable [QGVAR(HeadTiltCancel_MouseID), -1];
+    if (_oldID >= 0) then {[_oldID, "keydown"] call CBA_fnc_removeKeyHandler;};
+    private _epoch = missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -1];
+    private _cancelCode = compile format [
+        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -2]) == %1) then {missionNamespace setVariable ['ACM_core_ContinuousAction_Active', false];}; false",
+        _epoch
+    ];
+    GVAR(HeadTiltCancel_MouseID) = [0xF0, [false, false, false], _cancelCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
 
     [ACELLSTRING(common,Cancel), "", ""] call ACEFUNC(interaction,showMouseHint);
     [_patient, "activity", LSTRING(HeadTiltChinLift_ActionLog), [[_medic, false, true] call ACEFUNC(common,getName)]] call ACEFUNC(medical_treatment,addToLog);
@@ -45,7 +52,9 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
 }, { // On cancel
     params ["_medic", "_patient", "_bodyPart"];
 
-    [GVAR(HeadTiltCancel_MouseID), "keydown"] call CBA_fnc_removeKeyHandler;
+    private _id = missionNamespace getVariable [QGVAR(HeadTiltCancel_MouseID), -1];
+    if (_id >= 0) then {[_id, "keydown"] call CBA_fnc_removeKeyHandler;};
+    GVAR(HeadTiltCancel_MouseID) = -1;
 
     ["", "", ""] call ACEFUNC(interaction,showMouseHint);
 
