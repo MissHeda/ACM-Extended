@@ -23,14 +23,11 @@ if (!isNull _medicVehicle || {!isNull _patientVehicle}) exitWith {
     };
 };
 
-// B128 pulse-session generation. Retire input/PFH remnants synchronously before creating the new layer. The old PFH
-// is not allowed to run its cleanup against the new session: treatmentPoseStart below obtains a fresh pose token,
-// and old visual controls are explicitly deleted before the new cutRsc is created.
+// B128 pulse-session generation. Old input hooks are retired synchronously, while an old PFH is allowed one final
+// token-mismatch tick so it can release only its own treatment-pose token and old-patient Direct Pressure handoff.
+// It is forbidden from clearing the shared cutRsc/watch state of the new pulse episode.
 private _pulseEpoch = (uiNamespace getVariable ["ACME_PulseEpoch", 0]) + 1;
 uiNamespace setVariable ["ACME_PulseEpoch", _pulseEpoch];
-private _oldPFH = uiNamespace getVariable ["ACME_PulsePFH", -1];
-if (_oldPFH >= 0) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
-uiNamespace setVariable ["ACME_PulsePFH", -1];
 private _oldEsc = uiNamespace getVariable ["ACME_PulseEscKey", -1];
 if (_oldEsc >= 0) then {[_oldEsc,"keydown"] call CBA_fnc_removeKeyHandler;};
 private _oldMain = uiNamespace getVariable ["ACME_PulseEscDisplay", displayNull];
@@ -91,10 +88,25 @@ private _pfh = [{
     params ["_args","_pfh"];
     _args params ["_medic","_patient","_bodyPart","_esc","_poseEpoch","_pulseEpoch","_mainDisplay","_escEH"];
 
-    // Superseded pulse check. The new start already retired our captured input hooks, so only remove this PFH. Never
-    // clear the shared cutRsc/watch/DP state of the newer session, and never stop its newer treatment pose token.
+    // Superseded pulse check. Release only resources which belong to this captured patient/pose. If the replacement
+    // pulse is the same provider on the same DP patient, leave TreatmentBusy asserted because the new pulse still
+    // owns provider animation. No shared UI variables are cleared here.
     if ((uiNamespace getVariable ["ACME_PulseEpoch", -1]) != _pulseEpoch) exitWith {
         [_pfh] call CBA_fnc_removePerFrameHandler;
+        [_medic,"pulse",_poseEpoch] call ACME_fnc_treatmentPoseStop;
+        private _newMedic = uiNamespace getVariable ["ACME_PulseCheckMedic", objNull];
+        private _newPatient = uiNamespace getVariable ["ACME_PulseCheckPatient", objNull];
+        private _sameReplacement = (uiNamespace getVariable ["ACME_PulseCheckActive", false])
+            && {_newMedic isEqualTo _medic} && {_newPatient isEqualTo _patient};
+        if (!_sameReplacement && {local _medic}
+            && {_medic getVariable ["ACME_DP_Active", false]}
+            && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
+            _medic setVariable ["ACME_DP_TreatmentBusy", false, false];
+            _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1, false];
+            _medic setVariable ["ACME_DP_InPose", false, false];
+            _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
+            _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
+        };
     };
 
     private _uiGuardArmed = CBA_missionTime > ((uiNamespace getVariable ["ACME_PulseCheckStartedAt", CBA_missionTime]) + 0.20);
