@@ -4,10 +4,18 @@
 params ["_args", "_pfhId"];
 _args params ["_medic", "_patient"];
 
-if (isNull _medic || {!alive _medic} || {!(_medic getVariable ["ACME_hang_Active", false])}) exitWith {
-    [false] call ACME_fnc_hangBagStop;
+// B127: the stored PFH id plus patient is the Hang Bag episode identity. An old callback must never see a later
+// ACME_hang_Active=true and lower the new bag because its old patient went out of range or changed state.
+if (isNull _medic) exitWith {[_pfhId] call CBA_fnc_removePerFrameHandler;};
+if ((_medic getVariable ["ACME_hang_PFH", -1]) != _pfhId
+    || {!((_medic getVariable ["ACME_hang_Patient", objNull]) isEqualTo _patient)}) exitWith {
+    [_pfhId] call CBA_fnc_removePerFrameHandler;
 };
-if !(local _medic) exitWith {};
+if (!alive _medic || {!(_medic getVariable ["ACME_hang_Active", false])}) exitWith {
+    [false] call ACME_fnc_hangBagStop;
+    [_pfhId] call CBA_fnc_removePerFrameHandler;
+};
+if !(local _medic) exitWith {[_pfhId] call CBA_fnc_removePerFrameHandler;};
 // the system toggle. it is the same rule as direct pressure: disabling the system lowers the bag cleanly instead of
 // leaving the medic locked holding it.
 if !(missionNamespace getVariable ["ACME_sys_hang", true]) exitWith {
