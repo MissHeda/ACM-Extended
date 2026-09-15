@@ -22,4 +22,10 @@ if ((!(IS_UNCONSCIOUS(_patient)) && alive _patient) || HAS_SURGICAL_AIRWAY(_pati
     false;
 };
 
-!(alive (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull])) && !(alive (_patient getVariable [QACEGVAR(medical,CPR_provider), objNull])) && !(_patient getVariable [QGVAR(SurgicalAirway_InProgress), false]);
+// B127: establishSurgicalAirway marks the casualty InProgress immediately before handing lifetime ownership to
+// beginContinuousAction. Do not expose the action while another maneuver already owns that controller, otherwise a
+// rejected start can leave a phantom SurgicalAirway_InProgress state on the casualty.
+!(missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false])
+&& {!(alive (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull]))}
+&& {!(alive (_patient getVariable [QACEGVAR(medical,CPR_provider), objNull]))}
+&& {!(_patient getVariable [QGVAR(SurgicalAirway_InProgress), false])};
