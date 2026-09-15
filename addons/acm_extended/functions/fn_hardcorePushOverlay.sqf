@@ -3,7 +3,16 @@
    static picture controls so the barrel/plunger/backbit cannot disappear when dynamically-created picture controls
    are culled or rebuilt by ACE displays. The click hitbox is still recreated on the active gameplay/ACE displays. */
 disableSerialization;
-params [["_mode","update",[""]]];
+// B129: bare `call` from a PFH inherits the caller's _this. Accept only an explicit string mode;
+// every other payload means a normal HUD update.
+private _mode = "update";
+if (_this isEqualType "") then {
+    _mode = _this;
+} else {
+    if (_this isEqualType [] && {count _this > 0} && {(_this select 0) isEqualType ""}) then {
+        _mode = _this select 0;
+    };
+};
 
 private _hitId = 98974;
 private _displayIds = [46,91919,38580];

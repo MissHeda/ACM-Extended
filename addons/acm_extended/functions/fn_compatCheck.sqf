@@ -78,14 +78,16 @@ private _probe = [
 
 missionNamespace setVariable ["ACME_compatMissing", +_missing, false];
 if (_missing isEqualTo []) exitWith {
+    diag_log "[ACME COMPAT] OK: required runtime functions/markers verified";
 };
 
-{  } forEach _missing;
+diag_log format ["[ACME COMPAT] FAILED (%1): %2", count _missing, _missing joinString " | "];
 
 if (hasInterface) then {
     [{
-        params ["_n"];
-        [format ["ACM Extended: %1 compatibility problem(s). Missing/stale required functions or overrides detected; some systems may be unavailable or using the wrong implementation. Details: ACME_compatMissing.", _n], 8]
+        params ["_issues"];
+        private _detail = _issues joinString " | ";
+        [format ["ACM Extended: %1 compatibility problem(s). Missing/stale required functions or overrides detected. %2", count _issues, _detail], 8]
             call ace_common_fnc_displayTextStructured;
-    }, [count _missing], 12] call CBA_fnc_waitAndExecute;
+    }, [+_missing], 12] call CBA_fnc_waitAndExecute;
 };

@@ -11,6 +11,7 @@
  */
 
 params ["_patient"];
+private _acmeReconcile = "B125:airwayCollapseWakeClear";
 
 if (_patient getVariable [QGVAR(AirwayCollapse_PFH), -1] != -1) exitWith {};
 

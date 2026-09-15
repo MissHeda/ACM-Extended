@@ -292,8 +292,10 @@ _right pushBack (["ShockR", [_shockRes] call _yn, if (_shockRes) then {_cWarn} e
 private _jParts = ["leftarm", "rightarm", "leftleg", "rightleg"];
 private _jTxt = [];
 {private _s = _patient getVariable [format ["ACME_Junc_%1", _x], ""]; if (_s != "") then {_jTxt pushBack format ["%1:%2", _x select [0,2], _s];};} forEach _jParts;
-private _tq = _patient getVariable ["ACM_disability_Tourniquet_Time", [0,0,0,0,0,0]];
-private _tqCount = {_x > 0} count _tq;
+// B129: ACM_disability_Tourniquet_Time is presentation data and may contain strings such as "13:37".
+// Count the native ACE numeric tourniquet state instead, with a type guard for old/restored saves.
+private _tq = _patient getVariable ["ace_medical_tourniquets", [0,0,0,0,0,0]];
+private _tqCount = {_x isEqualType 0 && {_x > 0}} count _tq;
 private _aajt = [];
 if (_patient getVariable ["ACME_AAJT_zone3", false]) then {_aajt pushBack "Z3";};
 if (_patient getVariable ["ACME_AAJT_inguinal", false]) then {_aajt pushBack format ["Ing-%1", _patient getVariable ["ACME_AAJT_inguinalSide", "?"]];};

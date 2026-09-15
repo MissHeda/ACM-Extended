@@ -22,7 +22,7 @@ private _now = diag_tickTime;
 private _last = _job getOrDefault ["lastTick",_now];
 private _dt = ((_now - _last) max 0) min 0.25;
 _job set ["lastTick",_now];
-if (_dt <= 0) exitWith {call ACME_fnc_hardcorePushOverlay;};
+if (_dt <= 0) exitWith {[] call ACME_fnc_hardcorePushOverlay;};
 private _carry = (_job getOrDefault ["carryMl",0]) + (_job getOrDefault ["rateMlSec",0]) * _dt;
 private _targetLeft = ((_job getOrDefault ["targetMl",0]) - (_job getOrDefault ["pushedMl",0])) max 0;
 private _step = (floor ((_carry + 0.000001) * 100)) / 100;
@@ -85,4 +85,4 @@ if (!isNull (findDisplay 84000)) then {
         _job set ["nextUi",_now+0.15]; missionNamespace setVariable ["ACME_HCMedPushJob",_job];
         [0] call ACME_fnc_skCarouselRender; call ACME_fnc_skBodyActionRender;
     };
-} else {call ACME_fnc_hardcorePushOverlay;};
+} else {[] call ACME_fnc_hardcorePushOverlay;};
