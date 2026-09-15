@@ -64,9 +64,9 @@ private _pxAspect = pixelW / (pixelH max 0.000001);
 private _canvasH = safeZoneH * 0.225;
 private _canvasW = _canvasH * _pxAspect;
 private _travelX = _canvasW * _travelNorm * _sizeRatio;
-private _screenPadY = safeZoneH * 0.030;
+private _screenPadY = safeZoneH * 0.018;
 private _screenPadX = _screenPadY * _pxAspect;
-private _gapY = safeZoneH * 0.009;
+private _gapY = safeZoneH * 0.006;
 private _tw = safeZoneH * 0.365 * _pxAspect;
 private _th = safeZoneH * 0.066;
 private _right = safeZoneX + safeZoneW - _screenPadX;
@@ -125,10 +125,10 @@ if (!isNull _hud) then {
 // The syringe art itself has generous transparent margins inside its square texture, so keep the hit target to a
 // slim horizontal strip around the visible syringe rather than using the entire square canvas. This puts the
 // transparent button behind the syringe with only modest padding around its visible silhouette.
-private _hitW = _canvasW * 0.86;
-private _hitH = _canvasH * 0.30;
-private _hitXPad = (8*pixelW) max (_canvasW*0.018);
-private _hitYPad = (5*pixelH) max (_canvasH*0.018);
+private _hitW = _canvasW * 0.96;
+private _hitH = _canvasH * 0.34;
+private _hitXPad = (10*pixelW) max (_canvasW*0.024);
+private _hitYPad = (6*pixelH) max (_canvasH*0.022);
 private _hitPos = [
     _cx - (_hitW*0.5) - _hitXPad,
     _y + (_canvasH*0.5) - (_hitH*0.5) - _hitYPad,
@@ -140,11 +140,15 @@ private _hitPos = [
     if (!isNull _disp) then {
         private _hit = _disp displayCtrl _hitId;
         if (isNull _hit) then {
-            _hit = _disp ctrlCreate ["RscButton",_hitId];
+            _hit = _disp ctrlCreate ["ACME_SK_HotspotButton",_hitId];
             _hit ctrlSetText "";
+            _hit ctrlSetTextColor [0,0,0,0];
             _hit ctrlSetBackgroundColor [0,0,0,0];
             _hit ctrlSetTooltip "Open Narc Box at the active syringe push";
             _hit ctrlAddEventHandler ["ButtonClick",{call ACME_fnc_hardcorePushReopen;}];
+            _hit ctrlAddEventHandler ["MouseEnter",{(_this select 0) ctrlSetBackgroundColor [0,0,0,0];}];
+            _hit ctrlAddEventHandler ["MouseButtonDown",{(_this select 0) ctrlSetBackgroundColor [0,0,0,0];}];
+            _hit ctrlAddEventHandler ["MouseButtonUp",{(_this select 0) ctrlSetBackgroundColor [0,0,0,0];}];
         };
         _hit ctrlSetPosition _hitPos;
         _hit ctrlShow true;
