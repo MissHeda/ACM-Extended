@@ -28,9 +28,17 @@ if (_patient getVariable [QGVAR(CarryAssist_State), false]) exitWith {
 
     "ACM_ContinuousActionText" cutRsc ["RscContinuousActionText", "PLAIN", 0, false];
 
-    GVAR(CarryAssistCancel_MouseID) = [0xF0, [false, false, false], {
-        GVAR(ContinuousAction_Active) = false;
-    }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
+    // B127: this is an extra cancel key on top of beginContinuousAction's own lifetime. Make it belong to the
+    // generation that actually accepted this carry-assist session. A missed old handler therefore cannot cancel a
+    // later BVM/head-tilt/other continuous maneuver.
+    private _oldID = missionNamespace getVariable [QGVAR(CarryAssistCancel_MouseID), -1];
+    if (_oldID >= 0) then {[_oldID, "keydown"] call CBA_fnc_removeKeyHandler;};
+    private _epoch = missionNamespace getVariable [QGVAR(ContinuousAction_Epoch), -1];
+    private _cancelCode = compile format [
+        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -2]) == %1) then {missionNamespace setVariable ['ACM_core_ContinuousAction_Active', false];}; false",
+        _epoch
+    ];
+    GVAR(CarryAssistCancel_MouseID) = [0xF0, [false, false, false], _cancelCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
 
     [ACELLSTRING(common,Cancel), "", ""] call ACEFUNC(interaction,showMouseHint);
     [(format [LLSTRING(AssistCarry_Complete), ([_patient, false, true] call ACEFUNC(common,getName))]), 2, _medic] call ACEFUNC(common,displayTextStructured);
@@ -46,7 +54,9 @@ if (_patient getVariable [QGVAR(CarryAssist_State), false]) exitWith {
 }, { // On cancel
     params ["_medic", "_patient", "_bodyPart", "", "_notInVehicle"];
 
-    [GVAR(CarryAssistCancel_MouseID), "keydown"] call CBA_fnc_removeKeyHandler;
+    private _id = missionNamespace getVariable [QGVAR(CarryAssistCancel_MouseID), -1];
+    if (_id >= 0) then {[_id, "keydown"] call CBA_fnc_removeKeyHandler;};
+    GVAR(CarryAssistCancel_MouseID) = -1;
 
     ["", "", ""] call ACEFUNC(interaction,showMouseHint);
 
