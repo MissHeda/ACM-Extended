@@ -106,6 +106,16 @@ private _etco2 = if (!isNil "ACM_breathing_fnc_getEtCO2") then {[_patient] call 
     _patient getVariable ["ACM_breathing_isUsingBVM", false],
     _patient getVariable ["ACM_breathing_BVM_ConnectedOxygen", false]
 ]] call _out;
+[format ["ThoraSide L=[open:%1 tube:%2 seal:%3 closed:%4] R=[open:%5 tube:%6 seal:%7 closed:%8]",
+    _patient getVariable ["ACME_thora_open_left", ""],
+    _patient getVariable ["ACME_thora_tube_left", false],
+    _patient getVariable ["ACME_thora_sealed_left", false],
+    _patient getVariable ["ACME_thora_closed_left", false],
+    _patient getVariable ["ACME_thora_open_right", ""],
+    _patient getVariable ["ACME_thora_tube_right", false],
+    _patient getVariable ["ACME_thora_sealed_right", false],
+    _patient getVariable ["ACME_thora_closed_right", false]
+]] call _out;
 [""] call _out;
 
 ["------Circulation / Damage / Disability------"] call _out;

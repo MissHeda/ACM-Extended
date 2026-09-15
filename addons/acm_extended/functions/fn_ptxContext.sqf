@@ -62,29 +62,31 @@ _ventCapacity = _ventCapacity max (1.4 * _ncdPatency);
 // (split/kelly) has not yet established a patent pleural outlet.
 private _hasSideState = false;
 private _hasDefinitiveDrain = false;
-private _thoraSeal = false;
 {
     private _side = _x;
     private _tract = _patient getVariable [format ["ACME_thora_open_%1", _side], ""];
     private _tube = _patient getVariable [format ["ACME_thora_tube_%1", _side], false];
     private _sealed = _patient getVariable [format ["ACME_thora_sealed_%1", _side], false];
+    private _closed = _patient getVariable [format ["ACME_thora_closed_%1", _side], false];
     private _incision = _patient getVariable [format ["ACME_thora_incision_%1", _side], []];
     if !(_tract isEqualType "") then {_tract = "";};
     if !(_tube isEqualType false) then {_tube = false;};
     if !(_sealed isEqualType false) then {_sealed = false;};
+    if !(_closed isEqualType false) then {_closed = false;};
     if !(_incision isEqualType []) then {_incision = [];};
-    _hasSideState = _hasSideState || {_tract != ""} || {_tube} || {_sealed} || {count _incision == 3};
-    _hasDefinitiveDrain = _hasDefinitiveDrain || {_tube} || {_tract == "finger" && {!_sealed}};
-    _thoraSeal = _thoraSeal || {_tract in ["finger", "sealed"] && {_sealed} && {!_tube}};
+    // Backward compatibility for B120-B132 casualties: a sealed tract is closed even if the new explicit
+    // closed flag has not been written yet.
+    _closed = _closed || {_sealed && {_tract == "sealed"} && {!_tube}};
+    _hasSideState = _hasSideState || {_tract != ""} || {_tube} || {_sealed} || {_closed} || {count _incision == 3};
+    _hasDefinitiveDrain = _hasDefinitiveDrain || {_tube} || {_tract == "finger" && {!_sealed} && {!_closed}};
 } forEach ["left", "right"];
 if (!_hasSideState) then {
     private _nativeThora = _patient getVariable ["ACM_breathing_Thoracostomy_State", 0];
     if (_nativeThora isEqualType 0 && {finite _nativeThora}) then {_hasDefinitiveDrain = _nativeThora in [1, 2];};
 };
-if (_thoraSeal) then {
-    _hasSealOutlet = true;
-    _ventCapacity = _ventCapacity max ((if (_open == 0) then {1.5} else {0.15}) * (1 - _occ));
-};
+// A chest seal over a completed finger thoracostomy is an occlusive CLOSED tract. It removes the
+// surgical drain/vent and does not add one-way vent capacity. The retained internal leak/air state therefore
+// determines whether PTX can reaccumulate after the tract is closed.
 if (_hasDefinitiveDrain) then {
     _hasDrain = true;
     _ventCapacity = _ventCapacity max 5.0;

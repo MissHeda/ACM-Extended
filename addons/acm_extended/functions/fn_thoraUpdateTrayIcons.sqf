@@ -5,7 +5,10 @@ private _display = uiNamespace getVariable ["ACME_Thora_DLG", displayNull];
 if (isNull _display) exitWith {};
 private _side = uiNamespace getVariable ["ACME_Thora_Side", "right"];
 private _medic = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
+private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _held = uiNamespace getVariable ["ACME_Thora_Held", ""];
+private _closed = !isNull _patient && {_patient getVariable [format ["ACME_thora_closed_%1", _side], false]};
+private _sealed = !isNull _patient && {_patient getVariable [format ["ACME_thora_sealed_%1", _side], false]};
 private _canTube = !isNull _medic && {[_medic, "chestTube"] call ACME_fnc_procedureAllowed};
 private _canSeal = !isNull _medic && {[_medic, "thoracostomySeal"] call ACME_fnc_procedureAllowed};
 uiNamespace setVariable ["ACME_Thora_CanTube", _canTube];
@@ -32,11 +35,11 @@ uiNamespace setVariable ["ACME_Thora_SeparateClosureSlots", true];
     if (!isNull _ic && {_tex != ""}) then {_ic ctrlSetText _tex;};
 
     if (_tool == "tube") then {
-        _allowed = _canTube;
+        _allowed = _canTube && {!_closed} && {!_sealed};
         _count = if (_allowed) then {[_medic, "ACM_ChestTubeKit"] call ace_common_fnc_getCountOfItem} else {0};
     };
     if (_tool == "seal") then {
-        _allowed = _canSeal;
+        _allowed = _canSeal && {!_closed} && {!_sealed};
         _count = if (_allowed) then {[_medic, "ACM_ChestSeal"] call ace_common_fnc_getCountOfItem} else {0};
     };
     private _locked = (_tool in ["tube", "seal"]) && {!_allowed || {_count <= 0}};

@@ -4399,6 +4399,16 @@
     true
   ],
   [
+    "ACME_thora_closed_left",
+    "",
+    true
+  ],
+  [
+    "ACME_thora_closed_right",
+    "",
+    true
+  ],
+  [
     "ACME_thora_sealed_left",
     "",
     true

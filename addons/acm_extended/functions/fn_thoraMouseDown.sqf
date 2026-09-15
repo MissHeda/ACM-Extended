@@ -25,6 +25,7 @@ if (_button == 1) exitWith {
             ["The chest tube is sutured in place.", 1.5] call ace_common_fnc_displayTextStructured;
         } else {
             [_patient, _side, "tube", false] call ACME_fnc_thoraSideStateCommit;
+            [_patient, _side, "closed", false] call ACME_fnc_thoraSideStateCommit;
             [_patient] call ACME_fnc_thoraBumpVer;
             [] call ACME_fnc_thoraRenderTube;
             [] call ACME_fnc_thoraRender;
@@ -118,6 +119,8 @@ if (_held isEqualTo "finger") exitWith {
     };
     if (_kit == "") exitWith {false};
     [_patient, _side, "open", "finger"] call ACME_fnc_thoraSideStateCommit;
+    [_patient, _side, "closed", false] call ACME_fnc_thoraSideStateCommit;
+    [_patient, _side, "sealed", false] call ACME_fnc_thoraSideStateCommit;
     [_patient] call ACME_fnc_thoraBumpVer;
     [] call ACME_fnc_thoraRenderOpen;
     if (!isNull _medic) then {
@@ -152,6 +155,7 @@ if (_held in ["seal", "tube"]) exitWith {
         _medS removeItem "ACM_ChestSeal";
         if (([_medS, "ACM_ChestSeal"] call ace_common_fnc_getCountOfItem) >= _before) exitWith {false};
         [_patient, _side, "sealed", true] call ACME_fnc_thoraSideStateCommit;
+        [_patient, _side, "closed", true] call ACME_fnc_thoraSideStateCommit;
         [_patient] call ACME_fnc_thoraBumpVer;
         // This operation is deliberately distinct from native whole-chest sealing.
         // The owner validates the captured clinical epoch before changing physiology.
@@ -163,11 +167,13 @@ if (_held in ["seal", "tube"]) exitWith {
     };
 
     private _tubeMedic = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
+    if (_patient getVariable [format ["ACME_thora_closed_%1", _side], false]) exitWith {false};
     if (!(([_tubeMedic] call ACME_fnc_thoraClosureMode) select 2)) exitWith {false};
     private _tubeBefore = [_tubeMedic, "ACM_ChestTubeKit"] call ace_common_fnc_getCountOfItem;
     _tubeMedic removeItem "ACM_ChestTubeKit";
     if (([_tubeMedic, "ACM_ChestTubeKit"] call ace_common_fnc_getCountOfItem) >= _tubeBefore) exitWith {false};
     [_patient, _side, "sealed", false] call ACME_fnc_thoraSideStateCommit;
+    [_patient, _side, "closed", false] call ACME_fnc_thoraSideStateCommit;
     [_patient, _side, "tube", true] call ACME_fnc_thoraSideStateCommit;
     [_patient] call ACME_fnc_thoraBumpVer;
     // register the chest tube with ACM, so the procedure counts it as in. that enables drain fluid and shows on

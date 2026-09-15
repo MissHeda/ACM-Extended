@@ -7757,7 +7757,7 @@ class ace_medical_treatment_actions {
         displayNameProgress = "Opening thoracostomy...";
         items[] = {"ACM_ChestTubeKit"};
         consumeItem = 0;
-        condition = "([_medic, 'ACME_InsertChestTube'] call ACME_fnc_procedureActionAllowed) && {!isNull _patient && {(_patient getVariable ['ACM_breathing_Thoracostomy_State', 0]) == 1}}";
+        condition = "([_medic, 'ACME_InsertChestTube'] call ACME_fnc_procedureActionAllowed) && {!isNull _patient && {(_patient getVariable ['ACM_breathing_Thoracostomy_State', 0]) == 1} && {(((_patient getVariable ['ACME_thora_open_left', '']) == 'finger') && {!(_patient getVariable ['ACME_thora_closed_left', false])} && {!(_patient getVariable ['ACME_thora_sealed_left', false])}) || (((_patient getVariable ['ACME_thora_open_right', '']) == 'finger') && {!(_patient getVariable ['ACME_thora_closed_right', false])} && {!(_patient getVariable ['ACME_thora_sealed_right', false])})}}";
         // re-opens the thoracostomy mini-game so the medic can place the tube, or continue, with the saved state.
         callbackSuccess = "[_this select 0, _this select 1, _this select 2] call ACME_fnc_thoraOpen";
         ACM_menuIcon = "ACM_ChestTubeKit";
@@ -7792,7 +7792,7 @@ class ace_medical_treatment_actions {
     class ACME_CloseIncision: ACME_PerformThoracostomy {
         displayName = "Close Incision (Suture)";
         displayNameProgress = "Suturing incision closed...";
-        condition = "([_medic, 'ACME_CloseIncision'] call ACME_fnc_procedureActionAllowed) && {!isNull _patient && {(([_medic, _patient, ['ACE_surgicalKit']] call ace_medical_treatment_fnc_hasItem) || {_patient getVariable ['ACM_breathing_Thoracostomy_UsedKit', false]})} && {(_patient getVariable ['ACM_breathing_Thoracostomy_State', 0]) > 0} && {!(_patient getVariable ['ACME_thora_tube_left', false])} && {!(_patient getVariable ['ACME_thora_tube_right', false])}}";
+        condition = "([_medic, 'ACME_CloseIncision'] call ACME_fnc_procedureActionAllowed) && {!isNull _patient && {(([_medic, _patient, ['ACE_surgicalKit']] call ace_medical_treatment_fnc_hasItem) || {_patient getVariable ['ACM_breathing_Thoracostomy_UsedKit', false]})} && {(_patient getVariable ['ACM_breathing_Thoracostomy_State', 0]) > 0} && {!(_patient getVariable ['ACME_thora_tube_left', false])} && {!(_patient getVariable ['ACME_thora_tube_right', false])} && {!(_patient getVariable ['ACME_thora_closed_left', false])} && {!(_patient getVariable ['ACME_thora_closed_right', false])}}";
         callbackSuccess = "[_this select 0, _this select 1, 'close'] call ACME_fnc_thoraAftercare";
         ACM_menuIcon = "ACE_surgicalKit";
             medicRequired = "ACM_breathing_allowThoracostomy";

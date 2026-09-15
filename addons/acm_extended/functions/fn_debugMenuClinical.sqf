@@ -227,6 +227,16 @@ private _hemoFluid = _patient getVariable ["ACM_breathing_Hemothorax_Fluid", 0];
 private _seal = _patient getVariable ["ACM_breathing_ChestSeal_State", false];
 private _tubeL = _patient getVariable ["ACME_thora_tube_left", false];
 private _tubeR = _patient getVariable ["ACME_thora_tube_right", false];
+private _tractL = _patient getVariable ["ACME_thora_open_left", ""];
+private _tractR = _patient getVariable ["ACME_thora_open_right", ""];
+private _sealedL = _patient getVariable ["ACME_thora_sealed_left", false];
+private _sealedR = _patient getVariable ["ACME_thora_sealed_right", false];
+private _closedL = (_patient getVariable ["ACME_thora_closed_left", false]) || {_sealedL && {_tractL == "sealed"} && {!_tubeL}};
+private _closedR = (_patient getVariable ["ACME_thora_closed_right", false]) || {_sealedR && {_tractR == "sealed"} && {!_tubeR}};
+private _openL = _tractL == "finger" && {!_closedL};
+private _openR = _tractR == "finger" && {!_closedR};
+private _thoraL = if (_tubeL) then {"T"} else {if (_closedL) then {"C"} else {if (_openL) then {"O"} else {"-"}}};
+private _thoraR = if (_tubeR) then {"T"} else {if (_closedR) then {"C"} else {if (_openR) then {"O"} else {"-"}}};
 private _bvm = _patient getVariable ["ACM_breathing_isUsingBVM", false];
 private _vent = _patient getVariable ["ACME_vent_driving", false];
 // B125: classify the airway from ACM's actual patency result, not from a raw collapse latch. A mild collapse
@@ -254,7 +264,7 @@ if (_opa != "") then {_adj pushBack "OPA";}; if (_npa != "") then {_adj pushBack
 _left pushBack (["Adjunct", if (_adj isEqualTo []) then {"none"} else {_adj joinString "+"}, if (_adj isEqualTo []) then {_cMute} else {_cGood}, "Obs", format ["C%1 V%2 B%3", _collapse, _vomit, _bloodObs], _obsCol] call _pair);
 _left pushBack (["PTX", _ptx, if (_ptx > 0) then {_cWarn} else {_cGood}, "TPTX", [_tptx] call _yn, [_tptx, true] call _ynCol] call _pair);
 _left pushBack (["Hemo", format ["%1 / %2L", _hemo, _hemoFluid toFixed 2], if (_hemo > 0 || {_hemoFluid > 0.3}) then {_cWarn} else {_cGood}, "Seal", [_seal] call _yn, if (_seal) then {_cGood} else {_cMute}] call _pair);
-_left pushBack (["Tubes", format ["L:%1 R:%2", if (_tubeL) then {"Y"} else {"-"}, if (_tubeR) then {"Y"} else {"-"}], if (_tubeL || {_tubeR}) then {_cGood} else {_cMute}, "Support", format ["BVM:%1 V:%2", if (_bvm) then {"Y"} else {"-"}, if (_vent) then {"Y"} else {"-"}], if (_bvm || {_vent}) then {_cGood} else {_cMute}] call _pair);
+_left pushBack (["Thora", format ["L:%1 R:%2", _thoraL, _thoraR], if (_tubeL || {_tubeR} || {_closedL} || {_closedR} || {_openL} || {_openR}) then {_cGood} else {_cMute}, "Support", format ["BVM:%1 V:%2", if (_bvm) then {"Y"} else {"-"}, if (_vent) then {"Y"} else {"-"}], if (_bvm || {_vent}) then {_cGood} else {_cMute}] call _pair);
 
 // Neuro/TBI occupies main page because screenshots need to explain consciousness and ICP-related arrest.
 private _tbi = _patient getVariable ["ACME_tbi_State", createHashMap];

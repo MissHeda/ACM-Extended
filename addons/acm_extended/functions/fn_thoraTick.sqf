@@ -23,7 +23,8 @@ if (!isNull _thPat) then {
     private _sideSeen = uiNamespace getVariable ["ACME_Thora_Side", "right"];
     private _closureSeen = [_sideSeen,
         _thPat getVariable [format ["ACME_thora_tube_%1", _sideSeen], false],
-        _thPat getVariable [format ["ACME_thora_sealed_%1", _sideSeen], false]];
+        _thPat getVariable [format ["ACME_thora_sealed_%1", _sideSeen], false],
+        _thPat getVariable [format ["ACME_thora_closed_%1", _sideSeen], false]];
     // Closure values can arrive separately from the version. Observe the values too.
     if (_tv != (uiNamespace getVariable ["ACME_thora_verSeen", -1])
         || {!(_closureSeen isEqualTo (_display getVariable ["ACME_Thora_ClosureSeen", []]))}) then {
@@ -112,7 +113,11 @@ if (!isNull _spr) then {
             private _pat = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
             private _inc = if (isNull _pat) then { [] } else { _pat getVariable [format ["ACME_thora_incision_%1", _sside], []] };
             private _openst = if (isNull _pat) then { "" } else { _pat getVariable [format ["ACME_thora_open_%1", _sside], ""] };
-            private _closed = !isNull _pat && {(_pat getVariable [format ["ACME_thora_tube_%1", _sside], false]) || {(_held == "seal") && {_pat getVariable [format ["ACME_thora_sealed_%1", _sside], false]}}};
+            private _closed = !isNull _pat && {
+                (_pat getVariable [format ["ACME_thora_tube_%1", _sside], false])
+                || {_pat getVariable [format ["ACME_thora_closed_%1", _sside], false]}
+                || {(_held == "seal") && {_pat getVariable [format ["ACME_thora_sealed_%1", _sside], false]}}
+            };
             if (count _inc == 3 && {_openst == "finger"} && {!_closed}) then {
                 _inc params ["_ist", "_iang", "_ilenCm"];
                 _ist params ["_isu", "_isv"];

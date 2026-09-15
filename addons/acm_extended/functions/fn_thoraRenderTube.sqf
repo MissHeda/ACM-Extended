@@ -15,7 +15,10 @@ _rect params ["_bx", "_by", "_bw", "_bh"];
 private _side = uiNamespace getVariable ["ACME_Thora_Side", "right"];
 private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _placed = (!isNull _patient) && {_patient getVariable [format ["ACME_thora_tube_%1", _side], false]};
-private _dressed = (!isNull _patient) && {_patient getVariable [format ["ACME_thora_sealed_%1", _side], false]};
+private _dressed = (!isNull _patient) && {
+    (_patient getVariable [format ["ACME_thora_sealed_%1", _side], false])
+    || {_patient getVariable [format ["ACME_thora_closed_%1", _side], false]}
+};
 private _inc = if (isNull _patient) then { [] } else { _patient getVariable [format ["ACME_thora_incision_%1", _side], []] };
 if ((!_placed && {!_dressed}) || {count _inc != 3}) exitWith { _ctrl ctrlShow false; };
 
