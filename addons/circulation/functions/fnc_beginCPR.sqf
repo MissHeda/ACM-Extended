@@ -266,7 +266,7 @@ private _CPRStartTime = _readyAt + 0.2;
             } else {
                 if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
                 [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
+                [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
                 GVAR(CPRActive) = false;
                 GVAR(loopCPR) = false;
                 _medic setVariable [QGVAR(CPR_Loop), false, false];
@@ -290,7 +290,7 @@ private _CPRStartTime = _readyAt + 0.2;
                 } else {
                     if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
                     [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-                    [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
+                    [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
                     GVAR(CPRActive) = false;
                     GVAR(loopCPR) = false;
                     _medic setVariable [QGVAR(CPR_Loop), false, false];
