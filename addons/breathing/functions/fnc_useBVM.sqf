@@ -157,13 +157,18 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
 
     if (GVAR(SwapToCPR)) then {
         EGVAR(core,ContinuousAction_ForceOpenMenu) = false;
+        // B128: this handoff used to fire unconditionally 0.1 s after BVM teardown. If another continuous action
+        // started in that gap, the old BVM callback could inject CPR into the new maneuver. Carry the generation
+        // which actually owned this BVM and abandon the handoff if anything newer has taken the controller.
+        private _epoch = missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -1];
         [{
-            params ["_medic", "_patient"];
-
+            params ["_medic", "_patient", "_epoch"];
+            if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) != _epoch
+                || {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
+                || {isNull _medic} || {isNull _patient}) exitWith {};
             [LLSTRING(BVM_SwappedToCPR), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-
             [_medic, _patient] call EFUNC(circulation,beginCPR);
-        }, [_medic, _patient], 0.1] call CBA_fnc_waitAndExecute;
+        }, [_medic, _patient, _epoch], 0.1] call CBA_fnc_waitAndExecute;
     } else {
         [LLSTRING(BVM_Stopped), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
         [QEGVAR(core,openMedicalMenu), GVAR(BVMTarget)] call CBA_fnc_localEvent;
@@ -197,7 +202,7 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
             GVAR(BVMActive) = true;
         } else { // Paused BVM
             [LLSTRING(BVM_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
-            [LLSTRING(BVM_Stop), LLSTRING(BVM_Continue), (["", LLSTRING(BVM_SwapToCPR)] select (isNull (_patient getVariable [QGVAR(CPR_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
+            [LLSTRING(BVM_Stop), LLSTRING(BVM_Continue), (["", LLSTRING(BVM_SwapToCPR)] select (isNull (_patient getVariable [QEGVAR(circulation,CPR_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
             GVAR(BVMActive) = false;
         };
         _medic setVariable [QGVAR(isUsingBVM), ([_patient] call EFUNC(core,bvmActive)), true];
