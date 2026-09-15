@@ -6,6 +6,18 @@
 params ["_args", "_pfhId"];
 _args params ["_medic", "_patient", "_bodyPart", "_mode"];
 
+// B127 session ownership. The PFH id stored on the provider is the Direct Pressure episode identity. A callback
+// which survived removal from an older episode must never observe a later ACME_DP_Active=true and begin operating on
+// its old patient/body part again. Fingerprint the patient/part/mode as a second guard in case a CBA PFH id is ever
+// recycled during a long session.
+if (isNull _medic
+    || {(_medic getVariable ["ACME_DP_PFH", -1]) != _pfhId}
+    || {!((_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient)}
+    || {(_medic getVariable ["ACME_DP_Part", ""]) != _bodyPart}
+    || {(_medic getVariable ["ACME_DP_Mode", ""]) != _mode}) exitWith {
+    [_pfhId] call CBA_fnc_removePerFrameHandler;
+};
+
 if !(_medic getVariable ["ACME_DP_Active", false]) exitWith {[_pfhId] call CBA_fnc_removePerFrameHandler;};
 if !(missionNamespace getVariable ["ACME_sys_dp", true]) exitWith {
     [false, _medic, false] call ACME_fnc_directPressureStop;
