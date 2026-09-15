@@ -68,14 +68,22 @@ private _keyEH = _display displayAddEventHandler ["KeyDown", {
 // lmb and MMB pass through.
 // returning true from MouseButtonDown blocks the default handling. we trigger the cancel one frame later so the
 // handler returns cleanly first, because calling hangBagStop directly from inside the eh can fight the same
-// display.
+// display. B127 carries the episode fingerprint across that deferred frame so a click from a just-ended bag cannot
+// lower a new bag started before the callback executes.
 private _mouseEH = _display displayAddEventHandler ["MouseButtonDown", {
     params ["_display", "_button"];
     private _unit = ACE_player;
     private _locked = !isNull _unit && {alive _unit} && {_unit getVariable ["ACME_hang_Active", false]};
     if (!_locked) exitWith {false};
     if (_button isEqualTo 1) then {
-        [{ if (ACE_player getVariable ["ACME_hang_Active", false]) then { [false] call ACME_fnc_hangBagStop; }; }, []] call CBA_fnc_execNextFrame;
+        private _episodeStart = _unit getVariable ["ACME_hang_Start", -1];
+        [{
+            params ["_episodeStart"];
+            private _unit = ACE_player;
+            if (isNull _unit) exitWith {};
+            if ((_unit getVariable ["ACME_hang_Start", -2]) != _episodeStart) exitWith {};
+            if (_unit getVariable ["ACME_hang_Active", false]) then { [false] call ACME_fnc_hangBagStop; };
+        }, [_episodeStart]] call CBA_fnc_execNextFrame;
         true  // swallow the RMB so the weapon does not aim
     } else {
         false
