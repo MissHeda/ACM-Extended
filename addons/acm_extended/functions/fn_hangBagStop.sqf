@@ -6,6 +6,7 @@ private _medic = ACE_player;
 if !(_medic getVariable ["ACME_hang_Active", false]) exitWith {};
 
 private _patient = _medic getVariable ["ACME_hang_Patient", objNull];
+private _episodeStart = _medic getVariable ["ACME_hang_Start", -1];
 
 // Retire the held-loop generation before starting the authored exit. Otherwise fn_doAnimHeld can reassert the
 // static hold after RMB/Escape and leave the player frozen/sliding in a standing animation.
@@ -42,12 +43,22 @@ if (local _medic && {(toLower animationState _medic) find "jetscrewaidfcrouchthu
 private _returnPart = _medic getVariable ["ACME_hang_Part", missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart", ""]];
 
 private _teardown = {
-    params ["_medic", "_rope", "_anchor", "_bagHelper", "_bag", "_playedOut", "_outAnim", "_patient", "_returnPart", "_silent"];
+    params ["_medic", "_rope", "_anchor", "_bagHelper", "_bag", "_playedOut", "_outAnim", "_patient", "_returnPart", "_silent", "_episodeStart"];
+
+    // Cosmetic/rope objects belong to the ended episode and are always safe to delete from the captured references.
     if (!isNull _rope) then { [_rope] call ACME_fnc_ivLineDestroy; };
     if (!isNull _bagHelper) then { detach _bagHelper; deleteVehicle _bagHelper; };
     if (!isNull _anchor) then { detach _anchor; deleteVehicle _anchor; };
     if (!isNull _bag) then { detach _bag; deleteVehicle _bag; };
-    if (local _medic) then {
+
+    // B127: provider state is not an old prop. A second Hang Bag can be started while this authored lower animation
+    // is still completing. Never let the old delayed teardown reset the new pose, loadout, Direct Pressure pause or
+    // stance. ACME_hang_Start is the immutable episode fingerprint and remains changed even if the newer bag is
+    // subsequently lowered before this callback runs.
+    private _sameEpisode = (_medic getVariable ["ACME_hang_Start", -2]) == _episodeStart;
+    private _providerCanRestore = _sameEpisode && {!(_medic getVariable ["ACME_hang_Active", false])};
+
+    if (_providerCanRestore && {local _medic}) then {
         _medic enableAI "ANIM";
         // Normal path: the authored out move has already connected itself to crouch. Fallback path: if the move
         // graph never entered/left the out state within the bounded wait below, explicitly recover to crouch so
@@ -66,26 +77,38 @@ private _teardown = {
         };
         _medic selectWeapon "";
         _medic setUnitPos "MIDDLE";
+
+        // MIDDLE is only the safe crouched handoff. Release the stance lock once the authored exit has settled, but
+        // only if the same ended episode still owns provider cleanup.
+        [{
+            params ["_m", "_episodeStart"];
+            if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
+            if ((_m getVariable ["ACME_hang_Start", -2]) != _episodeStart) exitWith {};
+            if (_m getVariable ["ACME_hang_Active", false]) exitWith {};
+            _m setUnitPos "AUTO";
+        }, [_medic, _episodeStart], 0.85] call CBA_fnc_waitAndExecute;
     };
-    if ((_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == "hangbag") then {
+
+    if (_providerCanRestore && {(_medic getVariable ["ACME_DP_PauseTreatmentClass", ""]) == "hangbag"}) then {
         _medic setVariable ["ACME_DP_Paused", false, false];
         _medic setVariable ["ACME_DP_PauseTreatmentClass", "", false];
         _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
         _medic setVariable ["ACME_DP_LastPoseAssert", 0, false];
     };
 
-    if (!_silent && {!isNull _patient}) then {
+    if (!_silent && {!isNull _patient} && {_providerCanRestore}) then {
         [{
-            params ["_medic", "_patient", "_bp"];
+            params ["_medic", "_patient", "_bp", "_episodeStart"];
             if (isNull _medic || {isNull _patient}) exitWith {};
+            if ((_medic getVariable ["ACME_hang_Start", -2]) != _episodeStart) exitWith {};
             if !(_medic getVariable ["ACME_hang_Active", false]) then {
                 [_medic, _patient, _bp] call ACM_circulation_fnc_openTransfusionMenu;
             };
-        }, [_medic, _patient, _returnPart], 0.10] call CBA_fnc_waitAndExecute;
+        }, [_medic, _patient, _returnPart, _episodeStart], 0.10] call CBA_fnc_waitAndExecute;
     };
 };
 
-private _cleanupArgs = [_medic, _rope, _anchor, _bagHelper, _bag, _playedOut, _outAnim, _patient, _returnPart, _silent];
+private _cleanupArgs = [_medic, _rope, _anchor, _bagHelper, _bag, _playedOut, _outAnim, _patient, _returnPart, _silent, _episodeStart];
 if (_playedOut) then {
     // First wait until playMoveNow reaches the authored out state. Then wait until the state leaves naturally via
     // its ConnectTo edge. Both waits are bounded; timeout still runs the same safe teardown/recovery path.
