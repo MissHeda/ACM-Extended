@@ -23,6 +23,22 @@ if (!isNull _medicVehicle || {!isNull _patientVehicle}) exitWith {
     };
 };
 
+// B128 pulse-session generation. Retire input/PFH remnants synchronously before creating the new layer. The old PFH
+// is not allowed to run its cleanup against the new session: treatmentPoseStart below obtains a fresh pose token,
+// and old visual controls are explicitly deleted before the new cutRsc is created.
+private _pulseEpoch = (uiNamespace getVariable ["ACME_PulseEpoch", 0]) + 1;
+uiNamespace setVariable ["ACME_PulseEpoch", _pulseEpoch];
+private _oldPFH = uiNamespace getVariable ["ACME_PulsePFH", -1];
+if (_oldPFH >= 0) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
+uiNamespace setVariable ["ACME_PulsePFH", -1];
+private _oldEsc = uiNamespace getVariable ["ACME_PulseEscKey", -1];
+if (_oldEsc >= 0) then {[_oldEsc,"keydown"] call CBA_fnc_removeKeyHandler;};
+private _oldMain = uiNamespace getVariable ["ACME_PulseEscDisplay", displayNull];
+private _oldEscEH = uiNamespace getVariable ["ACME_PulseEscEH", -1];
+if (!isNull _oldMain && {_oldEscEH >= 0}) then {_oldMain displayRemoveEventHandler ["KeyDown", _oldEscEH];};
+private _oldWatch = uiNamespace getVariable ["ACME_PulseWatchCtrl", controlNull];
+if (!isNull _oldWatch) then {ctrlDelete _oldWatch;};
+
 [_patient,"activity","%1 felt for a %2",[[_medic,false,true] call ace_common_fnc_getName,_site]] call ace_medical_treatment_fnc_addToLog;
 ace_medical_gui_pendingReopen = false;
 if (dialog) then {closeDialog 0;};
@@ -43,32 +59,44 @@ uiNamespace setVariable ["ACME_PulseCheckCancel",false];
 uiNamespace setVariable ["ACME_PulseCheckMedic",_medic];
 uiNamespace setVariable ["ACME_PulseCheckPatient",_patient];
 uiNamespace setVariable ["ACME_PulseCheckStartedAt",CBA_missionTime];
-private _epoch = [_medic,"pulse",-1] call ACME_fnc_treatmentPoseStart;
-uiNamespace setVariable ["ACME_PulsePoseEpoch",_epoch];
+private _poseEpoch = [_medic,"pulse",-1] call ACME_fnc_treatmentPoseStart;
+uiNamespace setVariable ["ACME_PulsePoseEpoch",_poseEpoch];
+
 // Consume Escape instead of letting the engine open the pause menu. The RscFeelPulse layer is a cutRsc, not a
 // dialog, so the main display (46) must own the KeyDown as well as CBA's key handler.
 private _mainDisplay = findDisplay 46;
 private _escEH = -1;
 if (!isNull _mainDisplay) then {
+    _mainDisplay setVariable ["ACME_PulseKeyEpoch", _pulseEpoch];
     _escEH = _mainDisplay displayAddEventHandler ["KeyDown", {
-        params ["", "_key"];
-        if (_key != 1 || {!(uiNamespace getVariable ["ACME_PulseCheckActive", false])}) exitWith {false};
+        params ["_display", "_key"];
+        private _epoch = _display getVariable ["ACME_PulseKeyEpoch", -1];
+        if (_key != 1
+            || {(uiNamespace getVariable ["ACME_PulseEpoch", -2]) != _epoch}
+            || {!(uiNamespace getVariable ["ACME_PulseCheckActive", false])}) exitWith {false};
         uiNamespace setVariable ["ACME_PulseCheckEscape", true];
         true
     }];
 };
-private _esc = [1,[false,false,false],{
-    if (uiNamespace getVariable ["ACME_PulseCheckActive", false]) then {
-        uiNamespace setVariable ["ACME_PulseCheckEscape",true];
-        true
-    } else {false};
-},"keydown","",false,0] call CBA_fnc_addKeyHandler;
+private _escCode = compile format [
+    "if ((uiNamespace getVariable ['ACME_PulseEpoch', -2]) != %1) exitWith {false}; if (uiNamespace getVariable ['ACME_PulseCheckActive', false]) then {uiNamespace setVariable ['ACME_PulseCheckEscape', true]; true} else {false};",
+    _pulseEpoch
+];
+private _esc = [1,[false,false,false],_escCode,"keydown","",false,0] call CBA_fnc_addKeyHandler;
 uiNamespace setVariable ["ACME_PulseEscKey",_esc];
 uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
+uiNamespace setVariable ["ACME_PulseEscDisplay",_mainDisplay];
 
-[{
+private _pfh = [{
     params ["_args","_pfh"];
-    _args params ["_medic","_patient","_bodyPart","_esc","_epoch","_mainDisplay","_escEH"];
+    _args params ["_medic","_patient","_bodyPart","_esc","_poseEpoch","_pulseEpoch","_mainDisplay","_escEH"];
+
+    // Superseded pulse check. The new start already retired our captured input hooks, so only remove this PFH. Never
+    // clear the shared cutRsc/watch/DP state of the newer session, and never stop its newer treatment pose token.
+    if ((uiNamespace getVariable ["ACME_PulseEpoch", -1]) != _pulseEpoch) exitWith {
+        [_pfh] call CBA_fnc_removePerFrameHandler;
+    };
+
     private _uiGuardArmed = CBA_missionTime > ((uiNamespace getVariable ["ACME_PulseCheckStartedAt", CBA_missionTime]) + 0.20);
     private _menuOpen = _uiGuardArmed && {!isNull (uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull])};
     private _replacementDialog = _uiGuardArmed && {dialog};
@@ -81,8 +109,15 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
         || {_medic distance2D _patient > 4.5};
     if (_quit) exitWith {
         [_pfh] call CBA_fnc_removePerFrameHandler;
+        if ((uiNamespace getVariable ["ACME_PulsePFH", -2]) == _pfh) then {uiNamespace setVariable ["ACME_PulsePFH", -1];};
         [_esc,"keydown"] call CBA_fnc_removeKeyHandler;
+        if ((uiNamespace getVariable ["ACME_PulseEscKey", -2]) == _esc) then {uiNamespace setVariable ["ACME_PulseEscKey", -1];};
         if (!isNull _mainDisplay && {_escEH >= 0}) then {_mainDisplay displayRemoveEventHandler ["KeyDown", _escEH];};
+        if ((uiNamespace getVariable ["ACME_PulseEscEH", -2]) == _escEH) then {
+            uiNamespace setVariable ["ACME_PulseEscEH", -1];
+            uiNamespace setVariable ["ACME_PulseEscDisplay", displayNull];
+        };
+
         private _escaped = uiNamespace getVariable ["ACME_PulseCheckEscape",false];
         private _watchCtrl = uiNamespace getVariable ["ACME_PulseWatchCtrl", controlNull];
         if (!isNull _watchCtrl) then {ctrlDelete _watchCtrl;};
@@ -94,10 +129,11 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
         uiNamespace setVariable ["ACME_PulseCheckMedic",objNull];
         uiNamespace setVariable ["ACME_PulseCheckPatient",objNull];
         uiNamespace setVariable ["ACME_PulseCheckStartedAt",-1];
+
         // End the pulse/stethoscope pose before handing animation ownership back to Direct Pressure. CheckPulse's
         // ACE success event deliberately leaves ACME_DP_TreatmentBusy set while this minigame is alive. Clearing it
         // any earlier lets the DP PFH reassert its hold over the pulse pose and makes Feel Pulse instantly disappear.
-        [_medic,"pulse",_epoch] call ACME_fnc_treatmentPoseStop;
+        [_medic,"pulse",_poseEpoch] call ACME_fnc_treatmentPoseStop;
         if (local _medic
             && {_medic getVariable ["ACME_DP_Active", false]}
             && {(_medic getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
@@ -109,6 +145,7 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
         };
         if (_escaped) then {[_patient,"examine"] call ACME_fnc_reopenMedicalMenu;};
     };
+
     private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];
     if (isNull _disp) exitWith {};
     private _heart = _disp displayCtrl 80002;
@@ -125,4 +162,5 @@ uiNamespace setVariable ["ACME_PulseEscEH",_escEH];
             uiNamespace setVariable ["ACME_PulseVisualNext",CBA_missionTime + (60 / (_hr max 1))];
         };
     } else {_heart ctrlShow false;};
-},0,[_medic,_patient,_bodyPart,_esc,_epoch,_mainDisplay,_escEH]] call CBA_fnc_addPerFrameHandler;
+},0,[_medic,_patient,_bodyPart,_esc,_poseEpoch,_pulseEpoch,_mainDisplay,_escEH]] call CBA_fnc_addPerFrameHandler;
+uiNamespace setVariable ["ACME_PulsePFH", _pfh];
