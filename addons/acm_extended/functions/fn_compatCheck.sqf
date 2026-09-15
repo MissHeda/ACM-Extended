@@ -20,6 +20,34 @@ missionNamespace setVariable ["ACME_compatChecked", true];
 private _missing = [];
 private _version = missionNamespace getVariable ["ACME_infusion_version", "?"];
 
+private _hasMarker = {
+    params ["_name", "_marker"];
+    private _code = missionNamespace getVariable [_name, {}];
+    _code isEqualType {} && {(toLowerANSI str _code find toLowerANSI _marker) >= 0}
+};
+
+// B127: ace_dragging prepares this function during ACE startup, and some multiplayer mod stacks prepare it again
+// after ACM_core's CfgFunctions override has been compiled. That leaves a client running ACE's native function even
+// though the ACME PBO contains the correct reconciled source. This is not upstream drift, so repair this one known
+// load-order race from the exact source shipped in the same build before classifying it as stale. If preprocessing,
+// compilation or assignment fails, the normal marker test below still reports the compatibility fault instead of
+// hiding it. JIP clients run this locally as part of their own postInit/compatibility pass.
+if !( ["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"] call _hasMarker ) then {
+    private _repairPath = "\x\ACM\addons\core\overrides\fnc_dropObject_carry.sqf";
+    private _repairSource = preprocessFileLineNumbers _repairPath;
+    if (_repairSource != "") then {
+        private _repairCode = compile _repairSource;
+        private _repairValid = _repairCode isEqualType {}
+            && {(toLowerANSI str _repairCode find "b106:ace321carrydrop") >= 0};
+        if (_repairValid) then {
+            missionNamespace setVariable ["ace_dragging_fnc_dropObject_carry", _repairCode];
+            if (["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"] call _hasMarker) then {
+                diag_log format ["[ACME COMPAT] Reconciled runtime ace_dragging_fnc_dropObject_carry from %1", _repairPath];
+            };
+        };
+    };
+};
+
 // functions we call directly. if one of these is gone, whatever calls it fails at the worst possible moment.
 {
     if (isNil _x) then { _missing pushBack format ["FUNCTION %1", _x]; };
@@ -39,9 +67,7 @@ private _version = missionNamespace getVariable ["ACME_infusion_version", "?"];
 // authoritative vitals path intentionally calls ACM_circulation_fnc_getBloodVolumeChange directly.
 {
     _x params ["_name", "_marker"];
-    private _code = missionNamespace getVariable [_name, {}];
-    private _ok = _code isEqualType {} && {(toLowerANSI str _code find toLowerANSI _marker) >= 0};
-    if (!_ok) then { _missing pushBack format ["STALE/OVERRIDDEN %1", _name]; };
+    if !([_name, _marker] call _hasMarker) then { _missing pushBack format ["STALE/OVERRIDDEN %1", _name]; };
 } forEach [
     ["ACM_circulation_fnc_getBloodVolumeChange", "B106:volumeCanonical"],
     ["ace_medical_vitals_fnc_handleUnitVitals", "B106:vasoconstrictionPersist"],
