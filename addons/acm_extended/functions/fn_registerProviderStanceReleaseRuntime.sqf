@@ -60,20 +60,33 @@
                 _medic setVariable ["ACME_DP_IdleStart", CBA_missionTime];
                 _medic setVariable ["ACME_DP_LastPoseAssert", 0];
 
-                // DP treatments always return to the same casualty's medical menu. ACE's native pendingReopen does
-                // this in the normal case; this guarded fallback covers the preflight path without altering global
-                // menu behavior for any other intervention.
+                // B127: timed ACE treatments can emit their completion event before ace_common_dlgProgress has been
+                // destroyed. The former 0.05 s one-shot saw the still-live progress display, skipped the reopen, and
+                // never tried again. Wait for the progress display to actually disappear, then reopen exactly once.
+                // The Direct Pressure pose token makes the delayed callback episode-safe: stopping/restarting DP or
+                // moving to another patient invalidates it before it can touch the newer UI flow.
+                private _dpToken = _medic getVariable ["ACME_DP_PoseToken", -1];
                 [{
-                    params ["_m", "_p"];
+                    params ["_m", "_p", "_tok"];
                     if (isNull _m || {isNull _p} || {!local _m}
                         || {!(_m getVariable ["ACME_DP_Active", false])}
-                        || {!((_m getVariable ["ACME_DP_Patient", objNull]) isEqualTo _p)}) exitWith {};
+                        || {!((_m getVariable ["ACME_DP_Patient", objNull]) isEqualTo _p)}
+                        || {(_m getVariable ["ACME_DP_PoseToken", -2]) != _tok}) exitWith {true};
+                    isNull (uiNamespace getVariable ["ace_common_dlgProgress", displayNull])
+                }, {
+                    params ["_m", "_p", "_tok"];
+                    if (isNull _m || {isNull _p} || {!local _m}
+                        || {!(_m getVariable ["ACME_DP_Active", false])}
+                        || {!((_m getVariable ["ACME_DP_Patient", objNull]) isEqualTo _p)}
+                        || {(_m getVariable ["ACME_DP_PoseToken", -2]) != _tok}) exitWith {};
                     private _menu = uiNamespace getVariable ["ace_medical_gui_menuDisplay", displayNull];
                     private _progress = uiNamespace getVariable ["ace_common_dlgProgress", displayNull];
-                    if (isNull _menu && {isNull _progress}) then {
+                    // Do not replace a purpose-built minigame/dialog which a treatment callback intentionally opened.
+                    if (!isNull _progress || {dialog && {isNull _menu}}) exitWith {};
+                    if (isNull _menu) then {
                         ["ACM_core_openMedicalMenu", _p] call CBA_fnc_localEvent;
                     };
-                }, [_medic, _patient], 0.05] call CBA_fnc_waitAndExecute;
+                }, [_medic, _patient, _dpToken], 2, {}] call CBA_fnc_waitUntilAndExecute;
             };
         };
 
