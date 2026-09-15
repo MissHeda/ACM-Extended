@@ -43,7 +43,15 @@ private _id = [{
 
     _patient setVariable [QGVAR(Coagulation_NextAttempt), (CBA_missionTime + 12 - ((_txaCount * 3) + _plateletCount))];
 
-    if (GET_HEART_RATE(_patient) < 20 || (_plateletCount < 1 && _txaCount < 0.5) || (GET_EFF_BLOOD_VOLUME(_patient) < 3.8)) exitWith {};
+    // B135: arrest does not make coagulation biologically disappear. If CPR is producing forward flow, or TXA
+    // is already systemically present, continue clot attempts even though the native HR is below 20. Profound
+    // hypovolemia remains a barrier when untreated, but systemic TXA can still support hemostasis instead of being
+    // rendered inert at the exact point a resuscitating casualty needs it most.
+    private _cprActive = [_patient] call EFUNC(core,cprActive);
+    private _hemostaticPerfusion = (GET_HEART_RATE(_patient) >= 20) || {_cprActive} || {_txaCount > 0.1};
+    if (!_hemostaticPerfusion
+        || {(_plateletCount < 1 && {_txaCount < 0.5})}
+        || {(GET_EFF_BLOOD_VOLUME(_patient) < 3.8) && {_txaCount < 0.1}}) exitWith {};
 
     private _exit = true;
 
@@ -56,7 +64,7 @@ private _id = [{
         if (_openWoundsOnPart isEqualTo [] || [_patient, _x] call ACEFUNC(medical_treatment,hasTourniquetAppliedTo)) then {
             continue;
         };
-        
+
         private _woundIndex = _openWoundsOnPart findIf {(_x select 1) > 0 && (_x select 2) > 0 && (((_x select 0) % 10) + 1) <= _maximumWoundSeverity};
 
         if (_woundIndex != -1) exitWith {

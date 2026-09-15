@@ -2304,6 +2304,26 @@
     true
   ],
   [
+    "ACME_Junc_SourceWound_leftarm",
+    "",
+    true
+  ],
+  [
+    "ACME_Junc_SourceWound_leftleg",
+    "",
+    true
+  ],
+  [
+    "ACME_Junc_SourceWound_rightarm",
+    "",
+    true
+  ],
+  [
+    "ACME_Junc_SourceWound_rightleg",
+    "",
+    true
+  ],
+  [
     "ACME_Junc_XStatAt_leftarm",
     "time",
     true

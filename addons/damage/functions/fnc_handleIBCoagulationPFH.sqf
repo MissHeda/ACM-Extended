@@ -35,13 +35,21 @@ private _id = [{
         _patient setVariable [QGVAR(IBCoagulation_Active), false, true];
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
-    
+
     private _txaCount = ([_patient, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount)) min 2.2;
 
     if ((_patient getVariable [QGVAR(IBCoagulation_NextAttempt), 0]) > CBA_missionTime) exitWith {};
     _patient setVariable [QGVAR(IBCoagulation_NextAttempt), (CBA_missionTime + 9 - ((_txaCount * 3) + _plateletCount))];
 
-    if (GET_HEART_RATE(_patient) < 20 || (_plateletCount < 0.1 && _txaCount < 0.1) || (GET_EFF_BLOOD_VOLUME(_patient) < 3.6)) exitWith {};
+    // B135: preserve the native internal-wound clot worker during resuscitation. CPR can provide the forward
+    // circulation needed to keep factors moving, while TXA already present in the systemic compartment remains
+    // active through arrest. Untreated profound shock can still stall clot formation; TXA removes that absolute
+    // lockout rather than allowing an internal source to bleed forever solely because the patient arrested.
+    private _cprActive = [_patient] call EFUNC(core,cprActive);
+    private _hemostaticPerfusion = (GET_HEART_RATE(_patient) >= 20) || {_cprActive} || {_txaCount > 0.1};
+    if (!_hemostaticPerfusion
+        || {(_plateletCount < 0.1 && {_txaCount < 0.1})}
+        || {(GET_EFF_BLOOD_VOLUME(_patient) < 3.6) && {_txaCount < 0.1}}) exitWith {};
 
     private _exit = true;
 
@@ -63,12 +71,12 @@ private _id = [{
             _exit = false;
             continue;
         };
-        
+
         private _woundIndex = _internalWoundsOnPart findIf {(_x select 1) > 0};
 
         if (_woundIndex != -1) exitWith {
             (_internalWoundsOnPart select _woundIndex) params ["_woundType", "_woundCount", "_woundBleeding"];
-            
+
             private _woundSeverity = _woundType % 10;
             private _txaEffect = 1 + (2 min _txaCount);
             private _bloodVolumEffect = (GET_EFF_BLOOD_VOLUME(_patient) / 4.5) min 1;

@@ -114,8 +114,12 @@ if (GET_INTERNAL_BLEEDING(_unit) > 0.3 || (_plateletCount < 0.1 && _TXAEffect < 
 private _HTXState = _unit getVariable [QEGVAR(breathing,Hemothorax_State), 0];
 private _hemothoraxBleeding = 0;
 
-private _plateletBleedRatio = [(0.8 min (linearConversion [2.9, 1.8, _plateletCount, 0.8, 0.5]) max 0), 0] select _inCardiacArrest;
-private _plateletInternalBleedRatio = [(0.8 min (linearConversion [2.4, 1.6, _plateletCount, 0.8, 0.5]) max 0), 0] select _inCardiacArrest;
+// B135: cardiac arrest must not switch coagulation off. These ratios describe clot/platelet protection of an
+// existing hemorrhage source, not forward fluid delivery. CPR can restore enough pressure to make a source bleed
+// again, but platelets already at the wound still function and systemically-delivered TXA does not vanish when the
+// rhythm becomes pulseless. Keep the normal platelet protection during arrest; flow gating remains separate below.
+private _plateletBleedRatio = (0.8 min (linearConversion [2.9, 1.8, _plateletCount, 0.8, 0.5]) max 0);
+private _plateletInternalBleedRatio = (0.8 min (linearConversion [2.4, 1.6, _plateletCount, 0.8, 0.5]) max 0);
 
 if (_HTXState > 0) then {
     _hemothoraxBleeding = -_deltaT * GET_HEMOTHORAX_BLEEDRATE(_unit);
@@ -143,7 +147,7 @@ if (_salineVolume > 0) then {
 };
 
 if (_plateletCount > 0.1) then {
-    if (_TXAEffect > 0.5 && !_inCardiacArrest) then {
+    if (_TXAEffect > 0.5) then {
         _bloodLoss = _bloodLoss * (linearConversion [0.5, 2, _TXAEffect, 1, 0.9, true]);
         _internalBleeding = _internalBleeding * (linearConversion [0.5, 2, _TXAEffect, 1, 0.85, true]);
         _hemothoraxBleeding = _hemothoraxBleeding * (linearConversion [0.5, 2, _TXAEffect, 1, 0.8, true]);
@@ -152,7 +156,7 @@ if (_plateletCount > 0.1) then {
 
     _plateletCountChange = (_bloodLoss * _plateletBleedRatio) + ((_internalBleeding * 0.6) * _plateletInternalBleedRatio) + (_hemothoraxBleeding * _plateletBleedRatio) + (_capillaryBleeding * _plateletBleedRatio);
 
-    if (_TXAEffect > 0.1 && !_inCardiacArrest) then {
+    if (_TXAEffect > 0.1) then {
         _plateletCountChange = _plateletCountChange * 0.9;
     };
 };

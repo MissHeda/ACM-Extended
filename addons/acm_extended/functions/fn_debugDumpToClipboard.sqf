@@ -24,6 +24,11 @@ if (_ver == "") then {_ver = missionNamespace getVariable ["ACME_infusion_versio
 private _build = missionNamespace getVariable ["ACME_buildBatch", "?"];
 private _normalBlood = missionNamespace getVariable ["ACME_hypo_bloodNormal", 6];
 private _circVol = _patient getVariable ["ace_medical_bloodVolume", _normalBlood];
+private _extBleedDbg = if (!isNil "ace_medical_status_fnc_getBloodLoss") then {(([_patient] call ace_medical_status_fnc_getBloodLoss) max 0) * 60000} else {0};
+private _juncBleedDbg = ((_patient getVariable ["ACME_junctionalBleedLPS", 0]) max 0) * 60000;
+private _intBleedDbg = if (!isNil "ACM_circulation_fnc_getInternalBleedingRate") then {(([_patient] call ACM_circulation_fnc_getInternalBleedingRate) max 0) * 60000} else {0};
+private _hemoBleedDbg = if (!isNil "ACM_circulation_fnc_getHemothoraxBleedingRate") then {(([_patient] call ACM_circulation_fnc_getHemothoraxBleedingRate) max 0) * 60000} else {0};
+private _capBleedDbg = if (!isNil "ACM_circulation_fnc_getCapillaryDamageBleedingRate") then {(([_patient] call ACM_circulation_fnc_getCapillaryDamageBleedingRate) max 0) * 60000} else {0};
 private _bloodComp = _patient getVariable ["ACM_circulation_Blood_Volume", _normalBlood];
 private _plasmaComp = _patient getVariable ["ACM_circulation_Plasma_Volume", 0];
 private _salineComp = _patient getVariable ["ACM_circulation_Saline_Volume", 0];
@@ -137,6 +142,9 @@ private _etco2 = if (!isNil "ACM_breathing_fnc_getEtCO2") then {[_patient] call 
 
 ["------ACME High-Value State------"] call _out;
 private _tbiState = _patient getVariable ["ACME_tbi_State", createHashMap];
+_lines pushBack format ["BleedSources raw mL/min: external=%1 junctional=%2 internal=%3 hemothorax=%4 capillary=%5 total=%6",
+    round _extBleedDbg, round _juncBleedDbg, round _intBleedDbg, round _hemoBleedDbg, round _capBleedDbg,
+    round (_extBleedDbg + _juncBleedDbg + _intBleedDbg + _hemoBleedDbg + _capBleedDbg)];
 private _tbiICP = if (_tbiState isEqualType createHashMap) then {_tbiState getOrDefault ["icp", 0]} else {0};
 private _tbiCPP = _map - _tbiICP;
 [format ["TBI=%1 ICP=%2 CPP=%3 HPMK=%4/%5 Obtunded=%6 Vent=%7 ETT=%8",
