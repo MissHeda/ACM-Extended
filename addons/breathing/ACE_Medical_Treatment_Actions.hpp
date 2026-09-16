@@ -38,6 +38,8 @@ class ACEGVAR(medical_treatment,actions) {
         consumeItem = 0;
         condition = QUOTE(!([_patient] call EFUNC(core,cprActive)));
         callbackSuccess = QFUNC(useStethoscope);
+        ACME_neverRollToBack = 1;
+        ACME_suppressNativeTreatmentAnim = 1;
         ACM_menuIcon = "ACM_Stethoscope";
     };
     class UseBVM: UseStethoscope {
@@ -47,6 +49,8 @@ class ACEGVAR(medical_treatment,actions) {
         items[] = {"ACM_BVM","ACM_PocketBVM"};
         condition = QUOTE([ARR_2(_medic,_patient)] call FUNC(canUseBVM));
         callbackSuccess = QUOTE([ARR_3(_medic,_patient,false)] call FUNC(useBVM));
+        ACME_neverRollToBack = 0;
+        ACME_suppressNativeTreatmentAnim = 0;
         ACM_cancelRecovery = 1;
         ACM_menuIcon = "ACM_BVM";
     };

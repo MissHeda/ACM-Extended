@@ -269,7 +269,10 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
                 if (_lungSideState == 0) then {
                     private _crackleFlag = _patient getVariable ["ACME_edema_crackles", false];
                     private _overload = _patient getVariable ["ACM_circulation_Overload_Volume", 0];
-                    if (_crackleFlag || {_overload > (missionNamespace getVariable ["ACME_edema_threshold", 0.5])}) then {
+                    private _aspEdema = (_patient getVariable ["ACME_aspiration_edema",0]) max 0 min 1;
+                    if (_crackleFlag
+                        || {_overload > (missionNamespace getVariable ["ACME_edema_threshold",0.5])}
+                        || {_aspEdema >= (missionNamespace getVariable ["ACME_aspiration_edemaCrackleThreshold",0.12])}) then {
                         _lungSideState = 3;
                     };
                 };
@@ -298,7 +301,10 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
                     // crackles and milder edema gives normal crackles, so both crackle variants have a real trigger.
                     case (_lungSideState == 3): {
                         private _ov = _patient getVariable ["ACM_circulation_Overload_Volume", 0];
-                        if (_ov >= (missionNamespace getVariable ["ACME_edema_crackleFastVol", 0.5])) then {"Fast"} else {"Normal"};
+                        private _aspEdema = (_patient getVariable ["ACME_aspiration_edema",0]) max 0 min 1;
+                        private _fastEdema = (_ov >= (missionNamespace getVariable ["ACME_edema_crackleFastVol",0.5]))
+                            || {_aspEdema >= (missionNamespace getVariable ["ACME_aspiration_edemaCrackleFast",0.55])};
+                        if (_fastEdema) then {"Fast"} else {"Normal"};
                     };
                     case (_breathDelay < 2): {
                         "Fast";

@@ -44,5 +44,19 @@ _d setVariable ["ACME_MC_scenName","",true];
 [_d,[["deathBlocked",true,true]]] call ACM_core_fnc_setAceMedicalState;
 
 // Batch-3 expansion states also return to a neutral baseline when those functions are present.
+{
+    _x params ["_key","_value","_public"];
+    _d setVariable [_key,_value,_public];
+} forEach [
+    ["ACME_aspiration_load",0,true],
+    ["ACME_aspiration_injury",0,true],
+    ["ACME_aspiration_edema",0,true],
+    ["ACME_aspiration_edemaActive",false,true],
+    ["ACME_aspiration_shunt",0,true],
+    ["ACME_aspiration_RRDrive",0,true],
+    ["ACME_aspiration_SpO2Penalty",0,true],
+    ["ACME_aspiration_lastRRAdj",0,false],
+    ["ACME_aspiration_lastEmesisKey","",false]
+];
 if (!isNil "ACME_fnc_shockSetPhenotype") then {[_d,"auto",0] call ACME_fnc_shockSetPhenotype;};
 [_d] call ACME_fnc_megacodeStanceLock;

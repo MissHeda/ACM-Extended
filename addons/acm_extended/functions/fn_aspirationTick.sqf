@@ -46,21 +46,46 @@ private _now = CBA_missionTime;
     private _lastAt = _u getVariable ["ACME_aspiration_tickAt",_now-1];
     private _dt = ((_now - _lastAt) max 0) min 3;
     _u setVariable ["ACME_aspiration_tickAt",_now,false];
-    if (_load <= 0 || {_dt <= 0}) then {continue};
+    if (_dt <= 0) then {continue};
 
-    // Very slow spontaneous improvement; this is a lung injury, not residual mouth fluid.  Meaningful aspiration
-    // remains relevant for the duration of a normal mission unless the casualty receives prolonged definitive care.
-    private _recovery = if ((_u getVariable ["ace_medical_spo2",90]) >= 94) then {0.00006} else {0.00002};
-    _load = (_load - (_recovery * _dt)) max 0;
-    _u setVariable ["ACME_aspiration_load",_load,true];
+    // The particulate/chemical aspiration burden clears very slowly. Established alveolar injury is deliberately
+    // slower than visible airway-fluid clearance, so suction does not magically normalize the lungs.
+    if (_load > 0) then {
+        private _recovery = if ((_u getVariable ["ace_medical_spo2",90]) >= 94) then {0.00006} else {0.00002};
+        _load = (_load - (_recovery * _dt)) max 0;
+        _u setVariable ["ACME_aspiration_load",_load,true];
+    };
 
-    // Spontaneous-breathing physiology. Ventilated oxygenation consumes the same load through ventOxygenation.
+    // Aspiration pneumonitis can progress to non-cardiogenic pulmonary edema from inflammatory capillary leak.
+    // Minor aspiration does not automatically produce crackles. Moderate/severe or repeated aspiration builds a
+    // delayed edema burden over tens of seconds, then resolves far more slowly than the initiating emesis.
+    private _edema = (_u getVariable ["ACME_aspiration_edema",0]) max 0 min 1;
+    private _edemaTarget = linearConversion [0.14,0.75,_load,0,1,true];
+    if (_edemaTarget > _edema) then {
+        private _riseFraction = ((0.018 * _dt) min 0.20) max 0;
+        _edema = _edema + ((_edemaTarget - _edema) * _riseFraction);
+    } else {
+        _edema = (_edema - (0.000035 * _dt)) max _edemaTarget;
+    };
+    _edema = _edema max 0 min 1;
+
+    // Use one effective injury severity for oxygenation/RR/shunt. This is max(), not addition, so the edema
+    // manifestation extends established injury without double-counting the same aspiration event.
+    private _injury = _load max (0.85 * _edema);
+    private _crackleThreshold = missionNamespace getVariable ["ACME_aspiration_edemaCrackleThreshold",0.12];
+    _u setVariable ["ACME_aspiration_edema",_edema,true];
+    _u setVariable ["ACME_aspiration_edemaActive",_edema >= _crackleThreshold,true];
+    _u setVariable ["ACME_aspiration_injury",_injury,true];
+    _u setVariable ["ACME_aspiration_SpO2Penalty",30 * _injury,true];
+
+    // Spontaneous-breathing physiology. Ventilated oxygenation consumes the same effective injury through
+    // ACME_fnc_ventOxygenation, where PEEP can recruit part of the flooded/collapsed lung.
     private _vent = (_u getVariable ["ACME_vent_onPatient",false]) && {_u getVariable ["ACME_vent_driving",false]};
-    if (!_vent) then {
+    if (!_vent && {_injury > 0.001}) then {
         private _spo2 = _u getVariable ["ace_medical_spo2",97];
-        private _ceiling = 98 - (30 * _load);
+        private _ceiling = 98 - (30 * _injury);
         if (_spo2 > _ceiling) then {
-            private _fall = (0.03 + (0.18 * _load)) * _dt;
+            private _fall = (0.03 + (0.18 * _injury)) * _dt;
             private _new = (_spo2 - _fall) max _ceiling;
             if (!isNil "ACM_core_fnc_setAceMedicalState") then {
                 [_u, [["spo2",_new,true,true]]] call ACM_core_fnc_setAceMedicalState;
@@ -69,12 +94,13 @@ private _now = CBA_missionTime;
     };
 
     // Tachypneic compensation while spontaneous respiratory drive exists. Compose against the previous target
-    // without accumulating our own last offset.
+    // without accumulating our own last offset, and explicitly clear the old offset when aspiration resolves.
     private _curRR = _u getVariable ["ACM_core_TargetVitals_RespirationRate",16];
     private _lastAdj = _u getVariable ["ACME_aspiration_lastRRAdj",0];
     private _nativeRR = (_curRR - _lastAdj) max 0;
-    private _adj = 14 * _load;
+    private _adj = 14 * _injury;
     _u setVariable ["ACM_core_TargetVitals_RespirationRate",(_nativeRR + _adj) min 45,true];
     _u setVariable ["ACME_aspiration_lastRRAdj",_adj,false];
-    _u setVariable ["ACME_aspiration_shunt",0.30 * _load,true];
+    _u setVariable ["ACME_aspiration_RRDrive",_adj,true];
+    _u setVariable ["ACME_aspiration_shunt",0.30 * _injury,true];
 } forEach allUnits;

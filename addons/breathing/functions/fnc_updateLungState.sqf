@@ -23,8 +23,13 @@ if (_healed) exitWith {
 
 private _lungState = _patient getVariable ["ACM_breathing_Stethoscope_LungState", [0,0]];
 
-private _affectedIndex = _lungState findIf {_x > 0};
+// State 3 is dynamic edema presentation, not a structural unilateral injury. Clear stale edema first and rebuild it
+// from current overload/aspiration physiology below. States 1/2 remain the authoritative traumatic lung finding.
+for "_i" from 0 to 1 do {
+    if ((_lungState param [_i,0]) == 3) then {_lungState set [_i,0];};
+};
 
+private _affectedIndex = _lungState findIf {_x in [1,2]};
 if (_affectedIndex == -1) then {
     _affectedIndex = round (random 1);
 };
@@ -45,18 +50,22 @@ switch (true) do {
     default {};
 };
 
+// ACME: pulmonary edema can be volume-overload edema or aspiration-pneumonitis capillary leak. Both are diffuse.
+// A traumatic finding on a side remains higher priority than crackles on that same side.
+private _overload = _patient getVariable ["ACM_circulation_Overload_Volume", 0];
+private _aspEdema = (_patient getVariable ["ACME_aspiration_edema",0]) max 0 min 1;
+private _edemaActive = (_overload > (missionNamespace getVariable ["ACME_edema_threshold",0.5]))
+    || {_aspEdema >= (missionNamespace getVariable ["ACME_aspiration_edemaCrackleThreshold",0.12])};
+
 if (_state == 0) exitWith {
-    // ACME: there is no pneumo or hemothorax on this patient, so check for over-resuscitation pulmonary edema.
-    // the lung state of ACM is [left, right], so edema is modeled as diffuse crackles on both fields, where state 3
-    // gives Crackles in usestethoscope.
-    private _overload = _patient getVariable ["ACM_circulation_Overload_Volume", 0];
-    if (_overload > (missionNamespace getVariable ["ACME_edema_threshold", 0.5])) then {
-        _patient setVariable ["ACM_breathing_Stethoscope_LungState", [3,3], true];
-    } else {
-        _patient setVariable ["ACM_breathing_Stethoscope_LungState", [0,0], true];
-    };
+    _patient setVariable ["ACM_breathing_Stethoscope_LungState", [[0,0],[3,3]] select _edemaActive, true];
 };
 
 _lungState set [_affectedIndex, _state];
+if (_edemaActive) then {
+    for "_i" from 0 to 1 do {
+        if (_i != _affectedIndex && {(_lungState param [_i,0]) == 0}) then {_lungState set [_i,3];};
+    };
+};
 
 _patient setVariable ["ACM_breathing_Stethoscope_LungState", _lungState, true];

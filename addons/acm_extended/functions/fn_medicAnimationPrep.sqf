@@ -12,6 +12,10 @@ if (isNull _medic || {!local _medic} || {!alive _medic} || {[_medic] call ACME_f
 // its short treatment window entirely.
 private _state = toLowerANSI animationState _medic;
 private _visuallyEmpty = ((_state find "wnon") >= 0) && {((_state find "snon") >= 0)};
+// Arma can leave currentWeapon pointing at the rifle after the visible state is already Wnon. If we merely trust
+// the animation and return, the engine later tries to reassert that stale rifle during a frozen medical pose. Align
+// the logical selection once, with no holster loop, before the authored treatment takes ownership.
+if (_visuallyEmpty && {currentWeapon _medic != ""}) then {_medic selectWeapon "";};
 if (currentWeapon _medic == "" || {_visuallyEmpty}) exitWith {
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime], false];
     0

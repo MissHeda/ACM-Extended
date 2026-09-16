@@ -161,7 +161,11 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             looped = 1;
             disableWeapons = 1;
             disableWeaponsLong = 1;
+            disableWeaponsShort = 1;
+            disableReload = 1;
             canPullTrigger = 0;
+            enableOptics = 0;
+            enableBinocular = 0;
             connectTo[] = {};
             interpolateFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.2};
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.2, "Unconscious", 0.02};

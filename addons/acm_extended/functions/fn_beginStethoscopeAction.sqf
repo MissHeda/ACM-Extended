@@ -34,6 +34,10 @@ if (dialog) then {closeDialog 0;};
 
 private _notInVehicle = isNull objectParent _medic;
 
+// The stethoscope is a long frozen provider pose. Clear a stale logical rifle selection exactly once before pose
+// ownership begins; never issue per-frame put-away/select requests while the camera is attached to this maneuver.
+if (local _medic && {currentWeapon _medic != ""}) then {_medic selectWeapon "";};
+
 // One animation owner is enough, but its lifetime is deliberately independent from the dialog lifetime.
 private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
 _args call _onStart;

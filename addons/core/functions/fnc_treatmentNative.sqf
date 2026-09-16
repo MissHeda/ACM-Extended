@@ -139,7 +139,9 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
     // progress bar, item use, callbacks and patient state, but it must not enqueue its generic medic animation or
     // its matching end pose. That generic queue was what overwrote the authored chest/head bandage, NCD and
     // breathing-check motions a frame after ACME started them.
-    if (_medic getVariable ["ACME_suppressNativeTreatmentAnim", false]) then {
+    private _suppressNativeAnim = (_medic getVariable ["ACME_suppressNativeTreatmentAnim", false])
+        || {(isNumber (_config >> "ACME_suppressNativeTreatmentAnim")) && {(getNumber (_config >> "ACME_suppressNativeTreatmentAnim")) > 0}};
+    if (_suppressNativeAnim) then {
         _medicAnim = "";
     };
 

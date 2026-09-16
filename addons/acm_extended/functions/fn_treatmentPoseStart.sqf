@@ -270,10 +270,13 @@ private _pfh = [{
             if (_stopAfterHold >= 0 && {_now - _holdStarted >= _stopAfterHold}) exitWith {
                 [_medic, _mode, _epoch] call ACME_fnc_treatmentPoseStop;
             };
-            if ((_current != toLower _main || {getAnimSpeedCoef _medic != 0})
-                && {_now - _lastAssert >= 0.25}) then {
-                // Recover the owner's exact frozen frame directly; networking below is for the other clients.
-                if (_phase >= 0) then {_medic switchMove [_main, _phase, 1, false];};
+            private _stateDrift = _current != toLower _main;
+            private _speedDrift = getAnimSpeedCoef _medic != 0;
+            if ((_stateDrift || {_speedDrift}) && {_now - _lastAssert >= 0.25}) then {
+                // A speed-only disturbance does not need another switchMove. Re-seeking the exact frame every time
+                // an external system nudged animSpeedCoef was visible as an auscultation camera snap. Only restore
+                // the move when the animation state itself actually changed.
+                if (_stateDrift && {_phase >= 0}) then {_medic switchMove [_main, _phase, 1, false];};
                 _medic setAnimSpeedCoef 0;
                 private _jip = format ["ACME_treatmentPose_%1_%2", netId _medic, _epoch];
                 ["ACME_treatmentPoseSync", [_medic, _epoch, "hold", _main, _phase, owner _medic], _jip] call CBA_fnc_globalEventJIP;

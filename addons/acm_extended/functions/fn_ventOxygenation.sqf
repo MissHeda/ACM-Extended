@@ -7,6 +7,8 @@ private _ptx      = _patient getVariable ["ACM_breathing_Pneumothorax_State", 0]
 private _htxFluid = _patient getVariable ["ACM_breathing_Hemothorax_Fluid", 0];
 private _blast    = _patient getVariable ["ACME_blastLung_State", 0];
 private _asp      = (_patient getVariable ["ACME_aspiration_load", 0]) max 0 min 1;
+private _aspEdema = (_patient getVariable ["ACME_aspiration_edema", 0]) max 0 min 1;
+private _aspInjury = _asp max (0.85 * _aspEdema);
 
 private _edemaN = linearConversion [0.2, 1.6, _overload, 0, 1, true];
 private _blastN = _blast;
@@ -14,7 +16,7 @@ private _ptxN   = linearConversion [0, 3, _ptx, 0, 1, true];
 private _htxN   = linearConversion [0, 1500, _htxFluid, 0, 1, true];
 
 // Recruitable shunt: edema, blast-lung alveolar collapse, and the recruitable component of aspiration pneumonitis.
-private _shuntRecruitable = (0.38 * _edemaN) + (0.42 * _blastN) + (0.30 * _asp);
+private _shuntRecruitable = (0.38 * _edemaN) + (0.42 * _blastN) + (0.30 * _aspInjury);
 // Fixed shunt: pleural air/blood compressing the lung; PEEP cannot correct it.
 private _shuntFixed = (0.40 * _ptxN) + (0.30 * _htxN);
 
@@ -40,6 +42,6 @@ if (_comp < 0.35) then {
 
 // Established aspiration also makes the lung less compliant. Keep this modest so PEEP/pressure strategy matters
 // without turning every small aspiration into blast-lung-level stiffness.
-_targetSat = _targetSat - (3 * _asp);
+_targetSat = _targetSat - (3 * _aspInjury);
 
 ((_targetSat max 55) min 99)
