@@ -83,7 +83,7 @@ if (count (_patient getVariable [QGVAR(AED_EKGDisplay), []]) < AED_MONITOR_WIDTH
             };
         };
     };
-}; 
+};
 
 if (count (_patient getVariable [QGVAR(AED_PODisplay), []]) < AED_MONITOR_WIDTH || !(_patient getVariable [QGVAR(AED_Monitor_PulseOximeter_State), false])) then { // Initial
     if (_pulseOximeterState) then {
@@ -172,14 +172,14 @@ private _PFH = [{
 
         _patient setVariable [QGVAR(AED_UpdateStep), nil];
         _patient setVariable [QGVAR(AED_Offset), 0];
-        
+
         _patient setVariable [QGVAR(AEDMonitorDisplay_PFH), -1];
 
         if (GVAR(AED_ReOpenMenu)) then {
             GVAR(AED_ReOpenMenu) = false;
             [QEGVAR(core,openMedicalMenu), _patient] call CBA_fnc_localEvent;
         };
-        
+
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
 
@@ -497,7 +497,7 @@ private _PFH = [{
             // to this value, so PFH/render jitter cannot move a scheduled R wave relative to its audible beat.
             _patient setVariable ["ACME_AED_MonitorCursorTime", GVAR(EKG_Tick), false];
         };
-        
+
         // Update vitals displays
         private _displayedHR = _patient getVariable [QGVAR(AED_Pads_Display), 0];
         private _displayedSPO2 = _patient getVariable [QGVAR(AED_PulseOximeter_Display), 0];

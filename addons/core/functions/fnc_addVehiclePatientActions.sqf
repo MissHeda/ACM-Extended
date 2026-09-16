@@ -107,7 +107,7 @@ private _actions = [];
             _args params ["_patient"];
 
             private _actions = [];
-            
+
             _actions pushBack [
                 [
                 "ACM_PatientActions_ViewMonitor",

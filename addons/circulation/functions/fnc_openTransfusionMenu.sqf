@@ -143,7 +143,7 @@ private _inVehicle = !(isNull objectParent ACE_player);
         _xUpper ctrlShow (_IVUpper > 0);
         _xMiddle ctrlShow (_IVMiddle > 0);
         _xLower ctrlShow (_IVLower > 0);
-        
+
         if (GVAR(TransfusionMenu_SelectIV) && (_forEachIndex + 2) == _partIndex) then {
             switch (GVAR(TransfusionMenu_Selected_AccessSite)) do {
                 case 0: {

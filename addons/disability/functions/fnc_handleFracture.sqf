@@ -59,7 +59,7 @@ switch (true) do {
         if !(_splintNoEffect) then {
             _canReFracture = random 1 < 0.5;
         };
-        
+
         _targetFracture = ACM_FRACTURE_SEVERE;
     };
 };
@@ -124,7 +124,7 @@ private _PFH = [{
 
         if ((_fractures select _i) == -1 && _reFractureArray select _i) then {
             private _reFractureChance = 0.25;
-            
+
             if (_i in [2,3]) then {
                 _reFractureChance = 0.1;
             };

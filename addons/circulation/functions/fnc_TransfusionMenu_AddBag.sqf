@@ -59,10 +59,10 @@ private _itemClassNameString = getText (configFile >> "CfgWeapons" >> _itemClass
 
 [[_medic, _patient, _target, _itemClassname, _actionClassname, _vehicle], {
     params ["_medic", "_patient", "_target", "_itemClassname", "_actionClassname"];
-    
+
     [_medic, _patient, GVAR(TransfusionMenu_Selected_BodyPart), _actionClassname, objNull, _itemClassname, GVAR(TransfusionMenu_SelectIV), GVAR(TransfusionMenu_Selected_AccessSite)] call ACEFUNC(medical_treatment,ivBag);
     closeDialog 0;
-    
+
     [{
         params ["_medic", "_patient"];
 
@@ -77,6 +77,6 @@ private _itemClassNameString = getText (configFile >> "CfgWeapons" >> _itemClass
         [_target, _itemClassname] call ACEFUNC(common,addToInventory);
     };
     closeDialog 0;
-    
+
     [_medic, _patient, GVAR(TransfusionMenu_Selected_BodyPart)] call FUNC(openTransfusionMenu);
 }, (format [LLSTRING(TransfusionMenu_AddBag_Progress), _itemClassNameString]), 5] call EFUNC(core,progressBarAction);

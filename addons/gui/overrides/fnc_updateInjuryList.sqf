@@ -104,8 +104,8 @@ private _FBTKBags = 0;
                 _freshBloodBags = _freshBloodBags + 1;
             };
         };
-        _totalBags = _totalBags + 1;  
-    } forEach _IVBagsBodyPart; 
+        _totalBags = _totalBags + 1;
+    } forEach _IVBagsBodyPart;
 } forEach ALL_BODY_PARTS;
 
 if (_totalBags > 0) then {
@@ -221,7 +221,7 @@ if (_selectionN == 0) then {
                 _entry = format ["%1 [%2]", _entry, LELSTRING(airway,GUI_SurgicalAirway_Strapped)];
             };
             if (_target getVariable [QEGVAR(airway,SurgicalAirway_Incision), false] && !(_target getVariable [QEGVAR(airway,SurgicalAirway_IncisionStitched), false])) then {
-                _entry = format ["%1 [%2]", _entry, LELSTRING(airway,GUI_SurgicalAirway_OpenIncision)]; 
+                _entry = format ["%1 [%2]", _entry, LELSTRING(airway,GUI_SurgicalAirway_OpenIncision)];
             };
         } else {
             if (_target getVariable [QEGVAR(airway,SurgicalAirway_InProgress), false]) then {
@@ -273,7 +273,7 @@ if (_selectionN in [0,2,3] && {!(alive _target) || (_oxygenSaturation < ACM_CYAN
 
 if (EGVAR(CBRN,enable)) then {
     private _skinIrritation = (_target getVariable [QEGVAR(CBRN,SkinIrritation), [0,0,0,0,0,0]]) select _selectionN;
-    
+
     if (_skinIrritation > 5) then {
         private _colorMultiplier = linearConversion [5, 85, _skinIrritation, 1, 0.7, true];
         private _severity = switch (true) do {
@@ -332,17 +332,17 @@ if (_bodyPartIV isNotEqualTo [0,0,0]) then {
                 case ACM_IV_14G_M: {LELSTRING(circulation,IV_14g)};
             };
             _IVText = format ["%1 (%2)", _IVText, ([LELSTRING(circulation,IV_Upper), LELSTRING(circulation,IV_Middle), LELSTRING(circulation,IV_Lower)] select _forEachIndex)];
-    
+
             private _connectedBag = [_target, _selectionBodyPart, true, _forEachIndex, _x] call FUNC(getBodyPartIVBags);
-    
+
             private _IVEntry = "";
-    
+
             if (_connectedBag != "") then {
                 _IVEntry = format ["%1 [%2]", _IVText, _connectedBag];
             } else {
                 _IVEntry = _IVText;
             };
-    
+
             _entries pushBack [_IVEntry, _circulationColor];
         };
     } forEach _bodyPartIV;
@@ -406,8 +406,8 @@ if ((_selectionN == 1 || (_selectionN in [2,3] && _allowOnArm) || (_selectionN =
 // Pulse Oximeter
 if (_selectionN in [2,3] && {HAS_PULSEOX(_target,(_selectionN - 2))}) then {
     private _pr = (_target getVariable [QEGVAR(breathing,PulseOximeter_Display), [[0,0],[0,0]]] select (_selectionN - 2)) select 1;
-    private _spO2 = (_target getVariable [QEGVAR(breathing,PulseOximeter_Display), [[0,0],[0,0]]] select (_selectionN - 2)) select 0; 
-    
+    private _spO2 = (_target getVariable [QEGVAR(breathing,PulseOximeter_Display), [[0,0],[0,0]]] select (_selectionN - 2)) select 0;
+
     if (_spO2 < 1 || _pr < 1) then {
         _pr = "--";
         _spO2 = "--";

@@ -38,7 +38,7 @@ if !(isMultiplayer) exitWith {};
     if (isServer) then {
         [QGVAR(createCurator), {
             params ["_unit"];
-            
+
             if !(isPlayer _unit) exitWith {};
 
             private _unitID = getPlayerUID _unit;

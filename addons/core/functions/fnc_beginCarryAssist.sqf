@@ -42,7 +42,7 @@ if (_patient getVariable [QGVAR(CarryAssist_State), false]) exitWith {
 
     [ACELLSTRING(common,Cancel), "", ""] call ACEFUNC(interaction,showMouseHint);
     [(format [LLSTRING(AssistCarry_Complete), ([_patient, false, true] call ACEFUNC(common,getName))]), 2, _medic] call ACEFUNC(common,displayTextStructured);
-    
+
     private _display = uiNamespace getVariable ["ACM_ContinuousActionText", displayNull];
     private _ctrlTextUpper = _display displayCtrl IDC_CONTINUOUSACTIONTEXT_UPPER;
     private _ctrlTextLower = _display displayCtrl IDC_CONTINUOUSACTIONTEXT_BOTTOM;

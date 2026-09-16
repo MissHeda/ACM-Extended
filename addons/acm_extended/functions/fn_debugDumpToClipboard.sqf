@@ -142,9 +142,9 @@ private _etco2 = if (!isNil "ACM_breathing_fnc_getEtCO2") then {[_patient] call 
 
 ["------ACME High-Value State------"] call _out;
 private _tbiState = _patient getVariable ["ACME_tbi_State", createHashMap];
-_lines pushBack format ["BleedSources raw mL/min: external=%1 junctional=%2 internal=%3 hemothorax=%4 capillary=%5 total=%6",
+[format ["BleedSources raw mL/min: external=%1 junctional=%2 internal=%3 hemothorax=%4 capillary=%5 total=%6",
     round _extBleedDbg, round _juncBleedDbg, round _intBleedDbg, round _hemoBleedDbg, round _capBleedDbg,
-    round (_extBleedDbg + _juncBleedDbg + _intBleedDbg + _hemoBleedDbg + _capBleedDbg)];
+    round (_extBleedDbg + _juncBleedDbg + _intBleedDbg + _hemoBleedDbg + _capBleedDbg)]] call _out;
 private _tbiICP = if (_tbiState isEqualType createHashMap) then {_tbiState getOrDefault ["icp", 0]} else {0};
 private _tbiCPP = _map - _tbiICP;
 [format ["TBI=%1 ICP=%2 CPP=%3 HPMK=%4/%5 Obtunded=%6 Vent=%7 ETT=%8",
@@ -173,7 +173,7 @@ private _valueText = {
     };
     if ((typeName _v) == "HASHMAP") exitWith {format ["HASHMAP[count=%1]", count (keys _v)]};
     private _s = str _v;
-    if ((count _s) > 600) then {_s select [0, 600] + "..."} else {_s}
+    if ((count _s) > 600) then {(_s select [0, 600]) + "..."} else {_s}
 };
 
 ["------Raw Patient Medical Variables------"] call _out;

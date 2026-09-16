@@ -28,7 +28,7 @@ private _fnc_handleReopening = {
 
     [{
         params ["_patient", "_bodyPart", "_id", "_type"];
-        
+
         private _wrappedWounds = GET_WRAPPED_WOUNDS(_patient);
         private _wrappedWoundsOnPart = _wrappedWounds getOrDefault [_bodyPart, []];
 
@@ -96,7 +96,7 @@ private _fnc_handleReopening = {
             private _targetWoundsOnPart = _targetWounds getOrDefault [_bodyPart, []];
 
             private _targetIndex = _targetWoundsOnPart findIf {(_x select 0) isEqualTo _id && {_x select 1 > 0}};
-            
+
             if (_targetIndex < 0) exitWith {};
 
             (_targetWoundsOnPart select _targetIndex) params ["", "_targetAmountOf", "_targetBleeding", "_targetDamage"];
@@ -167,7 +167,7 @@ private _wrappedWounds = GET_WRAPPED_WOUNDS(_patient);
 private _wrappedWoundsOnPart = _wrappedWounds getOrDefault [_bodyPart, []];
 
 // Handle incrementing or creating new entry for wrapped wounds
-if (_wrappedWoundsOnPart isEqualTo []) then { 
+if (_wrappedWoundsOnPart isEqualTo []) then {
     _wrappedWounds set [_bodyPart, _wrappableListOnPart];
 } else {
     {

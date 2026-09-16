@@ -81,7 +81,7 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
     GVAR(BVMSwap_MouseID) = [0xF2, [false, false, false], _swapCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
 
     private _display = uiNamespace getVariable ["ACM_UseBVM", displayNull];
-    private _ctrlTopText = _display displayCtrl IDC_USEBVM_TOPTEXT; 
+    private _ctrlTopText = _display displayCtrl IDC_USEBVM_TOPTEXT;
     private _ctrlText = _display displayCtrl IDC_USEBVM_TEXT;
 
     // A BVM session remains an active ventilation session during CPR. The old non-SGA branch deliberately did
@@ -108,7 +108,7 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
     };
 
     _medic setVariable [QGVAR(isUsingBVM), ([_patient] call EFUNC(core,bvmActive)), true];
-    
+
     _ctrlText ctrlSetText ([_patient, false, true] call ACEFUNC(common,getName));
 
     GVAR(BVM_NextBreath) = (CBA_missionTime + 2);
@@ -181,7 +181,7 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
 
     private _updateMouseHint = false;
     private _updateText = false;
-    
+
     if ([_patient] call EFUNC(core,cprActive) != GVAR(CPRActive) || [_patient] call EFUNC(core,bvmActive) != GVAR(BVMActive)) then {
         _updateMouseHint = true;
         _updateText = true;
@@ -211,7 +211,7 @@ if !(isNull (_patient getVariable [QGVAR(BVM_Medic), objNull])) exitWith {
     if (_updateText) then {
         private _display = uiNamespace getVariable ["ACM_UseBVM", displayNull];
         private _ctrlTopText = _display displayCtrl IDC_USEBVM_TOPTEXT;
-        
+
         if ([_patient] call EFUNC(core,cprActive)) then {
             if !(_patient getVariable [QGVAR(BVM_ConnectedOxygen), false]) then {
                 _ctrlTopText ctrlSetText LLSTRING(BVM_UsingBVM_Assist);

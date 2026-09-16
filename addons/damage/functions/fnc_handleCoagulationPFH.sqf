@@ -59,7 +59,7 @@ private _id = [{
         if (_openWoundsOnPart isEqualTo [] || [_patient, _x] call ACEFUNC(medical_treatment,hasTourniquetAppliedTo)) then {
             continue;
         };
-        
+
         private _woundIndex = _openWoundsOnPart findIf {(_x select 1) > 0 && (_x select 2) > 0 && (((_x select 0) % 10) + 1) <= _maximumWoundSeverity};
 
         if (_woundIndex != -1) exitWith {

@@ -53,7 +53,7 @@ _patient setVariable [QGVAR(Detector_Exposure_Severity), 0];
 
 {
     private _category = _x;
-    
+
     {
         private _hazardType = format ["%1_%2", _category, _x];
         _patient setVariable [(format ["ACM_CBRN_%1_Buildup", toLower _hazardType]), 0, true];

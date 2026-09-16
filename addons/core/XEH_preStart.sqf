@@ -15,7 +15,7 @@ private _itemHash = createHashMap;
 // value is hash of item/treatment pairs
 {
     _x params ["_itemType", "_treatments"];
-    
+
     private _typeHash = createHashMap;
     {
         private _items = getArray (configFile >> "ace_medical_treatment_actions" >> _x >> "items");

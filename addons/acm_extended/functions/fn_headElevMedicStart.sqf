@@ -9,7 +9,7 @@ missionNamespace setVariable ["ACME_headElev_TunePatient", _patient];
     _medic setVariable ["ACME_headElev_seqToken", _token];
     _medic setVariable ["ACME_headElev_seqActive", true];
     _medic setVariable ["ACME_headElev_seqPatient", _patient];
-    
+
     // B89: elevate intentionally uses the same provider Putdown sequence as lay-flat/supine.
     // The patient animation path is independent and untouched.
     [_medic, "elevate"] call ACME_fnc_headElevMedicSeq;

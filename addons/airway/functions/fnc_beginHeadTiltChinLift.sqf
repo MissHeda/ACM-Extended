@@ -42,7 +42,7 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
     [ACELLSTRING(common,Cancel), "", ""] call ACEFUNC(interaction,showMouseHint);
     [_patient, "activity", LSTRING(HeadTiltChinLift_ActionLog), [[_medic, false, true] call ACEFUNC(common,getName)]] call ACEFUNC(medical_treatment,addToLog);
     [LLSTRING(HeadTiltChinLift_ActionHint), 2, _medic] call ACEFUNC(common,displayTextStructured);
-    
+
     private _display = uiNamespace getVariable ["ACM_HeadTilt", displayNull];
     private _ctrlText = _display displayCtrl IDC_HEADTILT_TEXT;
 

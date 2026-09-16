@@ -49,7 +49,7 @@ if !(_update) then {
 
         private _config = (configFile >> "CfgWeapons" >> _itemClassName);
         private _name = "";
-        
+
         if ((getNumber (_config >> "uniqueBag")) > 0) then {
             ((configName _config) splitString "_") params ["","","_volume","_id"];
 
@@ -68,7 +68,7 @@ if !(_update) then {
             _name = if (_shortName != "") then {_shortName} else {getText (_config >> "displayName")};
             if (_name == "") then {_name = _itemClassName;};
         };
-        private _i = _ctrlBagPanel lbAdd _name;  
+        private _i = _ctrlBagPanel lbAdd _name;
         _ctrlBagPanel lbSetPicture [_i, getText (_config >> "picture")];
         _ctrlBagPanel lbSetValue [_i, _bagIndex];
         _ctrlBagPanel lbSetTooltip [_i, (format [([(LLSTRING(TransfusionMenu_FluidRemaining)), ("%1ml filled")] select (_type == "FBTK")), round(_remainingVolume)])];

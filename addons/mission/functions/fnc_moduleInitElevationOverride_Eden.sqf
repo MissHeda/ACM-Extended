@@ -69,7 +69,7 @@ private _newEffectiveElevation = _correctedBase + _terrainASL;
 // data resolution cannot overwrite the Eden correction because of init ordering.
 missionNamespace setVariable ["ace_common_mapAltitude", _correctedBase];
 
-[{ 
+[{
     params ["_base"];
     missionNamespace setVariable ["ace_common_mapAltitude", _base];
 }, [_correctedBase], 0.5] call CBA_fnc_waitAndExecute;

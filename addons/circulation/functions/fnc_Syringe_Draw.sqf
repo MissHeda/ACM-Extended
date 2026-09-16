@@ -84,7 +84,7 @@ private _fnc_updateSelectedMedication = {
         private _concentration = getText (configFile >> "ACM_Medication" >> "Concentration" >> GVAR(SyringeDraw_Medication) >> "dose");
         _ctrlText ctrlSetText format [LLSTRING(Syringe_DrawingInto), GVAR(SyringeDraw_Medication), _concentration, _size];
         GVAR(SyringeDraw_MaxDose) = getNumber (configFile >> "ACM_Medication" >> "Concentration" >> GVAR(SyringeDraw_Medication) >> "volume");
-    }; 
+    };
 
     GVAR(SyringeDraw_Ctrl_PlungerVisual) = IDC_SYRINGEDRAW_SYRINGE_10_PLUNGER;
     GVAR(SyringeDraw_Ctrl_LimitTop) = SYRINGEDRAW_LIMIT_10_TOP;
@@ -106,7 +106,7 @@ private _fnc_updateSelectedMedication = {
             GVAR(SyringeDraw_Ctrl_LimitBottom) = SYRINGEDRAW_LIMIT_1_BOTTOM;
             GVAR(SyringeDraw_Ctrl_LimitTopMouse) = SYRINGEDRAW_LIMIT_1_TOP_MOUSE;
             GVAR(SyringeDraw_Ctrl_PlungerAdjustment) = SYRINGEDRAW_1_Y_OFFSET;
-            
+
             _ctrlPlunger ctrlSetPosition [_plungerX, SYRINGEDRAW_LIMIT_1_TOP, _plungerW, _plungerH];
             _ctrlPlunger ctrlCommit 0;
         };
@@ -181,7 +181,7 @@ private _fnc_updateSelectedMedication = {
     private _display = uiNamespace getVariable [QGVAR(SyringeDraw_DLG), displayNull];
     private _ctrlMedList = _display displayCtrl IDC_SYRINGEDRAW_MEDLIST;
     private _ctrlMedListButton = _display displayCtrl IDC_SYRINGEDRAW_MEDLIST_SELECTION_BUTTON;
- 
+
     private _cachedMedication = [] call FUNC(Syringe_GetMedicationList);
 
     if (count _cachedMedication != count GVAR(SyringeDraw_MedicationList)) then {

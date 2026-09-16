@@ -19,12 +19,12 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             aiming = "empty";
             aimingBody = "empty";
             ConnectFrom[] = {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1
             };
             //ConnectAs = "";
             ConnectTo[] = {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1
             };
             forceAim = 1;
@@ -32,7 +32,7 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             //InterpolateWith[] = {};
             InterpolateTo[]=
             {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1,
                 "Unconscious",
                 0.02
@@ -51,12 +51,12 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             aiming = "empty";
             aimingBody = "empty";
             ConnectFrom[] = {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1
             };
             //ConnectAs = "";
             ConnectTo[] = {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1
             };
             forceAim = 1;
@@ -64,7 +64,7 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             //InterpolateWith[] = {};
             InterpolateTo[]=
             {
-                "ACM_CPR", 
+                "ACM_CPR",
                 0.1,
                 "Unconscious",
                 0.02

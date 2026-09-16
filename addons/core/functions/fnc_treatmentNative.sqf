@@ -87,7 +87,7 @@ if (isNumber (_config >> "ACM_cancelRecovery")) then {
 };
 
 // play patient animation
-if (alive _patient) then { 
+if (alive _patient) then {
     private _animationStatePatient = animationState _patient;
 
     if (_animationStatePatient != "acm_recoveryposition" || (_animationStatePatient == "acm_recoveryposition" && _cancelsRecoveryPosition)) then {

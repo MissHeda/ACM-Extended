@@ -69,7 +69,7 @@ if (!(alive _unit) || !(HAS_PULSE(_unit)) || alive (_unit getVariable [QACEGVAR(
     private _oxygenSaturation = GET_OXYGEN(_unit);
     if (_bloodVolume > BLOOD_VOLUME_CLASS_4_HEMORRHAGE) then {
         private _timeSinceROSC = (CBA_missionTime - (_unit getVariable [QEGVAR(circulation,ROSC_Time), -45]));
-        
+
         GET_BLOOD_PRESSURE(_unit) params ["_BPDiastolic", "_BPSystolic"];
         private _meanBP = GET_MAP(_BPSystolic,_BPDiastolic);
         private _painLevel = GET_PAIN_PERCEIVED(_unit);

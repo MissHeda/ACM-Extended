@@ -111,7 +111,7 @@ _patient setVariable [QGVAR(SurgicalAirway_InProgress), true, true];
 
     _patient setVariable [QGVAR(SurgicalAirway_InProgress), false, true];
 
-    private _incisionCount = _patient getVariable [QGVAR(SurgicalAirway_IncisionCount), 0]; 
+    private _incisionCount = _patient getVariable [QGVAR(SurgicalAirway_IncisionCount), 0];
 
     if (GVAR(SurgicalAirway_Failed)) exitWith {
         [LLSTRING(SurgicalAirway_Failed), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
@@ -144,7 +144,7 @@ _patient setVariable [QGVAR(SurgicalAirway_InProgress), true, true];
 
         if (_patient getVariable [QGVAR(SurgicalAirway_StrapSecure), false]) then {
             if (_patient getVariable [QGVAR(SurgicalAirway_Strap_PFH), -1] != -1) exitWith {};
-            
+
             private _PFH = [{
                 params ["_args", "_idPFH"];
                 _args params ["_patient"];

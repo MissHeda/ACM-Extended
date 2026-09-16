@@ -263,11 +263,11 @@ if (_inVehicle) then {
 } else {
     [{
         params ["_patient", "_medic"];
-    
+
         (((objectParent _medic) isNotEqualTo (objectParent _patient)) || ((_patient distance _medic) > GVAR(AEDDistanceLimit)));
     }, {
         params ["_patient", "_medic"];
-        
+
         if !(isNull _patient) then {
             [_medic, _patient, "body", 0, false, true] call FUNC(setAED);
             [_medic, _patient, "body", 1, false, true] call FUNC(setAED);

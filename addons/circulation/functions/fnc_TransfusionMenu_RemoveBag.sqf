@@ -73,7 +73,7 @@ private _funcParams = [_IVBags, _IVBagsOnBodyPart, _targetIndex, _itemClassName,
 
 [[ACE_player, GVAR(TransfusionMenu_Target), _type, _returnVolume, _bloodType, _fnc_completeRemoval, _funcParams], {
     params ["_medic", "_patient", "_type", "_returnVolume", "_bloodType", "_fnc_completeRemoval", "_funcParams"];
-    
+
     _funcParams call _fnc_completeRemoval;
 
     private _fluidBagString = "";
@@ -85,7 +85,7 @@ private _funcParams = [_IVBags, _IVBagsOnBodyPart, _targetIndex, _itemClassName,
     };
     [_patient, "activity", LSTRING(TransfusionMenu_RemoveBag_ActionLog), [[_medic, false, true] call ACEFUNC(common,getName), (_fluidBagString), ([GVAR(TransfusionMenu_Selected_BodyPart)] call EFUNC(core,getBodyPartString))]] call ACEFUNC(medical_treatment,addToLog);
     closeDialog 0;
-    
+
     [{
         params ["_medic", "_patient"];
 
@@ -94,6 +94,6 @@ private _funcParams = [_IVBags, _IVBagsOnBodyPart, _targetIndex, _itemClassName,
 }, {
     params ["_medic", "_patient"];
     closeDialog 0;
-    
+
     [_medic, _patient, GVAR(TransfusionMenu_Selected_BodyPart)] call FUNC(openTransfusionMenu);
 }, (format [LLSTRING(TransfusionMenu_RemoveBag_Progress), _itemClassNameString]), 2.5] call EFUNC(core,progressBarAction);

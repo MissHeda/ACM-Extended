@@ -36,7 +36,7 @@ private _id = [{
         _patient setVariable [QGVAR(IBCoagulation_Active), false, true];
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
-    
+
     private _txaCount = ([_patient, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount)) min 2.2;
 
     if ((_patient getVariable [QGVAR(IBCoagulation_NextAttempt), 0]) > CBA_missionTime) exitWith {};
@@ -65,12 +65,12 @@ private _id = [{
             _exit = false;
             continue;
         };
-        
+
         private _woundIndex = _internalWoundsOnPart findIf {(_x select 1) > 0};
 
         if (_woundIndex != -1) exitWith {
             (_internalWoundsOnPart select _woundIndex) params ["_woundType", "_woundCount", "_woundBleeding"];
-            
+
             private _woundSeverity = _woundType % 10;
             private _txaEffect = 1 + (2 min _txaCount);
             private _bloodVolumEffect = (GET_EFF_BLOOD_VOLUME(_patient) / 4.5) min 1;

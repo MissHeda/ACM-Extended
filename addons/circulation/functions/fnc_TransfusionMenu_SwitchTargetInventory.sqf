@@ -199,7 +199,7 @@ if (GVAR(TransfusionMenu_Selected_Inventory) == 2) then {
     {
         private _count = [_target, _x] call ACEFUNC(common,getCountOfItem);
 
-        if (_count > 0) then { 
+        if (_count > 0) then {
             [_ctrlInventoryPanel, _fluidsArrayData, _count, _x, _forEachIndex] call _fnc_addToInventoryPanel;
         };
     } forEach _fluidsArray;

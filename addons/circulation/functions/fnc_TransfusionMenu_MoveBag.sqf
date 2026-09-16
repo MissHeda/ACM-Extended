@@ -54,9 +54,9 @@ if (GVAR(TransfusionMenu_Move_Active)) then {
         params ["_medic", "_patient", "_fnc_completeMove"];
 
         [_medic, _patient] call _fnc_completeMove;
-        
+
         closeDialog 0;
-    
+
         [{
             params ["_medic", "_patient"];
 
@@ -66,7 +66,7 @@ if (GVAR(TransfusionMenu_Move_Active)) then {
         params ["_medic", "_patient"];
 
         closeDialog 0;
-    
+
         [_medic, _patient, GVAR(TransfusionMenu_Selected_BodyPart)] call FUNC(openTransfusionMenu);
         GVAR(TransfusionMenu_Move_Active_Moving) = false;
     }, (format [LLSTRING(TransfusionMenu_MoveBag_Progress), _itemClassNameString, ([GVAR(TransfusionMenu_Selected_BodyPart)] call EFUNC(core,getBodyPartString))]), 2.5] call EFUNC(core,progressBarAction);

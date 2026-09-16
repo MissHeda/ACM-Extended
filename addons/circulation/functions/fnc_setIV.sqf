@@ -104,7 +104,7 @@ if (_iv && _state && !_exit) then {
 
     if (_successChance > 0.1) then {
         private _bodyPartDamage = GET_BODYPART_DAMAGE(_patient) select _partIndex;
-        
+
         private _modifier = 0;
 
         if (_type == ACM_IV_14G_M) then {
@@ -139,7 +139,7 @@ if (_iv && _state && !_exit) then {
 
 if (!_exit && !(random 1 < _successChance)) then {
     _exit = true;
-    
+
     if (_severeDamage) then {
         [(format ["%1, %2", LLSTRING(IV_FailedToLocateVein), (toLower (LLSTRING(IV_BodyPartTooDamaged)))]), 2, _medic] call ACEFUNC(common,displayTextStructured);
     } else {

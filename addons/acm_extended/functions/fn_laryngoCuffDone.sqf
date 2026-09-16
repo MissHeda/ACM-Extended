@@ -45,20 +45,20 @@ if (_tubeCommittedB39) then {
         _patient setVariable ["ACME_ETT_Trauma", true, true];
         [_patient, "trauma"] call ACME_fnc_laryngoBleed;
     };
-    
+
     if (!isNil "ace_medical_treatment_fnc_addToLog") then {
         [_patient, "airway", "Orotracheal intubation: ET tube placed, cuff inflated", []] call ace_medical_treatment_fnc_addToLog;
     };
     if (!isNil "ace_medical_treatment_fnc_addToTriageCard") then {
         [_patient, "Endotracheal tube placed"] call ace_medical_treatment_fnc_addToTriageCard;
     };
-    
+
     // the attempt record, for the aar. first-pass success and time to tube are the two numbers the airway world
     // actually cares about, so they are worth having on the casualty rather than only in a hint.
     private _passes = (_patient getVariable ["ACME_laryngo_failCount", 0]) + 1;
     _patient setVariable ["ACME_ETT_Passes", _passes, true];
     _patient setVariable ["ACME_ETT_TimeToTube", (uiNamespace getVariable ["ACME_laryngo_attemptClock", 0]), true];
-    
+
 };
 
 if (!isNull _dlg) then {

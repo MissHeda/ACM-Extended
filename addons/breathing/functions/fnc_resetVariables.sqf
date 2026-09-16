@@ -32,7 +32,7 @@ _patient setVariable [QGVAR(ChestSeal_State), false, true];
 _patient setVariable [QGVAR(Thoracostomy_State), nil, true];
 _patient setVariable [QGVAR(Thoracostomy_UsedKit), false, true];
 
-_patient setVariable [QGVAR(PulseOximeter_Display), [[0,0],[0,0]], true]; 
+_patient setVariable [QGVAR(PulseOximeter_Display), [[0,0],[0,0]], true];
 _patient setVariable [QGVAR(PulseOximeter_Placement), [false,false], true];
 _patient setVariable [QGVAR(PulseOximeter_PFH), -1];
 _patient setVariable [QGVAR(PulseOximeter_LastSync), [-1,-1]];

@@ -1754,6 +1754,20 @@ class CfgFunctions {
             class registerEcgJostleRuntime {};
             class registerSyringeLifecycleRuntime {};
             class initForkStartupRuntime {};
+
+            // Cumulative physiology / Megacode systems introduced after Batch 1.
+            class preoxygenationTick {};
+            class shockPhenotypeTick {};
+            class shockSetPhenotype {};
+            class coagulationTick {};
+            class aspirationTick {};
+            class pulsePerfusionProfile {};
+            class expansionBootstrap {};
+            class expansionRegisterRuntime {};
+            class megacodeAARRecord {};
+            class megacodeAARReset {};
+            class megacodeAARShow {};
+            class megacodeAARTick {};
             class registerDebugWatchdogRuntime {};
             class registerDebugPageKeybindRuntime {};
             class registerThoracicMenuPresentationRuntime {};

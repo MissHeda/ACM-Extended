@@ -43,7 +43,7 @@ if (_type == "") then {
     };
 
     [_patient, LLSTRING(FentanylLozenge)] call ACEFUNC(medical_treatment,addToTriageCard);
-    
+
     [_patient, "activity", LLSTRING(FentanylLozenge_Give_ActionLog), [[_medic, false, true] call ACEFUNC(common,getName)]] call ACEFUNC(medical_treatment,addToLog);
     [LLSTRING(FentanylLozenge_Give_Complete), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
     [QACEGVAR(common,displayTextStructured), [(format [LLSTRING(FentanylLozenge_Give_Hint), _medic]), 2, _patient], _patient] call CBA_fnc_targetEvent;

@@ -134,7 +134,7 @@ if (_adjustments isNotEqualTo []) then {
                         _RRAdjustmentMap set [_medicationType, [_cappedRRAdjust, _medMaxRRAdjust]];
                     };
                 } else {
-                    _respirationRateAdjustment = _respirationRateAdjustment + _rrAdjust * _effectRatio; 
+                    _respirationRateAdjustment = _respirationRateAdjustment + _rrAdjust * _effectRatio;
                 };
             };
             if (_coSensitivityAdjust != 0) then { _coSensitivityAdjustment = _coSensitivityAdjustment + _coSensitivityAdjust * _effectRatio; };

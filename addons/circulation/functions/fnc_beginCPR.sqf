@@ -129,7 +129,7 @@ private _CPRStartTime = _readyAt + 0.2;
 
 // Start the watchdog immediately, not after a blind wait. Escape/F0 during the entry animation therefore tears the
 // session down on the next frame and can never leave a two-second delayed callback that later starts an old CPR.
-[{ 
+[{
     params ["_args", "_idPFH"];
     _args params ["_medic", "_patient", "_notInVehicle", "_readyAt", "_CPRStartTime", "_fnc_doCPRAnimation", "_epoch", "_escapeID", "_mouseID", "_toggleID", "_swapID"];
 
