@@ -35,6 +35,9 @@ private _circTarget = _unit getVariable ["ACME_hrTarget_circ", -1];
 if (_circTarget >= 0 && {missionNamespace getVariable ["ACME_sys_circ", true]}) then {
     _desiredHR = _desiredHR + (_circTarget - _base);
 };
+// Shock phenotype contributes as its own additive chronotropic source. Keeping it here, in the single
+// authoritative HR endpoint, prevents a phenotype PFH from fighting circulation/rhythm target writers.
+_desiredHR = _desiredHR + (_unit getVariable ["ACME_shock_hrAdj", 0]);
 private _preTbiDesired = _desiredHR;
 private _tbiTarget = _unit getVariable ["ACME_hrTarget_tbi", -1];
 if (_tbiTarget >= 0 && {missionNamespace getVariable ["ACME_sys_tbi", true]}) then {

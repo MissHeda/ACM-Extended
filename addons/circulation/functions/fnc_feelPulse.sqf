@@ -1,14 +1,19 @@
-/* B100 pulse palpation minigame.
- * Keeps ACM's pulse visual, owns Escape explicitly, uses the exact auscultation pose/hold, and opens a watch
- * control for the duration of the check. The watch control is deleted before the pulse layer exits.
+/* B129 pulse palpation minigame.
+ * Keeps ACME's token-safe pulse/watch/Escape lifecycle and Direct Pressure handoff,
+ * while adding site-aware palpability plus hemodynamic pulse character. Thready
+ * pulses are smaller/dimmer/narrower; bounding pulses are larger/brighter/broader.
+ * Electrical activity without mechanical circulation never creates a palpated beat.
  */
 params ["_medic","_patient","_bodyPart"];
 if (isNull _medic || {isNull _patient}) exitWith {};
-private _site = switch (toLower _bodyPart) do {
+
+private _site = switch (toLowerANSI _bodyPart) do {
     case "head": {"carotid pulse"};
-    case "leftarm"; case "rightarm": {"radial pulse"};
+    case "leftarm";
+    case "rightarm": {"radial pulse"};
     default {"femoral pulse"};
 };
+
 // Vehicle-safe path. Closing the medical dialog and forcing the kneeling pulse minigame while seated makes the
 // engine immediately tear the interaction down. If both units share the same non-null vehicle, perform the same
 // authoritative pulse read directly and leave the medical UI open. Different vehicle contexts remain out of reach.
@@ -23,7 +28,7 @@ if (!isNull _medicVehicle || {!isNull _patientVehicle}) exitWith {
     };
 };
 
-// B128 pulse-session generation. Old input hooks are retired synchronously, while an old PFH is allowed one final
+// Pulse-session generation. Old input hooks are retired synchronously, while an old PFH is allowed one final
 // token-mismatch tick so it can release only its own treatment-pose token and old-patient Direct Pressure handoff.
 // It is forbidden from clearing the shared cutRsc/watch state of the new pulse episode.
 private _pulseEpoch = (uiNamespace getVariable ["ACME_PulseEpoch", 0]) + 1;
@@ -56,6 +61,7 @@ uiNamespace setVariable ["ACME_PulseCheckCancel",false];
 uiNamespace setVariable ["ACME_PulseCheckMedic",_medic];
 uiNamespace setVariable ["ACME_PulseCheckPatient",_patient];
 uiNamespace setVariable ["ACME_PulseCheckStartedAt",CBA_missionTime];
+uiNamespace setVariable ["ACME_PulseVisualNext",0];
 private _poseEpoch = [_medic,"pulse",-1] call ACME_fnc_treatmentPoseStart;
 uiNamespace setVariable ["ACME_PulsePoseEpoch",_poseEpoch];
 
@@ -141,6 +147,7 @@ private _pfh = [{
         uiNamespace setVariable ["ACME_PulseCheckMedic",objNull];
         uiNamespace setVariable ["ACME_PulseCheckPatient",objNull];
         uiNamespace setVariable ["ACME_PulseCheckStartedAt",-1];
+        uiNamespace setVariable ["ACME_PulseVisualNext",0];
 
         // End the pulse/stethoscope pose before handing animation ownership back to Direct Pressure. CheckPulse's
         // ACE success event deliberately leaves ACME_DP_TreatmentBusy set while this minigame is alive. Clearing it
@@ -161,18 +168,68 @@ private _pfh = [{
     private _disp = uiNamespace getVariable ["ACM_FeelPulse",displayNull];
     if (isNull _disp) exitWith {};
     private _heart = _disp displayCtrl 80002;
-    private _hr = if (alive _patient && {[_patient] call ACM_circulation_fnc_hasPulse} && {!([_patient,_bodyPart] call ace_medical_treatment_fnc_hasTourniquetAppliedTo)}) then {_patient getVariable ["ace_medical_heartRate",80]} else {0};
+    if (isNull _heart) exitWith {};
+
+    private _profile = [_patient, _bodyPart] call ACME_fnc_pulsePerfusionProfile;
+    _profile params ["_sitePalpable","_electricalHR","_hr","_strength","_character","_irregularity","_deficit","_bpSystolic","_bpDiastolic","_pulsePressure"];
     private _next = uiNamespace getVariable ["ACME_PulseVisualNext",0];
-    if (_hr > 0) then {
+
+    if (_sitePalpable && {_hr > 0}) then {
         _heart ctrlShow true;
+
         if (CBA_missionTime >= _next) then {
-            private _base = _heart getVariable ["ACME_PulseBase",ctrlPosition _heart]; _heart setVariable ["ACME_PulseBase",_base];
+            private _base = _heart getVariable ["ACME_PulseBase",ctrlPosition _heart];
+            _heart setVariable ["ACME_PulseBase",_base];
             _base params ["_x","_y","_w","_h"];
-            private _s = 1.7; private _cx=_x+_w/2; private _cy=_y+_h/2;
-            _heart ctrlSetPosition [_cx-_w*_s/2,_cy-_h*_s/2,_w*_s,_h*_s]; _heart ctrlCommit 0.12;
-            [{params ["_c","_b"]; if (!isNull _c) then {_c ctrlSetPosition _b; _c ctrlCommit 0.18;};},[_heart,_base],0.12] call CBA_fnc_waitAndExecute;
-            uiNamespace setVariable ["ACME_PulseVisualNext",CBA_missionTime + (60 / (_hr max 1))];
+
+            // Mechanical rate, not monitor rate. AFib and severe low-output tachycardia can therefore show a
+            // pulse deficit while the electrical monitor continues to count every QRS.
+            private _nominalDelay = 60 / (_hr max 1);
+            private _jitter = if (_irregularity > 0) then {random [-_irregularity, 0, _irregularity]} else {0};
+            private _delay = (_nominalDelay * (1 + _jitter)) max 0.16;
+
+            private _thready = _character == "thready";
+            private _bounding = _character == "bounding";
+            private _scale = if (_thready) then {
+                1.10 + (0.35 * _strength)
+            } else {
+                if (_bounding) then {2.15 + (0.35 * _strength)} else {1.45 + (0.55 * _strength)}
+            };
+            private _alpha = if (_thready) then {
+                0.18 + (0.42 * _strength)
+            } else {
+                if (_bounding) then {1} else {0.58 + (0.42 * _strength)}
+            };
+            private _beatTime = if (_thready) then {
+                0.08 min (0.18 * _delay)
+            } else {
+                if (_bounding) then {0.18 min (0.28 * _delay)} else {0.12 min (0.22 * _delay)}
+            };
+            private _releaseTime = if (_thready) then {
+                0.11 min (0.24 * _delay)
+            } else {
+                if (_bounding) then {0.30 min (0.42 * _delay)} else {0.18 min (0.32 * _delay)}
+            };
+
+            private _cx = _x + (_w / 2);
+            private _cy = _y + (_h / 2);
+            _heart ctrlSetTextColor [1,0,0,_alpha];
+            _heart ctrlSetPosition [_cx - (_w * _scale / 2), _cy - (_h * _scale / 2), _w * _scale, _h * _scale];
+            _heart ctrlCommit _beatTime;
+
+            [{
+                params ["_ctrl","_basePos","_release","_releaseAlpha"];
+                if (!isNull _ctrl) then {
+                    _ctrl ctrlSetPosition _basePos;
+                    _ctrl ctrlSetTextColor [1,0,0,_releaseAlpha];
+                    _ctrl ctrlCommit _release;
+                };
+            }, [_heart,_base,_releaseTime,(_alpha * (if (_thready) then {0.45} else {0.72}))], _beatTime] call CBA_fnc_waitAndExecute;
+
+            uiNamespace setVariable ["ACME_PulseVisualNext",CBA_missionTime + _delay];
         };
-    } else {_heart ctrlShow false;};
+    } else {
+        _heart ctrlShow false;
+    };
 },0,[_medic,_patient,_bodyPart,_esc,_poseEpoch,_pulseEpoch,_mainDisplay,_escEH]] call CBA_fnc_addPerFrameHandler;
 uiNamespace setVariable ["ACME_PulsePFH", _pfh];
