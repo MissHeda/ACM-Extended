@@ -3,7 +3,7 @@
  * Exact requested states, played at native speed:
  *   response             AinvPknlMstpSnonWrflDr_medic3_old
  *   airway               AinvPknlMstpSnonWrflDr_medic4_old
- *   roll                 AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s, then the exit blend
+ *   roll                 AinvPknlMstpSnonWnonDnon_medic4, literal BI state, frozen at 2.2 s, then the exit blend
  *   inspect              AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s until the 6 s inspection ends
  *   stethoscope          ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
  *   pulse                ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
@@ -52,8 +52,10 @@ if (isNull _medic || {!local _medic} || {!alive _medic}
 private _main = switch (_mode) do {
     case "response": {"ACME_ResponseCheckWork"};
     case "airway": {"ACME_AirwayCheckWork"};
-    // B73 wrappers inherit the exact requested BI RTMs but explicitly connect to/from unarmed crouch.
-    case "roll": {"ACME_RollProviderWork"};
+    // Chest-seal Flip intentionally uses the literal BI medic4 state.  The B73 wrapper changed the move-graph
+    // entry and lost the characteristic flip theatre.  Crouch-first entry/empty-hands handling still comes from
+    // this controller; only the actual work state is restored to the known-good literal animation.
+    case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};
     case "inspect": {"ACME_ChestInspectWork"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};

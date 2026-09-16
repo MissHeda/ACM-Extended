@@ -10,3 +10,4 @@ ACME_visualFx_co2Start = 48;
 ACME_visualFx_co2Severe = 85;
 ACME_visualFx_ketamineStart = 0.35;
 ACME_visualFx_ketamineFull = 1.15;
+ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-style radial tunnel profile
