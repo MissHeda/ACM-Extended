@@ -24,7 +24,7 @@ private _preHeadElev = _patient getVariable ["ACME_headElevated", false];
 private _preRecovery = _patient getVariable ["ACM_airway_RecoveryPosition_State", false];
 private _preLying = _patient getVariable ["ACM_core_Lying_State", false];
 private _preAnim = animationState _patient;
-private _preGrounded = _preHeadElev || _preLying
+private _preGrounded = _preHeadElev || _preRecovery || _preLying
     || {_patient getVariable ["ACE_isUnconscious", false]}
     || {_patient getVariable ["ace_medical_unconscious", false]}
     || {_patient getVariable ["ACME_obtunded", false]}
@@ -35,6 +35,13 @@ _patient setVariable ["ACME_CS_facing", _preSide, true];
 _patient setVariable ["ACME_CS_rollUntil", -1, false];
 
 private _readyAt = CBA_missionTime + 0.12;
+
+// Recovery position is suspended for the procedure just like Semi-Fowler. The existing worker notices the false
+// state and retires; the exact pre-procedure state is restored only when the last viewer presses Done/closes.
+if (_preRecovery) then {
+    _patient setVariable ["ACM_airway_RecoveryPosition_State", false, true];
+    _patient setVariable ["ACM_airway_HeadTilt_State", false, true];
+};
 
 // A Semi-Fowler casualty is laid flat once, before the minigame. Keep the support carrier out of the chest
 // workspace instead of putting it back on the patient while flat.
@@ -67,4 +74,15 @@ if (_vestClass != "" && {(count _vestEntry) == 2} && {isNull objectParent _patie
 };
 
 [_patient] call ACME_fnc_chestSealParkCarrier;
+
+// Normalize a live, grounded casualty to the anterior/supine workspace ONCE before the dialog is considered ready.
+// The UI itself always starts front; dead/vehicle/free-standing patients are left physically untouched.
+private _canNormalize = alive _patient && {isNull objectParent _patient} && {_preGrounded};
+private _actualNow = [_patient, _preSide] call ACME_fnc_chestSealActualSide;
+if (_canNormalize && {_actualNow != "front"}) then {
+    [_patient, "front", false, objNull] call ACME_fnc_chestSealRoll;
+    private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
+    if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
+    _readyAt = _readyAt max (CBA_missionTime + _rollTime + 0.08);
+};
 _patient setVariable ["ACME_CS_ProcedureReadyAt", _readyAt, true];

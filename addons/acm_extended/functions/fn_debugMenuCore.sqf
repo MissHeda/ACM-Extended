@@ -312,7 +312,7 @@ if (isNull _patient) exitWith {
 };
 
 private _aliveTxt = if (alive _patient) then {format ["<t color='%1'>alive</t>", _cGood]} else {format ["<t color='%1'>dead</t>", _cBad]};
-private _hr = round ([_patient, "ace_medical_heartRate", 0] call _fnNum);
+private _hr = if (alive _patient) then {round ([_patient, "ace_medical_heartRate", 0] call _fnNum)} else {0};
 private _rr = round ([_patient, "ACM_breathing_RespirationRate", 0] call _fnNum);
 private _spo2 = round ([_patient, "ace_medical_spo2", 0] call _fnNum);
 // B103: do not label ACM's Blood_Volume compartment as the patient's total volume.

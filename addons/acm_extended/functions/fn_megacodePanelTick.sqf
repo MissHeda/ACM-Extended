@@ -93,9 +93,13 @@ private _setStructured = {
 [_v,"RR",str (round _rr)] call _setStructured;
 [_v,"Temp",format ["%1",(round (_temp*10))/10]] call _setStructured;
 
-// One 176-sample LifePak sweep. Regenerate at sweep start or whenever the source signature materially changes.
+// Two consecutive LifePak windows share one boundary sample: 351 points / 350 drawable segments.
+// Sampling remains 0.03 s, so morphology is narrower rather than stretching a 176-point sweep across the full panel.
 private _stepAcc = (uiNamespace getVariable ["ACME_MC_stepAcc",0]) + _dt;
 private _step = uiNamespace getVariable ["ACME_MC_step",1];
+private _sampleCount = uiNamespace getVariable ["ACME_MC_sampleCount",351];
+if (!(_sampleCount isEqualType 0) || {_sampleCount < 351}) then {_sampleCount = 351;};
+private _segmentCount = _sampleCount - 1;
 private _sampleSec = 0.03;
 private _advance = floor (_stepAcc/_sampleSec);
 if (_advance <= 0) exitWith {};
@@ -120,19 +124,49 @@ private _regenerate = {
     private _rhythmArg = if (_cpr) then {-1} else {_nativeRhythm};
     _dummy setVariable ["ACME_AED_MonitorCursorTime",CBA_missionTime,false];
     _dummy setVariable ["ACM_circulation_AED_UpdateStep",uiNamespace getVariable ["ACME_MC_step",1],false];
-    private _ekg = (([_rhythmArg,_spacing,0] call ACM_circulation_fnc_displayAEDMonitor_generateEKG) param [0,[]]);
-    private _poRhythm = if (_perfusing || {_cpr}) then {_rhythmArg} else {1};
-    private _po = (([_poRhythm,_spacing,0,if (_perfusing || {_cpr}) then {_spo2} else {0}] call ACM_circulation_fnc_displayAEDMonitor_generatePO) param [0,[]]);
-    private _coRhythm = if (_rr > 0 && {_etco2 > 0}) then {_rhythmArg} else {1};
-    private _co = (([_coRhythm,_spacing,0,_etco2,_rr] call ACM_circulation_fnc_displayAEDMonitor_generateCO) param [0,[]]);
 
-    // ABP: Kelly-only invasive pressure lane. Shape is sampled on the same 0.03 s timeline but is explicitly not an
-    // AED source because the LifePak implementation has no ABP waveform. It disappears when there is no perfusion.
+    private _buildTwo = {
+        params ["_kind","_rhythm","_spacing","_spo2","_etco2","_rr"];
+        private _a = []; private _b = [];
+        switch _kind do {
+            case "ekg": {
+                _a = (([_rhythm,_spacing,0] call ACM_circulation_fnc_displayAEDMonitor_generateEKG) param [0,[]]);
+                _b = (([_rhythm,_spacing,0] call ACM_circulation_fnc_displayAEDMonitor_generateEKG) param [0,[]]);
+            };
+            case "po": {
+                _a = (([_rhythm,_spacing,0,_spo2] call ACM_circulation_fnc_displayAEDMonitor_generatePO) param [0,[]]);
+                _b = (([_rhythm,_spacing,0,_spo2] call ACM_circulation_fnc_displayAEDMonitor_generatePO) param [0,[]]);
+            };
+            default {
+                _a = (([_rhythm,_spacing,0,_etco2,_rr] call ACM_circulation_fnc_displayAEDMonitor_generateCO) param [0,[]]);
+                _b = (([_rhythm,_spacing,0,_etco2,_rr] call ACM_circulation_fnc_displayAEDMonitor_generateCO) param [0,[]]);
+            };
+        };
+        // Each native generator returns one complete 176-sample LifePak window. Place two windows back-to-back,
+        // sharing a boundary point. Force the second window's first point to the first window's endpoint so random
+        // noise cannot create a discontinuity at the join.
+        _a resize [176,0];
+        _b resize [176,0];
+        _b set [0, _a select 175];
+        private _out = +_a;
+        _b deleteAt 0;
+        _out append _b;
+        _out resize [351,0];
+        _out
+    };
+
+    private _ekg = ["ekg",_rhythmArg,_spacing,_spo2,_etco2,_rr] call _buildTwo;
+    private _poRhythm = if (_perfusing || {_cpr}) then {_rhythmArg} else {1};
+    private _po = ["po",_poRhythm,_spacing,if (_perfusing || {_cpr}) then {_spo2} else {0},_etco2,_rr] call _buildTwo;
+    private _coRhythm = if (_rr > 0 && {_etco2 > 0}) then {_rhythmArg} else {1};
+    private _co = ["co",_coRhythm,_spacing,_spo2,_etco2,_rr] call _buildTwo;
+
+    // Kelly-only ABP lane. Same 0.03-second timeline, now extended to both displayed windows.
     private _abp = [];
-    _abp resize [176,0];
+    _abp resize [351,0];
     if (_perfusing && {_ekgHR > 0}) then {
         private _period = 60/(_ekgHR max 1);
-        for "_i" from 0 to 175 do {
+        for "_i" from 0 to 350 do {
             private _t = _i*0.03;
             private _ph = (_t mod _period)/_period;
             private _norm = 0;
@@ -148,10 +182,18 @@ private _regenerate = {
     };
     [_ekg,_po,_abp,_co]
 };
-
 for "_n" from 1 to _advance do {
-    if (_step < 1 || {_step >= 176}) then {_step=1;};
-    if (_step == 1 || {_sig != _oldSig} || {(count (_buffers param [0,[]])) < 176}) then {
+    if (_step < 1 || {_step > _segmentCount}) then {_step=1;};
+    if (_step == 1 || {_sig != _oldSig} || {(count (_buffers param [0,[]])) < _sampleCount}) then {
+        private _sigChanged = _sig != _oldSig;
+        if (_sigChanged) then {
+            {
+                _x params ["_lines","_dots"];
+                {_x ctrlShow false;} forEach _lines;
+                {_x ctrlShow false;} forEach _dots;
+            } forEach _trace;
+            _step = 1;
+        };
         uiNamespace setVariable ["ACME_MC_step",_step];
         _buffers = [_dummy,_nativeRhythm,_effectiveRhythm,_ekgHR,_spo2,_rr,_etco2,_sbp,_dbp,_perfusing,_cpr] call _regenerate;
         _oldSig = _sig;
@@ -162,7 +204,7 @@ for "_n" from 1 to _advance do {
     private _prev = _step-1;
     for "_lane" from 0 to 3 do {
         private _buf = _buffers param [_lane,[]];
-        if (count _buf < 176) then {continue};
+        if (count _buf < _sampleCount) then {continue};
         private _a = _buf select _prev;
         private _b = _buf select _step;
         private _lanePair = _trace select _lane;
@@ -175,9 +217,7 @@ for "_n" from 1 to _advance do {
         private _ya = _cy + (_a*_scale);
         private _yb = _cy + (_b*_scale);
         private _h = _yb-_ya;
-        private _y = if (_h >= 0) then {_ya} else {_yb};
-        private _hh = (abs _h) max 0.0011;
-        _line ctrlSetPosition [_waveX+(_prev*_sampleW),_y,(_sampleW*1.08) max 0.0007,_hh];
+        _line ctrlSetPosition [_waveX+(_prev*_sampleW),_ya,_sampleW,_h];
         _line ctrlCommit 0;
         _line ctrlShow true;
         if (abs (_a-_b) < 0.9) then {
@@ -189,12 +229,12 @@ for "_n" from 1 to _advance do {
         } else {_dot ctrlShow false;};
 
         // Same forward erase gap as the LifePak sweep: hide a few samples ahead so old and new epochs do not join.
-        private _erase = (_prev+4) mod 175;
+        private _erase = (_prev+6) mod _segmentCount;
         if (_erase < count _lines) then {(_lines select _erase) ctrlShow false; (_dots select _erase) ctrlShow false;};
     };
 
     _step = _step+1;
-    if (_step >= 176) then {_step=1;};
+    if (_step > _segmentCount) then {_step=1;};
     _dummy setVariable ["ACM_circulation_AED_UpdateStep",_step,false];
 };
 uiNamespace setVariable ["ACME_MC_step",_step];

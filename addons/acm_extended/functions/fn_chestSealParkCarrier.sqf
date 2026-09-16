@@ -35,6 +35,5 @@ private _up = surfaceNormal [_px, _py];
     detach _x;
     _x disableCollisionWith _patient;
     _patient disableCollisionWith _x;
-    _x setPosATL [_px, _py, 0.02];
-    _x setVectorDirAndUp [_axis, _up];
+    [_x, [_px, _py, 0.02], _axis, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
 } forEach _props;

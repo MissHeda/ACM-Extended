@@ -27,5 +27,4 @@ private _py = (_hed select 1) + ((_axis select 1) * _gap);
 detach _prop;
 _prop disableCollisionWith _patient;
 _patient disableCollisionWith _prop;
-_prop setPosATL [_px, _py, 0.02];
-_prop setVectorDirAndUp [_axis, surfaceNormal [_px, _py]];
+[_prop, [_px, _py, 0.02], _axis, surfaceNormal [_px, _py], missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;

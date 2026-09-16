@@ -7,6 +7,7 @@
  * - use the LifePak/AED 176-sample monitor contract for ECG, pleth and capnography;
  * - create AED-style line + dot trace controls instead of the old 400-column independent renderer;
  * - keep one explicit control registry so unload can tear every dynamic control down cleanly.
+ * B123: present two consecutive 176-sample LifePak windows (~10.5 s total) across 350 drawable segments.
  */
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
@@ -131,7 +132,7 @@ private _colors = [
     [1,0.5,0.2,1]
 ];
 private _labels = ["II","Pleth","ABP","CO2"];
-private _sampleCount = 176;
+private _sampleCount = 351; // two 176-sample windows share the middle sample -> 350 drawable segments
 private _sampleW = _waveW / (_sampleCount - 1);
 private _trace = [];
 private _laneCenters = [];
@@ -145,9 +146,10 @@ for "_lane" from 0 to 3 do {
     private _segments = [];
     private _dots = [];
     for "_i" from 0 to (_sampleCount - 2) do {
-        private _line = _display ctrlCreate ["RscText", -1];
-        _line ctrlSetBackgroundColor (_colors select _lane);
-        _line ctrlSetPosition [_waveX+(_i*_sampleW),_cy,(_sampleW*1.08) max (_panelW*0.00045),_panelH*0.0016];
+        private _line = _display ctrlCreate ["RscLine", -1];
+        _line ctrlSetTextColor (_colors select _lane);
+        _line ctrlSetBackgroundColor [0,0,0,0];
+        _line ctrlSetPosition [_waveX+(_i*_sampleW),_cy,_sampleW,0];
         _line ctrlShow false;
         _line ctrlCommit 0;
         _all pushBack _line;
@@ -219,6 +221,7 @@ _dummy setVariable ["ACME_AED_NextRR",_rr0,false];
 _dummy setVariable ["ACME_AED_BeatSerial",0,false];
 _dummy setVariable ["ACME_AED_ClockRhythm",-999,false];
 uiNamespace setVariable ["ACME_MC_waveBuffers",[[],[],[],[]]];
+uiNamespace setVariable ["ACME_MC_sampleCount",_sampleCount];
 uiNamespace setVariable ["ACME_MC_waveSig",""];
 uiNamespace setVariable ["ACME_MC_step",1];
 uiNamespace setVariable ["ACME_MC_stepAcc",0];

@@ -54,11 +54,14 @@ private _finish = {
         _p setVariable ["ACME_headElev_ResumePending", true, true];
         [{_this call ACME_fnc_headElevTryResume;}, [_p], missionNamespace getVariable ["ACME_headElev_resumeDelay", 0.75]] call CBA_fnc_waitAndExecute;
     } else {
-        // Recovery position already keeps its clinical state during the procedure. If it owned a specific pose before
-        // the first flip, put that pose back once the chest-seal roll theatre is finished.
-        if (_wasRecovery && {_oldAnim != ""} && {alive _p}
+        // Restore the native recovery-position state/worker only after chest access is completely finished.
+        if (_wasRecovery && {alive _p}
             && {_p getVariable ["ACE_isUnconscious", false]} && {isNull objectParent _p}) then {
-            [_p, _oldAnim, 2, "chest-seal-restore", objNull, 1.0, 2] call ACME_fnc_patientAnimRequest;
+            [_p, _p, true, true] call ACM_airway_fnc_setRecoveryPosition;
+        } else {
+            if (_wasRecovery && {_oldAnim != ""} && {alive _p} && {isNull objectParent _p}) then {
+                [_p, _oldAnim, 2, "chest-seal-restore", objNull, 1.0, 2] call ACME_fnc_patientAnimRequest;
+            };
         };
     };
 };

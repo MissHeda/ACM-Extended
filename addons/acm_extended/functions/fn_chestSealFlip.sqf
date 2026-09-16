@@ -8,11 +8,7 @@ if ((_lockedUntil isEqualType 0) && {_lockedUntil > _now}) exitWith {};
 if (isNull _patient) exitWith {};
 
 private _uiCurrent = uiNamespace getVariable ["ACME_CS_Side", "front"];
-private _actualSide = [_patient, _uiCurrent] call ACME_fnc_chestSealActualSide;
-_patient setVariable ["ACME_CS_facing", _actualSide, true];
-private _virtualLocked = uiNamespace getVariable ["ACME_CS_VirtualFlip", false];
-private _baseSide = if (_virtualLocked) then {_uiCurrent} else {_actualSide};
-private _newSide = if (_baseSide == "front") then {"back"} else {"front"};
+private _newSide = if (_uiCurrent == "front") then {"back"} else {"front"};
 
 uiNamespace setVariable ["ACME_CS_Dragging", false];
 uiNamespace setVariable ["ACME_CS_DragPt", []];
@@ -29,19 +25,13 @@ private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"}
     || {_patient getVariable ["ACME_CS_ProcedureGrounded", false]};
 private _willAnimate = (!_dead) && {!_self} && {_isGrounded} && {isNull objectParent _patient};
 
-// An awake casualty who is standing/crouched under their own control must never be forced to the floor just so
-// the medic can inspect the opposite chest surface. Flip the diagnostic canvas only and briefly lock the UI side
-// so the live orientation classifier does not immediately snap it back. Dead/vehicle cases retain the actual side.
+// When the body cannot be animated (awake/free-standing, dead, self, or in a vehicle), Flip remains a valid
+// procedural view change. It never forces the casualty into a new physical animation.
 if (!_willAnimate) exitWith {
-    if (!_dead && {!_isUncon} && {!_isObtunded} && {isNull objectParent _patient}) then {
-        uiNamespace setVariable ["ACME_CS_Side", _newSide];
-        uiNamespace setVariable ["ACME_CS_FlipTarget", ""];
-        uiNamespace setVariable ["ACME_CS_FlipLockedUntil", 0];
-        uiNamespace setVariable ["ACME_CS_VirtualFlip", true];
-    } else {
-        uiNamespace setVariable ["ACME_CS_Side", _actualSide];
-        uiNamespace setVariable ["ACME_CS_FlipTarget", ""];
-    };
+    uiNamespace setVariable ["ACME_CS_Side", _newSide];
+    uiNamespace setVariable ["ACME_CS_FlipTarget", ""];
+    uiNamespace setVariable ["ACME_CS_FlipLockedUntil", 0];
+    uiNamespace setVariable ["ACME_CS_VirtualFlip", true];
     [] call ACME_fnc_chestSealRender;
 };
 

@@ -151,7 +151,7 @@ if (isNull _patient) exitWith {
 };
 
 // Core vitals.
-private _hr = round (_patient getVariable ["ace_medical_heartRate", 0]);
+private _hr = if (alive _patient) then {round (_patient getVariable ["ace_medical_heartRate", 0])} else {0};
 private _rr = round (_patient getVariable ["ACM_breathing_RespirationRate", 0]);
 private _spo2 = round (_patient getVariable ["ace_medical_spo2", 0]);
 private _bp = if (!isNil "ace_medical_status_fnc_getBloodPressure") then {[_patient] call ace_medical_status_fnc_getBloodPressure} else {[0,0]};

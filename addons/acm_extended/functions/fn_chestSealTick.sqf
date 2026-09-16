@@ -39,35 +39,16 @@ if (_burpLock >= 0) then {
 private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
 if (isNull _patient) exitWith {closeDialog 0;};
 
-// B57: while the Flip button owns a physical roll, keep the body diagram on the requested endpoint. Animated
-// shoulder/pelvis geometry crosses ambiguous orientations during the roll and used to make the image go
-// front -> back -> front (or the reverse). After the roll lock expires, live orientation classification resumes.
+// The procedure diagram is explicit-state only. During a physical roll, hold the requested endpoint; once the
+// animation finishes do NOT reclassify from transient body geometry. This prevents external/ambiguous animation
+// states from silently flipping the procedural canvas.
 private _uiSide = uiNamespace getVariable ["ACME_CS_Side", "front"];
 private _flipUntil = uiNamespace getVariable ["ACME_CS_FlipLockedUntil", 0];
 private _flipTarget = uiNamespace getVariable ["ACME_CS_FlipTarget", ""];
 private _flipLocked = (_flipUntil isEqualType 0) && {_flipUntil > diag_tickTime} && {_flipTarget in ["front","back"]};
-if (_flipLocked) then {
-    if (_uiSide != _flipTarget) then {
-        uiNamespace setVariable ["ACME_CS_Side", _flipTarget];
-        [] call ACME_fnc_chestSealRender;
-    };
-} else {
-    private _virtual = uiNamespace getVariable ["ACME_CS_VirtualFlip", false];
-    private _awakeFree = !(_patient getVariable ["ACE_isUnconscious", false])
-        && {!(_patient getVariable ["ace_medical_unconscious", false])}
-        && {!(_patient getVariable ["ACME_obtunded", false])}
-        && {!(_patient getVariable ["ACM_core_Lying_State", false])}
-        && {(toLowerANSI (stance _patient)) in ["stand", "crouch"]}
-        && {isNull objectParent _patient};
-    if (!(_virtual && {_awakeFree})) then {
-        if (_virtual) then {uiNamespace setVariable ["ACME_CS_VirtualFlip", false];};
-        private _actualSide = [_patient, _uiSide] call ACME_fnc_chestSealActualSide;
-        if (_actualSide != _uiSide) then {
-            uiNamespace setVariable ["ACME_CS_Side", _actualSide];
-            _patient setVariable ["ACME_CS_facing", _actualSide, true];
-            [] call ACME_fnc_chestSealRender;
-        };
-    };
+if (_flipLocked && {_uiSide != _flipTarget}) then {
+    uiNamespace setVariable ["ACME_CS_Side", _flipTarget];
+    [] call ACME_fnc_chestSealRender;
 };
 
 // the darkness is drawn first, above every branch that can bail out, the mouse-validity guards below included.

@@ -34,17 +34,9 @@ uiNamespace setVariable ["ACME_CS_VirtualFlip", false];
 uiNamespace setVariable ["ACME_CS_Held", false];
 uiNamespace setVariable ["ACME_CS_SpearHeld", false];
 
-// B48: the body, not a cached UI flag, decides which anatomical surface is shown when the minigame opens.
-// ACE/ACM/Zeus/ragdoll can change a casualty without touching ACME_CS_facing, so classify the current visual
-// animation/bone orientation every time instead of assuming front.  Opening the screen never rolls the patient.
-private _actualSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
-if (_patient getVariable ["ACME_headElev_Suspended", false]) then {
-    // headElevSuspend lays the patient flat and supine before this display opens. Prefer that completed physical
-    // state if geometry is still one frame behind while the dialog is being constructed.
-    _actualSide = [_patient, "front"] call ACME_fnc_chestSealActualSide;
-};
-_patient setVariable ["ACME_CS_facing", _actualSide, true];
-uiNamespace setVariable ["ACME_CS_Side", _actualSide];
+// The chest procedure always opens on the anterior/front diagram. Physical preparation is handled once by
+// fn_chestSealPatientBegin; after that, only the explicit Flip button is allowed to change the diagram side.
+uiNamespace setVariable ["ACME_CS_Side", "front"];
 
 uiNamespace setVariable ["ACME_CS_Holes", []];
 uiNamespace setVariable ["ACME_CS_netSnapshot", []];

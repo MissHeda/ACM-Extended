@@ -4,6 +4,9 @@ params ["_medic", "_patient", ["_bodyPart", "head"]];
 if !([_medic, "intubation", _patient getVariable ["ACME_ETT_Inserted", false]] call ACME_fnc_procedureAllowed) exitWith {};
 if (!hasInterface) exitWith {};
 if (isNull _patient) exitWith {};
+if (_patient getVariable ["ACM_airway_RecoveryPosition_State", false]) exitWith {
+    ["Move the patient out of the recovery position before intubating.", 2] call ace_common_fnc_displayTextStructured;
+};
 
 // clear the mode flags first, before anything reads them. these are set by other entry points and cleared on close,
 // so if a close is ever missed the next intubation inherits them. a stale standalone-suction flag hides the entire

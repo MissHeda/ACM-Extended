@@ -268,18 +268,27 @@ uiNamespace setVariable ["ACME_Thora_SealMode", false];
 uiNamespace setVariable ["ACME_Thora_SlotBGs", _slotBGs];
 [] call ACME_fnc_thoraUpdateTrayIcons;
 
-// the held-tool cursor sprite. it floats with the mouse and is created last so it sits on top. the side-specific
-// textures use %1 for right or left. the sizes are body-height fractions from the reference photos, and they are
-// tunable.
+// Persistent tube/intervention art must sit below the arm overlay. The overlay itself then masks prep, incision,
+// opening, tube and seal artwork exactly where the patient's arm crosses the chest. Active held tools remain above it.
+private _tubeCtrl = _display ctrlCreate ["RscPicture", -1];
+_tubeCtrl ctrlEnable false;
+_tubeCtrl ctrlShow false;
+uiNamespace setVariable ["ACME_Thora_TubeCtrl", _tubeCtrl];
+
+private _armCtrl = _display ctrlCreate ["RscPicture", -1];
+_armCtrl ctrlEnable false;
+_armCtrl ctrlSetPosition [_bodyX, _bodyY, _bodyW, _bodyH];
+_armCtrl ctrlSetTextColor [1,1,1,1];
+_armCtrl ctrlShow true;
+_armCtrl ctrlCommit 0;
+uiNamespace setVariable ["ACME_Thora_ArmOverlay", _armCtrl];
+
+// Held-tool cursor is created after the arm overlay so the medic's active tool/hand always remains visible.
 private _toolSpr = _display ctrlCreate ["RscPicture", -1];
 _toolSpr ctrlEnable false;
 _toolSpr ctrlShow false;
 uiNamespace setVariable ["ACME_Thora_ToolSpr", _toolSpr];
 uiNamespace setVariable ["ACME_Thora_TubeSnap", false];
-private _tubeCtrl = _display ctrlCreate ["RscPicture", -1];
-_tubeCtrl ctrlEnable false;
-_tubeCtrl ctrlShow false;
-uiNamespace setVariable ["ACME_Thora_TubeCtrl", _tubeCtrl];
 
 // the palpation feel-dot is created last, so it draws on top of everything and you can feel over the incision and
 // the opening.
