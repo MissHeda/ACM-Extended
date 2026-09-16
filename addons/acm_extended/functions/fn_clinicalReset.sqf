@@ -80,12 +80,15 @@ if (_preserveJunctional && {!alive _patient}) then {
 } forEach (call ACME_fnc_clinicalFields);
 
 // B106: never leave the derived XStat impairment/surgery flags or forceWalk state detached from the device state.
-private _preservedXStat = _preserveJunctional && {!alive _patient} && {(["leftleg", "rightleg"] findIf {
+private _preservedAnyXStat = _preserveJunctional && {!alive _patient} && {(["leftarm", "rightarm", "leftleg", "rightleg"] findIf {
     toLowerANSI (_patient getVariable [format ["ACME_Junc_%1", _x], ""]) isEqualTo "xstat"
 }) >= 0};
-_patient setVariable ["ACME_XStat_needsSurgery", _preservedXStat, true];
-_patient setVariable ["ACME_XStat_impaired", _preservedXStat, true];
-_patient forceWalk _preservedXStat;
+private _preservedLegXStat = _preserveJunctional && {!alive _patient} && {(["leftleg", "rightleg"] findIf {
+    toLowerANSI (_patient getVariable [format ["ACME_Junc_%1", _x], ""]) isEqualTo "xstat"
+}) >= 0};
+_patient setVariable ["ACME_XStat_needsSurgery", _preservedAnyXStat, true];
+_patient setVariable ["ACME_XStat_impaired", _preservedLegXStat, true];
+_patient forceWalk _preservedLegXStat;
 
 // Phase 67: the reset half of persistence uses the same owners as live mutation and restore.
 [_patient, "", true, false] call ACME_fnc_hpmkStateCommit;

@@ -145,7 +145,7 @@ if (!isNull _clean) then {
     };
 };
 
-// the fading miss-site bruises, independent of what is held. they run 0 to 100 percent over 15 s, then hold.
+// the fading miss-site bruises, independent of what is held. they develop over the configured few seconds, then hold.
 {
     _x params ["_bc", "_bt"];
     if (!isNull _bc && {[_bt] call _finite} && {_bt >= 0}) then {
@@ -158,9 +158,10 @@ if (!isNull _clean) then {
         _cap = (_cap max 0.05) min 1;
         private _life = missionNamespace getVariable ["ACME_iv_bruiseLifeSec", 1200];
         private _out  = missionNamespace getVariable ["ACME_iv_bruiseFadeOutSec", 300];
+        private _fadeIn = (missionNamespace getVariable ["ACME_iv_bruiseFadeInSec", 5.0]) max 0.1;
         private _al = switch (true) do {
             case (_e < 0):              { _cap };
-            case (_e < 15):             { (_e / 15) * _cap };
+            case (_e < _fadeIn):        { (_e / _fadeIn) * _cap };
             case (_e < (_life - _out)): { _cap };
             case (_e < _life):          { _cap * (((_life - _e) / (_out max 1)) max 0) };
             default                     { 0 };
@@ -169,7 +170,7 @@ if (!isNull _clean) then {
         _bc ctrlCommit 0;
         // THE VISIBILITY IS SET BOTH WAYS, NOT HIDDEN ONE WAY.
         // this used to be a bare hide when the alpha reached the floor, with nothing anywhere to show the control
-        // again. a bruise is created at the START of its 15 s fade in, so its alpha is about zero on the frame it
+        // again. a bruise is created at the START of its configured fade in, so its alpha is about zero on the frame it
         // appears, and this loop hid it on that first frame and left it hidden for good. it came back only when
         // fn_ivMinigameRenderMarks ran again and rebuilt the sprite, which is why placing a new IV made every
         // existing bruise appear at once.
@@ -187,8 +188,9 @@ if !(_exFades isEqualTo []) then {
     private _keepEx = [];
     private _exState = uiNamespace getVariable ["ACME_IV_ExtravasationVisualState", createHashMap];
     {
-        _x params ["_oldCtrl", "_newCtrl", "_started", ["_cap", 0.86], ["_key", ""], ["_target", 1]];
-        private _t = ((CBA_missionTime - _started) / 10) max 0 min 1;
+        _x params ["_oldCtrl", "_newCtrl", "_started", ["_cap", 0.86], ["_key", ""], ["_target", 1], ["_duration", 10]];
+        _duration = _duration max 0.1;
+        private _t = ((CBA_missionTime - _started) / _duration) max 0 min 1;
         if (!isNull _oldCtrl) then {
             _oldCtrl ctrlSetTextColor [1,1,1,_cap * (1 - _t)];
             _oldCtrl ctrlShow (_t < 0.996);

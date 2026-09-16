@@ -44,9 +44,9 @@ ACEGVAR(medical_gui,pendingReopen) = false; // Prevent medical menu from reopeni
 // PFH also removes its own id, but doing this synchronously prevents one stale ESC/H handler from touching the new
 // action during the one-frame handoff.
 private _oldOpenID = missionNamespace getVariable [QGVAR(ContinuousAction_OpenMedicalMenu_ID), -1];
-if (_oldOpenID >= 0) then {[_oldOpenID, "keydown"] call CBA_fnc_removeKeyHandler;};
+if (!(_oldOpenID isEqualTo -1) && {!(_oldOpenID isEqualTo "")}) then {[_oldOpenID, "keydown"] call CBA_fnc_removeKeyHandler;};
 private _oldEscapeID = missionNamespace getVariable [QGVAR(ContinuousAction_Cancel_EscapeID), -1];
-if (_oldEscapeID >= 0) then {[_oldEscapeID, "keydown"] call CBA_fnc_removeKeyHandler;};
+if (!(_oldEscapeID isEqualTo -1) && {!(_oldEscapeID isEqualTo "")}) then {[_oldEscapeID, "keydown"] call CBA_fnc_removeKeyHandler;};
 GVAR(ContinuousAction_OpenMedicalMenu_ID) = -1;
 GVAR(ContinuousAction_Cancel_EscapeID) = -1;
 
@@ -128,7 +128,7 @@ private _pfh = [{
     // the newer generation.
     if ((missionNamespace getVariable [QGVAR(ContinuousAction_Epoch), -1]) != _epoch) exitWith {
         [_idPFH] call CBA_fnc_removePerFrameHandler;
-        if (_keyID >= 0) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
+        if (!(_keyID isEqualTo -1) && {!(_keyID isEqualTo "")}) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
     };
 
     private _patientCondition = (isNull _patient);
@@ -145,7 +145,9 @@ private _pfh = [{
     if (_patientCondition || _medicCondition || _enteredVehicle || !GVAR(ContinuousAction_Active) || _dialogCondition || {(!_notInVehicle && _vehicleCondition) || {(_notInVehicle && _distanceCondition)}}) exitWith {
         [_idPFH] call CBA_fnc_removePerFrameHandler;
 
-        if (_keyID >= 0) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
+        // Release the shared ownership state before touching CBA handler cleanup. CBA currently returns string key-handler
+        // ids, and a cleanup failure must never leave the global continuous-action gate latched (which would make the
+        // Narc Box play its SFX but refuse to open any later continuous-action dialog).
         if (_isDialog) then {
             if (GVAR(ContinuousAction_OpenMedicalMenu_ID) == _keyID) then {GVAR(ContinuousAction_OpenMedicalMenu_ID) = -1;};
         } else {
@@ -154,9 +156,10 @@ private _pfh = [{
         if ((missionNamespace getVariable [QGVAR(ContinuousAction_PFH), -1]) == _idPFH) then {
             GVAR(ContinuousAction_PFH) = -1;
         };
-
         // The generation check above guarantees this cleanup still owns the global gate.
         GVAR(ContinuousAction_Active) = false;
+
+        if (!(_keyID isEqualTo -1) && {!(_keyID isEqualTo "")}) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
 
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
 

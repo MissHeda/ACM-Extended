@@ -20,3 +20,6 @@ ACME_xstatRampTime       = 12;  // seating: bleed ramps full -> 0 over this many
 ACME_xstatDwellTime      = 7200;  // the bolus holds for this long (2 h) before it starts to fail
 ACME_xstatRebleedTime    = 120;  // once it fails, the rebleed grows from a trickle to full across 2 min.
 ACME_xstatRebleedMaxFrac = 0.5;  // ...and full = at most half the original bleed. never more.
+
+// Large junctional wound/device body-map art develops more slowly than the smaller IV/contusion overlays.
+ACME_junctionalImageFadeInSec = 4.5;
