@@ -65,7 +65,8 @@ uiNamespace setVariable ["ACME_IV_SnapSites", _snapSites];
 // because an occupied location is still a valid target for the band and for a new stick.
 
 // the active site state, starting at the launched site.
-uiNamespace setVariable ["ACME_IV_Site", _site];
+uiNamespace setVariable ["ACME_IV_Site", _site];  // physical BOA site
+uiNamespace setVariable ["ACME_IV_ProbeSite", _site];  // independent vein currently under the provider
 uiNamespace setVariable ["ACME_IV_BandUV", [_bandU, _bandV]];
 uiNamespace setVariable ["ACME_IV_VeinUV", [_veinU, _veinV]];
 // the candidate veins at this site. outside the antecubital fossa this is the single strip it always was.
@@ -87,7 +88,7 @@ uiNamespace setVariable ["ACME_IV_Label", _label];
 // it current, so bringing it back is deleting the ctrlShow line below and nothing else.
 (_display displayCtrl 86504) ctrlSetText _label;
 (_display displayCtrl 86504) ctrlShow false;
-uiNamespace setVariable ["ACME_IV_Stage", "needband"];
+uiNamespace setVariable ["ACME_IV_Stage", "ready"];  // a BOA improves palpability; it is never an IV permission gate.
 uiNamespace setVariable ["ACME_IV_BandOn", false];
 uiNamespace setVariable ["ACME_IV_Held", "none"];
 uiNamespace setVariable ["ACME_IV_Gauge", 16];

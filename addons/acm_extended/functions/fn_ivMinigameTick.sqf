@@ -8,8 +8,9 @@ _acmeNVArgs call {
 // with the needle held, the full-size catheter sits on the cursor, tip at the cursor, and there is no feel dot.
 // the stick is blind, so you must remember where you felt the vein. clicking commits the stick, which
 // fn_ivminigameclick handles.
-// with nothing held, the band on and lmb held, the palpating finger shows and runs red, then yellow, then green
-// near the vein. it never locks or finds, so palpate as you like.
+// with nothing held and lmb held, the palpating finger shows and runs red, then yellow, then green near the vein.
+// A BOA improves venous filling but is not required. Pressure and the band/site relationship determine how much
+// vein can actually be felt. It never locks or finds, so palpate as you like.
 // the held item routes through the dynamic ACME_IV_HeldCursor sprite, so it always draws above the buttons.
 private _display = uiNamespace getVariable ["ACME_IV_DLG", displayNull];
 if (isNull _display) exitWith {};
@@ -79,7 +80,6 @@ _rect params ["_bx", "_by", "_bw", "_bh"];
 private _af = uiNamespace getVariable ["ACME_IV_AspectFix", 0.5625];
 
 private _held    = uiNamespace getVariable ["ACME_IV_Held", "none"];
-private _bandOn  = uiNamespace getVariable ["ACME_IV_BandOn", false];
 private _drag    = uiNamespace getVariable ["ACME_IV_Dragging", false];
 private _dot     = uiNamespace getVariable ["ACME_IV_DotCtrl", controlNull];
 // keep the instrument in the hand above the dabs, the marks and the bruises. ctrlCreate appends above every
@@ -218,6 +218,31 @@ _ui params ["_ux", "_uy"];
 if !(([_ux] call _finite) && {[_uy] call _finite}) exitWith {};
 private _fx = (_ux - _bx) / _bw;
 private _fy = (_uy - _by) / _bh;
+private _probeBP = uiNamespace getVariable ["ACME_IV_BodyPart", "leftarm"];
+private _probeView = uiNamespace getVariable ["ACME_IV_View", ""];
+private _artBounds = [_probeBP, _probeView, _fy] call ACME_fnc_ivLimbBounds;
+private _onPatientArt = false;
+if (count _artBounds == 2) then {
+    _onPatientArt = _fx >= (_artBounds select 0) && {_fx <= (_artBounds select 1)};
+};
+
+// On a limb the vein under the finger is selected by the finger's location, not by the BOA. This is what makes
+// an unbanded stick possible and what lets a mid-arm/AC band still expose a weaker distal wrist target. The band
+// site remains ACME_IV_Site; ACME_IV_ProbeSite is only the site currently being examined/stuck.
+if (!(uiNamespace getVariable ["ACME_IV_EJMode", false]) && {_onPatientArt}) then {
+    private _probeSite = [_fx, _fy] call ACME_fnc_ivSiteAtPoint;
+    if (_probeSite in ["upper", "middle", "lower"]) then {
+        uiNamespace setVariable ["ACME_IV_ProbeSite", _probeSite];
+        private _probeData = [_probeBP, _probeSite] call ACME_fnc_ivSiteData;
+        if (count _probeData >= 6 && {(_probeData select 0) == _probeView}) then {
+            private _pU = _probeData select 4;
+            private _pV = _probeData select 5;
+            uiNamespace setVariable ["ACME_IV_VeinUV", [_pU, _pV]];
+            uiNamespace setVariable ["ACME_IV_VeinSet",
+                [(uiNamespace getVariable ["ACME_IV_Patient", objNull]), _probeBP, _probeSite, _pU, _pV] call ACME_fnc_ivVeinSet];
+        };
+    };
+};
 
 // ej: two fixed sites either side of the throat, with no band. pick the jugular nearest the cursor each frame and
 // make it the active stick target, so the palpation and the stick track whichever side you reach for.
@@ -255,9 +280,21 @@ if (_distV < 1e8) then {
     _distV = [_fx, _fy] call ACME_fnc_ivVeinDist;
     _nvQ = 1;
 };
-private _feelRadius = uiNamespace getVariable ["ACME_IV_FeelRadius", 0.008];
-private _hitRadius  = uiNamespace getVariable ["ACME_IV_HitRadius", 0.004];
-private _maxHot     = uiNamespace getVariable ["ACME_IV_MaxHot", 1.0];
+// Recompute palpability from live MAP/SBP every frame. A selected BOA changes the returned values, but no BOA is
+// a valid state. The nearest anatomical site owns the difficulty, so a wrist palpated below an AC band receives
+// the smaller distal-band benefit rather than the AC-fossa value.
+private _diffSite = if (uiNamespace getVariable ["ACME_IV_EJMode", false]) then {
+    uiNamespace getVariable ["ACME_IV_EJAnatomicalSide", "left"]
+} else {
+    uiNamespace getVariable ["ACME_IV_ProbeSite", uiNamespace getVariable ["ACME_IV_Site", "middle"]]
+};
+private _liveDiff = [uiNamespace getVariable ["ACME_IV_Patient", objNull], _probeBP,
+    uiNamespace getVariable ["ACME_IV_Gauge", 16], _diffSite] call ACME_fnc_ivSiteDifficulty;
+_liveDiff params ["_livePatency", "_feelRadius", "_hitRadius", "_maxHot"];
+uiNamespace setVariable ["ACME_IV_Patency", _livePatency];
+uiNamespace setVariable ["ACME_IV_FeelRadius", _feelRadius];
+uiNamespace setVariable ["ACME_IV_HitRadius", _hitRadius];
+uiNamespace setVariable ["ACME_IV_MaxHot", _maxHot];
 private _palp = [_distV, _feelRadius, _hitRadius, _maxHot, _nvQ,
                  (uiNamespace getVariable ["ACME_IV_Patient", objNull])] call ACME_fnc_ivPalpModel;
 _palp params ["_dotCol", "_dotSize", "_onVein"];
@@ -456,10 +493,15 @@ if (_held == "needle") exitWith {
             // The right arm slopes across its canvas. Read its outline at the
             // pointer's height instead of reusing the selected band's midpoint.
             private _tiltView = uiNamespace getVariable ["ACME_IV_View", _sdAngle param [0, ""]];
-            private _rowBounds = [_bpT, _tiltView, _fy] call ACME_fnc_ivLimbBounds;
-            if (count _rowBounds == 2) then {
-                _edgeLeft = _rowBounds select 0;
-                _edgeRight = _rowBounds select 1;
+            // Preserve the established catheter-angle model. Only the patient right arm needed row-specific
+            // correction for its strongly sloped canvas; the expanded ivLimbBounds profiles are also used as
+            // puncture hit masks, but must not silently retune the other authored limb angles.
+            if (_bpT == "rightarm") then {
+                private _rowBounds = [_bpT, _tiltView, _fy] call ACME_fnc_ivLimbBounds;
+                if (count _rowBounds == 2) then {
+                    _edgeLeft = _rowBounds select 0;
+                    _edgeRight = _rowBounds select 1;
+                };
             };
             private _refU = _sdAngle param [7, missionNamespace getVariable ["ACME_iv_tiltRefU", 0.5]];
             if ((_edgeLeft isEqualType 0) && {finite _edgeLeft} && {_edgeRight isEqualType 0} && {finite _edgeRight} && {_edgeRight > _edgeLeft}) then {
@@ -514,9 +556,10 @@ if (_held == "needle") exitWith {
 };
 if (!isNull _heldC) then { _heldC ctrlShow false; };
 
-// nothing held: the palpating finger. it shows only with the band on and while holding lmb.
+// Nothing held: palpation is allowed with or without a BOA. Transparent canvas is not skin, so the finger does
+// not report a vein outside the authored patient silhouette.
 if (isNull _dot) exitWith {};
-if (!(_bandOn && _drag)) exitWith { _dot ctrlShow false; };
+if (!_drag || {!_onPatientArt}) exitWith { _dot ctrlShow false; };
 // the palpation model can tighten or swell the fingertip. a picture control has color, alpha and size and
 // nothing else, so size is a third of everything available to say what is under the finger.
 private _dotMul = uiNamespace getVariable ["ACME_IV_DotSize", 1];

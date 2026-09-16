@@ -29,7 +29,10 @@ uiNamespace setVariable ["ACME_IV_Held", "needle"];
 private _patient  = uiNamespace getVariable ["ACME_IV_Patient", objNull];
 private _bodyPart = uiNamespace getVariable ["ACME_IV_BodyPart", "leftarm"];
 // the site goes in too, so the difficulty is for the vein actually being stuck rather than an average of the limb.
-private _siteN = uiNamespace getVariable ["ACME_IV_Site", 1];
+private _siteN = uiNamespace getVariable ["ACME_IV_ProbeSite", ""];
+if !(_siteN in ["upper","middle","lower","left","right"]) then {
+    _siteN = uiNamespace getVariable ["ACME_IV_Site", 1];
+};
 private _diff = [_patient, _bodyPart, _gauge, _siteN] call ACME_fnc_ivSiteDifficulty;
 _diff params ["_patency", "_feelRadius", "_hitRadius", "_maxHot"];
 uiNamespace setVariable ["ACME_IV_Patency", _patency];
