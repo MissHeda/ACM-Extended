@@ -3,6 +3,14 @@ if (!hasInterface) exitWith {};
 private _u = player;
 if (isNull _u) exitWith {};
 private _enabled = missionNamespace getVariable ["ACME_visualFx_enabled",true];
+// ACE medical values can be transiently uninitialized when a player first spawns or changes controlled unit.
+// Hold physiology-driven FX briefly, but still allow instructor/debug overrides below.
+private _lastUnit = uiNamespace getVariable ["ACME_VFX_LastUnit",objNull];
+if !(_lastUnit isEqualTo _u) then {
+    uiNamespace setVariable ["ACME_VFX_LastUnit",_u];
+    uiNamespace setVariable ["ACME_VFX_PhysReadyAt",diag_tickTime + 2.5];
+};
+private _physReady = diag_tickTime >= (uiNamespace getVariable ["ACME_VFX_PhysReadyAt",0]);
 private _mk = {
     params ["_slot","_name","_prio"];
     private _h = uiNamespace getVariable [_slot,-1];
@@ -22,7 +30,7 @@ private _commit = missionNamespace getVariable ["ACME_visualFx_commitSec",0.30];
 private _clamp = {params ["_v"]; (_v max 0) min 1};
 private _dbg = {params ["_kind"]; private _d = _u getVariable [format ["ACME_visualFxDebug_%1",_kind],0]; [0,0.28,0.58,0.90] param [_d,0]};
 private _hyp=0; private _low=0; private _co2=0; private _ket=0; private _syn=0;
-if (_enabled && {alive _u}) then {
+if (_enabled && {alive _u} && {_physReady}) then {
     private _spo2 = _u getVariable ["ace_medical_spo2",100];
     _hyp = [((missionNamespace getVariable ["ACME_visualFx_hypoxiaStart",95]) - _spo2) / (((missionNamespace getVariable ["ACME_visualFx_hypoxiaStart",95]) - (missionNamespace getVariable ["ACME_visualFx_hypoxiaSevere",72])) max 1)] call _clamp;
     if (!isNil "ace_medical_status_fnc_getBloodPressure") then {
@@ -40,7 +48,18 @@ private _blurV = ((_hyp*0.9)+(_low*0.8)+(_co2*0.7)+(_ket*0.55)+(_syn*1.0)) min 2
 private _chromV = ((_ket*0.006)+(_hyp*0.0015)) min 0.008;
 private _dark = ((_hyp*0.34)+(_low*0.40)+(_syn*0.45)) min 0.62;
 private _sat = (1 - ((_hyp*0.60)+(_low*0.18))) max 0.28;
-if (_wet >= 0) then {_wet ppEffectAdjust [1,1,1,1.2+2.3*_dist,1.0+2.1*_dist,0.8+1.7*_dist,0.65+1.4*_dist,0.001+0.005*_dist,0.001+0.004*_dist,0.0015+0.008*_dist,0.001+0.006*_dist,0.25+0.55*_dist,0.2+0.45*_dist,4+6*_dist,3+4*_dist]; _wet ppEffectCommit _commit;};
+if (_wet >= 0) then {
+    // WetDistortion has no useful neutral parameter set for this profile: the old "zero" state still had
+    // non-zero wave amplitudes/frequencies and therefore made every healthy player spawn with swimming vision.
+    // Keep the effect completely disabled until an actual distortion source is present.
+    if (_dist <= 0.001) then {
+        _wet ppEffectEnable false;
+    } else {
+        _wet ppEffectEnable true;
+        _wet ppEffectAdjust [1,1,1,1.2+2.3*_dist,1.0+2.1*_dist,0.8+1.7*_dist,0.65+1.4*_dist,0.001+0.005*_dist,0.001+0.004*_dist,0.0015+0.008*_dist,0.001+0.006*_dist,0.25+0.55*_dist,0.2+0.45*_dist,4+6*_dist,3+4*_dist];
+        _wet ppEffectCommit _commit;
+    };
+};
 if (_chrom >= 0) then {_chrom ppEffectAdjust [_chromV,_chromV*0.65,true]; _chrom ppEffectCommit _commit;};
 if (_blur >= 0) then {_blur ppEffectAdjust [_blurV]; _blur ppEffectCommit _commit;};
 if (_color >= 0) then {_color ppEffectAdjust [1-_dark,1+(_syn*0.08),0,[0,0,0,0],[1,1,1,_sat],[0.299,0.587,0.114,0],[-1,-1,0,0,0,0,0]]; _color ppEffectCommit _commit;};
