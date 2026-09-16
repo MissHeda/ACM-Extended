@@ -76,5 +76,6 @@ _patient setVariable ["ACME_CS_rollUntil", CBA_missionTime + _rollTime, false];
     // Update the cache only after the physical endpoint is reached. UI classification still uses actual body
     // geometry/ACE animation first, so an external roll can immediately supersede this value.
     _p setVariable ["ACME_CS_facing", _target, true];
-    if (_p getVariable ["ACME_CS_ProcedureActive", false]) then {[_p] call ACME_fnc_chestSealParkCarrier;};
+    // The carrier is parked once when chest access begins.  Keep that world-space placement through
+    // front/back flips instead of shuttling the vest around the casualty on every roll.
 }, [_patient, _token, _hold, _isGrounded, _target], _rollTime] call CBA_fnc_waitAndExecute;

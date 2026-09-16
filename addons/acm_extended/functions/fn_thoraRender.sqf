@@ -9,6 +9,7 @@ private _side = uiNamespace getVariable ["ACME_Thora_Side", "right"];
 // redraw the committed incision of this side, if any. it persists per patient and side, and reappears if a tube is
 // removed.
 private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
+[] call ACME_fnc_thoraRenderBruises;
 private _inc = if (isNull _patient) then { [] } else { _patient getVariable [format ["ACME_thora_incision_%1", _side], []] };
 if (count _inc == 3) then {
     _inc params ["_ist", "_iang", "_ilenCm"];

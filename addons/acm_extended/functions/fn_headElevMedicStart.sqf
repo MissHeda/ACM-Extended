@@ -16,7 +16,12 @@ missionNamespace setVariable ["ACME_headElev_TunePatient", _patient];
 
     // fn_headElevMedicSeq clears seqActive after the provider sequence completes.
 
-    ["Head Elevated 30°", 3, _medic] call ace_common_fnc_displayTextStructured;
+    private _placementMsg = if (missionNamespace getVariable ["ACME_hc_descriptors", false]) then {
+        format ["%1 was placed in Semi-Fowler's position", [_patient, false, true] call ace_common_fnc_getName]
+    } else {
+        "Head Elevated 30°"
+    };
+    [_placementMsg, 3, _medic] call ace_common_fnc_displayTextStructured;
     if (!isNil "ace_medical_treatment_fnc_addToLog") then {
         [_patient, "activity",
  "%1 elevated head 30 degrees",

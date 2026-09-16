@@ -6,6 +6,13 @@
 ["ace_treatmentStarted", {
     params ["_medic", "_patient", "_bodyPart", ["_classname", ""]];
     if (isNull _patient || {!local _medic} || {!(_patient getVariable ["ACME_headElevated", false])}) exitWith {};
+    private _classLC = toLowerANSI _classname;
+    // Recovery position replaces Semi-Fowler rather than borrowing a temporary flat-treatment lease.
+    // Begin lowering during the three-second treatment window so success lands directly in the authored
+    // recovery pose instead of re-elevating the casualty after the native callback.
+    if (_classLC == "recoveryposition") exitWith {
+        [_medic, _patient, true] call ACME_fnc_headElevateStop;
+    };
     private _cfg = configFile >> "ace_medical_treatment_actions" >> _classname;
     private _roll = (getNumber (_cfg >> "ACM_rollToBack")) > 0;
     private _isBody = if (_bodyPart isEqualType "") then {toLower _bodyPart == "body"} else {_bodyPart == 1};

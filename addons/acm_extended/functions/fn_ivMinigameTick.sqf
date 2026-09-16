@@ -27,11 +27,28 @@ if !([] call ACME_fnc_ivUiValid) exitWith {_display closeDisplay 2;};
 // loop.
 private _ivPat = uiNamespace getVariable ["ACME_IV_Patient", objNull];
 if (!isNull _ivPat) then {
+    private _needMarkRender = false;
     private _mv = _ivPat getVariable ["ACME_IV_MarkVer", 0];
     if (_mv != (uiNamespace getVariable ["ACME_IV_MarkVerSeen", -1])) then {
         uiNamespace setVariable ["ACME_IV_MarkVerSeen", _mv];
-        call ACME_fnc_ivMinigameRenderMarks;
+        _needMarkRender = true;
     };
+
+    // Medical injury state can change without an IV mark being added or removed.  Repaint the trauma layer when
+    // ACE contusions or the site-specific extravasation severity changes, otherwise the visual can lag behind the
+    // actual patient until the medic places another catheter or re-opens the minigame.
+    private _visBP = uiNamespace getVariable ["ACME_IV_BodyPart", ""];
+    private _visualSig = str [
+        netId _ivPat,
+        [_ivPat, _visBP] call ACME_fnc_visualBruiseState,
+        [_ivPat, _visBP] call ACME_fnc_ivExtravasationState
+    ];
+    if (_visualSig != (uiNamespace getVariable ["ACME_IV_TraumaSig", ""])) then {
+        uiNamespace setVariable ["ACME_IV_TraumaSig", _visualSig];
+        _needMarkRender = true;
+    };
+
+    if (_needMarkRender) then {call ACME_fnc_ivMinigameRenderMarks;};
 };
 // vehicle motion.
 // the limb moves under the needle. it is applied before hit-testing, so the vein you palpated a second ago is not
@@ -161,6 +178,37 @@ if (!isNull _clean) then {
         _bc ctrlShow (_al > 0.004);
     };
 } forEach (uiNamespace getVariable ["ACME_IV_BruiseFades", []]);
+
+// A worsening infiltration/extravasation does not pop to the next image.  Both severity sprites are kept alive
+// for ten seconds and their opacity is blended here every frame.  Once the blend completes the old control is
+// deleted and the state is collapsed to the new severity so future repaints do not restart the transition.
+private _exFades = uiNamespace getVariable ["ACME_IV_ExtravasationFades", []];
+if !(_exFades isEqualTo []) then {
+    private _keepEx = [];
+    private _exState = uiNamespace getVariable ["ACME_IV_ExtravasationVisualState", createHashMap];
+    {
+        _x params ["_oldCtrl", "_newCtrl", "_started", ["_cap", 0.86], ["_key", ""], ["_target", 1]];
+        private _t = ((CBA_missionTime - _started) / 10) max 0 min 1;
+        if (!isNull _oldCtrl) then {
+            _oldCtrl ctrlSetTextColor [1,1,1,_cap * (1 - _t)];
+            _oldCtrl ctrlShow (_t < 0.996);
+            _oldCtrl ctrlCommit 0;
+        };
+        if (!isNull _newCtrl) then {
+            _newCtrl ctrlSetTextColor [1,1,1,_cap * _t];
+            _newCtrl ctrlShow (_t > 0.004);
+            _newCtrl ctrlCommit 0;
+        };
+        if (_t >= 1) then {
+            if (!isNull _oldCtrl) then {ctrlDelete _oldCtrl;};
+            if (_key != "") then {_exState set [_key, [_target, -1, -1]];};
+        } else {
+            _keepEx pushBack _x;
+        };
+    } forEach _exFades;
+    uiNamespace setVariable ["ACME_IV_ExtravasationFades", _keepEx];
+    uiNamespace setVariable ["ACME_IV_ExtravasationVisualState", _exState];
+};
 
 private _ui = call ACME_fnc_ivMinigameCursor;
 if (_ui isEqualTo []) exitWith {};

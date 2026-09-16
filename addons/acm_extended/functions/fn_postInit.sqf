@@ -121,6 +121,8 @@ call ACME_fnc_initTbiCoreState;
 
 // Phase 20: Circulation, acid-base, hypothermia and custom-rhythm tunables.
 call ACME_fnc_initCirculationConfig;
+call ACME_fnc_initVisualEffectsConfig;
+if (hasInterface) then {[{call ACME_fnc_visualFxTick}, (missionNamespace getVariable ["ACME_visualFx_updateSec",0.12]), []] call CBA_fnc_addPerFrameHandler;};
 
 // Phase 20: Obtundation, impaired-consciousness and recovery/input-lock tunables.
 call ACME_fnc_initConsciousnessConfig;

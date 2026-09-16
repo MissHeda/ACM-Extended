@@ -33,11 +33,36 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
     private _oldID = missionNamespace getVariable [QGVAR(HeadTiltCancel_MouseID), -1];
     if (_oldID >= 0) then {[_oldID, "keydown"] call CBA_fnc_removeKeyHandler;};
     private _epoch = missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -1];
+    GVAR(HeadTiltTarget) = _patient;
+    GVAR(HeadTiltEpoch) = _epoch;
     private _cancelCode = compile format [
-        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -2]) == %1) then {missionNamespace setVariable ['ACM_core_ContinuousAction_Active', false];}; false",
+        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -2]) == %1) then {private _p = missionNamespace getVariable ['ACM_airway_HeadTiltTarget', objNull]; if (!isNull _p && {!(_p getVariable ['ACM_airway_RecoveryPosition_State', false])}) then {_p setVariable ['ACM_airway_HeadTilt_State', false, true];}; missionNamespace setVariable ['ACM_core_ContinuousAction_Active', false];}; false",
         _epoch
     ];
     GVAR(HeadTiltCancel_MouseID) = [0xF0, [false, false, false], _cancelCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
+
+    // showMouseHint's first slot is LMB.  Install a display-level mouse fallback as well as CBA's 0xF0 mapping;
+    // this survives input-layout/mod conflicts that can otherwise leave the hint visible but non-functional.
+    private _oldDisplayEH = missionNamespace getVariable [QGVAR(HeadTiltCancel_DisplayEH), -1];
+    private _mainDisplay = findDisplay 46;
+    if (!isNull _mainDisplay && {_oldDisplayEH >= 0}) then {_mainDisplay displayRemoveEventHandler ["MouseButtonDown", _oldDisplayEH];};
+    GVAR(HeadTiltCancel_DisplayEH) = -1;
+    if (!isNull _mainDisplay) then {
+        GVAR(HeadTiltCancel_DisplayEH) = _mainDisplay displayAddEventHandler ["MouseButtonDown", {
+            params ["", "_button"];
+            if (_button != 0) exitWith {false};
+            private _p = missionNamespace getVariable ["ACM_airway_HeadTiltTarget", objNull];
+            private _ownerEpoch = missionNamespace getVariable ["ACM_airway_HeadTiltEpoch", -2];
+            private _activeEpoch = missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -1];
+            if (_ownerEpoch == _activeEpoch && {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}) then {
+                if (!isNull _p && {!(_p getVariable ["ACM_airway_RecoveryPosition_State", false])}) then {
+                    _p setVariable ["ACM_airway_HeadTilt_State", false, true];
+                };
+                missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
+            };
+            false
+        }];
+    };
 
     [ACELLSTRING(common,Cancel), "", ""] call ACEFUNC(interaction,showMouseHint);
     [_patient, "activity", LSTRING(HeadTiltChinLift_ActionLog), [[_medic, false, true] call ACEFUNC(common,getName)]] call ACEFUNC(medical_treatment,addToLog);
@@ -55,6 +80,12 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
     private _id = missionNamespace getVariable [QGVAR(HeadTiltCancel_MouseID), -1];
     if (_id >= 0) then {[_id, "keydown"] call CBA_fnc_removeKeyHandler;};
     GVAR(HeadTiltCancel_MouseID) = -1;
+    private _mainDisplay = findDisplay 46;
+    private _displayEH = missionNamespace getVariable [QGVAR(HeadTiltCancel_DisplayEH), -1];
+    if (!isNull _mainDisplay && {_displayEH >= 0}) then {_mainDisplay displayRemoveEventHandler ["MouseButtonDown", _displayEH];};
+    GVAR(HeadTiltCancel_DisplayEH) = -1;
+    GVAR(HeadTiltTarget) = objNull;
+    GVAR(HeadTiltEpoch) = -1;
 
     ["", "", ""] call ACEFUNC(interaction,showMouseHint);
 

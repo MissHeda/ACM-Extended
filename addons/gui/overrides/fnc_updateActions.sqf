@@ -82,6 +82,14 @@ if (_showTriage) exitWith {
 // Build display-local headers only when grouping is enabled. The collected actions already
 // carry the correct categories and order for both grouped and flat menus.
 private _menuActions = missionNamespace getVariable ['ace_medical_gui_actions', []];
+// Check Airway and Check Breathing are head-only live assessments.  canTreatCached can retain an
+// eligibility result for a frame while the body selection or alive state changes, and grouped children replace
+// their condition with {true} after collection.  Apply the anatomical/death gate again at paint time so these
+// two exact actions can never leak onto the chest or remain on a corpse.
+_menuActions = _menuActions select {
+    private _class = toLower (_x param [8, '']);
+    !(_class in ['checkairway', 'checkbreathing']) || {_bodyPart == 0 && {!isNull _target} && {alive _target}}
+};
 // Dog tags always remain the last standalone examination, even if another addon
 // supplied group metadata or the native collector fallback has no class metadata.
 private _dogTagLabel = getText (configFile >> 'ace_medical_treatment_actions' >> 'CheckDogTags' >> 'displayName');

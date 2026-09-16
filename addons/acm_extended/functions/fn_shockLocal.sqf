@@ -89,7 +89,14 @@ if (_organized && {!_expectedSync}) then {
                 };
             };
             if (_attempt) then {
-                if ([_patient, _epoch] call ACME_fnc_shockROSC) then {_notice = "Defibrillation: return of spontaneous circulation."; _log = "Defibrillation with ROSC";};
+                if (_rhythm == 102 && {!(_patient getVariable ["ace_medical_inCardiacArrest",false])}) then {
+                    [_patient,0,_epoch] call ACME_fnc_rhythmSet;
+                    [_patient,"ACME_rhythm_torsadesRefractoryUntil",CBA_missionTime + (missionNamespace getVariable ["ACME_rhythm_defibTorsadesRefractorySec",8])] call ACME_fnc_setVarNet;
+                    _notice = "Defibrillation converted polymorphic VT.";
+                    _log = "Defibrillation converted torsades";
+                } else {
+                    if ([_patient, _epoch] call ACME_fnc_shockROSC) then {_notice = "Defibrillation: return of spontaneous circulation."; _log = "Defibrillation with ROSC";};
+                };
             };
         } else {
             // Native shock of sinus, VT, asystole or PEA. A waveform change never substitutes for arrest entry.

@@ -2020,6 +2020,8 @@ class CfgFunctions {
             class ivMinigameCleanDone {};
             class ivMinigameRelease {};
             class ivMinigameRenderMarks {};
+            class ivExtravasationState {};
+            class visualBruiseState {};
             class ivMinigameAddMark {};
             class ivMinigameClick {};
             class ivMinigameRefreshBandSlot {};
@@ -2285,6 +2287,7 @@ class CfgFunctions {
             class thoraInit {};
             class thoraClose {};
             class thoraRender {};
+            class thoraRenderBruises {};
             class thoraFlip {};
             class thoraTick {};
             class thoraBumpVer {};
@@ -2615,6 +2618,10 @@ class CfgFunctions {
             class installLightKey {};
             class flashlightDiag {};
             class debugForceShake {};
+            class initVisualEffectsConfig {};
+            class visualFxTick {};
+            class visualFxDebugCycle {};
+            class visualFxDebugClear {};
             class compatCheck {};
             class altitudeTick {};
             class altitudeDatum {};
@@ -7445,7 +7452,7 @@ class ace_medical_treatment_actions {
         displayNameProgress = "$STR_ACM_Airway_EstablishRecoveryPosition_Progress";
         icon = "";
         medicRequired = 0;
-        treatmentTime = "ACM_airway_treatmentTimeRecoveryPosition";
+        treatmentTime = 3;
         allowedSelections[] = {"Body"};
         condition = "alive _patient && {ACM_airway_enable} && {!([_patient] call ACM_core_fnc_cprActive)} && {!(_patient call ace_common_fnc_isAwake)} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral','']) != 'SGA'} && {!(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull]))} && {!(_patient getVariable ['ACME_ETT_Inserted',false])} && {!(_patient getVariable ['ACME_vent_driving',false])} && {!(_patient getVariable ['ACM_airway_RecoveryPosition_State',false])} && {isNull objectParent _patient}";
         callbackSuccess = "[_medic,_patient,true] call ACM_airway_fnc_setRecoveryPosition";
@@ -8351,9 +8358,9 @@ class ace_medical_treatment_actions {
     // each level feels like.
     class ACME_DebugForceShake: CheckPulse {
         displayName = "Force Shake (debug)";
-        displayNameProgress = "...";
-        treatmentTime = 0.1;  // not 0. ACE never fires callbacksuccess on a zero-duration treatment, so this
-                               // the debug action has never done anything either.
+        displayNameProgress = "";
+        treatmentTime = 0.01;  // ACE requires a non-zero duration to fire callbackSuccess; 0.01 is visually instant.
+        allowedSelections[] = {"Head"};
         condition = "missionNamespace getVariable ['ACME_debug_enabled', false]";
         callbackSuccess = "[] call ACME_fnc_debugForceShake";
         items[] = {};
@@ -9033,8 +9040,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_toggleShock";
         callbackFailure = "";
@@ -9048,8 +9055,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_toggleOverResus";
         callbackFailure = "";
@@ -9062,8 +9069,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Head", "Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_setObtunded";
         callbackFailure = "";
@@ -9084,8 +9091,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_toggleHypothermia";
         callbackFailure = "";
@@ -9098,8 +9105,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_rhythmAFibRVR";
         callbackFailure = "";
@@ -9112,8 +9119,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_rhythmAFib";
         callbackFailure = "";
@@ -9126,8 +9133,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_rhythmAtrialTach";
         callbackFailure = "";
@@ -9140,8 +9147,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_rhythmTorsades";
         callbackFailure = "";
@@ -9154,14 +9161,22 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_rhythmSVT";
         callbackFailure = "";
         callbackProgress = "";
         items[] = {};
     };
+    class ACME_DebugVFXHypoxia: CheckPulse {
+        displayName = "Visual FX: Hypoxia cycle (debug)"; displayNameProgress = ""; category = "advanced"; treatmentLocations[] = {"All"}; medicRequired = 1; treatmentTime = 0.01; allowedSelections[] = {"Head"}; condition = "[] call ACME_fnc_debugEnabled"; callbackSuccess = "[_this select 0,_this select 1,'hypoxia'] call ACME_fnc_visualFxDebugCycle"; callbackFailure = ""; callbackProgress = ""; items[] = {};
+    };
+    class ACME_DebugVFXHypotension: ACME_DebugVFXHypoxia {displayName = "Visual FX: Hypotension / shock cycle (debug)"; callbackSuccess = "[_this select 0,_this select 1,'hypotension'] call ACME_fnc_visualFxDebugCycle";};
+    class ACME_DebugVFXHypercapnia: ACME_DebugVFXHypoxia {displayName = "Visual FX: Hypercapnia cycle (debug)"; callbackSuccess = "[_this select 0,_this select 1,'hypercapnia'] call ACME_fnc_visualFxDebugCycle";};
+    class ACME_DebugVFXKetamine: ACME_DebugVFXHypoxia {displayName = "Visual FX: Ketamine / dissociation cycle (debug)"; callbackSuccess = "[_this select 0,_this select 1,'ketamine'] call ACME_fnc_visualFxDebugCycle";};
+    class ACME_DebugVFXSyncope: ACME_DebugVFXHypoxia {displayName = "Visual FX: Near-syncope cycle (debug)"; callbackSuccess = "[_this select 0,_this select 1,'syncope'] call ACME_fnc_visualFxDebugCycle";};
+    class ACME_DebugVFXClear: ACME_DebugVFXHypoxia {displayName = "Visual FX: Clear debug overrides"; callbackSuccess = "[_this select 0,_this select 1] call ACME_fnc_visualFxDebugClear";};
     // cheyne-stokes respirations, on and off, for debug. it drives a proper crescendo and decrescendo breathing
     // cycle with an apneic pause, independent of the TBI, so it can be demonstrated and tested on any casualty. a
     // medic's check breathing reads the live rate, and the capnography EtCO2 waxes and wanes with it.
@@ -9172,8 +9187,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_descriptorSelfTest";
         callbackFailure = "";
@@ -9186,8 +9201,8 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 1;
-        treatmentTime = 1;
-        allowedSelections[] = {"Body"};
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
         condition = "[] call ACME_fnc_debugEnabled";
         callbackSuccess = "_this call ACME_fnc_debugCheyneStokes";
         callbackFailure = "";

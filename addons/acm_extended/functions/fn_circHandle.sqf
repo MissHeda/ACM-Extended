@@ -547,7 +547,14 @@ private _getMedEffect = {
         && {CBA_missionTime >= (_patient getVariable ["ACME_rhythm_magNextAttempt", -1])}
     ) then {
         [_patient, "ACME_rhythm_magNextAttempt", CBA_missionTime + 1] call ACME_fnc_setVarNet;
-        if ([_patient, [_patient] call ACME_fnc_clinicalEpoch] call ACME_fnc_shockROSC) then {
+        private _converted = false;
+        if (_patient getVariable ["ace_medical_inCardiacArrest",false]) then {
+            _converted = [_patient, [_patient] call ACME_fnc_clinicalEpoch] call ACME_fnc_shockROSC;
+        } else {
+            [_patient,0,[_patient] call ACME_fnc_clinicalEpoch] call ACME_fnc_rhythmSet;
+            _converted = ([_patient] call ACME_fnc_rhythmGet) != 102;
+        };
+        if (_converted) then {
             [_patient, "ACME_rhythm_torsadesRefractoryUntil", CBA_missionTime + (missionNamespace getVariable ["ACME_rhythm_magRefractorySec", 20])] call ACME_fnc_setVarNet;
             private _ceil = missionNamespace getVariable ["ACME_rhythm_amioCeilingMg", 2200];
             [_patient, "ACME_rhythm_amioCum", (_patient getVariable ["ACME_rhythm_amioCum", 0]) min (_ceil * 0.75)] call ACME_fnc_setVarNet;

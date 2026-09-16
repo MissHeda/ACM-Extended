@@ -21,6 +21,9 @@ private _preHeadElev = _pre param [1, false, [false]];
 private _preRecovery = _pre param [2, false, [false]];
 private _preAnim = _pre param [4, "", [""]];
 if !(_preSide in ["front", "back"]) then {_preSide = "front";};
+// Defensive migration for a procedure state written by an older build while Semi-Fowler was tilted.
+// A head-elevated casualty always returns to anterior-up before the elevation resumes.
+if (_preHeadElev) then {_preSide = "front";};
 
 // Finalize the non-roll pieces only after the body is back on its original side.
 private _finish = {

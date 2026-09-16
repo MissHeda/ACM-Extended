@@ -42,7 +42,7 @@ class ACEGVAR(medical_treatment,actions) {
         displayNameProgress = CSTRING(EstablishRecoveryPosition_Progress);
         icon = "";
         medicRequired = 0;
-        treatmentTime = QGVAR(treatmentTimeRecoveryPosition);
+        treatmentTime = 3;
         allowedSelections[] = {"Body"};
         condition = QUOTE(GVAR(enable) && !([_patient] call EFUNC(core,cprActive)) && !(_patient call ACEFUNC(common,isAwake)) && (_patient getVariable [ARR_2(QQGVAR(AirwayItem_Oral),'')] != 'SGA') && !(alive (_patient getVariable [ARR_2(QQEGVAR(breathing,BVM_Medic),objNull)])) && !(IN_RECOVERYPOSITION(_patient)) && (isNull objectParent _patient));
         callbackSuccess = QUOTE([ARR_3(_medic,_patient,true)] call FUNC(setRecoveryPosition));

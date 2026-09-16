@@ -28,7 +28,7 @@ private _heartRate = GET_HEART_RATE(_unit);
 // Extended target values are offsets from the unchanged native resting baseline, not replacement returns.
 private _base = _unit getVariable ["ACME_hrRestBaseline", _desiredHR];
 private _custom = [_unit] call ACME_fnc_rhythmGet;
-if (_custom in [100,101,103,104]) then {_desiredHR = _unit getVariable ["ACME_rhythm_targetHR", _desiredHR];};
+if (_custom in [100,101,102,103,104]) then {_desiredHR = _unit getVariable ["ACME_rhythm_targetHR", _desiredHR];};
 // Apply circulation first. TBI is applied separately so nonterminal ICP cannot be the sole reason an otherwise
 // viable ACM target crosses the fatal <40 bpm line. Terminal stage 3 is intentionally exempt.
 private _circTarget = _unit getVariable ["ACME_hrTarget_circ", -1];
@@ -104,6 +104,9 @@ if (!(alive _unit) || !(HAS_PULSE(_unit)) || alive (_unit getVariable [QACEGVAR(
         _targetHR = _targetHR max _targetOxygenHR;
 
         _targetHR = (_targetHR + _hrTargetAdjustment) max 0;
+        // Perfusing torsades owns its ventricular rate. Generic compensatory tachycardia must not push the
+        // 210-bpm torsades target across ACM's >220 native VT/PVT threshold and replace the morphology.
+        if (_custom == 102) then {_targetHR = _targetHR min (_unit getVariable ["ACME_rhythm_targetHR",210]);};
 
         if (_timeSinceROSC < 45) then {
             _targetHR = _targetHR max (_desiredHR + 40 * ((30 / (_timeSinceROSC max 0.001)) min 1));
@@ -113,6 +116,7 @@ if (!(alive _unit) || !(HAS_PULSE(_unit)) || alive (_unit getVariable [QACEGVAR(
                 _targetHR = _targetHR min (_targetHR / (_desiredHR max 0.001)) * (_desiredHR * 0.7);
             };
         };
+        if (_custom == 102) then {_targetHR = _targetHR min (_unit getVariable ["ACME_rhythm_targetHR",210]);};
 
         _hrChange = round(_targetHR - _heartRate) / 2;
     } else {

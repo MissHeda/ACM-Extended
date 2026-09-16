@@ -44,6 +44,8 @@ if (count _thBase >= 4) then {
     ([_display, "ACME_Thora_ShakeBase"] call ACME_fnc_uiShakeApply) params ["_tdx", "_tdy"];
     _thBase params ["_tbx", "_tby", "_tbw", "_tbh"];
     uiNamespace setVariable ["ACME_Thora_BodyRect", [_tbx + _tdx, _tby + _tdy, _tbw, _tbh]];
+    // The bruise layer rides with the chest during cabin motion.
+    [] call ACME_fnc_thoraRenderBruises;
 };
 
 // the darkness is drawn first, before any branch can bail out.

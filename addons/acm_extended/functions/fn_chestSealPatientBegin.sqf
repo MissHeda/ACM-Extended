@@ -19,8 +19,14 @@ _patient setVariable ["ACME_CS_ProcedureActive", true, true];
 // A second medic joins the already prepared workspace. The existing ready time is authoritative.
 if (!_first) exitWith {};
 
-private _preSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
 private _preHeadElev = _patient getVariable ["ACME_headElevated", false];
+// Semi-Fowler is an anterior-up/supine posture.  Do not infer a back-facing state from the tilted
+// model geometry or Done can perform a spurious roll before the elevation is resumed.
+private _preSide = if (_preHeadElev) then {
+    "front"
+} else {
+    [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide
+};
 private _preRecovery = _patient getVariable ["ACM_airway_RecoveryPosition_State", false];
 private _preLying = _patient getVariable ["ACM_core_Lying_State", false];
 private _preAnim = animationState _patient;

@@ -115,9 +115,20 @@ private _dh = _bodyH * 0.028;
 uiNamespace setVariable ["ACME_Thora_DotH", _dh];
 uiNamespace setVariable ["ACME_Thora_DotW", _dh * _af];
 
-// the layer order, bottom to top, is the iodine prep, then the pink tract opening, then the red incision line,
+// Soft-tissue contusions sit directly over the base chest and underneath every prep/intervention layer.
+// Keep a fixed pool so repainting or cabin shake never changes z-order.
+private _bruiseCtrls = [];
+for "_i" from 1 to 5 do {
+    private _b = _display ctrlCreate ["RscPictureKeepAspect", -1];
+    _b ctrlEnable false;
+    _b ctrlShow false;
+    _bruiseCtrls pushBack _b;
+};
+uiNamespace setVariable ["ACME_Thora_BruiseCtrls", _bruiseCtrls];
+
+// the layer order, bottom to top, is the bruising, iodine prep, pink tract opening, then red incision line,
 // because later controls draw on top.
-// the chlorhexidine prep trail pool is at the bottom.
+// the chlorhexidine prep trail pool is at the bottom of the procedural intervention layers.
 private _prepDots = [];
 for "_i" from 1 to 130 do {
     private _p = _display ctrlCreate ["ACME_CS_Dot", -1];
