@@ -164,10 +164,11 @@ private _h = [{
     private _bottomMouse = _maxY + _mouseOffset;
     private _floorYMouse = _floorY + _mouseOffset;
     getMousePosition params ["_mouseX", "_mouseY"];
-    // Do not warp/recenter the hardware cursor while dragging. The new in-place Narc Box pages and syringe-size
-    // swaps keep the same display alive, so forcing setMousePosition here can move the pointer away from the moving
-    // plunger hitbox and strand the grab state. Clamp only the Y used for the syringe calculation.
+    // Preserve ACM's sticky-plunger behavior, but anchor the hardware cursor to the ACTUAL grab-control center.
+    // The old canvas-center anchor became wrong after the in-place Narc Box/page geometry changes and could pin the
+    // cursor far above the syringe. X follows the plunger center; Y is constrained to the valid draw travel.
     private _mouseYClamped = _bottomMouse min _mouseY max _floorYMouse;
+    setMousePosition [_plungerX + (_plungerW / 2), _mouseYClamped];
     private _rawY = (_mouseYClamped - _mouseOffset) min _maxY max _floorY;
     private _rawFill = linearConversion [_limitTop, _limitBottom, _rawY, 0, _size, true];
 

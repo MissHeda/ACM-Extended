@@ -149,9 +149,10 @@ private _h = [{
     ACM_circulation_SyringeDraw_MaxDose=_maxFill;
     private _floorMouse=_floorY+_mouseOffset;
     private _maxMouse=_maxY+_mouseOffset;
-    // Never recenter the cursor during a flush draw/waste either. Keep physical pointer ownership with the user and
-    // clamp only the value used to position the plunger.
+    // Keep the native sticky cursor feel, but use the actual moving grab-control center instead of a canvas-derived
+    // anchor. This keeps the mouse physically attached to the plunger and prevents the post-page-layout jump.
     private _mouseYClamped=(_maxMouse min _mouseY max _floorMouse);
+    setMousePosition [_plungerX + (_plungerW / 2), _mouseYClamped];
     private _rawY=(_mouseYClamped-_mouseOffset) min _maxY max _floorY;
     private _fill=linearConversion [_limitTop,_limitBottom,_rawY,0,_size,true] max _floorMl min _maxFill;
     private _newY=linearConversion [0,_size,_fill,_limitTop,_limitBottom,true];

@@ -21,13 +21,6 @@ ACM_circulation_SyringeDraw_DrawnAmount = 0;
 ACM_circulation_SyringeDraw_Moving = false;
 
 if (isNull _dlg) exitWith {};
-private _releaseEH = _dlg getVariable ["ACME_SK_PlungerReleaseEH", -1];
-if (_releaseEH isEqualType 0 && {_releaseEH >= 0}) then {
-    _dlg displayRemoveEventHandler ["MouseButtonDown", _releaseEH];
-    _dlg setVariable ["ACME_SK_PlungerReleaseEH", -1];
-};
-uiNamespace setVariable ["ACME_SK_PlungerSuppressUpUntil", -1];
-
 // restore the own plunger move handler of ACM, onmousebuttonup into syringe_draw_move, and clear the tooltip.
 private _plunger = _dlg displayCtrl 84009;
 if (!isNull _plunger) then {

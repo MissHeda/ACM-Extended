@@ -42,14 +42,15 @@ def test_chrom_duplicate_reference_restored():
     assert 'former dose/HR-synchronous contribution numerically below' in t
 
 
-def test_plunger_drag_does_not_warp_cursor_and_release_is_robust():
+def test_plunger_drag_stays_sticky_to_actual_control_and_releases_on_second_click():
     compound=read('functions/fn_skCompoundBegin.sqf')
     waste=read('functions/fn_skWasteBegin.sqf')
     toggle=read('functions/fn_skWasteToggleMove.sqf')
     end=read('functions/fn_skWasteEnd.sqf')
-    assert 'setMousePosition [' not in compound
-    assert 'setMousePosition [' not in waste
-    assert 'ACME_SK_PlungerReleaseEH' in toggle
-    assert 'ACME_SK_PlungerSuppressUpUntil' in toggle
-    assert 'displayAddEventHandler ["MouseButtonDown"' in toggle
-    assert 'ACME_SK_PlungerReleaseEH' in end
+    assert 'setMousePosition [_plungerX + (_plungerW / 2), _mouseYClamped];' in compound
+    assert 'setMousePosition [_plungerX + (_plungerW / 2), _mouseYClamped];' in waste
+    assert 'setMousePosition [_px + (_pw / 2), _py + (_ph / 2)];' in toggle
+    assert 'Click again to release the plunger' in toggle
+    assert 'ACME_SK_PlungerReleaseEH' not in toggle
+    assert 'displayAddEventHandler ["MouseButtonDown"' not in toggle
+    assert 'ACME_SK_PlungerReleaseEH' not in end
