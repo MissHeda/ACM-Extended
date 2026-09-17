@@ -3064,6 +3064,16 @@
     true
   ],
   [
+    "ACME_rhythm_torsadesNonPerfusing",
+    "",
+    true
+  ],
+  [
+    "ACME_rhythm_torsadesPerfusion",
+    "",
+    true
+  ],
+  [
     "ACME_rhythm_torsadesRefractoryUntil",
     "cba",
     true

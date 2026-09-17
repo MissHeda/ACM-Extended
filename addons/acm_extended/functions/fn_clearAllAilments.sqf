@@ -230,7 +230,7 @@ if (alive _patient) then {
 } forEach [
     "ACME_rhythm_active", "ACME_rhythm_targetHR", "ACME_rhythm_bpOffset", "ACME_rhythm_savedTargetHR", "ACME_peaElectricalHR", "ACME_peaElectricalState",
     "ACM_circulation_AED_RhythmTransition",
-    "ACME_rhythm_amioCum", "ACME_rhythm_obtundUntil", "ACME_rhythm_torsadesRefractoryUntil",
+    "ACME_rhythm_amioCum", "ACME_rhythm_obtundUntil", "ACME_rhythm_torsadesRefractoryUntil", "ACME_rhythm_torsadesNonPerfusing", "ACME_rhythm_torsadesPerfusion", "ACME_rhythm_torsadesArrestRequestAt",
     "ACME_rhythm_epiDripEarliest", "ACME_rhythm_magTerminatedLogged", "ACME_rhythm_magSuppressUntil",
     "ACME_rhythm_magLevel", "ACME_rhythm_lidoLastTherapeutic", "ACME_rhythm_lidoEffectiveness", "ACME_lido_serumLevel",
     "ACME_lido_seizureState", "ACME_lido_seizurePhaseEnd", "ACME_seizure_rrDrive",

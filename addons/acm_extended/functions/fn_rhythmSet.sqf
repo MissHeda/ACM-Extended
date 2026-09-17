@@ -25,7 +25,12 @@ if (_code in [100,101,102,103,104] && {(_unit getVariable ["ACME_rhythm_targetHR
 };
 if (_code == 102) exitWith {
     if (!alive _unit || {_unit getVariable ["ace_medical_inCardiacArrest", false]}) exitWith {};
-    if ((_unit getVariable ["ACME_rhythm_active", 0]) != 102) then {[_unit, "ACME_rhythm_torsadesStart", CBA_missionTime] call ACME_fnc_setVarNet;};
+    if ((_unit getVariable ["ACME_rhythm_active", 0]) != 102) then {
+        [_unit, "ACME_rhythm_torsadesStart", CBA_missionTime] call ACME_fnc_setVarNet;
+        [_unit, "ACME_rhythm_torsadesNonPerfusing", false] call ACME_fnc_setVarNet;
+        [_unit, "ACME_rhythm_torsadesPerfusion", 1] call ACME_fnc_setVarNet;
+        _unit setVariable ["ACME_rhythm_torsadesArrestRequestAt", -1, false];
+    };
     [_unit, "", -1, true, true] call ACME_fnc_rhythmNativeHoldCommit;
     [_unit, 0, true, true, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;
     [_unit, 102, true, true] call ACME_fnc_rhythmActiveCommit;
@@ -56,12 +61,18 @@ if (_code in [100,101,103,104]) exitWith {
         ["ACM_circulation_CardiacArrest_TargetRhythm", 0]
     ];
     [_unit, "ACME_rhythm_torsadesStart", nil] call ACME_fnc_setVarNet;
+    [_unit, "ACME_rhythm_torsadesNonPerfusing", nil] call ACME_fnc_setVarNet;
+    [_unit, "ACME_rhythm_torsadesPerfusion", nil] call ACME_fnc_setVarNet;
+    _unit setVariable ["ACME_rhythm_torsadesArrestRequestAt", nil, false];
     [_unit, _code, true, true] call ACME_fnc_rhythmActiveCommit;
     [_unit, [["cardiacRhythmState", 0]], true] call ACM_circulation_fnc_setRuntimeState;
     [_unit] call _forceMonitorRefresh;
 };
 if (_code >= -1 && {_code <= 5}) then {
     [_unit, "ACME_rhythm_torsadesStart", nil] call ACME_fnc_setVarNet;
+    [_unit, "ACME_rhythm_torsadesNonPerfusing", nil] call ACME_fnc_setVarNet;
+    [_unit, "ACME_rhythm_torsadesPerfusion", nil] call ACME_fnc_setVarNet;
+    _unit setVariable ["ACME_rhythm_torsadesArrestRequestAt", nil, false];
     [_unit] call ACME_fnc_rhythmRelease;
     if (_code == 5) then {
         private _brady = (random 1) < (missionNamespace getVariable ["ACME_peaBradyChance", 0]);

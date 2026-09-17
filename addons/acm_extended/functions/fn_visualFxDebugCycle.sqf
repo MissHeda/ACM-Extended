@@ -1,15 +1,27 @@
 params ["_medic","_patient",["_kind","hypoxia"]];
-if (isNull _patient) exitWith {};
+if (!hasInterface) exitWith {};
 _kind = toLowerANSI _kind;
-private _key = format ["ACME_visualFxDebug_%1",_kind];
-private _next = ((_patient getVariable [_key,0]) + 1) mod 4;
-_patient setVariable [_key,_next,true];
-// Force the local mixer to reapply the wet profile on every ketamine severity transition.
-// The handle itself remains alive so Mild -> Moderate -> Severe does not lose wave phase/persistence.
-if (_kind isEqualTo "ketamine" && {_patient isEqualTo player}) then {
-    uiNamespace setVariable ["ACME_VFX_WetForceRefresh",true];
-    if (_next > 0) then {uiNamespace setVariable ["ACME_VFX_WetActive",true];};
+if !(_kind in ["hypoxia","hypotension","hypercapnia","ketamine","syncope"]) exitWith {};
+
+// Visual post-processing is local to the person looking through the screen.  Keep instructor/test overrides
+// client-local as well: putting them on the casualty made old debug state survive respawn and made an action on
+// somebody else's Head change a variable that the local PP mixer never read.  The provider who clicks the debug
+// action now owns the test profile regardless of which casualty's medical menu is open.
+private _key = format ["ACME_VFX_Debug_%1",_kind];
+private _cur = uiNamespace getVariable [_key,0];
+if !(_cur isEqualType 0) then {_cur = 0;};
+private _next = ((_cur max 0 min 3) + 1) mod 4;
+uiNamespace setVariable [_key,_next];
+uiNamespace setVariable ["ACME_VFX_ForceRefresh",true];
+if (_kind isEqualTo "ketamine") then {uiNamespace setVariable ["ACME_VFX_WetForceRefresh",true];};
+
+private _label = switch (_kind) do {
+    case "hypoxia": {"Hypoxia"};
+    case "hypotension": {"Hypotension / shock"};
+    case "hypercapnia": {"Hypercapnia"};
+    case "ketamine": {"Ketamine / dissociation"};
+    case "syncope": {"Near-syncope"};
+    default {_kind};
 };
-private _label = switch (_kind) do {case "hypoxia":{"Hypoxia"}; case "hypotension":{"Hypotension / shock"}; case "hypercapnia":{"Hypercapnia"}; case "ketamine":{"Ketamine / dissociation"}; case "syncope":{"Near-syncope"}; default {_kind};};
 private _sev = ["OFF","MILD","MODERATE","SEVERE"] select _next;
 if (!isNull _medic) then {[format ["Visual FX %1: %2",_label,_sev],1.5,_medic] call ace_common_fnc_displayTextStructured;};
