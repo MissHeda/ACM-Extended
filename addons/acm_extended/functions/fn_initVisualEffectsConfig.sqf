@@ -13,4 +13,8 @@ ACME_visualFx_ketamineFull = 1.15;
 // WetDistortion begins earlier than the stronger dissociation/blur profile so ordinary therapeutic exposure is visible.
 ACME_visualFx_ketamineWetStart = 0.05;
 ACME_visualFx_ketamineWetFull = 1.15;
+ACME_visualFx_ketamineWetRiseSec = 4.0;   // smooth wave onset; avoids the initial fast-wave burst
+ACME_visualFx_ketamineWetFallSec = 5.0;   // slightly slower wave recovery/washout
+ACME_visualFx_ketamineGeneralRiseSec = 3.5; // blur/chromatic dissociation also eases in instead of stepping on
+ACME_visualFx_ketamineGeneralFallSec = 4.5;
 ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-style radial tunnel profile

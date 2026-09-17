@@ -32,6 +32,11 @@ if (_lifeChanged) then {
     uiNamespace setVariable ["ACME_VFX_WetLast",[]];
     uiNamespace setVariable ["ACME_VFX_TunnelLast",[]];
     uiNamespace setVariable ["ACME_VFX_KetZoomLast",-1];
+    uiNamespace setVariable ["ACME_VFX_KetWetSmooth",0];
+    uiNamespace setVariable ["ACME_VFX_KetWetSmoothAt",diag_tickTime];
+    uiNamespace setVariable ["ACME_VFX_KetGeneralSmooth",0];
+    uiNamespace setVariable ["ACME_VFX_KetGeneralSmoothAt",diag_tickTime];
+    uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[]];
     uiNamespace setVariable ["ACME_VFX_HeartPhase",0];
     uiNamespace setVariable ["ACME_VFX_HeartPhaseAt",diag_tickTime];
     uiNamespace setVariable ["ACME_VFX_ForceRefresh",true];
@@ -142,6 +147,27 @@ if (!_enabled || {!alive _u}) then {
     _dbgHyp = 0; _dbgLow = 0; _dbgCO2 = 0; _dbgKet = 0; _dbgSyn = 0;
 };
 
+// Smooth the non-wave ketamine layers too. The old debug path stepped blur/chromatic separation to a new tier in
+// one controller tick even when the water layer was being eased, which made the overall ketamine onset still feel
+// abrupt. Real medication and debug now share the same gradual visual envelope.
+private _ketGeneralTarget = _ket;
+private _ketGeneralNow = diag_tickTime;
+private _ketGeneralAt = uiNamespace getVariable ["ACME_VFX_KetGeneralSmoothAt",_ketGeneralNow];
+private _ketGeneralDt = ((_ketGeneralNow - _ketGeneralAt) max 0) min 0.25;
+private _ketGeneralSmooth = uiNamespace getVariable ["ACME_VFX_KetGeneralSmooth",0];
+if !(_ketGeneralSmooth isEqualType 0 && {finite _ketGeneralSmooth}) then {_ketGeneralSmooth = 0;};
+private _ketGeneralTau = if (_ketGeneralTarget > _ketGeneralSmooth) then {
+    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralRiseSec",3.5]
+} else {
+    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralFallSec",4.5]
+};
+private _ketGeneralStep = (_ketGeneralDt / (_ketGeneralTau max 0.25)) min 1;
+_ketGeneralSmooth = (_ketGeneralSmooth + ((_ketGeneralTarget - _ketGeneralSmooth) * _ketGeneralStep)) max 0 min 1;
+if (abs (_ketGeneralTarget - _ketGeneralSmooth) < 0.0005) then {_ketGeneralSmooth = _ketGeneralTarget;};
+uiNamespace setVariable ["ACME_VFX_KetGeneralSmooth",_ketGeneralSmooth];
+uiNamespace setVariable ["ACME_VFX_KetGeneralSmoothAt",_ketGeneralNow];
+_ket = _ketGeneralSmooth;
+
 // Deterministic debug profiles. These are intentionally more obvious than the continuous physiologic thresholds so
 // an instructor can verify every layer from the medical menu without guessing whether an effect actually changed.
 // Ketamine owns the dedicated late wet pass below for BOTH medication-driven and debug effects. Keeping it out
@@ -155,15 +181,21 @@ private _co2WetDebug = [0,0.20,0.48,0.78] param [_dbgCO2,0];
 private _dist = (_ketWetPhys max _ketWetDebug max _shockWetPhys max _shockWetDebug max _co2WetPhys max _co2WetDebug) min 1;
 
 private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.55)+(_syn*1.00)) min 2.6;
+// Ketamine's debug-only blur/chromatic boosts use the same smoothed envelope as the general drug effect instead of
+// stepping to their final tier immediately. Other debug physiology controls keep their deterministic instant tiers.
+private _dbgKetTargetMag = [_dbgKet] call _dbgMag;
+private _dbgKetEnvelope = if (_dbgKet > 0 && {_dbgKetTargetMag > 0.001}) then {(_ket / _dbgKetTargetMag) min 1} else {0};
+private _dbgKetBlur = ([0,0.18,0.45,0.80] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
     max ([0,0.28,0.82,1.55] param [_dbgLow,0])
     max ([0,0.40,1.05,1.80] param [_dbgCO2,0])
-    max ([0,0.18,0.45,0.80] param [_dbgKet,0])
+    max _dbgKetBlur
     max ([0,0.55,1.35,2.35] param [_dbgSyn,0]);
 _blurV = _blurV max _dbgBlur;
 
 private _chromV = ((_ket*0.006)+(_hyp*0.0015)) min 0.010;
-_chromV = _chromV max ([0,0.0018,0.0048,0.0090] param [_dbgKet,0]);
+private _dbgKetChrom = ([0,0.0018,0.0048,0.0090] param [_dbgKet,0]) * _dbgKetEnvelope;
+_chromV = _chromV max _dbgKetChrom;
 private _dark = ((_hyp*0.34)+(_low*0.40)+(_syn*0.45)) min 0.68;
 _dark = _dark max ([0,0.08,0.22,0.42] param [_dbgHyp,0])
     max ([0,0.08,0.24,0.46] param [_dbgLow,0])
@@ -182,6 +214,31 @@ _tunnelI = _tunnelI max _dbgTunnel;
 
 private _forceAll = uiNamespace getVariable ["ACME_VFX_ForceRefresh",false];
 if (_forceAll) then {uiNamespace setVariable ["ACME_VFX_ForceRefresh",false];};
+
+// Ketamine has ONE authoritative wave magnitude. Debug tiers and real medication only select a target; the actual
+// WetDistortion intensity eases toward that target over several seconds. This prevents the old fast first burst,
+// makes Mild genuinely mild, and stops Moderate/Severe from stacking another speed contribution on top of Mild.
+private _ketDbgTarget = [0,0.34,0.68,1.00] param [_dbgKet,0];
+private _ketWetTarget = (_ketWetReal max _ketDbgTarget) min 1;
+private _ketSmoothNow = diag_tickTime;
+private _ketSmoothAt = uiNamespace getVariable ["ACME_VFX_KetWetSmoothAt",_ketSmoothNow];
+private _ketSmoothDt = ((_ketSmoothNow - _ketSmoothAt) max 0) min 0.25;
+private _ketWetSmooth = uiNamespace getVariable ["ACME_VFX_KetWetSmooth",0];
+if !(_ketWetSmooth isEqualType 0 && {finite _ketWetSmooth}) then {_ketWetSmooth = 0;};
+private _ketTau = if (_ketWetTarget > _ketWetSmooth) then {
+    missionNamespace getVariable ["ACME_visualFx_ketamineWetRiseSec",4.0]
+} else {
+    missionNamespace getVariable ["ACME_visualFx_ketamineWetFallSec",5.0]
+};
+private _ketStep = (_ketSmoothDt / (_ketTau max 0.25)) min 1;
+_ketWetSmooth = (_ketWetSmooth + ((_ketWetTarget - _ketWetSmooth) * _ketStep)) max 0 min 1;
+if (abs (_ketWetTarget - _ketWetSmooth) < 0.0005) then {_ketWetSmooth = _ketWetTarget;};
+uiNamespace setVariable ["ACME_VFX_KetWetSmooth",_ketWetSmooth];
+uiNamespace setVariable ["ACME_VFX_KetWetSmoothAt",_ketSmoothNow];
+
+// Never layer the shock/CO2 WetDistortion pass over an active/fading ketamine wave. Two WetDistortion handles with
+// different frequencies were the source of apparent speed spikes. Ketamine owns the wave pass until it fully fades.
+if (_ketWetTarget > 0.001 || {_ketWetSmooth > 0.001}) then {_dist = 0;};
 
 // WetDistortion: assert ENABLED every active tick. Do not trust a cached boolean and do not disable/recreate it
 // between Mild -> Moderate -> Severe. Only its profile is recommitted when the requested tier/magnitude changes.
@@ -235,50 +292,55 @@ if (_wet >= 0) then {
     };
 };
 
-// Dedicated late ketamine WetDistortion for BOTH real medication and debug testing. Debug tiers use explicit
-// profiles; real ketamine interpolates continuously from the subtle Mild-like wave to the tuned Severe profile.
-// Rendering this after DynamicBlur prevents the blur layer from visually washing out the displacement.
+// Dedicated late ketamine WetDistortion for BOTH real medication and debug testing. There is no tier-specific
+// speed stack anymore: one smoothed scalar drives both amplitude and frequency. The control points below are tuned
+// so Mild stays close to the earlier subtle profile, Moderate is clearly stronger, and Severe is pronounced without
+// the previous high-speed opening burst.
 if (_ketWetDebugHandle >= 0) then {
-    private _ketWetRequested = (_dbgKet > 0) || {_ketWetReal > 0.001};
+    private _ketWetRequested = (_ketWetTarget > 0.001) || {_ketWetSmooth > 0.001};
     if (!_ketWetRequested || {!_enabled} || {!alive _u}) then {
         _ketWetDebugHandle ppEffectEnable false;
         uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[]];
     } else {
         _ketWetDebugHandle ppEffectEnable true;
-        private _realStep = (round (_ketWetReal * 100)) / 100;
-        private _signature = [_dbgKet,_realStep];
+
+        // Piecewise interpolation lets the named debug tiers be exact authored profiles while real medication moves
+        // smoothly through the same continuum.
+        private _tierLerp = {
+            params ["_x","_zero","_mild","_moderate","_severe"];
+            if (_x <= 0.34) exitWith {linearConversion [0,0.34,_x,_zero,_mild,true]};
+            if (_x <= 0.68) exitWith {linearConversion [0.34,0.68,_x,_mild,_moderate,true]};
+            linearConversion [0.68,1,_x,_moderate,_severe,true]
+        };
+        private _k = _ketWetSmooth;
+
+        // Overall wave speed is intentionally lower than the previous profiles. Because all four frequency values
+        // come from this same scalar, no hidden Mild/Moderate/Severe speed layer can overlap another one.
+        private _f1 = [_k,2.30,2.75,2.95,3.15] call _tierLerp;
+        private _f2 = [_k,2.05,2.45,2.62,2.78] call _tierLerp;
+        private _f3 = [_k,1.50,1.82,1.96,2.08] call _tierLerp;
+        private _f4 = [_k,1.10,1.35,1.46,1.55] call _tierLerp;
+
+        private _a1 = [_k,0.0000,0.0049,0.0059,0.0070] call _tierLerp;
+        private _a2 = [_k,0.0000,0.0037,0.0045,0.0053] call _tierLerp;
+        private _a3 = [_k,0.0000,0.0096,0.0125,0.0160] call _tierLerp;
+        private _a4 = [_k,0.0000,0.0072,0.0094,0.0120] call _tierLerp;
+        private _phase1 = [_k,0.42,0.49,0.54,0.59] call _tierLerp;
+        private _phase2 = [_k,0.25,0.29,0.33,0.37] call _tierLerp;
+        private _tail1 = [_k,9.2,9.7,10.0,10.3] call _tierLerp;
+        private _tail2 = [_k,5.4,5.7,5.9,6.1] call _tierLerp;
+
+        private _profile = [1,1,1,_f1,_f2,_f3,_f4,_a1,_a2,_a3,_a4,_phase1,_phase2,_tail1,_tail2];
+        private _stepSig = (round (_k * 200)) / 200;
         private _lastKetWet = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",[]];
+        private _signature = [_stepSig];
         if (_forceAll || {!(_lastKetWet isEqualTo _signature)}) then {
-            private _profile = if (_dbgKet > 0) then {
-                switch (_dbgKet) do {
-                    case 1: {[1,1,1,4.20,3.80,2.62,1.96,0.0059,0.0045,0.0115,0.0088,0.52,0.32,10.2,6.1]};
-                    case 2: {[1,1,1,4.55,4.05,2.95,2.25,0.0070,0.0052,0.0155,0.0116,0.58,0.38,10.6,6.4]};
-                    case 3: {[1,1,1,4.95,4.35,3.30,2.55,0.0084,0.0062,0.0210,0.0155,0.64,0.44,11.0,6.8]};
-                    default {[1,1,1,4.10,3.70,2.50,1.85,0.0054,0.0041,0.0090,0.0070,0.50,0.30,10.0,6.0]};
-                }
-            } else {
-                private _k = _ketWetReal max 0 min 1;
-                [
-                    1,1,1,
-                    4.05 + (0.90*_k),
-                    3.68 + (0.67*_k),
-                    2.48 + (0.82*_k),
-                    1.84 + (0.71*_k),
-                    0.0054 + (0.0030*_k),
-                    0.0041 + (0.0021*_k),
-                    0.0094 + (0.0116*_k),
-                    0.0072 + (0.0083*_k),
-                    0.50 + (0.14*_k),
-                    0.30 + (0.14*_k),
-                    10.0 + (1.0*_k),
-                    6.0 + (0.8*_k)
-                ]
-            };
             _ketWetDebugHandle ppEffectAdjust _profile;
-            _ketWetDebugHandle ppEffectCommit (if (_dbgKet > 0) then {0.08} else {0.30});
+            // The controller already eases the target. A short commit only blends the tiny per-tick parameter step;
+            // it no longer performs a near-instant jump into a full tier profile.
+            _ketWetDebugHandle ppEffectCommit 0.18;
             uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",_signature];
         };
-        // Assert the real engine state every tick for the full medication/debug exposure.
         _ketWetDebugHandle ppEffectEnable true;
     };
 };
