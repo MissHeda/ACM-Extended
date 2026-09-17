@@ -27,7 +27,7 @@ if (_lifeChanged) then {
     {
         private _h = uiNamespace getVariable [_x,-1];
         if (_h isEqualType 0 && {_h >= 0}) then {_h ppEffectEnable false;};
-    } forEach ["ACME_VFX_Wet","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
+    } forEach ["ACME_VFX_Wet","ACME_VFX_KetWetDebug","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
     uiNamespace setVariable ["ACME_VFX_WetActive",false];
     uiNamespace setVariable ["ACME_VFX_WetLast",[]];
     uiNamespace setVariable ["ACME_VFX_TunnelLast",[]];
@@ -55,6 +55,10 @@ private _mk = {
     _h
 };
 private _wet = ["ACME_VFX_Wet","WetDistortion",330] call _mk;
+// Dedicated debug-ketamine wet pass. It is deliberately later than DynamicBlur so Moderate/Severe blur cannot
+// visually wash out the displacement. This handle is local, starts disabled, and is asserted while any ketamine
+// debug tier is active.
+private _ketWetDebugHandle = ["ACME_VFX_KetWetDebug","WetDistortion",480] call _mk;
 private _chrom = ["ACME_VFX_Chrom","ChromAberration",230] call _mk;
 private _blur = ["ACME_VFX_Blur","DynamicBlur",430] call _mk;
 private _color = ["ACME_VFX_Color","ColorCorrections",1530] call _mk;
@@ -131,8 +135,9 @@ if (!_enabled || {!alive _u}) then {
 
 // Deterministic debug profiles. These are intentionally more obvious than the continuous physiologic thresholds so
 // an instructor can verify every layer from the medical menu without guessing whether an effect actually changed.
-private _ketWetPhys = if (_ket > 0.001) then {0.38 + (0.62 * _ket)} else {0};
-private _ketWetDebug = [0,0.58,0.82,1.00] param [_dbgKet,0];
+private _ketWetPhys = if (_dbgKet > 0) then {0} else {if (_ket > 0.001) then {0.38 + (0.62 * _ket)} else {0}};
+// Debug ketamine owns a dedicated late wet pass below, so do not double-stack it into the shared wet mixer.
+private _ketWetDebug = 0;
 private _shockWetPhys = if (_low > 0.20) then {linearConversion [0.20,1,_low,0.20,0.88,true]} else {0};
 private _shockWetDebug = [0,0.28,0.62,0.96] param [_dbgLow,0];
 private _co2WetPhys = if (_co2 > 0.10) then {linearConversion [0.10,1,_co2,0.08,0.42,true]} else {0};
@@ -219,6 +224,31 @@ if (_wet >= 0) then {
             _wet ppEffectCommit 0.06;
             uiNamespace setVariable ["ACME_VFX_WetLast",_signature];
         };
+    };
+};
+
+// Dedicated ketamine debug wet distortion. Explicit profiles avoid tier-to-tier multiplier ambiguity and this
+// effect renders after DynamicBlur, making the water displacement remain plainly visible at Moderate and Severe.
+if (_ketWetDebugHandle >= 0) then {
+    if (_dbgKet <= 0 || {!_enabled} || {!alive _u}) then {
+        _ketWetDebugHandle ppEffectEnable false;
+        uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",-1];
+    } else {
+        _ketWetDebugHandle ppEffectEnable true;
+        private _lastKetWetTier = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",-1];
+        if (_forceAll || {_lastKetWetTier != _dbgKet}) then {
+            private _profile = switch (_dbgKet) do {
+                case 1: {[1,1,1,4.35,3.90,2.80,2.10,0.0072,0.0054,0.0160,0.0120,0.56,0.36,10.0,6.0]};
+                case 2: {[1,1,1,5.25,4.65,3.55,2.75,0.0115,0.0085,0.0330,0.0245,0.70,0.50,11.2,7.0]};
+                case 3: {[1,1,1,6.40,5.55,4.55,3.60,0.0175,0.0130,0.0600,0.0450,0.86,0.66,12.8,8.2]};
+                default {[1,1,1,4.10,3.70,2.50,1.85,0.0054,0.0041,0.0090,0.0070,0.50,0.30,10.0,6.0]};
+            };
+            _ketWetDebugHandle ppEffectAdjust _profile;
+            _ketWetDebugHandle ppEffectCommit 0.08;
+            uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",_dbgKet];
+        };
+        // Do not trust cached PP state. Reassert enable every controller tick for the full non-zero debug cycle.
+        _ketWetDebugHandle ppEffectEnable true;
     };
 };
 

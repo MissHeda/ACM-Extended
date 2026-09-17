@@ -14,6 +14,9 @@ private _next = ((_cur max 0 min 3) + 1) mod 4;
 uiNamespace setVariable [_key,_next];
 uiNamespace setVariable ["ACME_VFX_ForceRefresh",true];
 if (_kind isEqualTo "ketamine") then {uiNamespace setVariable ["ACME_VFX_WetForceRefresh",true];};
+// Apply the selected test tier immediately instead of waiting for the next PFH tick. The PFH continues to own and
+// reassert the effect afterward, so the profile persists across Mild -> Moderate -> Severe.
+if (!isNil "ACME_fnc_visualFxTick") then {call ACME_fnc_visualFxTick;};
 
 private _label = switch (_kind) do {
     case "hypoxia": {"Hypoxia"};
