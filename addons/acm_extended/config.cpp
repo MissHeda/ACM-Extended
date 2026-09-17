@@ -152,9 +152,11 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             disableWeaponsLong = 1;
             canPullTrigger = 0;
             connectFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
-            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
+            // B128: chest-seal Flip can take ownership directly from the pressure hold instead of waiting for a
+            // neutral crouch round-trip. This is the literal medic4 Flip/Inspect-Chest motion requested by ACME.
+            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "AinvPknlMstpSnonWnonDnon_medic4", 0.08};
             interpolateFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "AinvPknlMstpSnonWnonDnon_AinvPknlMstpSnonWnonDnon_medic", 0.10};
-            interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
+            interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "AinvPknlMstpSnonWnonDnon_medic4", 0.08, "Unconscious", 0.02};
         };
         class UnconsciousReviveMedic_B;
         class ACME_StethoscopeWork: UnconsciousReviveMedic_B {
@@ -2123,6 +2125,8 @@ class CfgFunctions {
             class skUiTick {};
 
             class skPickSize {};
+            class skApplySize {};
+            class skPageNavigate {};
             class skPickFlush {};
             class skWasteBegin {};
             class skWasteToggleMove {};

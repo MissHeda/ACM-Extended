@@ -201,7 +201,10 @@ for "_slot" from 0 to 4 do {
         private _frac = (((_amt + _nsMl) / (_size max 0.01)) max 0) min 1;
         private _sizeRatio = switch (_size) do {case 1:{10.2/10.5};case 3:{9.83/10.5};case 5:{10.3/10.5};default{1};};
         private _py = _y + (_travel10 * _sizeRatio * _frac * (_h / ((_native select 3) max 0.001)));
-        _pl ctrlSetPosition [_x,_py,_w,_h]; _pl ctrlSetTextColor [1,1,1,_alpha];
+        // During a live push the center plunger is owned by fn_skConfirmInjection's frame-by-frame animator.
+        // Repainting it from stored contents would snap it backward and create the slideshow effect.
+        if !(_injectBusy && {_slot == 2}) then {_pl ctrlSetPosition [_x,_py,_w,_h];};
+        _pl ctrlSetTextColor [1,1,1,_alpha];
 
         private _color = _e param [7,"none",[""]];
         private _hasTag = !(_color in ["","none"]);

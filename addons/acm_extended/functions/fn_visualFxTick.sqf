@@ -143,9 +143,9 @@ if (_enabled && {alive _u} && {_physReady}) then {
             private _kNorm = (_k / _ketInduce) max 0;
             _ketDoseNorm = _kNorm;
 
-            // ACM still owns a legacy ketamine ChromAberration pulse. ACME now owns all ketamine perception, so
-            // suppress the old handle while ketamine is on board; otherwise the two chromatic layers stack and make
-            // analgesic doses look far stronger than the ACME values below.
+            // ACME is the sole owner of ketamine ChromAberration. Disable ACM's legacy handle here and reproduce
+            // its former dose/HR-synchronous contribution numerically below. This preserves the stronger stacked-era
+            // magnitude without running two ChromAberration PP effects against each other.
             private _acmKetChrom = missionNamespace getVariable ["ACM_core_ppAnestheticEffect_chrom",-1];
             if (_acmKetChrom isEqualType 0 && {_acmKetChrom >= 0}) then {_acmKetChrom ppEffectEnable false;};
 
@@ -313,7 +313,36 @@ private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
 _blurV = _blurV max _dbgBlur;
 
 // Chromatic aberration is the diplopia / subtle color-edge cue.  The previous scale was too prominent at analgesic
-// doses. With ACM's duplicate layer now suppressed, restore a little low-dose edge separation while keeping it restrained.
+// ACME-only equivalent of ACM's former anesthetic ChromAberration. ACM used:
+//   effect = Ketamine(IM)*0.5 + Ketamine_IV*0.8; peak = linearConversion [0,1,effect,0,0.06]; floor = peak*0.3.
+// Recreate ~86% of that contribution in this single handle, pulse-synchronous to HR, then layer ACME's slower
+// diplopia/vibration texture on top numerically. No second PP effect is enabled.
+private _legacyChromEq = 0;
+if (_ketDoseNorm > 0 && {!isNil "ace_medical_status_fnc_getMedicationCount"}) then {
+    private _imLegacy = [_u,"Ketamine",false] call ace_medical_status_fnc_getMedicationCount;
+    private _ivLegacy = [_u,"Ketamine_IV",false] call ace_medical_status_fnc_getMedicationCount;
+    if !(_imLegacy isEqualType 0 && {finite _imLegacy}) then {_imLegacy = 0;};
+    if !(_ivLegacy isEqualType 0 && {finite _ivLegacy}) then {_ivLegacy = 0;};
+    private _legacyEffect = (((_imLegacy max 0) * 0.5) + ((_ivLegacy max 0) * 0.8)) min 1;
+    private _legacyScale = missionNamespace getVariable ["ACME_visualFx_ketamineLegacyChromEquivalentScale",0.86];
+    private _legacyPeak = (0.06 * _legacyEffect * _legacyScale) max 0;
+    private _legacyFloor = _legacyPeak * 0.30;
+    private _legacyHR = _u getVariable ["ace_medical_heartRate",80];
+    if !(_legacyHR isEqualType 0 && {finite _legacyHR} && {_legacyHR > 0}) then {_legacyHR = 80;};
+    private _legacyRR = 60 / ((_legacyHR max 25) min 240);
+    private _legacyPhase = (diag_tickTime mod _legacyRR) / (_legacyRR max 0.10);
+    private _legacyPulse = if (_legacyPhase < 0.33) then {
+        // ACM committed from low -> high across roughly the first third of the beat.
+        sin ((_legacyPhase / 0.33) * 90)
+    } else {
+        // Then it relaxed toward the 30% floor for the remainder of the beat.
+        private _r = ((_legacyPhase - 0.33) / 0.67) min 1;
+        1 - _r
+    };
+    _legacyChromEq = _legacyFloor + ((_legacyPeak - _legacyFloor) * (_legacyPulse max 0 min 1));
+};
+
+// ACME's authored low-dose edge separation remains as the slower perceptual texture.
 private _ketChromReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
@@ -329,7 +358,7 @@ if (_ketDoseNorm > 0) then {
 if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicChromEnvelope;};
 _ketChromReal = _ketChromReal * (0.20 + (0.80 * _ketOnsetEnvelope));
 private _dbgKetChrom = ([0,0.000080,0.00070,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
-private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
+private _ketChromRaw = ((_ketChromReal + _legacyChromEq) max _dbgKetChrom) min 0.060;
 // Slow pulse + damped vibration tail. Dose owns magnitude; modulation is noticeable again without becoming a
 // second stacked chromatic effect.
 private _chromCycleSec = 5.2;
@@ -347,13 +376,13 @@ if (_chromCycleT < 0.52) then {
 };
 // With ACM's duplicate ketamine chromatic pass suppressed, restore a perceptible pulse without making the RGB split
 // dominant. Low doses get a larger RELATIVE pulse on a very small base; high-dose modulation tapers down.
-private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.128,0.050,true];
-private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.032,0.013,true];
+private _chromPulseGain = linearConversion [0,0.060,_ketChromRaw,0.080,0.018,true];
+private _chromVibeGain = linearConversion [0,0.060,_ketChromRaw,0.022,0.008,true];
 private _ketChromX = _ketChromRaw * (1 + (_chromPulseGain * _chromPulse) + (_chromVibeGain * _chromVibe));
 private _ketChromY = (_ketChromRaw * 0.62) * (1 + ((_chromPulseGain * 0.72) * _chromPulse) - ((_chromVibeGain * 0.78) * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;
-private _chromX = (_ketChromX + _hypChrom) min 0.010;
-private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.007;
+private _chromX = (_ketChromX + _hypChrom) min 0.065;
+private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.050;
 private _chromV = _chromX max _chromY;
 private _dark = ((_hyp*0.34)+(_low*0.40)+(_syn*0.45)) min 0.68;
 _dark = _dark max ([0,0.08,0.22,0.42] param [_dbgHyp,0])

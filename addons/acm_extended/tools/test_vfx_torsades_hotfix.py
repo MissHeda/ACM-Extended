@@ -40,11 +40,14 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'ACME_visualFx_ketamineAnalgesicWindowSec' in tick
     assert 'ACME_VFX_KetLastDoseAt' in tick
     assert 'ACM_core_ppAnestheticEffect_chrom' in tick
+    assert '_acmKetChrom ppEffectEnable false;' in tick
+    assert 'private _legacyChromEq = 0;' in tick
+    assert '0.06 * _legacyEffect * _legacyScale' in tick
     assert 'private _ketAnalgesicEnvelope = 1;' in tick
     assert 'private _ketAnalgesicBlurEnvelope = 1;' in tick
     assert 'private _ketAnalgesicChromEnvelope = 1;' in tick
     assert '_ketAnalgesicBlurEnvelope = 0.10 + (0.90 * _waveShaped);' in tick
-    assert 'private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.128,0.050,true];' in tick
+    assert 'private _chromPulseGain = linearConversion [0,0.060,_ketChromRaw,0.080,0.018,true];' in tick
     assert 'ace_medical_treatment_medicationLocal' in post
     assert 'ACME_VFX_KetLastDoseAt' in post
 

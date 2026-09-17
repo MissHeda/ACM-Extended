@@ -71,6 +71,30 @@ uiNamespace setVariable [QGVAR(TransfusionMenu_DLG),(findDisplay IDC_TRANSFUSION
 
 private _display = uiNamespace getVariable [QGVAR(TransfusionMenu_DLG), displayNull];
 
+// ACME three-page navigation. Transfuse sits between Body Map (left) and Narc Box (right).
+if (!isNull _display && {!isNil "ACME_fnc_skPageNavigate"}) then {
+    private _canvas = call ACME_fnc_uiCanvas;
+    _canvas params ["_uiX","_uiY","_uiW","_uiH"];
+    private _w = _uiW / 11;
+    private _h = safeZoneH / 32;
+    private _gap = 4 * pixelW;
+    private _y = safeZoneY + (safeZoneH / 1.08);
+    private _lx = (_uiX + (_uiW/2)) - (_gap/2) - _w;
+    private _rx = (_uiX + (_uiW/2)) + (_gap/2);
+    private _lb = _display ctrlCreate ["RscButton",86950];
+    _lb ctrlSetPosition [_lx,_y,_w,_h];
+    _lb ctrlSetText "< Body Map";
+    _lb ctrlSetTooltip "Previous page";
+    _lb ctrlAddEventHandler ["ButtonClick",{["left"] call ACME_fnc_skPageNavigate;}];
+    _lb ctrlCommit 0;
+    private _rb = _display ctrlCreate ["RscButton",86951];
+    _rb ctrlSetPosition [_rx,_y,_w,_h];
+    _rb ctrlSetText "Narc Box >";
+    _rb ctrlSetTooltip "Next page";
+    _rb ctrlAddEventHandler ["ButtonClick",{["right"] call ACME_fnc_skPageNavigate;}];
+    _rb ctrlCommit 0;
+};
+
 call FUNC(TransfusionMenu_UpdateSelection);
 call FUNC(TransfusionMenu_SwitchTargetInventory);
 [false] call FUNC(TransfusionMenu_UpdateBagList);

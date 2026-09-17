@@ -174,22 +174,33 @@ if (!isNull _patientHeader) then {_display setVariable ["ACME_SK_PatientHeaderNa
 private _viewY  = safeZoneY + (safeZoneH / 1.08);  // restored to the original low Draw Syringe / Body Map row.
 private _routeY = safeZoneY + (safeZoneH * 0.748);
 
-// a pulsing backing behind the view toggle. it is a plain RscText, with no focus or hover state, so the pulse is
-// always visible, even right after you click the toggle. the toggle button on top is transparent, so only its
-// label shows over this. it is created before the button so it sits behind it.
+// Three-page navigation. On the Narc Box page the left button goes to Transfuse and the right button to Body Map.
+// Body Map reverses the local page on the left and continues to Transfuse on the right. Both backings pulse without
+// owning focus, so switching pages never magnetizes the cursor to a newly recreated control.
+private _navGap = 4 * pixelW;
+private _navLeftX = (_uiX + (_uiW/2)) - (_navGap/2) - _tw;
+private _navRightX = (_uiX + (_uiW/2)) + (_navGap/2);
 private _pulseBack = _display ctrlCreate ["RscText", 84153];
-_pulseBack ctrlSetPosition [_tx, _viewY, _tw, _th];
+_pulseBack ctrlSetPosition [_navLeftX, _viewY, _tw, _th];
 _pulseBack ctrlSetBackgroundColor (["info", 0.45] call ACME_fnc_a11yColor);
 _pulseBack ctrlCommit 0;
+private _pulseBackR = _display ctrlCreate ["RscText", 84157];
+_pulseBackR ctrlSetPosition [_navRightX, _viewY, _tw, _th];
+_pulseBackR ctrlSetBackgroundColor (["info", 0.45] call ACME_fnc_a11yColor);
+_pulseBackR ctrlCommit 0;
 
-// the view toggle, between the syringe and the body map. it is a transparent button over the pulsing backing,
-// visible in both views.
 private _toggleBtn = _display ctrlCreate ["ACME_SK_PulseButton", 84150];
-_toggleBtn ctrlSetPosition [_tx, _viewY, _tw, _th];
-_toggleBtn ctrlSetText "Body Map >";
-_toggleBtn ctrlSetTooltip "Open the body injection map or return to the prepared-syringe carousel";
-_toggleBtn ctrlAddEventHandler ["ButtonClick", { call ACME_fnc_skToggleView }];
+_toggleBtn ctrlSetPosition [_navLeftX, _viewY, _tw, _th];
+_toggleBtn ctrlSetText "< Transfuse";
+_toggleBtn ctrlSetTooltip "Previous page";
+_toggleBtn ctrlAddEventHandler ["ButtonClick", {["left"] call ACME_fnc_skPageNavigate;}];
 _toggleBtn ctrlCommit 0;
+private _toggleBtnR = _display ctrlCreate ["ACME_SK_PulseButton", 84152];
+_toggleBtnR ctrlSetPosition [_navRightX, _viewY, _tw, _th];
+_toggleBtnR ctrlSetText "Body Map >";
+_toggleBtnR ctrlSetTooltip "Next page";
+_toggleBtnR ctrlAddEventHandler ["ButtonClick", {["right"] call ACME_fnc_skPageNavigate;}];
+_toggleBtnR ctrlCommit 0;
 
 // B76 contextual action directly above Draw Syringe. The backing owns the blinking red/green color so hover/focus
 // cannot freeze it; the transparent button owns only text/input.
@@ -502,6 +513,11 @@ if (_afterSaveId != "") then {
             uiNamespace setVariable ["ACME_SK_View", "syringe"];
         };
     };
+};
+private _requestedView = uiNamespace getVariable ["ACME_SK_RequestedView",""];
+if (_requestedView in ["syringe","body"]) then {
+    uiNamespace setVariable ["ACME_SK_RequestedView",""];
+    uiNamespace setVariable ["ACME_SK_View",_requestedView];
 };
 uiNamespace setVariable ["ACME_SK_Route", "vascular"];
 _display setVariable ["ACME_SK_NextRefresh", 0];

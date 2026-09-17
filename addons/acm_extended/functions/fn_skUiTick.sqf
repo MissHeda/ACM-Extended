@@ -83,7 +83,9 @@ if (_body) then {
     };
 };
 if (_body) then {call ACME_fnc_skBodyActionRender;};
-(_d displayCtrl 84153) ctrlSetBackgroundColor (["info", 0.30 + 0.45 * (0.5 + 0.5 * sin (_now * 220))] call ACME_fnc_a11yColor);
+private _navPulse = ["info", 0.30 + 0.45 * (0.5 + 0.5 * sin (_now * 220))] call ACME_fnc_a11yColor;
+(_d displayCtrl 84153) ctrlSetBackgroundColor _navPulse;
+(_d displayCtrl 84157) ctrlSetBackgroundColor _navPulse;
 // Native access changes can show Push again; retain the Narc Box's Save action and view.
 (_d displayCtrl 84005) ctrlShow _infusion;
 (_d displayCtrl 84005) ctrlEnable _infusion;
