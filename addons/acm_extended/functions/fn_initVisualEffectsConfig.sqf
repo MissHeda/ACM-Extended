@@ -1,6 +1,6 @@
-/* Centralized local perception model. Debug variables are patient-scoped and public; rendering stays client-local. */
+/* Centralized local perception model. Debug variables and rendering stay client-local. */
 ACME_visualFx_enabled = true;
-ACME_visualFx_updateSec = 0.12;
+ACME_visualFx_updateSec = 0.05;  // 20 Hz so HR-synchronous tunnel pulses remain legible even during tachycardia
 ACME_visualFx_commitSec = 0.30;
 ACME_visualFx_hypoxiaStart = 95;
 ACME_visualFx_hypoxiaSevere = 72;

@@ -27,10 +27,11 @@ if (_lifeChanged) then {
     {
         private _h = uiNamespace getVariable [_x,-1];
         if (_h isEqualType 0 && {_h >= 0}) then {_h ppEffectEnable false;};
-    } forEach ["ACME_VFX_Wet","ACME_VFX_KetWetDebug","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
+    } forEach ["ACME_VFX_Wet","ACME_VFX_KetWetDebug","ACME_VFX_KetZoom","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
     uiNamespace setVariable ["ACME_VFX_WetActive",false];
     uiNamespace setVariable ["ACME_VFX_WetLast",[]];
     uiNamespace setVariable ["ACME_VFX_TunnelLast",[]];
+    uiNamespace setVariable ["ACME_VFX_KetZoomLast",-1];
     uiNamespace setVariable ["ACME_VFX_HeartPhase",0];
     uiNamespace setVariable ["ACME_VFX_HeartPhaseAt",diag_tickTime];
     uiNamespace setVariable ["ACME_VFX_ForceRefresh",true];
@@ -59,6 +60,9 @@ private _wet = ["ACME_VFX_Wet","WetDistortion",330] call _mk;
 // visually wash out the displacement. This handle is local, starts disabled, and is asserted while any ketamine
 // debug tier is active.
 private _ketWetDebugHandle = ["ACME_VFX_KetWetDebug","WetDistortion",480] call _mk;
+// Arma has no safe scripting command for changing the live player's FOV. A very light RadialBlur pass provides a
+// slow optical push-in impression for Moderate/Severe ketamine without replacing the gameplay camera.
+private _ketZoom = ["ACME_VFX_KetZoom","RadialBlur",490] call _mk;
 private _chrom = ["ACME_VFX_Chrom","ChromAberration",230] call _mk;
 private _blur = ["ACME_VFX_Blur","DynamicBlur",430] call _mk;
 private _color = ["ACME_VFX_Color","ColorCorrections",1530] call _mk;
@@ -237,10 +241,12 @@ if (_ketWetDebugHandle >= 0) then {
         _ketWetDebugHandle ppEffectEnable true;
         private _lastKetWetTier = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",-1];
         if (_forceAll || {_lastKetWetTier != _dbgKet}) then {
+            // Keep Mild close to the original ACME water profile, just slightly stronger. Moderate and Severe
+            // remain clearly progressive without the exaggerated displacement used by the previous hotfix.
             private _profile = switch (_dbgKet) do {
-                case 1: {[1,1,1,4.35,3.90,2.80,2.10,0.0072,0.0054,0.0160,0.0120,0.56,0.36,10.0,6.0]};
-                case 2: {[1,1,1,5.25,4.65,3.55,2.75,0.0115,0.0085,0.0330,0.0245,0.70,0.50,11.2,7.0]};
-                case 3: {[1,1,1,6.40,5.55,4.55,3.60,0.0175,0.0130,0.0600,0.0450,0.86,0.66,12.8,8.2]};
+                case 1: {[1,1,1,4.20,3.80,2.62,1.96,0.0059,0.0045,0.0115,0.0088,0.52,0.32,10.2,6.1]};
+                case 2: {[1,1,1,4.55,4.05,2.95,2.25,0.0070,0.0052,0.0155,0.0116,0.58,0.38,10.6,6.4]};
+                case 3: {[1,1,1,4.95,4.35,3.30,2.55,0.0084,0.0062,0.0210,0.0155,0.64,0.44,11.0,6.8]};
                 default {[1,1,1,4.10,3.70,2.50,1.85,0.0054,0.0041,0.0090,0.0070,0.50,0.30,10.0,6.0]};
             };
             _ketWetDebugHandle ppEffectAdjust _profile;
@@ -249,6 +255,29 @@ if (_ketWetDebugHandle >= 0) then {
         };
         // Do not trust cached PP state. Reassert enable every controller tick for the full non-zero debug cycle.
         _ketWetDebugHandle ppEffectEnable true;
+    };
+};
+
+// Moderate/Severe ketamine get a slow zoom-like optical push. This deliberately stays subtle; its job is to make
+// the scene feel as if it is gradually closing in, not to create another tunnel-vision effect.
+if (_ketZoom >= 0) then {
+    if (_dbgKet < 2 || {!_enabled} || {!alive _u}) then {
+        _ketZoom ppEffectEnable false;
+        uiNamespace setVariable ["ACME_VFX_KetZoomLast",-1];
+    } else {
+        _ketZoom ppEffectEnable true;
+        private _lastKetZoomTier = uiNamespace getVariable ["ACME_VFX_KetZoomLast",-1];
+        if (_forceAll || {_lastKetZoomTier != _dbgKet}) then {
+            private _zoomProfile = if (_dbgKet >= 3) then {
+                [0.0050,0.0050,0.125,0.125]
+            } else {
+                [0.0030,0.0030,0.155,0.155]
+            };
+            _ketZoom ppEffectAdjust _zoomProfile;
+            _ketZoom ppEffectCommit (if (_dbgKet >= 3) then {5.5} else {6.5});
+            uiNamespace setVariable ["ACME_VFX_KetZoomLast",_dbgKet];
+        };
+        _ketZoom ppEffectEnable true;
     };
 };
 
@@ -273,13 +302,14 @@ if (_tunnel >= 0) then {
         uiNamespace setVariable ["ACME_VFX_HeartPhase",_heartPhase];
         uiNamespace setVariable ["ACME_VFX_HeartPhaseAt",diag_tickTime];
 
-        private _beatPulse = if (_heartPhase < 0.30) then {1 - (_heartPhase / 0.30)} else {0};
-        private _pulseI = (_tunnelI * (0.72 + (0.28 * _beatPulse))) min 1;
+        private _beatPulse = if (_heartPhase < 0.26) then {1 - (_heartPhase / 0.26)} else {0};
+        // Keep HR synchronization, but make each beat a restrained accent instead of a large vignette pump.
+        private _pulseI = (_tunnelI * (0.88 + (0.12 * _beatPulse))) min 1;
         private _tv = 0.6 * _pulseI;
-        private _blendA = _pulseI * (0.95 + (0.05 * _beatPulse));
-        private _tone = 0.10 - (0.09 * _beatPulse);
-        private _radA = (0.85 - (0.10 * _beatPulse)) - _tv;
-        private _radB = (0.80 - (0.10 * _beatPulse)) - _tv;
+        private _blendA = _pulseI * (0.985 + (0.015 * _beatPulse));
+        private _tone = 0.075 - (0.035 * _beatPulse);
+        private _radA = (0.85 - (0.035 * _beatPulse)) - _tv;
+        private _radB = (0.80 - (0.035 * _beatPulse)) - _tv;
         private _adjust = [1,1,0,[0,0,0,_blendA],[_tone,_tone,_tone,_tone],[0,0,0,0],[_radA,_radB,0,0,0,0,8]];
 
         private _last = uiNamespace getVariable ["ACME_VFX_TunnelLast",[]];
