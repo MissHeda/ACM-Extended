@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Local-only ACME perception mixer.
  *
  * Physiology contributes continuous magnitudes. Debug actions contribute deterministic local tiers. One controller
@@ -268,6 +268,7 @@ if (abs (_ketGeneralTarget - _ketGeneralSmooth) < 0.0005) then {_ketGeneralSmoot
 uiNamespace setVariable ["ACME_VFX_KetGeneralSmooth",_ketGeneralSmooth];
 uiNamespace setVariable ["ACME_VFX_KetGeneralSmoothAt",_ketGeneralNow];
 _ket = _ketGeneralSmooth;
+private _ketOnsetEnvelope = if (_ketGeneralTarget > 0.001) then {(_ketGeneralSmooth / _ketGeneralTarget) min 1} else {0};
 
 // Deterministic debug profiles. These are intentionally more obvious than the continuous physiologic thresholds so
 // an instructor can verify every layer from the medical menu without guessing whether an effect actually changed.
@@ -296,7 +297,9 @@ if (_ketDoseNorm > 0) then {
     };
 };
 if (_ketAnalgesicActive) then {_ketBlurReal = _ketBlurReal * _ketAnalgesicBlurEnvelope;};
-private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.20)+(_syn*1.00)) min 2.6;
+_ketBlurReal = _ketBlurReal * _ketOnsetEnvelope;
+private _ketSharedBlur = if (_ketDoseNorm > (missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicMax",0.22])) then {(_ket * 0.10)} else {0};
+private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+_ketSharedBlur+(_syn*1.00)) min 2.6;
 _blurV = _blurV max _ketBlurReal;
 // Debug ketamine mirrors dose bands: Mild stays subtle, Moderate is clearly altered, Severe owns the strong state.
 private _dbgKetTargetMag = [_dbgKet] call _dbgMag;
@@ -314,17 +317,18 @@ _blurV = _blurV max _dbgBlur;
 private _ketChromReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
-        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000042,true];
+        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000050,true];
     } else {
         if (_ketDoseNorm <= 0.45) then {
-            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000042,0.00046,true];
+            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000050,0.00054,true];
         } else {
-            _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00048,0.0038,true];
+            _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00060,0.0038,true];
         };
     };
 };
 if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicChromEnvelope;};
-private _dbgKetChrom = ([0,0.000070,0.00064,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
+_ketChromReal = _ketChromReal * (0.20 + (0.80 * _ketOnsetEnvelope));
+private _dbgKetChrom = ([0,0.000080,0.00070,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
 // Slow pulse + damped vibration tail. Dose owns magnitude; modulation is noticeable again without becoming a
 // second stacked chromatic effect.
@@ -343,8 +347,8 @@ if (_chromCycleT < 0.52) then {
 };
 // With ACM's duplicate ketamine chromatic pass suppressed, restore a perceptible pulse without making the RGB split
 // dominant. Low doses get a larger RELATIVE pulse on a very small base; high-dose modulation tapers down.
-private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.110,0.045,true];
-private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.028,0.012,true];
+private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.128,0.050,true];
+private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.032,0.013,true];
 private _ketChromX = _ketChromRaw * (1 + (_chromPulseGain * _chromPulse) + (_chromVibeGain * _chromVibe));
 private _ketChromY = (_ketChromRaw * 0.62) * (1 + ((_chromPulseGain * 0.72) * _chromPulse) - ((_chromVibeGain * 0.78) * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;

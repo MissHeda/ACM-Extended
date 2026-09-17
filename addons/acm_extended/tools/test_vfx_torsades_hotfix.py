@@ -19,6 +19,7 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert '_wet ppEffectEnable true;' in tick
     assert 'ACME_VFX_KetWetDebug' in tick
     assert 'private _kNorm = (_k / _ketInduce) max 0;' in tick
+    assert 'private _ketOnsetEnvelope = if (_ketGeneralTarget > 0.001) then {(_ketGeneralSmooth / _ketGeneralTarget) min 1} else {0};' in tick
     assert 'private _zeroKetProfile' in tick
     assert '_ketWetDebugHandle ppEffectCommit 0;' in tick
     assert 'private _f1 = [_k,1.45,1.65,1.74,1.84]' in tick
@@ -33,7 +34,7 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert '_chrom ppEffectAdjust [_chromX,_chromY,true];' in tick
     assert 'ACME_VFX_KetMotion' in tick
     assert 'private _ketChromReal = 0;' in tick
-    assert '0.000042' in tick
+    assert '0.000050' in tick
     assert 'private _ketVivid' in tick
     assert 'private _motionSource = _ketWetSmooth;' in tick
     assert 'ACME_visualFx_ketamineAnalgesicWindowSec' in tick
@@ -43,7 +44,7 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'private _ketAnalgesicBlurEnvelope = 1;' in tick
     assert 'private _ketAnalgesicChromEnvelope = 1;' in tick
     assert '_ketAnalgesicBlurEnvelope = 0.10 + (0.90 * _waveShaped);' in tick
-    assert 'private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.110,0.045,true];' in tick
+    assert 'private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.128,0.050,true];' in tick
     assert 'ace_medical_treatment_medicationLocal' in post
     assert 'ACME_VFX_KetLastDoseAt' in post
 
