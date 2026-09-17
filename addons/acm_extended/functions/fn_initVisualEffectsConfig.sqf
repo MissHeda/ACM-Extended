@@ -9,14 +9,21 @@ ACME_visualFx_mapSevere = 35;
 ACME_visualFx_co2Start = 48;
 ACME_visualFx_co2Severe = 85;
 // Ketamine visual thresholds are fractions of ACME's induction-equivalent ketamine load, NOT raw ACM medication
-// count. This keeps low analgesic doses subtle while preserving a continuous path into Moderate/Severe dissociation.
-ACME_visualFx_ketamineStart = 0.10;
+// count.  The real-dose curve is intentionally bottom-heavy: a ~0.25 mg/kg analgesic dose should be barely visible,
+// a moderate exposure rises only to the previous low-dose look, and the high/induction endpoint remains unchanged.
+ACME_visualFx_ketamineStart = 0.08;
 ACME_visualFx_ketamineFull = 0.82;
-// The water cue starts earlier than the heavier blur/chromatic profile but still uses induction-normalized load.
-ACME_visualFx_ketamineWetStart = 0.025;
+ACME_visualFx_ketamineDoseLowPoint = 0.16;
+ACME_visualFx_ketamineDoseModeratePoint = 0.45;
+ACME_visualFx_ketamineLowGeneralOut = 0.010;
+ACME_visualFx_ketamineModerateGeneralOut = 0.060;
+// The water cue begins slightly earlier than chromatic/blur but stays almost imperceptible at analgesic exposure.
+ACME_visualFx_ketamineWetStart = 0.05;
 ACME_visualFx_ketamineWetFull = 0.82;
-ACME_visualFx_ketamineWetRiseSec = 5.0;   // slower smooth onset; no initial strong-wave burst
-ACME_visualFx_ketamineWetFallSec = 5.5;   // gentle recovery/washout
-ACME_visualFx_ketamineGeneralRiseSec = 4.0; // blur/chromatic dissociation follows rather than snapping on
-ACME_visualFx_ketamineGeneralFallSec = 4.5;
+ACME_visualFx_ketamineLowWetOut = 0.025;
+ACME_visualFx_ketamineModerateWetOut = 0.150;
+ACME_visualFx_ketamineWetRiseSec = 7.0;   // slower onset so low-dose waves develop instead of appearing abruptly
+ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
+ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on
+ACME_visualFx_ketamineGeneralFallSec = 5.0;
 ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-style radial tunnel profile

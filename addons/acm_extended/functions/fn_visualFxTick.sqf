@@ -130,15 +130,43 @@ if (_enabled && {alive _u} && {_physReady}) then {
             // ACM's native route onset and washout timing.
             private _ketInduce = (missionNamespace getVariable ["ACME_ket_induceThreshold",7]) max 0.1;
             private _kNorm = (_k / _ketInduce) max 0;
-            private _generalStart = missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.10];
-            private _generalFull = missionNamespace getVariable ["ACME_visualFx_ketamineFull",0.82];
-            private _wetStart = missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.025];
-            private _wetFull = missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",0.82];
-            _ket = [(_kNorm - _generalStart) / ((_generalFull - _generalStart) max 0.01)] call _clamp;
-            // The water cue starts below the heavier blur/chromatic dissociation, but it is still normalized to
-            // induction-equivalent load. Real medication and debug therefore share the same authored visual range
-            // without low analgesic doses jumping directly into Moderate/Severe wave intensity.
-            _ketWetReal = [(_kNorm - _wetStart) / ((_wetFull - _wetStart) max 0.01)] call _clamp;
+            // Real-dose perception uses a deliberately bottom-heavy response curve.  A small analgesic exposure
+            // (~0.25 mg/kg IV, e.g. 0.4 mL of 50 mg/mL in a ~79 kg casualty) should be barely perceptible, not a
+            // miniature dissociative state.  Moderate exposure reaches roughly the OLD low-dose visual level, while
+            // the high/induction endpoint remains exactly 1.0 so Severe is not weakened.
+            private _curve = {
+                params ["_x","_onset","_lowIn","_midIn","_fullIn","_lowOut","_midOut"];
+                if (_x <= _onset) exitWith {0};
+                if (_x <= _lowIn) exitWith {linearConversion [_onset,_lowIn,_x,0,_lowOut,true]};
+                if (_x <= _midIn) exitWith {linearConversion [_lowIn,_midIn,_x,_lowOut,_midOut,true]};
+                linearConversion [_midIn,_fullIn,_x,_midOut,1,true]
+            };
+
+            private _fullIn = missionNamespace getVariable ["ACME_visualFx_ketamineFull",0.82];
+            private _lowIn = missionNamespace getVariable ["ACME_visualFx_ketamineDoseLowPoint",0.16];
+            private _midIn = missionNamespace getVariable ["ACME_visualFx_ketamineDoseModeratePoint",0.45];
+
+            _ket = [
+                _kNorm,
+                missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.08],
+                _lowIn,
+                _midIn,
+                _fullIn,
+                missionNamespace getVariable ["ACME_visualFx_ketamineLowGeneralOut",0.010],
+                missionNamespace getVariable ["ACME_visualFx_ketamineModerateGeneralOut",0.060]
+            ] call _curve;
+
+            // Water starts slightly earlier than chromatic/blur but remains extremely shallow at low analgesic
+            // doses.  At ~0.14 induction-normalized load this resolves to only ~0.02 of the authored wave range.
+            _ketWetReal = [
+                _kNorm,
+                missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05],
+                _lowIn,
+                _midIn,
+                missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",0.82],
+                missionNamespace getVariable ["ACME_visualFx_ketamineLowWetOut",0.025],
+                missionNamespace getVariable ["ACME_visualFx_ketamineModerateWetOut",0.150]
+            ] call _curve;
         };
     };
     _syn = ((_low * 0.75) + (_hyp * 0.35)) min 1;
@@ -167,9 +195,9 @@ private _ketGeneralDt = ((_ketGeneralNow - _ketGeneralAt) max 0) min 0.25;
 private _ketGeneralSmooth = uiNamespace getVariable ["ACME_VFX_KetGeneralSmooth",0];
 if !(_ketGeneralSmooth isEqualType 0 && {finite _ketGeneralSmooth}) then {_ketGeneralSmooth = 0;};
 private _ketGeneralTau = if (_ketGeneralTarget > _ketGeneralSmooth) then {
-    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralRiseSec",3.5]
+    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralRiseSec",6.0]
 } else {
-    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralFallSec",4.5]
+    missionNamespace getVariable ["ACME_visualFx_ketamineGeneralFallSec",5.0]
 };
 private _ketGeneralStep = (_ketGeneralDt / (_ketGeneralTau max 0.25)) min 1;
 _ketGeneralSmooth = (_ketGeneralSmooth + ((_ketGeneralTarget - _ketGeneralSmooth) * _ketGeneralStep)) max 0 min 1;
@@ -203,7 +231,13 @@ private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
     max ([0,0.55,1.35,2.35] param [_dbgSyn,0]);
 _blurV = _blurV max _dbgBlur;
 
-private _chromV = ((_ket*0.006)+(_hyp*0.0015)) min 0.010;
+private _ketChromBase = (_ket * 0.006) min 0.009;
+// Very small, slow chromatic "breathing" while ketamine is active.  Keep this independent from the shock tunnel
+// heartbeat so a low ketamine dose does not look like hypoperfusion.  This is only a +/-2% modulation of the already
+// dose-scaled chromatic separation and is therefore almost imperceptible at analgesic doses.
+private _ketPulse01 = 0.5 + (0.5 * sin ((diag_tickTime * 75) mod 360)); // ~4.8 s cycle
+private _ketChromPulse = 0.98 + (0.04 * _ketPulse01);
+private _chromV = ((_ketChromBase * _ketChromPulse)+(_hyp*0.0015)) min 0.010;
 private _dbgKetChrom = ([0,0.0018,0.0048,0.0090] param [_dbgKet,0]) * _dbgKetEnvelope;
 _chromV = _chromV max _dbgKetChrom;
 private _dark = ((_hyp*0.34)+(_low*0.40)+(_syn*0.45)) min 0.68;
@@ -236,9 +270,9 @@ private _ketSmoothDt = ((_ketSmoothNow - _ketSmoothAt) max 0) min 0.25;
 private _ketWetSmooth = uiNamespace getVariable ["ACME_VFX_KetWetSmooth",0];
 if !(_ketWetSmooth isEqualType 0 && {finite _ketWetSmooth}) then {_ketWetSmooth = 0;};
 private _ketTau = if (_ketWetTarget > _ketWetSmooth) then {
-    missionNamespace getVariable ["ACME_visualFx_ketamineWetRiseSec",4.0]
+    missionNamespace getVariable ["ACME_visualFx_ketamineWetRiseSec",7.0]
 } else {
-    missionNamespace getVariable ["ACME_visualFx_ketamineWetFallSec",5.0]
+    missionNamespace getVariable ["ACME_visualFx_ketamineWetFallSec",6.0]
 };
 private _ketStep = (_ketSmoothDt / (_ketTau max 0.25)) min 1;
 _ketWetSmooth = (_ketWetSmooth + ((_ketWetTarget - _ketWetSmooth) * _ketStep)) max 0 min 1;
