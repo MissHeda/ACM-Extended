@@ -28,3 +28,6 @@ ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
 ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on
 ACME_visualFx_ketamineGeneralFallSec = 5.0;
 ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-style radial tunnel profile
+
+// Ketamine perceptual layering is intentionally dose-banded in fn_visualFxTick: sub-dissociative exposure favors
+// mild blur/diplopia + subtle vividness and motion-lag; stronger depth/zoom and chromatic separation arrive later.

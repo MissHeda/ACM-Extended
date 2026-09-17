@@ -27,7 +27,7 @@ if (_lifeChanged) then {
     {
         private _h = uiNamespace getVariable [_x,-1];
         if (_h isEqualType 0 && {_h >= 0}) then {_h ppEffectEnable false;};
-    } forEach ["ACME_VFX_Wet","ACME_VFX_KetWetDebug","ACME_VFX_KetZoom","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
+    } forEach ["ACME_VFX_Wet","ACME_VFX_KetWetDebug","ACME_VFX_KetMotion","ACME_VFX_KetZoom","ACME_VFX_Chrom","ACME_VFX_Blur","ACME_VFX_Color","ACME_VFX_Tunnel"];
     uiNamespace setVariable ["ACME_VFX_WetActive",false];
     uiNamespace setVariable ["ACME_VFX_WetLast",[]];
     uiNamespace setVariable ["ACME_VFX_TunnelLast",[]];
@@ -65,6 +65,10 @@ private _wet = ["ACME_VFX_Wet","WetDistortion",330] call _mk;
 // visually wash out the displacement. This handle is local, starts disabled, and is asserted while any ketamine
 // debug tier is active.
 private _ketWetDebugHandle = ["ACME_VFX_KetWetDebug","WetDistortion",480] call _mk;
+// RadialBlur is the closest scriptable approximation to the mild motion-lag / trailing sensation described with
+// ketamine. Keep it very weak and strongest in the mild-to-moderate range; the separate zoom-like pass below owns
+// the stronger depth-perception cue at clearly dissociative exposure.
+private _ketMotion = ["ACME_VFX_KetMotion","RadialBlur",485] call _mk;
 // Arma has no safe scripting command for changing the live player's FOV. A very light RadialBlur pass provides a
 // slow optical push-in impression for Moderate/Severe ketamine without replacing the gameplay camera.
 private _ketZoom = ["ACME_VFX_KetZoom","RadialBlur",490] call _mk;
@@ -95,6 +99,7 @@ private _low = 0;
 private _co2 = 0;
 private _ket = 0;
 private _ketWetReal = 0;
+private _ketDoseNorm = 0;
 private _syn = 0;
 
 if (_enabled && {alive _u} && {_physReady}) then {
@@ -130,6 +135,7 @@ if (_enabled && {alive _u} && {_physReady}) then {
             // ACM's native route onset and washout timing.
             private _ketInduce = (missionNamespace getVariable ["ACME_ket_induceThreshold",7]) max 0.1;
             private _kNorm = (_k / _ketInduce) max 0;
+            _ketDoseNorm = _kNorm;
             // Real-dose perception uses a deliberately bottom-heavy response curve.  A small analgesic exposure
             // (~0.25 mg/kg IV, e.g. 0.4 mL of 50 mg/mL in a ~79 kg casualty) should be barely perceptible, not a
             // miniature dissociative state.  Moderate exposure reaches roughly the OLD low-dose visual level, while
@@ -181,7 +187,7 @@ if (_enabled && {alive _u}) then {
 };
 
 if (!_enabled || {!alive _u}) then {
-    _hyp = 0; _low = 0; _co2 = 0; _ket = 0; _ketWetReal = 0; _syn = 0;
+    _hyp = 0; _low = 0; _co2 = 0; _ket = 0; _ketWetReal = 0; _ketDoseNorm = 0; _syn = 0;
     _dbgHyp = 0; _dbgLow = 0; _dbgCO2 = 0; _dbgKet = 0; _dbgSyn = 0;
 };
 
@@ -218,12 +224,26 @@ private _co2WetPhys = if (_co2 > 0.10) then {linearConversion [0.10,1,_co2,0.08,
 private _co2WetDebug = [0,0.20,0.48,0.78] param [_dbgCO2,0];
 private _dist = (_ketWetPhys max _ketWetDebug max _shockWetPhys max _shockWetDebug max _co2WetPhys max _co2WetDebug) min 1;
 
-private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.55)+(_syn*1.00)) min 2.6;
-// Ketamine's debug-only blur/chromatic boosts use the same smoothed envelope as the general drug effect instead of
-// stepping to their final tier immediately. Other debug physiology controls keep their deterministic instant tiers.
+// Ketamine uses a different visual vocabulary below dissociation: mild focus loss/diplopia first, then depth
+// distortion and stronger perceptual separation later.  Keep a ~0.25 mg/kg exposure in the SUB-dissociative band.
+private _ketBlurReal = 0;
+if (_ketDoseNorm > 0) then {
+    if (_ketDoseNorm <= 0.18) then {
+        _ketBlurReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.060,true];
+    } else {
+        if (_ketDoseNorm <= 0.45) then {
+            _ketBlurReal = linearConversion [0.18,0.45,_ketDoseNorm,0.060,0.145,true];
+        } else {
+            _ketBlurReal = linearConversion [0.45,0.82,_ketDoseNorm,0.145,0.48,true];
+        };
+    };
+};
+private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.20)+(_syn*1.00)) min 2.6;
+_blurV = _blurV max _ketBlurReal;
+// Debug ketamine mirrors dose bands: Mild stays subtle, Moderate is clearly altered, Severe owns the strong state.
 private _dbgKetTargetMag = [_dbgKet] call _dbgMag;
 private _dbgKetEnvelope = if (_dbgKet > 0 && {_dbgKetTargetMag > 0.001}) then {(_ket / _dbgKetTargetMag) min 1} else {0};
-private _dbgKetBlur = ([0,0.18,0.45,0.80] param [_dbgKet,0]) * _dbgKetEnvelope;
+private _dbgKetBlur = ([0,0.075,0.18,0.50] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
     max ([0,0.28,0.82,1.55] param [_dbgLow,0])
     max ([0,0.40,1.05,1.80] param [_dbgCO2,0])
@@ -231,27 +251,39 @@ private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
     max ([0,0.55,1.35,2.35] param [_dbgSyn,0]);
 _blurV = _blurV max _dbgBlur;
 
-private _ketChromBase = (_ket * 0.006) min 0.009;
-private _dbgKetChrom = ([0,0.0018,0.0048,0.0090] param [_dbgKet,0]) * _dbgKetEnvelope;
-private _ketChromRaw = (_ketChromBase max _dbgKetChrom) min 0.009;
-// Ketamine chromatic separation has a slow perceptual pulse followed by a short damped micro-vibration tail.
-// The tail deliberately oscillates X/Y separation in opposite directions at ~5.2 Hz, which reads as a subtle
-// residual "buzz" rather than another vignette/heartbeat.  Keep the modulation small; dose still owns magnitude.
-private _chromCycleSec = 5.2;
+// Chromatic aberration is the diplopia / subtle color-edge cue.  The previous scale was too prominent at analgesic
+// doses, so the sub-dissociative band is now explicitly capped at a tiny value and the curve rises later.
+private _ketChromReal = 0;
+if (_ketDoseNorm > 0) then {
+    if (_ketDoseNorm <= 0.18) then {
+        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000055,true];
+    } else {
+        if (_ketDoseNorm <= 0.45) then {
+            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000055,0.00042,true];
+        } else {
+            _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00042,0.0038,true];
+        };
+    };
+};
+private _dbgKetChrom = ([0,0.000085,0.00055,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
+private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
+// Slow pulse + very small damped vibration tail.  Dose owns magnitude; modulation is intentionally restrained so
+// low-dose diplopia is perceptible at edges but never reads as a psychedelic RGB split.
+private _chromCycleSec = 5.6;
 private _chromCycleT = diag_tickTime mod _chromCycleSec;
 private _chromPulse = 0;
 private _chromVibe = 0;
-if (_chromCycleT < 0.52) then {
-    _chromPulse = sin ((_chromCycleT / 0.52) * 180);
+if (_chromCycleT < 0.48) then {
+    _chromPulse = sin ((_chromCycleT / 0.48) * 180);
 } else {
-    if (_chromCycleT < 1.30) then {
-        private _tailT = _chromCycleT - 0.52;
-        private _tailFade = 1 - (_tailT / 0.78);
-        _chromVibe = (sin (_tailT * 360 * 5.2)) * _tailFade;
+    if (_chromCycleT < 1.18) then {
+        private _tailT = _chromCycleT - 0.48;
+        private _tailFade = 1 - (_tailT / 0.70);
+        _chromVibe = (sin (_tailT * 360 * 5.0)) * _tailFade;
     };
 };
-private _ketChromX = _ketChromRaw * (1 + (0.035 * _chromPulse) + (0.030 * _chromVibe));
-private _ketChromY = (_ketChromRaw * 0.65) * (1 + (0.025 * _chromPulse) - (0.024 * _chromVibe));
+private _ketChromX = _ketChromRaw * (1 + (0.012 * _chromPulse) + (0.010 * _chromVibe));
+private _ketChromY = (_ketChromRaw * 0.62) * (1 + (0.009 * _chromPulse) - (0.008 * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;
 private _chromX = (_ketChromX + _hypChrom) min 0.010;
 private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.007;
@@ -263,6 +295,17 @@ _dark = _dark max ([0,0.08,0.22,0.42] param [_dbgHyp,0])
 private _sat = (1 - ((_hyp*0.60)+(_low*0.18))) max 0.24;
 private _dbgSat = ([1,0.90,0.68,0.42] param [_dbgHyp,1]) min ([1,0.96,0.86,0.72] param [_dbgLow,1]);
 _sat = _sat min _dbgSat;
+// Mildly vivid color response. Arma's ColorCorrections does not expose a standalone scripted "saturation +N%"
+// control, so use a very small contrast/colorization lift. Hypoxia/shock desaturation still remains authoritative.
+private _ketVividReal = if (_ketDoseNorm <= 0.05) then {0} else {
+    if (_ketDoseNorm <= 0.18) then {linearConversion [0.05,0.18,_ketDoseNorm,0,0.18,true]} else {
+        if (_ketDoseNorm <= 0.45) then {linearConversion [0.18,0.45,_ketDoseNorm,0.18,0.52,true]} else {
+            linearConversion [0.45,0.82,_ketDoseNorm,0.52,1,true]
+        }
+    }
+};
+private _ketVividDebug = [0,0.20,0.55,1.00] param [_dbgKet,0];
+private _ketVivid = (_ketVividReal max (_ketVividDebug * _dbgKetEnvelope)) min 1;
 
 private _tunnelSource = (_syn max _low max (_hyp*0.85));
 private _tunnelStart = missionNamespace getVariable ["ACME_visualFx_tunnelStart",0.50];
@@ -402,6 +445,29 @@ if (_ketWetDebugHandle >= 0) then {
     };
 };
 
+// Slight motion-lag / trailing approximation for mild-to-moderate ketamine. RadialBlur is video-setting
+// dependent, so this is a supplemental cue only; blur, waves, chromatic separation, and color shift remain present
+// when the player's Radial Blur option is disabled. Peak this around Moderate rather than making Severe smeary.
+if (_ketMotion >= 0) then {
+    private _motionSource = _ketWetSmooth;
+    private _motionI = if (_motionSource <= 0.68) then {
+        linearConversion [0.03,0.68,_motionSource,0,1,true]
+    } else {
+        linearConversion [0.68,1,_motionSource,1,0.62,true]
+    };
+    if (_motionI <= 0.005 || {!_enabled} || {!alive _u}) then {
+        _ketMotion ppEffectAdjust [0,0,0.10,0.10];
+        _ketMotion ppEffectCommit 0.35;
+        _ketMotion ppEffectEnable false;
+    } else {
+        private _p = 0.00035 + (0.00125 * _motionI);
+        private _center = 0.115 + (0.025 * _motionI);
+        _ketMotion ppEffectAdjust [_p,_p * 0.92,_center,_center];
+        _ketMotion ppEffectEnable true;
+        _ketMotion ppEffectCommit 0.22;
+    };
+};
+
 // Moderate/Severe ketamine get a slow zoom-like optical push. This deliberately stays subtle; its job is to make
 // the scene feel as if it is gradually closing in, not to create another tunnel-vision effect.
 if (_ketZoom >= 0) then {
@@ -490,10 +556,15 @@ if (_blur >= 0) then {
     };
 };
 if (_color >= 0) then {
-    private _colorActive = _dark > 0.005 || {_sat < 0.995};
+    private _colorActive = _dark > 0.005 || {_sat < 0.995} || {_ketVivid > 0.005};
     if (!_colorActive) then {_color ppEffectEnable false;} else {
         _color ppEffectEnable true;
-        _color ppEffectAdjust [1-_dark,1+(_syn*0.08),0,[0,0,0,0],[1,1,1,_sat],[0.299,0.587,0.114,0],[-1,-1,0,0,0,0,0]];
+        private _ketContrast = 0.022 * _ketVivid;
+        private _ketBright = 0.008 * _ketVivid;
+        private _vR = 1 + (0.018 * _ketVivid);
+        private _vG = 1 + (0.012 * _ketVivid);
+        private _vB = 1 + (0.024 * _ketVivid);
+        _color ppEffectAdjust [1-_dark+_ketBright,1+(_syn*0.08)+_ketContrast,0,[0,0,0,0],[_vR,_vG,_vB,_sat],[0.299,0.587,0.114,0],[-1,-1,0,0,0,0,0]];
         _color ppEffectCommit _commit;
     };
 };
