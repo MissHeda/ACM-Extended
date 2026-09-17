@@ -89,6 +89,7 @@ private _hyp = 0;
 private _low = 0;
 private _co2 = 0;
 private _ket = 0;
+private _ketWetReal = 0;
 private _syn = 0;
 
 if (_enabled && {alive _u} && {_physReady}) then {
@@ -119,6 +120,10 @@ if (_enabled && {alive _u} && {_physReady}) then {
         if (_k isEqualType 0 && {finite _k} && {_k > 0}) then {
             _ket = [(_k - (missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.35])) /
                 (((missionNamespace getVariable ["ACME_visualFx_ketamineFull",1.15]) - (missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.35])) max 0.01)] call _clamp;
+            // The water/dissociation cue should begin before the stronger blur/chromatic profile. Medication counts
+            // already include route onset/washout, so this remains pharmacology-driven rather than dose-button-driven.
+            _ketWetReal = [(_k - (missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05])) /
+                (((missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",1.15]) - (missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05])) max 0.01)] call _clamp;
         };
     };
     _syn = ((_low * 0.75) + (_hyp * 0.35)) min 1;
@@ -133,14 +138,15 @@ if (_enabled && {alive _u}) then {
 };
 
 if (!_enabled || {!alive _u}) then {
-    _hyp = 0; _low = 0; _co2 = 0; _ket = 0; _syn = 0;
+    _hyp = 0; _low = 0; _co2 = 0; _ket = 0; _ketWetReal = 0; _syn = 0;
     _dbgHyp = 0; _dbgLow = 0; _dbgCO2 = 0; _dbgKet = 0; _dbgSyn = 0;
 };
 
 // Deterministic debug profiles. These are intentionally more obvious than the continuous physiologic thresholds so
 // an instructor can verify every layer from the medical menu without guessing whether an effect actually changed.
-private _ketWetPhys = if (_dbgKet > 0) then {0} else {if (_ket > 0.001) then {0.38 + (0.62 * _ket)} else {0}};
-// Debug ketamine owns a dedicated late wet pass below, so do not double-stack it into the shared wet mixer.
+// Ketamine owns the dedicated late wet pass below for BOTH medication-driven and debug effects. Keeping it out
+// of this shared shock/CO2 pass prevents blur ordering and mixed-state profiles from hiding the water displacement.
+private _ketWetPhys = 0;
 private _ketWetDebug = 0;
 private _shockWetPhys = if (_low > 0.20) then {linearConversion [0.20,1,_low,0.20,0.88,true]} else {0};
 private _shockWetDebug = [0,0.28,0.62,0.96] param [_dbgLow,0];
@@ -194,18 +200,16 @@ if (_wet >= 0) then {
         private _signature = [_dist,_ket,_low,_co2,_dbgKet,_dbgLow,_dbgCO2];
         private _changed = _forceWet || {!(_lastWet isEqualTo _signature)};
         if (_changed) then {
-            private _ketMix = (_ket max 0) min 1;
+            private _ketMix = 0;
             private _shockMix = (_low max 0) min 1;
             private _co2Mix = (_co2 max 0) min 1;
-            private _speedBias = ((_ketMix * 0.72) + (_shockMix * 0.28) + (_co2Mix * 0.18)) min 1;
+            private _speedBias = ((_shockMix * 0.36) + (_co2Mix * 0.22)) min 1;
 
             // Explicit debug amplification.  Mild remains obvious; Moderate is ~2.3x the mild wave gain and Severe
             // ~4x. Shock and hypercapnia have their own slower/smaller gains and can combine with ketamine.
-            private _ketGain = [1.00,1.35,3.10,5.40] param [_dbgKet,1.00];
-            if (_dbgKet <= 0 && {_ket > 0.001}) then {_ketGain = 1.00 + (1.75 * _ket);};
             private _shockGain = [1.00,1.15,1.75,2.55] param [_dbgLow,1.00];
             private _co2Gain = [1.00,1.05,1.35,1.80] param [_dbgCO2,1.00];
-            private _waveGain = _ketGain max _shockGain max _co2Gain;
+            private _waveGain = _shockGain max _co2Gain;
             private _amp = _dist;
 
             _wet ppEffectAdjust [
@@ -231,29 +235,50 @@ if (_wet >= 0) then {
     };
 };
 
-// Dedicated ketamine debug wet distortion. Explicit profiles avoid tier-to-tier multiplier ambiguity and this
-// effect renders after DynamicBlur, making the water displacement remain plainly visible at Moderate and Severe.
+// Dedicated late ketamine WetDistortion for BOTH real medication and debug testing. Debug tiers use explicit
+// profiles; real ketamine interpolates continuously from the subtle Mild-like wave to the tuned Severe profile.
+// Rendering this after DynamicBlur prevents the blur layer from visually washing out the displacement.
 if (_ketWetDebugHandle >= 0) then {
-    if (_dbgKet <= 0 || {!_enabled} || {!alive _u}) then {
+    private _ketWetRequested = (_dbgKet > 0) || {_ketWetReal > 0.001};
+    if (!_ketWetRequested || {!_enabled} || {!alive _u}) then {
         _ketWetDebugHandle ppEffectEnable false;
-        uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",-1];
+        uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[]];
     } else {
         _ketWetDebugHandle ppEffectEnable true;
-        private _lastKetWetTier = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",-1];
-        if (_forceAll || {_lastKetWetTier != _dbgKet}) then {
-            // Keep Mild close to the original ACME water profile, just slightly stronger. Moderate and Severe
-            // remain clearly progressive without the exaggerated displacement used by the previous hotfix.
-            private _profile = switch (_dbgKet) do {
-                case 1: {[1,1,1,4.20,3.80,2.62,1.96,0.0059,0.0045,0.0115,0.0088,0.52,0.32,10.2,6.1]};
-                case 2: {[1,1,1,4.55,4.05,2.95,2.25,0.0070,0.0052,0.0155,0.0116,0.58,0.38,10.6,6.4]};
-                case 3: {[1,1,1,4.95,4.35,3.30,2.55,0.0084,0.0062,0.0210,0.0155,0.64,0.44,11.0,6.8]};
-                default {[1,1,1,4.10,3.70,2.50,1.85,0.0054,0.0041,0.0090,0.0070,0.50,0.30,10.0,6.0]};
+        private _realStep = (round (_ketWetReal * 100)) / 100;
+        private _signature = [_dbgKet,_realStep];
+        private _lastKetWet = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",[]];
+        if (_forceAll || {!(_lastKetWet isEqualTo _signature)}) then {
+            private _profile = if (_dbgKet > 0) then {
+                switch (_dbgKet) do {
+                    case 1: {[1,1,1,4.20,3.80,2.62,1.96,0.0059,0.0045,0.0115,0.0088,0.52,0.32,10.2,6.1]};
+                    case 2: {[1,1,1,4.55,4.05,2.95,2.25,0.0070,0.0052,0.0155,0.0116,0.58,0.38,10.6,6.4]};
+                    case 3: {[1,1,1,4.95,4.35,3.30,2.55,0.0084,0.0062,0.0210,0.0155,0.64,0.44,11.0,6.8]};
+                    default {[1,1,1,4.10,3.70,2.50,1.85,0.0054,0.0041,0.0090,0.0070,0.50,0.30,10.0,6.0]};
+                }
+            } else {
+                private _k = _ketWetReal max 0 min 1;
+                [
+                    1,1,1,
+                    4.05 + (0.90*_k),
+                    3.68 + (0.67*_k),
+                    2.48 + (0.82*_k),
+                    1.84 + (0.71*_k),
+                    0.0054 + (0.0030*_k),
+                    0.0041 + (0.0021*_k),
+                    0.0094 + (0.0116*_k),
+                    0.0072 + (0.0083*_k),
+                    0.50 + (0.14*_k),
+                    0.30 + (0.14*_k),
+                    10.0 + (1.0*_k),
+                    6.0 + (0.8*_k)
+                ]
             };
             _ketWetDebugHandle ppEffectAdjust _profile;
-            _ketWetDebugHandle ppEffectCommit 0.08;
-            uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",_dbgKet];
+            _ketWetDebugHandle ppEffectCommit (if (_dbgKet > 0) then {0.08} else {0.30});
+            uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",_signature];
         };
-        // Do not trust cached PP state. Reassert enable every controller tick for the full non-zero debug cycle.
+        // Assert the real engine state every tick for the full medication/debug exposure.
         _ketWetDebugHandle ppEffectEnable true;
     };
 };
@@ -261,21 +286,23 @@ if (_ketWetDebugHandle >= 0) then {
 // Moderate/Severe ketamine get a slow zoom-like optical push. This deliberately stays subtle; its job is to make
 // the scene feel as if it is gradually closing in, not to create another tunnel-vision effect.
 if (_ketZoom >= 0) then {
-    if (_dbgKet < 2 || {!_enabled} || {!alive _u}) then {
+    private _realZoomTier = if (_ketWetReal >= 0.78) then {3} else {if (_ketWetReal >= 0.45) then {2} else {0}};
+    private _zoomTier = _dbgKet max _realZoomTier;
+    if (_zoomTier < 2 || {!_enabled} || {!alive _u}) then {
         _ketZoom ppEffectEnable false;
         uiNamespace setVariable ["ACME_VFX_KetZoomLast",-1];
     } else {
         _ketZoom ppEffectEnable true;
         private _lastKetZoomTier = uiNamespace getVariable ["ACME_VFX_KetZoomLast",-1];
-        if (_forceAll || {_lastKetZoomTier != _dbgKet}) then {
-            private _zoomProfile = if (_dbgKet >= 3) then {
+        if (_forceAll || {_lastKetZoomTier != _zoomTier}) then {
+            private _zoomProfile = if (_zoomTier >= 3) then {
                 [0.0050,0.0050,0.125,0.125]
             } else {
                 [0.0030,0.0030,0.155,0.155]
             };
             _ketZoom ppEffectAdjust _zoomProfile;
-            _ketZoom ppEffectCommit (if (_dbgKet >= 3) then {5.5} else {6.5});
-            uiNamespace setVariable ["ACME_VFX_KetZoomLast",_dbgKet];
+            _ketZoom ppEffectCommit (if (_zoomTier >= 3) then {5.5} else {6.5});
+            uiNamespace setVariable ["ACME_VFX_KetZoomLast",_zoomTier];
         };
         _ketZoom ppEffectEnable true;
     };
