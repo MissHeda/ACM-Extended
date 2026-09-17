@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Local-only ACME perception mixer.
  *
  * Physiology contributes continuous magnitudes. Debug actions contribute deterministic local tiers. One controller
@@ -314,17 +314,17 @@ _blurV = _blurV max _dbgBlur;
 private _ketChromReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
-        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000034,true];
+        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000042,true];
     } else {
         if (_ketDoseNorm <= 0.45) then {
-            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000034,0.00040,true];
+            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000042,0.00046,true];
         } else {
-            _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00042,0.0038,true];
+            _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00048,0.0038,true];
         };
     };
 };
 if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicChromEnvelope;};
-private _dbgKetChrom = ([0,0.000055,0.00058,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
+private _dbgKetChrom = ([0,0.000070,0.00064,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
 // Slow pulse + damped vibration tail. Dose owns magnitude; modulation is noticeable again without becoming a
 // second stacked chromatic effect.
@@ -343,8 +343,8 @@ if (_chromCycleT < 0.52) then {
 };
 // With ACM's duplicate ketamine chromatic pass suppressed, restore a perceptible pulse without making the RGB split
 // dominant. Low doses get a larger RELATIVE pulse on a very small base; high-dose modulation tapers down.
-private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.085,0.035,true];
-private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.022,0.010,true];
+private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.110,0.045,true];
+private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.028,0.012,true];
 private _ketChromX = _ketChromRaw * (1 + (_chromPulseGain * _chromPulse) + (_chromVibeGain * _chromVibe));
 private _ketChromY = (_ketChromRaw * 0.62) * (1 + ((_chromPulseGain * 0.72) * _chromPulse) - ((_chromVibeGain * 0.78) * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;
@@ -490,12 +490,12 @@ if (_ketWetDebugHandle >= 0) then {
         private _f3 = [_k,0.94,1.08,1.15,1.22] call _tierLerp;
         private _f4 = [_k,0.68,0.79,0.84,0.90] call _tierLerp;
 
-        // Mild/Moderate/Severe are slightly more visible than the prior tune, but all move more slowly. A low real
-        // dose remains below the Mild control point and gains visibility through the raised low/mid dose curve.
-        private _a1 = [_k,0.0000,0.0047,0.0058,0.0069] call _tierLerp;
-        private _a2 = [_k,0.0000,0.0035,0.0045,0.0054] call _tierLerp;
-        private _a3 = [_k,0.0000,0.0092,0.0120,0.0154] call _tierLerp;
-        private _a4 = [_k,0.0000,0.0068,0.0090,0.0116] call _tierLerp;
+        // Bias ketamine toward horizontal visual drift with a smaller vertical component. This feels less like
+        // generic underwater bobbing and more like altered lateral swimming/perceptual slippage.
+        private _a1 = [_k,0.0000,0.0066,0.0081,0.0098] call _tierLerp;
+        private _a2 = [_k,0.0000,0.0049,0.0061,0.0072] call _tierLerp;
+        private _a3 = [_k,0.0000,0.0041,0.0051,0.0062] call _tierLerp;
+        private _a4 = [_k,0.0000,0.0030,0.0038,0.0046] call _tierLerp;
         private _phase1 = [_k,0.40,0.46,0.50,0.54] call _tierLerp;
         private _phase2 = [_k,0.24,0.27,0.30,0.33] call _tierLerp;
         private _tail1 = [_k,9.0,9.4,9.7,10.0] call _tierLerp;
