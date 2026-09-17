@@ -21,8 +21,13 @@ ACME_visualFx_ketamineModerateGeneralOut = 0.060;
 // low/mid curve is raised enough that the slow swimming motion remains perceptible before high dissociative doses.
 ACME_visualFx_ketamineWetStart = 0.05;
 ACME_visualFx_ketamineWetFull = 0.82;
-ACME_visualFx_ketamineLowWetOut = 0.040;
-ACME_visualFx_ketamineModerateWetOut = 0.205;
+ACME_visualFx_ketamineLowWetOut = 0.065;
+ACME_visualFx_ketamineModerateWetOut = 0.215;
+// Analgesic/sub-dissociative perception is intentionally transient. New ketamine medication events refresh the
+// five-minute window, and the low-dose visual envelope slowly waxes/wanes rather than staying continuously obvious.
+ACME_visualFx_ketamineAnalgesicMax = 0.22;
+ACME_visualFx_ketamineAnalgesicWindowSec = 300;
+ACME_visualFx_ketamineAnalgesicWaveSec = 22;
 ACME_visualFx_ketamineWetRiseSec = 7.0;   // slower onset so low-dose waves develop instead of appearing abruptly
 ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
 ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on

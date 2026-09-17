@@ -8,6 +8,7 @@ def read(rel):
 def test_visual_debug_is_client_local_and_spawn_clean():
     cyc = read('functions/fn_visualFxDebugCycle.sqf')
     tick = read('functions/fn_visualFxTick.sqf')
+    post = read('functions/fn_postInit.sqf')
     assert 'uiNamespace setVariable [_key,_next]' in cyc
     assert '_patient setVariable [_key' not in cyc
     assert 'ACME_VFX_PhysReadyAt",diag_tickTime + 5.0' in tick
@@ -31,9 +32,15 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert '_chrom ppEffectAdjust [_chromX,_chromY,true];' in tick
     assert 'ACME_VFX_KetMotion' in tick
     assert 'private _ketChromReal = 0;' in tick
-    assert '0.000055' in tick
+    assert '0.000026' in tick
     assert 'private _ketVivid' in tick
     assert 'private _motionSource = _ketWetSmooth;' in tick
+    assert 'ACME_visualFx_ketamineAnalgesicWindowSec' in tick
+    assert 'ACME_VFX_KetLastDoseAt' in tick
+    assert 'ACM_core_ppAnestheticEffect_chrom' in tick
+    assert 'private _ketAnalgesicEnvelope = 1;' in tick
+    assert 'ace_medical_treatment_medicationLocal' in post
+    assert 'ACME_VFX_KetLastDoseAt' in post
 
 def test_torsades_progressively_loses_mechanical_perfusion():
     tick = read('functions/fn_rhythmTick.sqf')

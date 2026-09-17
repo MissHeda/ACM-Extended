@@ -37,6 +37,7 @@ if (_lifeChanged) then {
     uiNamespace setVariable ["ACME_VFX_KetGeneralSmooth",0];
     uiNamespace setVariable ["ACME_VFX_KetGeneralSmoothAt",diag_tickTime];
     uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[]];
+    uiNamespace setVariable ["ACME_VFX_KetLastDoseAt",-1];
     uiNamespace setVariable ["ACME_VFX_HeartPhase",0];
     uiNamespace setVariable ["ACME_VFX_HeartPhaseAt",diag_tickTime];
     uiNamespace setVariable ["ACME_VFX_ForceRefresh",true];
@@ -100,6 +101,9 @@ private _co2 = 0;
 private _ket = 0;
 private _ketWetReal = 0;
 private _ketDoseNorm = 0;
+private _ketAnalgesicActive = false;
+private _ketAnalgesicEnvelope = 1;
+private _ketAnalgesicWetEnvelope = 1;
 private _syn = 0;
 
 if (_enabled && {alive _u} && {_physReady}) then {
@@ -136,6 +140,39 @@ if (_enabled && {alive _u} && {_physReady}) then {
             private _ketInduce = (missionNamespace getVariable ["ACME_ket_induceThreshold",7]) max 0.1;
             private _kNorm = (_k / _ketInduce) max 0;
             _ketDoseNorm = _kNorm;
+
+            // ACM still owns a legacy ketamine ChromAberration pulse. ACME now owns all ketamine perception, so
+            // suppress the old handle while ketamine is on board; otherwise the two chromatic layers stack and make
+            // analgesic doses look far stronger than the ACME values below.
+            private _acmKetChrom = missionNamespace getVariable ["ACM_core_ppAnestheticEffect_chrom",-1];
+            if (_acmKetChrom isEqualType 0 && {_acmKetChrom >= 0}) then {_acmKetChrom ppEffectEnable false;};
+
+            // Analgesic/sub-dissociative visuals are intentionally transient and waxing/waning. A new ketamine dose
+            // refreshes ACME_VFX_KetLastDoseAt through the ACE medicationLocal event registered in fn_postInit.
+            // If a mission starts with ketamine already on board, begin the window when ACME first detects it.
+            private _lastKetDoseAt = uiNamespace getVariable ["ACME_VFX_KetLastDoseAt",-1];
+            if !(_lastKetDoseAt isEqualType 0 && {finite _lastKetDoseAt} && {_lastKetDoseAt >= 0}) then {
+                _lastKetDoseAt = diag_tickTime;
+                uiNamespace setVariable ["ACME_VFX_KetLastDoseAt",_lastKetDoseAt];
+            };
+            private _ketVisualAge = (diag_tickTime - _lastKetDoseAt) max 0;
+            private _analgesicMax = missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicMax",0.22];
+            _ketAnalgesicActive = _kNorm <= _analgesicMax;
+            if (_ketAnalgesicActive) then {
+                private _maxVisualSec = missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicWindowSec",300];
+                if (_ketVisualAge >= _maxVisualSec) then {
+                    // Keep pharmacology intact, but end the local perception layer after five minutes unless redosed.
+                    _ketDoseNorm = 0;
+                    _ketAnalgesicEnvelope = 0;
+                    _ketAnalgesicWetEnvelope = 0;
+                } else {
+                    private _cycle = (missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicWaveSec",22]) max 4;
+                    private _wave01 = 0.5 + (0.5 * sin (360 * ((_ketVisualAge mod _cycle) / _cycle)));
+                    // Blur/chromatic cues ebb more strongly; the water layer stays present but swells gently at peaks.
+                    _ketAnalgesicEnvelope = 0.48 + (0.52 * _wave01);
+                    _ketAnalgesicWetEnvelope = 0.78 + (0.32 * _wave01);
+                };
+            };
             // Real-dose perception uses a deliberately bottom-heavy response curve.  A small analgesic exposure
             // (~0.25 mg/kg IV, e.g. 0.4 mL of 50 mg/mL in a ~79 kg casualty) should be barely perceptible, not a
             // miniature dissociative state.  Moderate exposure reaches roughly the OLD low-dose visual level, while
@@ -170,9 +207,20 @@ if (_enabled && {alive _u} && {_physReady}) then {
                 _lowIn,
                 _midIn,
                 missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",0.82],
-                missionNamespace getVariable ["ACME_visualFx_ketamineLowWetOut",0.040],
-                missionNamespace getVariable ["ACME_visualFx_ketamineModerateWetOut",0.205]
+                missionNamespace getVariable ["ACME_visualFx_ketamineLowWetOut",0.065],
+                missionNamespace getVariable ["ACME_visualFx_ketamineModerateWetOut",0.215]
             ] call _curve;
+
+            if (_ketAnalgesicActive) then {
+                if (_ketAnalgesicEnvelope <= 0) then {
+                    _ket = 0;
+                    _ketWetReal = 0;
+                } else {
+                    _ket = _ket * _ketAnalgesicEnvelope;
+                    // Slightly more obvious analgesic water movement, but still below the authored Mild debug point.
+                    _ketWetReal = (_ketWetReal * _ketAnalgesicWetEnvelope) min 0.30;
+                };
+            };
         };
     };
     _syn = ((_low * 0.75) + (_hyp * 0.35)) min 1;
@@ -229,21 +277,22 @@ private _dist = (_ketWetPhys max _ketWetDebug max _shockWetPhys max _shockWetDeb
 private _ketBlurReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
-        _ketBlurReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.060,true];
+        _ketBlurReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.028,true];
     } else {
         if (_ketDoseNorm <= 0.45) then {
-            _ketBlurReal = linearConversion [0.18,0.45,_ketDoseNorm,0.060,0.145,true];
+            _ketBlurReal = linearConversion [0.18,0.45,_ketDoseNorm,0.028,0.135,true];
         } else {
             _ketBlurReal = linearConversion [0.45,0.82,_ketDoseNorm,0.145,0.48,true];
         };
     };
 };
+if (_ketAnalgesicActive) then {_ketBlurReal = _ketBlurReal * _ketAnalgesicEnvelope;};
 private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.20)+(_syn*1.00)) min 2.6;
 _blurV = _blurV max _ketBlurReal;
 // Debug ketamine mirrors dose bands: Mild stays subtle, Moderate is clearly altered, Severe owns the strong state.
 private _dbgKetTargetMag = [_dbgKet] call _dbgMag;
 private _dbgKetEnvelope = if (_dbgKet > 0 && {_dbgKetTargetMag > 0.001}) then {(_ket / _dbgKetTargetMag) min 1} else {0};
-private _dbgKetBlur = ([0,0.075,0.18,0.50] param [_dbgKet,0]) * _dbgKetEnvelope;
+private _dbgKetBlur = ([0,0.050,0.18,0.50] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
     max ([0,0.28,0.82,1.55] param [_dbgLow,0])
     max ([0,0.40,1.05,1.80] param [_dbgCO2,0])
@@ -256,16 +305,17 @@ _blurV = _blurV max _dbgBlur;
 private _ketChromReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
-        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000055,true];
+        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000026,true];
     } else {
         if (_ketDoseNorm <= 0.45) then {
-            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000055,0.00042,true];
+            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000026,0.00036,true];
         } else {
             _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00042,0.0038,true];
         };
     };
 };
-private _dbgKetChrom = ([0,0.000085,0.00055,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
+if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicEnvelope;};
+private _dbgKetChrom = ([0,0.000045,0.00055,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
 // Slow pulse + very small damped vibration tail.  Dose owns magnitude; modulation is intentionally restrained so
 // low-dose diplopia is perceptible at edges but never reads as a psychedelic RGB split.
@@ -282,8 +332,8 @@ if (_chromCycleT < 0.48) then {
         _chromVibe = (sin (_tailT * 360 * 5.0)) * _tailFade;
     };
 };
-private _ketChromX = _ketChromRaw * (1 + (0.012 * _chromPulse) + (0.010 * _chromVibe));
-private _ketChromY = (_ketChromRaw * 0.62) * (1 + (0.009 * _chromPulse) - (0.008 * _chromVibe));
+private _ketChromX = _ketChromRaw * (1 + (0.007 * _chromPulse) + (0.006 * _chromVibe));
+private _ketChromY = (_ketChromRaw * 0.62) * (1 + (0.005 * _chromPulse) - (0.005 * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;
 private _chromX = (_ketChromX + _hypChrom) min 0.010;
 private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.007;
@@ -304,7 +354,8 @@ private _ketVividReal = if (_ketDoseNorm <= 0.05) then {0} else {
         }
     }
 };
-private _ketVividDebug = [0,0.20,0.55,1.00] param [_dbgKet,0];
+if (_ketAnalgesicActive) then {_ketVividReal = _ketVividReal * (0.72 + (0.28 * _ketAnalgesicEnvelope));};
+private _ketVividDebug = [0,0.16,0.55,1.00] param [_dbgKet,0];
 private _ketVivid = (_ketVividReal max (_ketVividDebug * _dbgKetEnvelope)) min 1;
 
 private _tunnelSource = (_syn max _low max (_hyp*0.85));
@@ -540,7 +591,7 @@ if (_tunnel >= 0) then {
 };
 
 if (_chrom >= 0) then {
-    if (_chromV <= 0.00005) then {_chrom ppEffectEnable false;} else {
+    if (_chromV <= 0.000008) then {_chrom ppEffectEnable false;} else {
         _chrom ppEffectEnable true;
         _chrom ppEffectAdjust [_chromX,_chromY,true];
         // Follow the authored pulse/vibration waveform directly. A long commit here would smear the short tail and
