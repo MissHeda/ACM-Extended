@@ -106,10 +106,10 @@ private _settings = [
     // ratio the stick is judged on is identical at every size. a bigger arm is easier to AIM at with a mouse
     // and is exactly as hard clinically.
     [
-        "ACME_iv_uiScaleV2", "SLIDER",
-        ["IV panel: panel size", "1.0 is the former 1.6 setting's displayed limb size. Minimum preserves the former 1.0 size; maximum is 50% larger than the new default. Use Up/Down arrows to pan an enlarged limb. Targets and placed items scale together; tray controls remain on screen. Takes effect the next time the panel opens."],
+        "ACME_iv_uiScaleV3", "SLIDER",
+        ["IV panel: panel size", "1.0 is now the former 1.10 panel size. Minimum preserves the previous absolute minimum; maximum remains 50% larger than the new default. Use Up/Down arrows to pan an enlarged limb. Targets and placed items scale together; tray controls remain on screen. Takes effect the next time the panel opens."],
         [_cIV, "Mini-game panel"],
-        [0.7135135135, 1.5, 1, 2], 0, {}
+        [0.6486486486, 1.5, 1, 2], 0, {}
     ],
     [
         "ACME_iv_trayIconBias", "SLIDER",

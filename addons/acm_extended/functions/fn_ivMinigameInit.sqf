@@ -135,20 +135,21 @@ uiNamespace setVariable ["ACME_IV_AspectFix", _af];
 // The body rect: a framed limb, centered.
 private _szX = safeZoneX; private _szY = safeZoneY; private _szW = safeZoneW; private _szH = safeZoneH;
 private _cx = _szX + (_szW / 2);
-// ACME_iv_uiScaleV2 enlarges the limb. it CANNOT change the difficulty, and that is by construction rather than by
+// ACME_iv_uiScaleV3 enlarges the limb. it CANNOT change the difficulty, and that is by construction rather than by
 // care: fn_ivVeinDist returns its distance in BODY-WIDTH FRACTIONS, and fn_ivSiteDifficulty returns feel and hit
 // radii in the same fractions. the vein, the tolerance and the safe radii all scale with the rect together, so
 // the ratio the stick is judged on is identical at any size. what does change is pixels per fraction, so the
 // same tolerance covers more screen and is easier to aim at with a mouse. that is the point of making it bigger.
-// B34's versioned preference resets old saved scales once. New 1.0 is the
-// ACTUAL old 1.6 display height after its screen-fit clamp (0.925 safezoneH).
-// The minimum exactly preserves the old 1.0 height, and 1.5 truly enlarges it.
+// V3 rebases the user-facing scale: new 1.00 is exactly the former 1.10 visual size.
+// A new setting key intentionally resets saved V2 preferences so an old saved 1.10 does not become 1.21.
+// The lower setting limit is reduced by the same factor so the previous absolute minimum remains available.
 // Geometry, input, marks and instruments all read this one body rectangle.
-private _zoom = missionNamespace getVariable ["ACME_iv_uiScaleV2", 1];
-if (!(_zoom isEqualType 0) || {!finite _zoom}) then {_zoom = 1;};
-_zoom = (_zoom max (0.66 / 0.925)) min 1.5;
-// Match the old tray at both retained endpoints; above baseline it grows with
-// the patient. Its independent fit always keeps the final tray slot reachable.
+private _zoomSetting = missionNamespace getVariable ["ACME_iv_uiScaleV3", 1];
+if (!(_zoomSetting isEqualType 0) || {!finite _zoomSetting}) then {_zoomSetting = 1;};
+_zoomSetting = (_zoomSetting max ((0.66 / 0.925) / 1.10)) min 1.5;
+private _zoom = _zoomSetting * 1.10;
+// Match the old tray at the preserved minimum and then grow with the same physical
+// scale as the patient. Its independent fit always keeps the final tray slot reachable.
 private _k = if (_zoom < 1) then {
     linearConversion [0.66 / 0.925, 1, _zoom, 1, 1.6, true]
 } else {1.6 * _zoom};
@@ -196,7 +197,7 @@ if (!(missionNamespace getVariable ["ACME_ui_helpText", false])) then { (_displa
 // worst kind of thing to leave behind.
 private _rows  = 6;  // band, pad, 14g, 16g, 18g, 20g.
 if (missionNamespace getVariable ["ACME_iv_lineSlot", false]) then { _rows = 7; };
-// the tray takes the SAME scale the limb takes, so ACME_iv_uiScaleV2 grows the panel as one thing rather than
+// the tray takes the SAME physical scale the limb takes, so ACME_iv_uiScaleV3 grows the panel as one thing rather than
 // growing the casualty and leaving the instruments the size they were. the fit check below still shrinks the
 // column when it does not fit the screen height, so a large scale on a short screen degrades instead of
 // overflowing.
