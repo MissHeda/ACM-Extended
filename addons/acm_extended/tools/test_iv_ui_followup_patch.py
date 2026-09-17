@@ -49,6 +49,10 @@ def test_tray_rotation_hover_splay_and_spear_sound():
     assert 'ACME_fnc_ivTrayHover' in i
     assert "(_count min 5)" in h
     assert "_count > 5" in h
+    assert "private _liveSlot = ctrlPosition _bg;" in h
+    assert "private _fanW = _sw * 0.88;" in h
+    assert "private _px = _sx + _sw - _pw - (_sw * 0.035);" in h
+    assert "[-0.030, 0.045, -100]" in h
     assert "['band','pad']" in h
     assert 'playSound "ACME_NARSPEAR_Open"' in g
     assert 'class ivTrayHover {};' in c
