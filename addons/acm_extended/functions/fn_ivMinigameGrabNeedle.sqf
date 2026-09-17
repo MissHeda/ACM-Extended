@@ -2,6 +2,7 @@
 // switch. it recomputes the stick difficulty for the gauge, and grabbing plays the catheter uncap and peel sfx,
 // ACME_IVUncap.
 params [["_gauge", 16]];
+["needle",_gauge,false] call ACME_fnc_ivTrayHover;  // collapse the fan immediately on pickup/return.
 // Keep the active catheter in control until it is completed or this face is suspended.
 if ((uiNamespace getVariable ["ACME_IV_InsStage", ""]) in ["advance", "thread", "retract"]) exitWith {};
 private _dlg = uiNamespace getVariable ["ACME_IV_DLG", displayNull];
@@ -42,5 +43,5 @@ uiNamespace setVariable ["ACME_IV_MaxHot", _maxHot];
 
 // the grab sound: the catheter un-cap and peel.
 uiNamespace setVariable ["ACME_IV_NeedleFrame", ""];  // start straight; tick tilts it by off-center
-playSound "ACME_IVUncap";
+playSound "ACME_NARSPEAR_Open";
 [] call ACME_fnc_ivMinigameRefreshBandSlot;

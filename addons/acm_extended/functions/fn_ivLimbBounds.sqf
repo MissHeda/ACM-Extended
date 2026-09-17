@@ -372,6 +372,10 @@ private _profile = switch (toLower _bodyPart) do {
     default {[]};
 };
 if (count _profile < 2) exitWith {[]};
+// EJ punctures are intentionally limited to the lateral neck/trapezius window shown in the reference art:
+// inferior to the chin and superior to the clavicles. The alpha silhouette still supplies the row's left/right
+// edge, so face, upper chest and transparent canvas remain invalid even though they share the same background.
+if ((toLower _bodyPart) == "ej" && {(_v < 0.420) || {_v > 0.590}}) exitWith {[]};
 if (_v < ((_profile select 0) select 0) || {_v > ((_profile select ((count _profile) - 1)) select 0)}) exitWith {[]};
 private _index = _profile findIf {(_x select 0) >= _v};
 if (_index <= 0) exitWith {(_profile select 0) select [1,2]};

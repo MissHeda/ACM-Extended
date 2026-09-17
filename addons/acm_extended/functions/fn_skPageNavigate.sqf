@@ -45,7 +45,19 @@ if (_target == "transfuse") exitWith {
     [{params ["_p","_part"]; [ACE_player,_p,_part] call ACM_circulation_fnc_openTransfusionMenu;},[_patient,_part]] call CBA_fnc_execNextFrame;
 };
 
-// Coming from Transfuse: open the normal Narc Box once, then land on the requested page.
+// Coming from Transfuse: this is explicitly a NORMAL Narc Box / Body Map open, never an infusion-prep reopen.
+// A prepared infusion is already stored in its prepared-set record; ACME_infusion_pendingContext is only the
+// temporary syringe-into-bag editor context. If that context survives the close/reopen race, fn_skInject marks
+// the new display as ACME_SK_Return and fn_skSetView immediately forces the bag-injection page back on screen.
 uiNamespace setVariable ["ACME_SK_RequestedView",_target];
+ACME_infusion_pendingContext = nil;
+missionNamespace setVariable ["ACME_infusion_bagTally", []];
 closeDialog 0;
-[{params ["_p","_part"]; [uiNamespace getVariable ["ACME_SK_CurSize",10],_p,_part] call ACME_fnc_skOpenDraw;},[_patient,_part]] call CBA_fnc_execNextFrame;
+[{
+    params ["_p","_part"];
+    // Clear again on the next frame so an unload handler from the previous dialog cannot restore stale prep state
+    // between the button click and creation of the normal Narc Box.
+    ACME_infusion_pendingContext = nil;
+    missionNamespace setVariable ["ACME_infusion_bagTally", []];
+    [uiNamespace getVariable ["ACME_SK_CurSize",10],_p,_part] call ACME_fnc_skOpenDraw;
+},[_patient,_part]] call CBA_fnc_execNextFrame;

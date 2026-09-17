@@ -108,7 +108,7 @@ if (!isNull _patient && {_bp in ["leftarm", "rightarm", "leftleg", "rightleg"]})
     if (_mbp == _bp && {_mview == _view}) then {
         // A persistent venous track mark sits below the current hub/bruise/hole.  Repeated attempts at the
         // same tier intensify it, while the authored +/-15-degree families follow the catheter approach.
-        if (_bp in ["leftarm", "rightarm", "leftleg", "rightleg"] && {_mgauge > 0} && {_mkind in ["hub", "removed", "miss"]}) then {
+        if (_bp in ["leftarm", "rightarm", "leftleg", "rightleg"] && {_mgauge > 0} && {_mkind in ["removed", "miss"]}) then {
             private _mSite = toLower (_x param [10, ""]);
             private _trackKey = format ["%1:%2:%3", _mSite, round (_mu * 1000), round (_mv * 1000)];
             if !(_trackKey in _trackKeys) then {

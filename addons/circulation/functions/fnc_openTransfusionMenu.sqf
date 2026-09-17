@@ -108,6 +108,19 @@ if (!isNull _display && {!isNil "ACME_fnc_skPageNavigate"}) then {
     private _y = safeZoneY + (safeZoneH / 1.08);
     private _lx = (_uiX + (_uiW/2)) - (_gap/2) - _w;
     private _rx = (_uiX + (_uiW/2)) + (_gap/2);
+    // Same pulsing blue backing used by the Narc Box page buttons. The actual buttons remain transparent.
+    private _pulse0 = ["info",0.52] call ACME_fnc_a11yColor;
+    private _lbBack = _display ctrlCreate ["RscText",86952];
+    _lbBack ctrlSetPosition [_lx,_y,_w,_h];
+    _lbBack ctrlSetBackgroundColor _pulse0;
+    _lbBack ctrlEnable false;
+    _lbBack ctrlCommit 0;
+    private _rbBack = _display ctrlCreate ["RscText",86953];
+    _rbBack ctrlSetPosition [_rx,_y,_w,_h];
+    _rbBack ctrlSetBackgroundColor _pulse0;
+    _rbBack ctrlEnable false;
+    _rbBack ctrlCommit 0;
+
     private _lb = _display ctrlCreate ["ACME_TX_PageButton",86950];
     _lb ctrlSetPosition [_lx,_y,_w,_h];
     _lb ctrlSetText "< Body Map";
@@ -152,6 +165,14 @@ private _inVehicle = !(isNull objectParent ACE_player);
         GVAR(TransfusionMenu_Target) = objNull;
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
+
+    // Keep the Transfuse page buttons visually identical to Narc Box / Body Map: same accessibility blue and
+    // same live pulse. Backings own the color so focused/pressed button states cannot darken it.
+    private _navPulse = ["info", 0.30 + 0.45 * (0.5 + 0.5 * sin (diag_tickTime * 220))] call ACME_fnc_a11yColor;
+    {
+        private _pc = _display displayCtrl _x;
+        if (!isNull _pc) then {_pc ctrlSetBackgroundColor _navPulse;};
+    } forEach [86952,86953];
 
     private _ctrlTourniquetLeftArm = _display displayCtrl IDC_TRANSFUSIONMENU_BG_TOURNIQUET_LEFTARM;
     private _ctrlTourniquetRightArm = _display displayCtrl IDC_TRANSFUSIONMENU_BG_TOURNIQUET_RIGHTARM;

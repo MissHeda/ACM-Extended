@@ -226,6 +226,8 @@ private _bandY = _colY;
 (_display displayCtrl 86533) ctrlSetPosition [_colX, _bandY + _slotH, _slotW, _lblH]; (_display displayCtrl 86533) ctrlCommit 0;  // the BAND label.
 (_display displayCtrl 86532) ctrlSetPosition [_colX, _bandY, _slotW, _slotH]; (_display displayCtrl 86532) ctrlCommit 0;
 uiNamespace setVariable ["ACME_IV_BandSlotRect", [_colX, _bandY, _slotW, _slotH]];
+(_display displayCtrl 86532) ctrlAddEventHandler ["MouseEnter", {["band",0,true] call ACME_fnc_ivTrayHover;}];
+(_display displayCtrl 86532) ctrlAddEventHandler ["MouseExit",  {["band",0,false] call ACME_fnc_ivTrayHover;}];
 
 // the pad slot, row 1.
 private _padY = _colY + _step;
@@ -234,6 +236,8 @@ private _padY = _colY + _step;
 (_display displayCtrl 86538) ctrlSetPosition [_colX, _padY + _slotH, _slotW, _lblH]; (_display displayCtrl 86538) ctrlCommit 0;  // the PAD label.
 (_display displayCtrl 86537) ctrlSetPosition [_colX, _padY, _slotW, _slotH]; (_display displayCtrl 86537) ctrlCommit 0;
 uiNamespace setVariable ["ACME_IV_PadSlotRect", [_colX, _padY, _slotW, _slotH]];
+(_display displayCtrl 86537) ctrlAddEventHandler ["MouseEnter", {["pad",0,true] call ACME_fnc_ivTrayHover;}];
+(_display displayCtrl 86537) ctrlAddEventHandler ["MouseExit",  {["pad",0,false] call ACME_fnc_ivTrayHover;}];
 
 // hide the old needle header, which is unused now.
 (_display displayCtrl 86539) ctrlShow false;
@@ -243,10 +247,10 @@ uiNamespace setVariable ["ACME_IV_PadSlotRect", [_colX, _padY, _slotW, _slotH]];
 // margins overflow harmlessly. the supercath art is about three times longer than the art this scale was first
 // set for, at 6.0, which is why the needles hung out of the tray.
 // the old art was 0.104 of its canvas tall and drew at 6.0, so it filled 0.62 of the box. the straight supercath
-// frame is 0.307 of its canvas, so 2.03 reproduces exactly the size the tray used to look right at.
-// tune it with ACME_iv_trayIconScale.
+// frame is 0.307 of its canvas. The catheter is rotated 90 degrees left for the tray and enlarged to use the
+// available slot width; tune it with ACME_iv_trayIconScale.
 private _nY0 = _colY + (_step * 2);
-private _iconScale = missionNamespace getVariable ["ACME_iv_trayIconScale", 2.03];
+private _iconScale = missionNamespace getVariable ["ACME_iv_trayIconScale", 2.45];
 private _gauges = [[86540,86541,86542,86543,14], [86544,86545,86546,86547,16], [86548,86549,86550,86551,18],
                    [86556,86557,86558,86559,20]];
 private _needleRects = [];
@@ -262,10 +266,17 @@ private _needleRects = [];
     if (!(_iconBias isEqualType 0) || {!finite _iconBias}) then { _iconBias = 0.34 };
     private _iconY = _ry + (_slotH * ((_iconBias max 0) min 1)) - (_iconH / 2);
     (_display displayCtrl _bgIdc) ctrlSetPosition [_colX, _ry, _slotW, _slotH]; (_display displayCtrl _bgIdc) ctrlCommit 0;
-    (_display displayCtrl _logoIdc) ctrlSetPosition [_iconX, _iconY, _iconW, _iconH]; (_display displayCtrl _logoIdc) ctrlCommit 0;
+    private _logo = _display displayCtrl _logoIdc;
+    _logo ctrlSetPosition [_iconX, _iconY, _iconW, _iconH];
+    _logo ctrlSetAngle [-90,0.5,0.5,false];
+    _logo ctrlCommit 0;
     (_display displayCtrl _lblIdc) ctrlSetPosition [_colX, _ry + _slotH, _slotW, _lblH]; (_display displayCtrl _lblIdc) ctrlCommit 0;
-    (_display displayCtrl _clickIdc) ctrlSetPosition [_colX, _ry, _slotW, _slotH]; (_display displayCtrl _clickIdc) ctrlCommit 0;
-    _needleRects pushBack [_g, [_colX, _ry, _slotW, _slotH]];
+    private _click = _display displayCtrl _clickIdc;
+    _click ctrlSetPosition [_colX, _ry, _slotW, _slotH];
+    _click ctrlCommit 0;
+    _click ctrlAddEventHandler ["MouseEnter", compile format ["['needle',%1,true] call ACME_fnc_ivTrayHover",_g]];
+    _click ctrlAddEventHandler ["MouseExit",  compile format ["['needle',%1,false] call ACME_fnc_ivTrayHover",_g]];
+    _needleRects pushBack [_g, [_colX, _ry, _slotW, _slotH], [_iconX,_iconY,_iconW,_iconH], _logoIdc];
 } forEach _gauges;
 uiNamespace setVariable ["ACME_IV_NeedleRects", _needleRects];
 
@@ -412,7 +423,7 @@ _display displayAddEventHandler ["KeyDown", {
 
 // the hold, palpate and wipe state.
 uiNamespace setVariable ["ACME_IV_Dragging", false];
-uiNamespace setVariable ["ACME_IV_StripHalf", ([0.045, 0.080] select _isEJ)];  // EJ spans the usable lateral neck from below the jaw to just above the clavicle.
+uiNamespace setVariable ["ACME_IV_StripHalf", ([0.045, 0.085] select _isEJ)];  // EJ spans below the chin through the lateral neck/traps, stopping above the clavicles.
 uiNamespace setVariable ["ACME_IV_Palpated", false];
 uiNamespace setVariable ["ACME_IV_PalpTimer", 0];
 uiNamespace setVariable ["ACME_IV_Cleaned", false];

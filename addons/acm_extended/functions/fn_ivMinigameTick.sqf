@@ -248,8 +248,8 @@ if (!(uiNamespace getVariable ["ACME_IV_EJMode", false]) && {_onPatientArt}) the
 // make it the active stick target, so the palpation and the stick track whichever side you reach for.
 // screen-right is the patient's left.
 if (uiNamespace getVariable ["ACME_IV_EJMode", false]) then {
-    private _vL = uiNamespace getVariable ["ACME_IV_EJVeinL", [0.555, 0.125]];
-    private _vR = uiNamespace getVariable ["ACME_IV_EJVeinR", [0.445, 0.125]];
+    private _vL = uiNamespace getVariable ["ACME_IV_EJVeinL", [0.560, 0.505]];
+    private _vR = uiNamespace getVariable ["ACME_IV_EJVeinR", [0.440, 0.505]];
     private _dL = (abs (_fx - (_vL select 0))) + (abs (_fy - (_vL select 1)));
     private _dR = (abs (_fx - (_vR select 0))) + (abs (_fy - (_vR select 1)));
     private _nearL = (_dL <= _dR);  // the cursor is nearest the patient-left vein, which is screen-right.
@@ -476,6 +476,12 @@ if (_held == "needle") exitWith {
     } else {_bpT in ["leftarm", "leftleg"]};
     private _artSide = if (_patientLeft) then {"left"} else {"right"};
     if (_isEJ) then {_artSide = if (_patientLeft) then {"right"} else {"left"};};
+    // Flipping an arm to its posterior face mirrors its resting 15-degree approach on screen. Use the opposite
+    // authored family on the rear face so the catheter does not keep leaning the front-view direction.
+    private _viewNow = toLower (uiNamespace getVariable ["ACME_IV_View", ""]);
+    if (!_isEJ && {_bpT in ["leftarm","rightarm"]} && {_viewNow find "_rear" >= 0}) then {
+        _artSide = if (_artSide == "left") then {"right"} else {"left"};
+    };
     private _frame = format [if (_isEJ) then {"_ej_15_%1"} else {"_15_%1"}, _artSide];
     private _displayAngle = 0;
     private _onBody = (_fx >= 0) && {_fx <= 1} && {_fy >= 0} && {_fy <= 1};
@@ -526,10 +532,11 @@ if (_held == "needle") exitWith {
         };
     };
     uiNamespace setVariable ["ACME_IV_NeedleFrame", _frame];
-    // the needle is held, not welded to the pointer. the tip lags and it trembles, and where it ends up is the
-    // point of the needle. everything downstream reads that settled point rather than the cursor, so the stick
-    // lands where the steel is and not where the mouse is.
-    ([_ux, _uy, diag_deltaTime] call ACME_fnc_ivNeedleTip) params ["_tipX", "_tipY"];
+    // The bevel itself is the aiming cursor. Keep the authored catheter anchored so the VERY TIP of the steel
+    // sits on the pointer every frame; do not add spring-lag or tremor between the cursor and the puncture point.
+    private _tipX = _ux;
+    private _tipY = _uy;
+    uiNamespace setVariable ["ACME_IV_NeedleTipPos", [_tipX,_tipY]];
     // frame 00 is the ready pose, with the bevel held just off the skin. the anchor is the insertion plane, so the
     // tip draws a little short of the cursor until the stick starts.
     _heldC ctrlSetText ([uiNamespace getVariable ["ACME_IV_Gauge", 16], _frame, 0] call ACME_fnc_ivCathTex);

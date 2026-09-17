@@ -220,8 +220,8 @@ uiNamespace setVariable ["ACME_IV_VeinSet",
         } else {
             // Resolve the anatomical EJ side from the actual steel tip at the click, not from the previous frame's
             // cursor. Screen-right is patient-left.
-            private _vL = uiNamespace getVariable ["ACME_IV_EJVeinL", [0.560, 0.405]];
-            private _vR = uiNamespace getVariable ["ACME_IV_EJVeinR", [0.460, 0.405]];
+            private _vL = uiNamespace getVariable ["ACME_IV_EJVeinL", [0.560, 0.505]];
+            private _vR = uiNamespace getVariable ["ACME_IV_EJVeinR", [0.440, 0.505]];
             private _dL = (abs (_fx - (_vL select 0))) + (abs (_fy - (_vL select 1)));
             private _dR = (abs (_fx - (_vR select 0))) + (abs (_fy - (_vR select 1)));
             private _nearL = _dL <= _dR;

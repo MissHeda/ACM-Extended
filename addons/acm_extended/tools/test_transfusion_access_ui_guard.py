@@ -25,6 +25,9 @@ def test_transfusion_page_buttons_stay_blue():
     cfg=read('../acm_extended/config.cpp') if False else read('config.cpp')
     openf=(ROOT.parent/'circulation/functions/fnc_openTransfusionMenu.sqf').read_text(encoding='utf-8', errors='ignore')
     assert 'class ACME_TX_PageButton' in cfg
-    assert 'colorBackgroundActive[] = {0.043,0.082,0.188,0.94};' in cfg
+    assert 'class ACME_TX_PageButton: ACME_SK_PulseButton' in cfg
+    assert 'ctrlCreate ["RscText",86952]' in openf
+    assert 'ctrlCreate ["RscText",86953]' in openf
+    assert 'diag_tickTime * 220' in openf
     assert 'ctrlCreate ["ACME_TX_PageButton",86950]' in openf
     assert '(_uiW / 11) * 0.72' in openf
