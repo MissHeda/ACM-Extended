@@ -123,12 +123,22 @@ if (_enabled && {alive _u} && {_physReady}) then {
     if (!isNil "ACME_fnc_ketamineOnBoard") then {
         private _k = [_u] call ACME_fnc_ketamineOnBoard;
         if (_k isEqualType 0 && {finite _k} && {_k > 0}) then {
-            _ket = [(_k - (missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.35])) /
-                (((missionNamespace getVariable ["ACME_visualFx_ketamineFull",1.15]) - (missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.35])) max 0.01)] call _clamp;
-            // The water/dissociation cue should begin before the stronger blur/chromatic profile. Medication counts
-            // already include route onset/washout, so this remains pharmacology-driven rather than dose-button-driven.
-            _ketWetReal = [(_k - (missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05])) /
-                (((missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",1.15]) - (missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05])) max 0.01)] call _clamp;
+            // ketamineOnBoard is an ACM effect-ratio sum, not a normalized dissociation severity. ACME's own
+            // sedation model treats ~ACME_ket_induceThreshold (default 7) as a full induction-equivalent load.
+            // Normalize against that same clinical scale before feeding perception. This prevents a small 20 mg
+            // (0.4 mL of the 50 mg/mL vial) IV dose from looking like near-induction dissociation while still using
+            // ACM's native route onset and washout timing.
+            private _ketInduce = (missionNamespace getVariable ["ACME_ket_induceThreshold",7]) max 0.1;
+            private _kNorm = (_k / _ketInduce) max 0;
+            private _generalStart = missionNamespace getVariable ["ACME_visualFx_ketamineStart",0.10];
+            private _generalFull = missionNamespace getVariable ["ACME_visualFx_ketamineFull",0.82];
+            private _wetStart = missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.025];
+            private _wetFull = missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",0.82];
+            _ket = [(_kNorm - _generalStart) / ((_generalFull - _generalStart) max 0.01)] call _clamp;
+            // The water cue starts below the heavier blur/chromatic dissociation, but it is still normalized to
+            // induction-equivalent load. Real medication and debug therefore share the same authored visual range
+            // without low analgesic doses jumping directly into Moderate/Severe wave intensity.
+            _ketWetReal = [(_kNorm - _wetStart) / ((_wetFull - _wetStart) max 0.01)] call _clamp;
         };
     };
     _syn = ((_low * 0.75) + (_hyp * 0.35)) min 1;
@@ -292,20 +302,21 @@ if (_wet >= 0) then {
     };
 };
 
-// Dedicated late ketamine WetDistortion for BOTH real medication and debug testing. There is no tier-specific
-// speed stack anymore: one smoothed scalar drives both amplitude and frequency. The control points below are tuned
-// so Mild stays close to the earlier subtle profile, Moderate is clearly stronger, and Severe is pronounced without
-// the previous high-speed opening burst.
+// Dedicated late ketamine WetDistortion for BOTH real medication and debug testing. The controller itself smooths
+// the scalar, so do NOT start a new ppEffectCommit interpolation every tick. Recommitting while a prior commit is in
+// flight was the source of the visible stutter. The profile is applied immediately from the already-smoothed scalar.
+// Also adjust BEFORE enabling so a previously disabled Severe profile can never flash for one frame at the start.
 if (_ketWetDebugHandle >= 0) then {
     private _ketWetRequested = (_ketWetTarget > 0.001) || {_ketWetSmooth > 0.001};
+    private _zeroKetProfile = [1,1,1,2.10,1.88,1.38,1.00,0,0,0,0,0.40,0.24,9.0,5.3];
     if (!_ketWetRequested || {!_enabled} || {!alive _u}) then {
+        // Zero the retained engine profile while disabled. WetDistortion remembers its last parameters, so disabling
+        // a Severe profile without clearing it can produce a brief strong burst the next time the handle is enabled.
+        _ketWetDebugHandle ppEffectAdjust _zeroKetProfile;
+        _ketWetDebugHandle ppEffectCommit 0;
         _ketWetDebugHandle ppEffectEnable false;
         uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[]];
     } else {
-        _ketWetDebugHandle ppEffectEnable true;
-
-        // Piecewise interpolation lets the named debug tiers be exact authored profiles while real medication moves
-        // smoothly through the same continuum.
         private _tierLerp = {
             params ["_x","_zero","_mild","_moderate","_severe"];
             if (_x <= 0.34) exitWith {linearConversion [0,0.34,_x,_zero,_mild,true]};
@@ -314,34 +325,30 @@ if (_ketWetDebugHandle >= 0) then {
         };
         private _k = _ketWetSmooth;
 
-        // Overall wave speed is intentionally lower than the previous profiles. Because all four frequency values
-        // come from this same scalar, no hidden Mild/Moderate/Severe speed layer can overlap another one.
-        private _f1 = [_k,2.30,2.75,2.95,3.15] call _tierLerp;
-        private _f2 = [_k,2.05,2.45,2.62,2.78] call _tierLerp;
-        private _f3 = [_k,1.50,1.82,1.96,2.08] call _tierLerp;
-        private _f4 = [_k,1.10,1.35,1.46,1.55] call _tierLerp;
+        // Slower single-source frequencies. Severity is communicated mostly by displacement amplitude, not by
+        // suddenly making the waves run faster. All four frequencies come only from this scalar, so there is no
+        // hidden overlapping speed contribution between Mild, Moderate, Severe, real dose, shock, or CO2.
+        private _f1 = [_k,2.10,2.40,2.55,2.70] call _tierLerp;
+        private _f2 = [_k,1.88,2.12,2.25,2.38] call _tierLerp;
+        private _f3 = [_k,1.38,1.56,1.66,1.76] call _tierLerp;
+        private _f4 = [_k,1.00,1.14,1.22,1.30] call _tierLerp;
 
-        private _a1 = [_k,0.0000,0.0049,0.0059,0.0070] call _tierLerp;
-        private _a2 = [_k,0.0000,0.0037,0.0045,0.0053] call _tierLerp;
-        private _a3 = [_k,0.0000,0.0096,0.0125,0.0160] call _tierLerp;
-        private _a4 = [_k,0.0000,0.0072,0.0094,0.0120] call _tierLerp;
-        private _phase1 = [_k,0.42,0.49,0.54,0.59] call _tierLerp;
-        private _phase2 = [_k,0.25,0.29,0.33,0.37] call _tierLerp;
-        private _tail1 = [_k,9.2,9.7,10.0,10.3] call _tierLerp;
-        private _tail2 = [_k,5.4,5.7,5.9,6.1] call _tierLerp;
+        // Mild is intentionally gentler than the previous tune. Moderate/Severe add displacement smoothly without
+        // the old speed spike. A low real dose spends most of its time below the Mild control point.
+        private _a1 = [_k,0.0000,0.0042,0.0052,0.0062] call _tierLerp;
+        private _a2 = [_k,0.0000,0.0031,0.0040,0.0048] call _tierLerp;
+        private _a3 = [_k,0.0000,0.0082,0.0108,0.0140] call _tierLerp;
+        private _a4 = [_k,0.0000,0.0061,0.0081,0.0105] call _tierLerp;
+        private _phase1 = [_k,0.40,0.46,0.50,0.54] call _tierLerp;
+        private _phase2 = [_k,0.24,0.27,0.30,0.33] call _tierLerp;
+        private _tail1 = [_k,9.0,9.4,9.7,10.0] call _tierLerp;
+        private _tail2 = [_k,5.3,5.5,5.7,5.9] call _tierLerp;
 
         private _profile = [1,1,1,_f1,_f2,_f3,_f4,_a1,_a2,_a3,_a4,_phase1,_phase2,_tail1,_tail2];
-        private _stepSig = (round (_k * 200)) / 200;
-        private _lastKetWet = uiNamespace getVariable ["ACME_VFX_KetWetDebugLast",[]];
-        private _signature = [_stepSig];
-        if (_forceAll || {!(_lastKetWet isEqualTo _signature)}) then {
-            _ketWetDebugHandle ppEffectAdjust _profile;
-            // The controller already eases the target. A short commit only blends the tiny per-tick parameter step;
-            // it no longer performs a near-instant jump into a full tier profile.
-            _ketWetDebugHandle ppEffectCommit 0.18;
-            uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",_signature];
-        };
+        _ketWetDebugHandle ppEffectAdjust _profile;
+        _ketWetDebugHandle ppEffectCommit 0;
         _ketWetDebugHandle ppEffectEnable true;
+        uiNamespace setVariable ["ACME_VFX_KetWetDebugLast",[_k]];
     };
 };
 
@@ -391,21 +398,26 @@ if (_tunnel >= 0) then {
         uiNamespace setVariable ["ACME_VFX_HeartPhase",_heartPhase];
         uiNamespace setVariable ["ACME_VFX_HeartPhaseAt",diag_tickTime];
 
-        private _beatPulse = if (_heartPhase < 0.26) then {1 - (_heartPhase / 0.26)} else {0};
-        // Keep HR synchronization, but make each beat a restrained accent instead of a large vignette pump.
-        private _pulseI = (_tunnelI * (0.88 + (0.12 * _beatPulse))) min 1;
+        // Sharper systolic accent: fast attack, short decay, long quiet diastolic interval. Keep it subtle so the
+        // vignette reads as pulse-synchronous perfusion rather than visibly pumping the whole screen.
+        private _beatPulse = if (_heartPhase < 0.035) then {
+            _heartPhase / 0.035
+        } else {
+            if (_heartPhase < 0.225) then {1 - ((_heartPhase - 0.035) / 0.190)} else {0}
+        };
+        private _pulseI = (_tunnelI * (0.93 + (0.07 * _beatPulse))) min 1;
         private _tv = 0.6 * _pulseI;
-        private _blendA = _pulseI * (0.985 + (0.015 * _beatPulse));
-        private _tone = 0.075 - (0.035 * _beatPulse);
-        private _radA = (0.85 - (0.035 * _beatPulse)) - _tv;
-        private _radB = (0.80 - (0.035 * _beatPulse)) - _tv;
+        private _blendA = _pulseI * (0.992 + (0.008 * _beatPulse));
+        private _tone = 0.066 - (0.018 * _beatPulse);
+        private _radA = (0.85 - (0.022 * _beatPulse)) - _tv;
+        private _radB = (0.80 - (0.022 * _beatPulse)) - _tv;
         private _adjust = [1,1,0,[0,0,0,_blendA],[_tone,_tone,_tone,_tone],[0,0,0,0],[_radA,_radB,0,0,0,0,8]];
 
         private _last = uiNamespace getVariable ["ACME_VFX_TunnelLast",[]];
         private _signature = [round (_tunnelI*100),round (_beatPulse*100),round _hr];
         if (_forceAll || {!(_last isEqualTo _signature)}) then {
             _tunnel ppEffectAdjust _adjust;
-            _tunnel ppEffectCommit 0.04;
+            _tunnel ppEffectCommit 0.02;
             uiNamespace setVariable ["ACME_VFX_TunnelLast",_signature];
         };
     };

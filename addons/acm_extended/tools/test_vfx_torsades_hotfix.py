@@ -16,7 +16,12 @@ def test_visual_debug_is_client_local_and_spawn_clean():
         assert f'ACME_VFX_Debug_%1' in cyc or kind in cyc
     # Every active wet tick asserts the engine handle on; severity is not allowed to rely on a stale cache.
     assert '_wet ppEffectEnable true;' in tick
-    assert 'private _ketGain = [1.00,1.35,3.10,5.40]' in tick
+    assert 'ACME_VFX_KetWetDebug' in tick
+    assert 'private _kNorm = (_k / _ketInduce) max 0;' in tick
+    assert 'private _zeroKetProfile' in tick
+    assert '_ketWetDebugHandle ppEffectCommit 0;' in tick
+    assert 'private _f1 = [_k,2.10,2.40,2.55,2.70]' in tick
+    assert 'private _a3 = [_k,0.0000,0.0082,0.0108,0.0140]' in tick
     assert 'private _shockWetDebug = [0,0.28,0.62,0.96]' in tick
     assert 'private _co2WetDebug = [0,0.20,0.48,0.78]' in tick
     assert 'private _dbgTunnel' in tick
