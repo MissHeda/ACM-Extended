@@ -103,6 +103,8 @@ private _ketWetReal = 0;
 private _ketDoseNorm = 0;
 private _ketAnalgesicActive = false;
 private _ketAnalgesicEnvelope = 1;
+private _ketAnalgesicBlurEnvelope = 1;
+private _ketAnalgesicChromEnvelope = 1;
 private _ketAnalgesicWetEnvelope = 1;
 private _syn = 0;
 
@@ -164,12 +166,19 @@ if (_enabled && {alive _u} && {_physReady}) then {
                     // Keep pharmacology intact, but end the local perception layer after five minutes unless redosed.
                     _ketDoseNorm = 0;
                     _ketAnalgesicEnvelope = 0;
+                    _ketAnalgesicBlurEnvelope = 0;
+                    _ketAnalgesicChromEnvelope = 0;
                     _ketAnalgesicWetEnvelope = 0;
                 } else {
-                    private _cycle = (missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicWaveSec",22]) max 4;
+                    private _cycle = (missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicWaveSec",28]) max 6;
                     private _wave01 = 0.5 + (0.5 * sin (360 * ((_ketVisualAge mod _cycle) / _cycle)));
-                    // Blur/chromatic cues ebb more strongly; the water layer stays present but swells gently at peaks.
-                    _ketAnalgesicEnvelope = 0.48 + (0.52 * _wave01);
+                    private _waveShaped = _wave01 ^ 1.35;
+                    // Analgesic ketamine should breathe in and out rather than look continuously blurred. Keep the
+                    // general/saturation layer gently present, let blur almost clear between crests, retain a steadier
+                    // chromatic base for the separate pulse below, and preserve the existing water-displacement range.
+                    _ketAnalgesicEnvelope = 0.55 + (0.45 * _wave01);
+                    _ketAnalgesicBlurEnvelope = 0.10 + (0.90 * _waveShaped);
+                    _ketAnalgesicChromEnvelope = 0.72 + (0.28 * _wave01);
                     _ketAnalgesicWetEnvelope = 0.78 + (0.32 * _wave01);
                 };
             };
@@ -286,7 +295,7 @@ if (_ketDoseNorm > 0) then {
         };
     };
 };
-if (_ketAnalgesicActive) then {_ketBlurReal = _ketBlurReal * _ketAnalgesicEnvelope;};
+if (_ketAnalgesicActive) then {_ketBlurReal = _ketBlurReal * _ketAnalgesicBlurEnvelope;};
 private _blurV = ((_hyp*0.90)+(_low*0.80)+(_co2*0.70)+(_ket*0.20)+(_syn*1.00)) min 2.6;
 _blurV = _blurV max _ketBlurReal;
 // Debug ketamine mirrors dose bands: Mild stays subtle, Moderate is clearly altered, Severe owns the strong state.
@@ -301,39 +310,43 @@ private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
 _blurV = _blurV max _dbgBlur;
 
 // Chromatic aberration is the diplopia / subtle color-edge cue.  The previous scale was too prominent at analgesic
-// doses, so the sub-dissociative band is now explicitly capped at a tiny value and the curve rises later.
+// doses. With ACM's duplicate layer now suppressed, restore a little low-dose edge separation while keeping it restrained.
 private _ketChromReal = 0;
 if (_ketDoseNorm > 0) then {
     if (_ketDoseNorm <= 0.18) then {
-        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000026,true];
+        _ketChromReal = linearConversion [0.05,0.18,_ketDoseNorm,0,0.000034,true];
     } else {
         if (_ketDoseNorm <= 0.45) then {
-            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000026,0.00036,true];
+            _ketChromReal = linearConversion [0.18,0.45,_ketDoseNorm,0.000034,0.00040,true];
         } else {
             _ketChromReal = linearConversion [0.45,0.82,_ketDoseNorm,0.00042,0.0038,true];
         };
     };
 };
-if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicEnvelope;};
-private _dbgKetChrom = ([0,0.000045,0.00055,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
+if (_ketAnalgesicActive) then {_ketChromReal = _ketChromReal * _ketAnalgesicChromEnvelope;};
+private _dbgKetChrom = ([0,0.000055,0.00058,0.0038] param [_dbgKet,0]) * _dbgKetEnvelope;
 private _ketChromRaw = (_ketChromReal max _dbgKetChrom) min 0.0038;
-// Slow pulse + very small damped vibration tail.  Dose owns magnitude; modulation is intentionally restrained so
-// low-dose diplopia is perceptible at edges but never reads as a psychedelic RGB split.
-private _chromCycleSec = 5.6;
+// Slow pulse + damped vibration tail. Dose owns magnitude; modulation is noticeable again without becoming a
+// second stacked chromatic effect.
+private _chromCycleSec = 5.2;
 private _chromCycleT = diag_tickTime mod _chromCycleSec;
 private _chromPulse = 0;
 private _chromVibe = 0;
-if (_chromCycleT < 0.48) then {
-    _chromPulse = sin ((_chromCycleT / 0.48) * 180);
+if (_chromCycleT < 0.52) then {
+    _chromPulse = sin ((_chromCycleT / 0.52) * 180);
 } else {
-    if (_chromCycleT < 1.18) then {
-        private _tailT = _chromCycleT - 0.48;
-        private _tailFade = 1 - (_tailT / 0.70);
-        _chromVibe = (sin (_tailT * 360 * 5.0)) * _tailFade;
+    if (_chromCycleT < 1.32) then {
+        private _tailT = _chromCycleT - 0.52;
+        private _tailFade = 1 - (_tailT / 0.80);
+        _chromVibe = (sin (_tailT * 360 * 4.6)) * _tailFade;
     };
 };
-private _ketChromX = _ketChromRaw * (1 + (0.007 * _chromPulse) + (0.006 * _chromVibe));
-private _ketChromY = (_ketChromRaw * 0.62) * (1 + (0.005 * _chromPulse) - (0.005 * _chromVibe));
+// With ACM's duplicate ketamine chromatic pass suppressed, restore a perceptible pulse without making the RGB split
+// dominant. Low doses get a larger RELATIVE pulse on a very small base; high-dose modulation tapers down.
+private _chromPulseGain = linearConversion [0,0.0038,_ketChromRaw,0.085,0.035,true];
+private _chromVibeGain = linearConversion [0,0.0038,_ketChromRaw,0.022,0.010,true];
+private _ketChromX = _ketChromRaw * (1 + (_chromPulseGain * _chromPulse) + (_chromVibeGain * _chromVibe));
+private _ketChromY = (_ketChromRaw * 0.62) * (1 + ((_chromPulseGain * 0.72) * _chromPulse) - ((_chromVibeGain * 0.78) * _chromVibe));
 private _hypChrom = (_hyp * 0.0015) min 0.0015;
 private _chromX = (_ketChromX + _hypChrom) min 0.010;
 private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.007;
@@ -472,10 +485,10 @@ if (_ketWetDebugHandle >= 0) then {
         // One deliberately slow frequency family. Severity is communicated mostly by displacement amplitude, not by
         // wave speed. All four frequencies come only from this scalar, so there is no hidden overlapping speed
         // contribution between Mild, Moderate, Severe, real dose, shock, or CO2.
-        private _f1 = [_k,1.80,2.02,2.14,2.26] call _tierLerp;
-        private _f2 = [_k,1.60,1.78,1.89,1.99] call _tierLerp;
-        private _f3 = [_k,1.17,1.31,1.40,1.47] call _tierLerp;
-        private _f4 = [_k,0.85,0.96,1.03,1.09] call _tierLerp;
+        private _f1 = [_k,1.45,1.65,1.74,1.84] call _tierLerp;
+        private _f2 = [_k,1.28,1.46,1.54,1.62] call _tierLerp;
+        private _f3 = [_k,0.94,1.08,1.15,1.22] call _tierLerp;
+        private _f4 = [_k,0.68,0.79,0.84,0.90] call _tierLerp;
 
         // Mild/Moderate/Severe are slightly more visible than the prior tune, but all move more slowly. A low real
         // dose remains below the Mild control point and gains visibility through the raised low/mid dose curve.

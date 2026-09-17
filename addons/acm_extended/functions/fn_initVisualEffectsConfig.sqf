@@ -24,10 +24,10 @@ ACME_visualFx_ketamineWetFull = 0.82;
 ACME_visualFx_ketamineLowWetOut = 0.065;
 ACME_visualFx_ketamineModerateWetOut = 0.215;
 // Analgesic/sub-dissociative perception is intentionally transient. New ketamine medication events refresh the
-// five-minute window, and the low-dose visual envelope slowly waxes/wanes rather than staying continuously obvious.
+// five-minute window. Mild blur now falls close to clear vision between slow crests instead of sitting at a constant floor.
 ACME_visualFx_ketamineAnalgesicMax = 0.22;
 ACME_visualFx_ketamineAnalgesicWindowSec = 300;
-ACME_visualFx_ketamineAnalgesicWaveSec = 22;
+ACME_visualFx_ketamineAnalgesicWaveSec = 28;
 ACME_visualFx_ketamineWetRiseSec = 7.0;   // slower onset so low-dose waves develop instead of appearing abruptly
 ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
 ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on
