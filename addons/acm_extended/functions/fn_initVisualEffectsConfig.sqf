@@ -17,11 +17,12 @@ ACME_visualFx_ketamineDoseLowPoint = 0.16;
 ACME_visualFx_ketamineDoseModeratePoint = 0.45;
 ACME_visualFx_ketamineLowGeneralOut = 0.010;
 ACME_visualFx_ketamineModerateGeneralOut = 0.060;
-// The water cue begins slightly earlier than chromatic/blur but stays almost imperceptible at analgesic exposure.
+// The water cue begins slightly earlier than chromatic/blur. Low analgesic exposure stays subtle, but the
+// low/mid curve is raised enough that the slow swimming motion remains perceptible before high dissociative doses.
 ACME_visualFx_ketamineWetStart = 0.05;
 ACME_visualFx_ketamineWetFull = 0.82;
-ACME_visualFx_ketamineLowWetOut = 0.025;
-ACME_visualFx_ketamineModerateWetOut = 0.150;
+ACME_visualFx_ketamineLowWetOut = 0.040;
+ACME_visualFx_ketamineModerateWetOut = 0.205;
 ACME_visualFx_ketamineWetRiseSec = 7.0;   // slower onset so low-dose waves develop instead of appearing abruptly
 ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
 ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on

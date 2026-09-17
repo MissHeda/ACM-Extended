@@ -156,16 +156,16 @@ if (_enabled && {alive _u} && {_physReady}) then {
                 missionNamespace getVariable ["ACME_visualFx_ketamineModerateGeneralOut",0.060]
             ] call _curve;
 
-            // Water starts slightly earlier than chromatic/blur but remains extremely shallow at low analgesic
-            // doses.  At ~0.14 induction-normalized load this resolves to only ~0.02 of the authored wave range.
+            // Water starts slightly earlier than chromatic/blur. The low/mid response stays subtle but is lifted
+            // enough to remain perceptible before high dissociative exposure; the final high-dose ceiling is unchanged.
             _ketWetReal = [
                 _kNorm,
                 missionNamespace getVariable ["ACME_visualFx_ketamineWetStart",0.05],
                 _lowIn,
                 _midIn,
                 missionNamespace getVariable ["ACME_visualFx_ketamineWetFull",0.82],
-                missionNamespace getVariable ["ACME_visualFx_ketamineLowWetOut",0.025],
-                missionNamespace getVariable ["ACME_visualFx_ketamineModerateWetOut",0.150]
+                missionNamespace getVariable ["ACME_visualFx_ketamineLowWetOut",0.040],
+                missionNamespace getVariable ["ACME_visualFx_ketamineModerateWetOut",0.205]
             ] call _curve;
         };
     };
@@ -232,14 +232,30 @@ private _dbgBlur = ([0,0.32,0.90,1.65] param [_dbgHyp,0])
 _blurV = _blurV max _dbgBlur;
 
 private _ketChromBase = (_ket * 0.006) min 0.009;
-// Very small, slow chromatic "breathing" while ketamine is active.  Keep this independent from the shock tunnel
-// heartbeat so a low ketamine dose does not look like hypoperfusion.  This is only a +/-2% modulation of the already
-// dose-scaled chromatic separation and is therefore almost imperceptible at analgesic doses.
-private _ketPulse01 = 0.5 + (0.5 * sin ((diag_tickTime * 75) mod 360)); // ~4.8 s cycle
-private _ketChromPulse = 0.98 + (0.04 * _ketPulse01);
-private _chromV = ((_ketChromBase * _ketChromPulse)+(_hyp*0.0015)) min 0.010;
 private _dbgKetChrom = ([0,0.0018,0.0048,0.0090] param [_dbgKet,0]) * _dbgKetEnvelope;
-_chromV = _chromV max _dbgKetChrom;
+private _ketChromRaw = (_ketChromBase max _dbgKetChrom) min 0.009;
+// Ketamine chromatic separation has a slow perceptual pulse followed by a short damped micro-vibration tail.
+// The tail deliberately oscillates X/Y separation in opposite directions at ~5.2 Hz, which reads as a subtle
+// residual "buzz" rather than another vignette/heartbeat.  Keep the modulation small; dose still owns magnitude.
+private _chromCycleSec = 5.2;
+private _chromCycleT = diag_tickTime mod _chromCycleSec;
+private _chromPulse = 0;
+private _chromVibe = 0;
+if (_chromCycleT < 0.52) then {
+    _chromPulse = sin ((_chromCycleT / 0.52) * 180);
+} else {
+    if (_chromCycleT < 1.30) then {
+        private _tailT = _chromCycleT - 0.52;
+        private _tailFade = 1 - (_tailT / 0.78);
+        _chromVibe = (sin (_tailT * 360 * 5.2)) * _tailFade;
+    };
+};
+private _ketChromX = _ketChromRaw * (1 + (0.035 * _chromPulse) + (0.030 * _chromVibe));
+private _ketChromY = (_ketChromRaw * 0.65) * (1 + (0.025 * _chromPulse) - (0.024 * _chromVibe));
+private _hypChrom = (_hyp * 0.0015) min 0.0015;
+private _chromX = (_ketChromX + _hypChrom) min 0.010;
+private _chromY = (_ketChromY + (_hypChrom * 0.65)) min 0.007;
+private _chromV = _chromX max _chromY;
 private _dark = ((_hyp*0.34)+(_low*0.40)+(_syn*0.45)) min 0.68;
 _dark = _dark max ([0,0.08,0.22,0.42] param [_dbgHyp,0])
     max ([0,0.08,0.24,0.46] param [_dbgLow,0])
@@ -359,20 +375,20 @@ if (_ketWetDebugHandle >= 0) then {
         };
         private _k = _ketWetSmooth;
 
-        // Slower single-source frequencies. Severity is communicated mostly by displacement amplitude, not by
-        // suddenly making the waves run faster. All four frequencies come only from this scalar, so there is no
-        // hidden overlapping speed contribution between Mild, Moderate, Severe, real dose, shock, or CO2.
-        private _f1 = [_k,2.10,2.40,2.55,2.70] call _tierLerp;
-        private _f2 = [_k,1.88,2.12,2.25,2.38] call _tierLerp;
-        private _f3 = [_k,1.38,1.56,1.66,1.76] call _tierLerp;
-        private _f4 = [_k,1.00,1.14,1.22,1.30] call _tierLerp;
+        // One deliberately slow frequency family. Severity is communicated mostly by displacement amplitude, not by
+        // wave speed. All four frequencies come only from this scalar, so there is no hidden overlapping speed
+        // contribution between Mild, Moderate, Severe, real dose, shock, or CO2.
+        private _f1 = [_k,1.80,2.02,2.14,2.26] call _tierLerp;
+        private _f2 = [_k,1.60,1.78,1.89,1.99] call _tierLerp;
+        private _f3 = [_k,1.17,1.31,1.40,1.47] call _tierLerp;
+        private _f4 = [_k,0.85,0.96,1.03,1.09] call _tierLerp;
 
-        // Mild is intentionally gentler than the previous tune. Moderate/Severe add displacement smoothly without
-        // the old speed spike. A low real dose spends most of its time below the Mild control point.
-        private _a1 = [_k,0.0000,0.0042,0.0052,0.0062] call _tierLerp;
-        private _a2 = [_k,0.0000,0.0031,0.0040,0.0048] call _tierLerp;
-        private _a3 = [_k,0.0000,0.0082,0.0108,0.0140] call _tierLerp;
-        private _a4 = [_k,0.0000,0.0061,0.0081,0.0105] call _tierLerp;
+        // Mild/Moderate/Severe are slightly more visible than the prior tune, but all move more slowly. A low real
+        // dose remains below the Mild control point and gains visibility through the raised low/mid dose curve.
+        private _a1 = [_k,0.0000,0.0047,0.0058,0.0069] call _tierLerp;
+        private _a2 = [_k,0.0000,0.0035,0.0045,0.0054] call _tierLerp;
+        private _a3 = [_k,0.0000,0.0092,0.0120,0.0154] call _tierLerp;
+        private _a4 = [_k,0.0000,0.0068,0.0090,0.0116] call _tierLerp;
         private _phase1 = [_k,0.40,0.46,0.50,0.54] call _tierLerp;
         private _phase2 = [_k,0.24,0.27,0.30,0.33] call _tierLerp;
         private _tail1 = [_k,9.0,9.4,9.7,10.0] call _tierLerp;
@@ -460,8 +476,10 @@ if (_tunnel >= 0) then {
 if (_chrom >= 0) then {
     if (_chromV <= 0.00005) then {_chrom ppEffectEnable false;} else {
         _chrom ppEffectEnable true;
-        _chrom ppEffectAdjust [_chromV,_chromV*0.65,true];
-        _chrom ppEffectCommit _commit;
+        _chrom ppEffectAdjust [_chromX,_chromY,true];
+        // Follow the authored pulse/vibration waveform directly. A long commit here would smear the short tail and
+        // restarting that interpolation every 20 Hz tick would reintroduce visual stepping.
+        _chrom ppEffectCommit 0.04;
     };
 };
 if (_blur >= 0) then {

@@ -20,11 +20,15 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'private _kNorm = (_k / _ketInduce) max 0;' in tick
     assert 'private _zeroKetProfile' in tick
     assert '_ketWetDebugHandle ppEffectCommit 0;' in tick
-    assert 'private _f1 = [_k,2.10,2.40,2.55,2.70]' in tick
-    assert 'private _a3 = [_k,0.0000,0.0082,0.0108,0.0140]' in tick
+    assert 'private _f1 = [_k,1.80,2.02,2.14,2.26]' in tick
+    assert 'private _a3 = [_k,0.0000,0.0092,0.0120,0.0154]' in tick
     assert 'private _shockWetDebug = [0,0.28,0.62,0.96]' in tick
     assert 'private _co2WetDebug = [0,0.20,0.48,0.78]' in tick
     assert 'private _dbgTunnel' in tick
+    assert 'private _chromCycleSec = 5.2;' in tick
+    assert 'private _chromVibe = 0;' in tick
+    assert 'sin (_tailT * 360 * 5.2)' in tick
+    assert '_chrom ppEffectAdjust [_chromX,_chromY,true];' in tick
 
 def test_torsades_progressively_loses_mechanical_perfusion():
     tick = read('functions/fn_rhythmTick.sqf')
