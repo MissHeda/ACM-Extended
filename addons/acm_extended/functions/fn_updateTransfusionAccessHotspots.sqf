@@ -136,7 +136,9 @@ private _partLabel = {
     private _hover = _hot getVariable ["ACME_TX_Hover", false];
     _hot ctrlSetBackgroundColor (if (_hover) then {[0.20,0.65,0.20,0.22]} else {if (_selected) then {[1,1,1,0.08]} else {[0,0,0,0]}});
     if (_has && {!isNull _image}) then {
-        private _col = if (_selected) then {[1,1,1,1]} else {if (_hover) then {[0.32,0.86,0.42,1]} else {[0.20,0.65,0.20,1]}};
+        // Same interaction language as Body Map: the real device artwork is the target. Selected/hovered = 100%;
+        // other established sites stay slightly dim so selection is obvious without changing hue.
+        private _col = if (_selected || {_hover}) then {[0.20,0.65,0.20,1]} else {[0.20,0.65,0.20,0.42]};
         _image ctrlSetTextColor _col;
     };
 

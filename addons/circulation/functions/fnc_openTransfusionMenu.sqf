@@ -52,17 +52,44 @@ GVAR(TransfusionMenu_Move_OriginBodyPart) = toLowerANSI _bodyPart;
 GVAR(TransfusionMenu_Move_OriginAccessSite) = GVAR(TransfusionMenu_Selected_AccessSite);
 
 if (GVAR(TransfusionMenu_Selected_AccessSite) == -1) then {
-    if ([_patient, _bodyPart, 0, -1] call FUNC(hasIV)) then {
-        GVAR(TransfusionMenu_SelectIV) = true;
-        private _ivAccess = (GET_IV(_patient) select (ALL_BODY_PARTS find GVAR(TransfusionMenu_Selected_BodyPart)));
-        {
-            if (_x > 0) exitWith {
-                GVAR(TransfusionMenu_Selected_AccessSite) = _forEachIndex;
-            };
-        } forEach _ivAccess;
-    } else {
-        GVAR(TransfusionMenu_Selected_AccessSite) = 0;
+    private _selected = false;
+    // Prefer a real access on the body part used to open the menu.
+    for "_site" from 0 to 2 do {
+        if (!_selected && {[_patient,_bodyPart,0,_site] call FUNC(hasIV)}) then {
+            GVAR(TransfusionMenu_SelectIV) = true;
+            GVAR(TransfusionMenu_Selected_AccessSite) = _site;
+            _selected = true;
+        };
+    };
+    if (!_selected && {[_patient,_bodyPart,0] call FUNC(hasIO)}) then {
         GVAR(TransfusionMenu_SelectIV) = false;
+        GVAR(TransfusionMenu_Selected_AccessSite) = 0;
+        _selected = true;
+    };
+    // If that part has no access, select the first ACTUAL IV/IO anywhere. Never invent a torso IO.
+    if (!_selected) then {
+        {
+            private _part = _x;
+            for "_site" from 0 to 2 do {
+                if (!_selected && {[_patient,_part,0,_site] call FUNC(hasIV)}) then {
+                    GVAR(TransfusionMenu_SelectIV) = true;
+                    GVAR(TransfusionMenu_Selected_BodyPart) = _part;
+                    GVAR(TransfusionMenu_Selected_AccessSite) = _site;
+                    _selected = true;
+                };
+            };
+            if (!_selected && {[_patient,_part,0] call FUNC(hasIO)}) then {
+                GVAR(TransfusionMenu_SelectIV) = false;
+                GVAR(TransfusionMenu_Selected_BodyPart) = _part;
+                GVAR(TransfusionMenu_Selected_AccessSite) = 0;
+                _selected = true;
+            };
+            if (_selected) exitWith {};
+        } forEach ALL_BODY_PARTS;
+    };
+    if (!_selected) then {
+        GVAR(TransfusionMenu_SelectIV) = true;
+        GVAR(TransfusionMenu_Selected_AccessSite) = -1;
     };
 };
 
@@ -75,19 +102,19 @@ private _display = uiNamespace getVariable [QGVAR(TransfusionMenu_DLG), displayN
 if (!isNull _display && {!isNil "ACME_fnc_skPageNavigate"}) then {
     private _canvas = call ACME_fnc_uiCanvas;
     _canvas params ["_uiX","_uiY","_uiW","_uiH"];
-    private _w = _uiW / 11;
+    private _w = (_uiW / 11) * 0.72;
     private _h = safeZoneH / 32;
     private _gap = 4 * pixelW;
     private _y = safeZoneY + (safeZoneH / 1.08);
     private _lx = (_uiX + (_uiW/2)) - (_gap/2) - _w;
     private _rx = (_uiX + (_uiW/2)) + (_gap/2);
-    private _lb = _display ctrlCreate ["RscButton",86950];
+    private _lb = _display ctrlCreate ["ACME_TX_PageButton",86950];
     _lb ctrlSetPosition [_lx,_y,_w,_h];
     _lb ctrlSetText "< Body Map";
     _lb ctrlSetTooltip "Previous page";
     _lb ctrlAddEventHandler ["ButtonClick",{["left"] call ACME_fnc_skPageNavigate;}];
     _lb ctrlCommit 0;
-    private _rb = _display ctrlCreate ["RscButton",86951];
+    private _rb = _display ctrlCreate ["ACME_TX_PageButton",86951];
     _rb ctrlSetPosition [_rx,_y,_w,_h];
     _rb ctrlSetText "Narc Box >";
     _rb ctrlSetTooltip "Next page";
@@ -171,25 +198,25 @@ private _inVehicle = !(isNull objectParent ACE_player);
         if (GVAR(TransfusionMenu_SelectIV) && (_forEachIndex + 2) == _partIndex) then {
             switch (GVAR(TransfusionMenu_Selected_AccessSite)) do {
                 case 0: {
-                    _xUpper ctrlSetTextColor [1,1,1,1];
-                    _xMiddle ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-                    _xLower ctrlSetTextColor [0.2, 0.65, 0.2, 1];
+                    _xUpper ctrlSetTextColor [0.20,0.65,0.20,1];
+                    _xMiddle ctrlSetTextColor [0.20,0.65,0.20,0.42];
+                    _xLower ctrlSetTextColor [0.20,0.65,0.20,0.42];
                 };
                 case 1: {
-                    _xUpper ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-                    _xMiddle ctrlSetTextColor [1,1,1,1];
-                    _xLower ctrlSetTextColor [0.2, 0.65, 0.2, 1];
+                    _xUpper ctrlSetTextColor [0.20,0.65,0.20,0.42];
+                    _xMiddle ctrlSetTextColor [0.20,0.65,0.20,1];
+                    _xLower ctrlSetTextColor [0.20,0.65,0.20,0.42];
                 };
                 case 2: {
-                    _xUpper ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-                    _xMiddle ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-                    _xLower ctrlSetTextColor [1,1,1,1];
+                    _xUpper ctrlSetTextColor [0.20,0.65,0.20,0.42];
+                    _xMiddle ctrlSetTextColor [0.20,0.65,0.20,0.42];
+                    _xLower ctrlSetTextColor [0.20,0.65,0.20,1];
                 };
             };
         } else {
-            _xUpper ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-            _xMiddle ctrlSetTextColor [0.2, 0.65, 0.2, 1];
-            _xLower ctrlSetTextColor [0.2, 0.65, 0.2, 1];
+            _xUpper ctrlSetTextColor [0.20,0.65,0.20,0.42];
+            _xMiddle ctrlSetTextColor [0.20,0.65,0.20,0.42];
+            _xLower ctrlSetTextColor [0.20,0.65,0.20,0.42];
         };
     } forEach _IVCtrlArray;
 
@@ -206,24 +233,42 @@ private _inVehicle = !(isNull objectParent ACE_player);
         _x ctrlShow ((_IOArray select (_forEachIndex + 1)) > 0);
 
         if (!(GVAR(TransfusionMenu_SelectIV)) && (_forEachIndex + 1) == _partIndex) then {
-            _x ctrlSetTextColor [1,1,1,1];
+            _x ctrlSetTextColor [0.20,0.65,0.20,1];
         } else {
-            _x ctrlSetTextColor [0.2, 0.65, 0.2, 1];
+            _x ctrlSetTextColor [0.20,0.65,0.20,0.42];
         };
     } forEach _IOCtrlArray;
 
     private _ctrlStopTransfusionButton = _display displayCtrl IDC_TRANSFUSIONMENU_BUTTON_STOPIV;
-
-    private _siteFlowRate = [(GET_IO_FLOW_X(_patient,_partIndex)), (GET_IV_FLOW_X(_patient,_partIndex,(GVAR(TransfusionMenu_Selected_AccessSite))))] select GVAR(TransfusionMenu_SelectIV);
-
+    private _ctrlAddBagButton = _display displayCtrl IDC_TRANSFUSIONMENU_BUTTON_ADDBAG;
+    private _selectedPart = GVAR(TransfusionMenu_Selected_BodyPart);
+    private _selectedSite = GVAR(TransfusionMenu_Selected_AccessSite);
+    private _hasSelectedAccess = if (GVAR(TransfusionMenu_SelectIV)) then {
+        _selectedSite >= 0 && {[_patient,_selectedPart,0,_selectedSite] call FUNC(hasIV)}
+    } else {
+        [_patient,_selectedPart,0] call FUNC(hasIO)
+    };
+    private _siteFlowRate = 0;
+    if (_hasSelectedAccess && {_partIndex >= 0}) then {
+        _siteFlowRate = [(GET_IO_FLOW_X(_patient,_partIndex)), (GET_IV_FLOW_X(_patient,_partIndex,_selectedSite))] select GVAR(TransfusionMenu_SelectIV);
+    };
     private _typeString = [LLSTRING(Intraosseous_Short), LLSTRING(Intravenous_Short)] select GVAR(TransfusionMenu_SelectIV);
 
-    if (_siteFlowRate > 0) then {
-        _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StopTransfusion_Display), _typeString]);
-        _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StopTransfusion_ToolTip), _typeString]);
+    if (!_hasSelectedAccess) then {
+        _ctrlStopTransfusionButton ctrlSetText "No IV / IO access";
+        _ctrlStopTransfusionButton ctrlSetTooltip "Establish and select an IV or IO before starting a transfusion";
+        _ctrlStopTransfusionButton ctrlEnable false;
+        if (!isNull _ctrlAddBagButton) then {_ctrlAddBagButton ctrlEnable false;};
     } else {
-        _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StartTransfusion_Display), _typeString]);
-        _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StartTransfusion_ToolTip), _typeString]);
+        _ctrlStopTransfusionButton ctrlEnable true;
+        if (!isNull _ctrlAddBagButton) then {_ctrlAddBagButton ctrlEnable true;};
+        if (_siteFlowRate > 0) then {
+            _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StopTransfusion_Display), _typeString]);
+            _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StopTransfusion_ToolTip), _typeString]);
+        } else {
+            _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StartTransfusion_Display), _typeString]);
+            _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StartTransfusion_ToolTip), _typeString]);
+        };
     };
 
     if ((GVAR(TransfusionMenu_Selection_IVBags_LastUpdate) + 1) < CBA_missionTime) then {

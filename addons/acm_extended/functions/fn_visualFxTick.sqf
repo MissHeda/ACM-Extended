@@ -171,13 +171,13 @@ if (_enabled && {alive _u} && {_physReady}) then {
                     _ketAnalgesicWetEnvelope = 0;
                 } else {
                     private _cycle = (missionNamespace getVariable ["ACME_visualFx_ketamineAnalgesicWaveSec",28]) max 6;
-                    private _wave01 = 0.5 + (0.5 * sin (360 * ((_ketVisualAge mod _cycle) / _cycle)));
+                    private _wave01 = 0.5 - (0.5 * cos (360 * ((_ketVisualAge mod _cycle) / _cycle)));
                     private _waveShaped = _wave01 ^ 1.35;
                     // Analgesic ketamine should breathe in and out rather than look continuously blurred. Keep the
                     // general/saturation layer gently present, let blur almost clear between crests, retain a steadier
                     // chromatic base for the separate pulse below, and preserve the existing water-displacement range.
                     _ketAnalgesicEnvelope = 0.55 + (0.45 * _wave01);
-                    _ketAnalgesicBlurEnvelope = 0.10 + (0.90 * _waveShaped);
+                    _ketAnalgesicBlurEnvelope = _waveShaped;
                     _ketAnalgesicChromEnvelope = 0.72 + (0.28 * _wave01);
                     _ketAnalgesicWetEnvelope = 0.78 + (0.32 * _wave01);
                 };
@@ -521,10 +521,10 @@ if (_ketWetDebugHandle >= 0) then {
         // One deliberately slow frequency family. Severity is communicated mostly by displacement amplitude, not by
         // wave speed. All four frequencies come only from this scalar, so there is no hidden overlapping speed
         // contribution between Mild, Moderate, Severe, real dose, shock, or CO2.
-        private _f1 = [_k,1.45,1.65,1.74,1.84] call _tierLerp;
-        private _f2 = [_k,1.28,1.46,1.54,1.62] call _tierLerp;
-        private _f3 = [_k,0.94,1.08,1.15,1.22] call _tierLerp;
-        private _f4 = [_k,0.68,0.79,0.84,0.90] call _tierLerp;
+        private _f1 = [_k,1.24,1.42,1.50,1.58] call _tierLerp;
+        private _f2 = [_k,1.10,1.26,1.33,1.40] call _tierLerp;
+        private _f3 = [_k,0.80,0.92,0.98,1.04] call _tierLerp;
+        private _f4 = [_k,0.58,0.67,0.72,0.77] call _tierLerp;
 
         // Bias ketamine toward horizontal visual drift with a smaller vertical component. This feels less like
         // generic underwater bobbing and more like altered lateral swimming/perceptual slippage.

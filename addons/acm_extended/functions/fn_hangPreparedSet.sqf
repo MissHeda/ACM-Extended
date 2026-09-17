@@ -37,6 +37,9 @@ if (isNull _target) exitWith {
 private _bodyPart = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart", ""];
 private _iv       = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_SelectIV", true];
 private _site     = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_AccessSite", -1];
+if !([_target,_bodyPart,_iv,_site] call ACME_fnc_transfusionAccessValid) exitWith {
+    ["Establish and select an IV/IO before hanging this set.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
+};
 private _lineKey  = format ["%1#%2#%3", _bodyPart, _iv, _site];
 
 // a set that came off a patient, through remove-to-list, is tied to that patient. untied sets hang on anyone.

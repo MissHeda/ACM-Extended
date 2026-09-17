@@ -27,11 +27,11 @@ ACME_visualFx_ketamineModerateWetOut = 0.215;
 // five-minute window. Mild blur now falls close to clear vision between slow crests instead of sitting at a constant floor.
 ACME_visualFx_ketamineAnalgesicMax = 0.22;
 ACME_visualFx_ketamineAnalgesicWindowSec = 300;
-ACME_visualFx_ketamineAnalgesicWaveSec = 28;
+ACME_visualFx_ketamineAnalgesicWaveSec = 34;
 ACME_visualFx_ketamineWetRiseSec = 7.0;   // slower onset so low-dose waves develop instead of appearing abruptly
 ACME_visualFx_ketamineWetFallSec = 6.0;   // gentle recovery/washout
-ACME_visualFx_ketamineGeneralRiseSec = 6.0; // chromatic/blur lag behind drug arrival instead of snapping on
-ACME_visualFx_ketamineGeneralFallSec = 5.0;
+ACME_visualFx_ketamineGeneralRiseSec = 8.5; // chromatic/blur lag behind drug arrival instead of snapping on
+ACME_visualFx_ketamineGeneralFallSec = 7.0;
 ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-style radial tunnel profile
 
 // Ketamine perceptual layering is intentionally dose-banded in fn_visualFxTick: sub-dissociative exposure favors

@@ -25,6 +25,10 @@ if (_selectionIndex < 0 && !(GVAR(TransfusionMenu_Move_Active))) exitWith {};
 private _ctrlMoveButton = _display displayCtrl IDC_TRANSFUSIONMENU_BUTTON_MOVEBAG;
 
 if (GVAR(TransfusionMenu_Move_Active)) then {
+    private _validDestination = [GVAR(TransfusionMenu_Target),GVAR(TransfusionMenu_Selected_BodyPart),GVAR(TransfusionMenu_SelectIV),GVAR(TransfusionMenu_Selected_AccessSite)] call ACME_fnc_transfusionAccessValid;
+    if (!_validDestination) exitWith {
+        ["Select an established IV or IO before placing the bag.",2.5,ACE_player,13] call ACEFUNC(common,displayTextStructured);
+    };
     _ctrlMoveButton ctrlSetText LLSTRING(TransfusionMenu_MoveBag_Display);
     _ctrlMoveButton ctrlSetTooltip LLSTRING(TransfusionMenu_MoveBag_ToolTip);
 

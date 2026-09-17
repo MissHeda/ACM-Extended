@@ -40,8 +40,23 @@ if (_stableId == "") exitWith {
 };
 _entry params ["_med",["_size",10],["_amt",0],["_label",""],["_nsMl",0]];
 private _total = (_amt + _nsMl) max 0;
-// B124: non-Hardcore medication administration always uses ACM's original three-second push.
+// Vascular pushes always use the provider-entered duration. The grey recommended number is a placeholder only.
+// Hardcore Medications consumes the same field in fn_hardcorePushStart; normal mode uses it for the plunger timing
+// and delivery metadata while its rate-sensitive adverse physiology remains gated off by the Hardcore setting.
 private _pushSec = 3;
+private _pushDurationValid = true;
+if (_route != "im") then {
+    private _durCtrl = _d displayCtrl 84831;
+    private _ghost = isNull _durCtrl || {_durCtrl getVariable ["ACME_SK_GhostActive",false]};
+    private _raw = if (_ghost) then {""} else {ctrlText _durCtrl};
+    private _typed = if (_raw == "") then {0} else {parseNumber _raw};
+    _pushDurationValid = !_ghost && {_raw != ""} && {_typed >= 1} && {_typed <= 300};
+    if (_pushDurationValid) then {_pushSec = _typed;};
+};
+if (!_pushDurationValid) exitWith {
+    ["Type the push duration (1-300 seconds). The grey number is only the recommended value.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
+    false
+};
 if (_total <= 0) exitWith {
     uiNamespace setVariable ["ACME_SK_PendingInjection",[]];
     call ACME_fnc_skBodyActionRender;

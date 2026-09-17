@@ -16,6 +16,10 @@ ACME_DP_fractureWakeGrace = 8;
 // direct-pressure free-movement pose tuning, for the limb and the head.
 ACME_DP_idleToPose = 0.8;  // idle seconds before adopting the holding pose
 ACME_DP_lookDot    = 0.4;  // minimum horizontal facing dot toward the patient to hold the pose, about a 66 deg cone.
+// B128: give every other-casualty Direct Pressure hold one additional metre of working leash. Movement input
+// still releases the hold immediately; this distance is only for leaning/repositioning around a stationary casualty.
+ACME_DP_leashDist = 2.7;
+ACME_DP_torsoLeashDist = 3.2;
 ACME_DP_treatTimeMult = 1.6;  // while a medic holds limb, head or self direct pressure, every timed action takes this much longer, because one hand is occupied.
 ACME_DP_limbBleedMult = 0.72;  // normal: modest immediate reduction of ordinary external limb bleeding while pressure is physically maintained.
 ACME_DP_limbBleedMultHardcore = 0.80;  // hardcore: still improved, but less forgiving than normal. Head/torso are never multiplied.

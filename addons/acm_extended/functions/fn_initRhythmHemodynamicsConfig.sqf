@@ -18,9 +18,9 @@ ACME_rhythm_bpDropTorsades     = -30;  // torsades: near-arrest perfusion
 ACME_rhythm_bpDropAFib         = 0;  // controlled AFib: rate-controlled, perfuses fine
 ACME_rhythm_bpDropSVT          = -18;  // SVT: symptomatic / cardiovertible
 
-// Custom perfusing rhythms. Torsades remains a true polymorphic ventricular rhythm with a pulse until native
-// physiology actually arrests the casualty; defibrillation and magnesium have explicit conversion paths.
-ACME_rhythm_perfusingCustom = [100, 101, 102, 103, 104];
+// Custom rhythms that are perfusing for their full lifetime. Torsades (102) is transitional: it perfuses only
+// while its entry morphology converts, then deliberately enters native PVT arrest while retaining the 102 waveform.
+ACME_rhythm_perfusingCustom = [100, 101, 103, 104];
 
 // Custom rhythms no longer masquerade as a native arrest rhythm while they still perfuse. Native ACM takes over
 // only after a real critical/arrest transition, at which point the custom overlay is released.

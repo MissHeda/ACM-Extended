@@ -8,18 +8,12 @@ private _back = _d displayCtrl 84819;
 private _btn = _d displayCtrl 84820;
 if (isNull _back || {isNull _btn}) exitWith {};
 
-// B124: push-duration/Slow Push controls exist only when [HARDCORE] Medications is enabled. Normal mode keeps
-// ACM's original three-second push and does not expose a control that has no gameplay effect.
+// Push-duration controls are available for every vascular syringe administration. The grey number is only the
+// recommended duration; the provider must type the actual push time. Hardcore Medications uses the same field.
 private _hcMed = missionNamespace getVariable ["ACME_hcEff_medications",false];
 private _durLabel = _d displayCtrl 84830;
 private _durEdit = _d displayCtrl 84831;
-if (!_hcMed) then {
-    if (!isNull _durLabel) then {ctrlDelete _durLabel;};
-    if (!isNull _durEdit) then {ctrlDelete _durEdit;};
-    _durLabel = controlNull;
-    _durEdit = controlNull;
-} else {
-    if (isNull _durLabel) then {
+if (isNull _durLabel) then {
         _durLabel = _d ctrlCreate ["RscText",84830];
         _durLabel ctrlSetText "Seconds to Push over:";
         _durLabel ctrlSetTextColor [0.94,0.91,0.82,1];
@@ -31,15 +25,47 @@ if (!_hcMed) then {
         _durEdit ctrlSetText "";
         _durEdit ctrlSetTextColor [1,1,1,1];
         _durEdit ctrlSetBackgroundColor [0.02,0.03,0.06,0.94];
-        _durEdit ctrlSetTooltip "Whole seconds to push the medication over (1-300).";
+        _durEdit ctrlSetTooltip "Type the number of whole seconds to push over (1-300). Grey text is only the recommended value.";
+        _durEdit setVariable ["ACME_SK_GhostActive",false];
+        _durEdit setVariable ["ACME_SK_GhostText",""];
+        _durEdit ctrlAddEventHandler ["MouseButtonDown", {
+            params ["_ctrl"];
+            if (_ctrl getVariable ["ACME_SK_GhostActive",false]) then {
+                _ctrl ctrlSetText "";
+                _ctrl ctrlSetTextColor [1,1,1,1];
+                _ctrl setVariable ["ACME_SK_GhostActive",false];
+            };
+        }];
+        _durEdit ctrlAddEventHandler ["KeyDown", {
+            params ["_ctrl"];
+            if (_ctrl getVariable ["ACME_SK_GhostActive",false]) then {
+                _ctrl ctrlSetText "";
+                _ctrl ctrlSetTextColor [1,1,1,1];
+                _ctrl setVariable ["ACME_SK_GhostActive",false];
+            };
+            false
+        }];
         _durEdit ctrlAddEventHandler ["KeyUp", {
             params ["_ctrl"];
-            private _raw = ctrlText _ctrl;
-            private _clean = toString ((toArray _raw) select {_x >= 48 && {_x <= 57}});
-            if (_clean != _raw) then {_ctrl ctrlSetText _clean;};
+            if !(_ctrl getVariable ["ACME_SK_GhostActive",false]) then {
+                private _raw = ctrlText _ctrl;
+                private _clean = toString ((toArray _raw) select {_x >= 48 && {_x <= 57}});
+                if (_clean != _raw) then {_ctrl ctrlSetText _clean;};
+                call ACME_fnc_skBodyActionRender;
+            };
+        }];
+        _durEdit ctrlAddEventHandler ["KillFocus", {
+            params ["_ctrl"];
+            if ((ctrlText _ctrl) == "") then {
+                private _g = _ctrl getVariable ["ACME_SK_GhostText",""];
+                if (_g != "") then {
+                    _ctrl ctrlSetText _g;
+                    _ctrl ctrlSetTextColor [0.56,0.58,0.62,0.82];
+                    _ctrl setVariable ["ACME_SK_GhostActive",true];
+                };
+            };
         }];
     };
-};
 private _body = (uiNamespace getVariable ["ACME_SK_View","syringe"]) == "body";
 private _editMode = uiNamespace getVariable ["ACME_SK_TagEditMode",false];
 private _busy = uiNamespace getVariable ["ACME_SK_InjectionBusy",false];
@@ -49,17 +75,21 @@ private _usable = _body && {!_editMode} && {_idx >= 0} && {_idx < count _store} 
 if (!_usable) exitWith {
     _back ctrlShow false;
     _btn ctrlShow false;
-    if (_hcMed) then {_durLabel ctrlShow false; _durEdit ctrlShow false;};
+    _durLabel ctrlShow false; _durEdit ctrlShow false;
 };
 
-private _view = _d displayCtrl 84150;
-private _vr = +(ctrlPosition _view);
+private _viewL = _d displayCtrl 84150;
+private _viewR = _d displayCtrl 84152;
+private _vl = +(ctrlPosition _viewL);
+private _vr = +(ctrlPosition _viewR);
 private _gap = safeZoneH * 0.006;
-private _r = [_vr select 0, (_vr select 1) - (_vr select 3) - _gap, _vr select 2, _vr select 3];
+private _actionX = _vl select 0;
+private _actionW = ((_vr select 0) + (_vr select 2)) - _actionX;
+private _r = [_actionX, (_vl select 1) - (_vl select 3) - _gap, _actionW, _vl select 3];
 _back ctrlSetPosition _r; _btn ctrlSetPosition _r;
 _back ctrlCommit 0; _btn ctrlCommit 0;
 
-if (_hcMed) then {
+{
     private _durGap = 2 * pixelW;
     private _durH = (_r select 3) * 0.82;
     private _durY = (_r select 1) - _durH - (_gap * 0.65);
@@ -90,6 +120,8 @@ if (_hcOwns) exitWith {
         _durLabel ctrlShow true;
         _durEdit ctrlShow true;
         _durEdit ctrlEnable false;
+        _durEdit setVariable ["ACME_SK_GhostActive",false];
+        _durEdit ctrlSetTextColor [1,1,1,1];
         _durEdit ctrlSetText str (round (_hcJob getOrDefault ["duration",3]));
     };
     _back ctrlShow true;
@@ -98,10 +130,14 @@ if (_hcOwns) exitWith {
 };
 if (_pending isEqualType [] && {count _pending >= 3}) then {
     _pending params ["_part","_site","_route"];
-    if (_hcMed && {_route != "im"}) then {
+    if (_route != "im") then {
         private _defaultFor = _d getVariable ["ACME_HCMedPushDefaultFor",""];
         if (_defaultFor != _id) then {
-            _durEdit ctrlSetText str ([_entry] call ACME_fnc_medicationSuggestedPushSec);
+            private _suggested = str (round ([_entry] call ACME_fnc_medicationSuggestedPushSec));
+            _durEdit setVariable ["ACME_SK_GhostText",_suggested];
+            _durEdit setVariable ["ACME_SK_GhostActive",true];
+            _durEdit ctrlSetText _suggested;
+            _durEdit ctrlSetTextColor [0.56,0.58,0.62,0.82];
             _d setVariable ["ACME_HCMedPushDefaultFor",_id];
         };
     };
@@ -129,16 +165,22 @@ if (_pending isEqualType [] && {count _pending >= 3}) then {
     };
     _btn ctrlSetText format ["%1 %2 mL in %3",_verb,_mlText,_where];
     _btn ctrlSetTooltip "Confirm administration of the currently selected syringe at the selected site";
-    _btn ctrlEnable (!_busy && {_total > 0});
-    _back ctrlSetBackgroundColor (["success",0.82] call ACME_fnc_a11yColor);
-    private _showDuration = _hcMed && {_route != "im"};
-    if (_hcMed) then {
-        _durLabel ctrlShow _showDuration;
-        _durEdit ctrlShow _showDuration;
-        _durEdit ctrlEnable (_showDuration && {!_busy});
+    private _validPushTime = true;
+    if (_route != "im") then {
+        private _ghost = _durEdit getVariable ["ACME_SK_GhostActive",false];
+        private _rawDur = if (_ghost) then {""} else {ctrlText _durEdit};
+        private _numDur = if (_rawDur == "") then {0} else {parseNumber _rawDur};
+        _validPushTime = !_ghost && {_rawDur != ""} && {_numDur >= 1} && {_numDur <= 300};
     };
+    _btn ctrlEnable (!_busy && {_total > 0} && {_validPushTime});
+    _btn ctrlSetTooltip (if (_validPushTime) then {"Confirm administration of the currently selected syringe at the selected site"} else {"Type a push duration first. Grey text is the recommended duration only."});
+    _back ctrlSetBackgroundColor (["success",0.82] call ACME_fnc_a11yColor);
+    private _showDuration = _route != "im";
+    _durLabel ctrlShow _showDuration;
+    _durEdit ctrlShow _showDuration;
+    _durEdit ctrlEnable (_showDuration && {!_busy});
 } else {
-    if (_hcMed) then {_durLabel ctrlShow false; _durEdit ctrlShow false;};
+    _durLabel ctrlShow false; _durEdit ctrlShow false;
     private _armed = uiNamespace getVariable ["ACME_SK_DiscardArmedId",""];
     if (_armed != _id) then {uiNamespace setVariable ["ACME_SK_DiscardArmedId",""]; _armed = "";};
     _btn ctrlSetText (if (_armed == _id) then {"Confirm discard?"} else {"Discard Syringe"});

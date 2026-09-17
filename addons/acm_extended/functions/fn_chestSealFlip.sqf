@@ -52,10 +52,17 @@ private _provider = uiNamespace getVariable ["ACME_CS_Medic", objNull];
 if (!isNull _provider && {local _provider}) then {
     if ((_provider getVariable ["ACME_DP_Active", false])
         && {(_provider getVariable ["ACME_DP_Patient", objNull]) isEqualTo _patient}) then {
+        // B128: Flip takes animation ownership synchronously.  The old path only marked DP "paused", so
+        // treatmentPoseStart did not recognize the handoff and ran a second weapon/prep transition while the
+        // looping DP state was still visible.  Mark it treatment-busy before starting the roll and invalidate every
+        // held-pose reassert worker in this same frame. Clinical pressure is suspended until Flip finishes.
         _provider setVariable ["ACME_DP_Paused", true, false];
         _provider setVariable ["ACME_DP_PauseTreatmentClass", "chestsealflip", false];
+        _provider setVariable ["ACME_DP_TreatmentBusy", true, false];
+        _provider setVariable ["ACME_DP_PoseToken", (_provider getVariable ["ACME_DP_PoseToken", 0]) + 1, false];
         _provider setVariable ["ACME_dah_gen", (_provider getVariable ["ACME_dah_gen", 0]) + 1, false];
         _provider setVariable ["ACME_DP_InPose", false, false];
+        _provider setVariable ["ACME_DP_LastPoseAssert", 0, false];
     };
     [_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart;
 };
@@ -85,6 +92,7 @@ if (!isNull _display) then {
                 && {(_provider getVariable ["ACME_DP_PauseTreatmentClass", ""]) == "chestsealflip"}) then {
                 _provider setVariable ["ACME_DP_Paused", false, false];
                 _provider setVariable ["ACME_DP_PauseTreatmentClass", "", false];
+                _provider setVariable ["ACME_DP_TreatmentBusy", false, false];
                 _provider setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
             };
         }, [], (_rollTime max _providerTime)] call CBA_fnc_waitAndExecute;

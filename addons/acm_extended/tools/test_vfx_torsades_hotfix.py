@@ -22,7 +22,7 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'private _ketOnsetEnvelope = if (_ketGeneralTarget > 0.001) then {(_ketGeneralSmooth / _ketGeneralTarget) min 1} else {0};' in tick
     assert 'private _zeroKetProfile' in tick
     assert '_ketWetDebugHandle ppEffectCommit 0;' in tick
-    assert 'private _f1 = [_k,1.45,1.65,1.74,1.84]' in tick
+    assert 'private _f1 = [_k,1.24,1.42,1.50,1.58]' in tick
     assert 'private _a1 = [_k,0.0000,0.0066,0.0081,0.0098]' in tick
     assert 'private _a3 = [_k,0.0000,0.0041,0.0051,0.0062]' in tick
     assert 'private _shockWetDebug = [0,0.28,0.62,0.96]' in tick
@@ -46,7 +46,8 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'private _ketAnalgesicEnvelope = 1;' in tick
     assert 'private _ketAnalgesicBlurEnvelope = 1;' in tick
     assert 'private _ketAnalgesicChromEnvelope = 1;' in tick
-    assert '_ketAnalgesicBlurEnvelope = 0.10 + (0.90 * _waveShaped);' in tick
+    assert '_ketAnalgesicBlurEnvelope = _waveShaped;' in tick
+    assert 'private _wave01 = 0.5 - (0.5 * cos' in tick
     assert 'private _chromPulseGain = linearConversion [0,0.060,_ketChromRaw,0.080,0.018,true];' in tick
     assert 'ace_medical_treatment_medicationLocal' in post
     assert 'ACME_VFX_KetLastDoseAt' in post
@@ -82,6 +83,6 @@ def test_chrom_equivalent_is_single_owner_and_wet_profile_is_unchanged():
     assert 'private _legacyFloor = _legacyPeak * 0.24;' in tick
     assert 'if (_legacyPhase < 0.14)' in tick
     # Keep the accepted ketamine WetDistortion profile untouched while tuning chromatic response.
-    assert 'private _f1 = [_k,1.45,1.65,1.74,1.84]' in tick
+    assert 'private _f1 = [_k,1.24,1.42,1.50,1.58]' in tick
     assert 'private _a1 = [_k,0.0000,0.0066,0.0081,0.0098]' in tick
     assert 'private _a3 = [_k,0.0000,0.0041,0.0051,0.0062]' in tick

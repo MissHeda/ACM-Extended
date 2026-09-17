@@ -54,3 +54,19 @@ def test_plunger_drag_stays_sticky_to_actual_control_and_releases_on_second_clic
     assert 'ACME_SK_PlungerReleaseEH' not in toggle
     assert 'displayAddEventHandler ["MouseButtonDown"' not in toggle
     assert 'ACME_SK_PlungerReleaseEH' not in end
+
+
+def test_nav_buttons_are_narrow_and_action_spans_both():
+    inj=read('functions/fn_skInject.sqf')
+    body=read('functions/fn_skBodyActionRender.sqf')
+    assert 'private _navW = _tw * 0.72;' in inj
+    assert 'private _actionW = ((_vr select 0) + (_vr select 2)) - _actionX;' in body
+
+def test_push_duration_uses_ghost_suggestion_not_default_value():
+    body=read('functions/fn_skBodyActionRender.sqf')
+    start=read('functions/fn_hardcorePushStart.sqf')
+    assert 'ACME_SK_GhostActive' in body
+    assert 'Grey text is only the recommended value' in body
+    assert '_validPushTime' in body
+    assert 'private _dur = -1;' in start
+    assert 'The grey number is only the recommended value' in start

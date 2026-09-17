@@ -28,6 +28,15 @@ if (_targetIndex < 0) exitWith {};
 
 private _medic = ACE_player;
 private _patient = GVAR(TransfusionMenu_Target);
+private _validAccess = [
+    _patient,
+    GVAR(TransfusionMenu_Selected_BodyPart),
+    GVAR(TransfusionMenu_SelectIV),
+    GVAR(TransfusionMenu_Selected_AccessSite)
+] call ACME_fnc_transfusionAccessValid;
+if (!_validAccess) exitWith {
+    ["Establish and select an IV or IO before hanging fluid.",2.5,ACE_player,13] call ACEFUNC(common,displayTextStructured);
+};
 
 private _vehicle = objectParent _medic;
 

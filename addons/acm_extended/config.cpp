@@ -2071,6 +2071,7 @@ class CfgFunctions {
             class updateTransfusionControls {};
             class updateTransfusionAccessHotspots {};
             class selectTransfusionAccess {};
+            class transfusionAccessValid {};
             class updateEJTransfusionMenu {};
             class selectEJTransfusionSite {};
             class adjustDripRate {};
@@ -3169,6 +3170,21 @@ class ACME_SK_PulseButton: ACME_SK_StyledButton {
     colorBackgroundActive[] = {0,0,0,0};
     colorBackgroundDisabled[] = {0,0,0,0};
     colorFocused[] = {0,0,0,0};
+};
+// Transfusion three-page navigation keeps one stable blue in normal/hover/pressed/focused states.
+// This prevents the page buttons from flashing ACM/RscButton grey after switching pages.
+class ACME_TX_PageButton: RscButton {
+    colorText[] = {0.94,0.91,0.82,1};
+    colorDisabled[] = {0.94,0.91,0.82,0.45};
+    colorBackground[] = {0.043,0.082,0.188,0.94};
+    colorBackgroundActive[] = {0.043,0.082,0.188,0.94};
+    colorBackgroundDisabled[] = {0.043,0.082,0.188,0.55};
+    colorFocused[] = {0.043,0.082,0.188,0.94};
+    colorBorder[] = {0.12,0.24,0.42,0.9};
+    font = "RobotoCondensed";
+    sizeEx = "safeZoneH / 46";
+    borderSize = 0;
+    shadow = 0;
 };
 // injection hotspots over the body image. each is a faint blue clickable zone that brightens on hover.
 // they are invisible by default. this used to paint a solid 50 percent blue rectangle over every site, which

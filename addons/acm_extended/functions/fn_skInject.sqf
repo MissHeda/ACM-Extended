@@ -178,25 +178,26 @@ private _routeY = safeZoneY + (safeZoneH * 0.748);
 // Body Map reverses the local page on the left and continues to Transfuse on the right. Both backings pulse without
 // owning focus, so switching pages never magnetizes the cursor to a newly recreated control.
 private _navGap = 4 * pixelW;
-private _navLeftX = (_uiX + (_uiW/2)) - (_navGap/2) - _tw;
+private _navW = _tw * 0.72;
+private _navLeftX = (_uiX + (_uiW/2)) - (_navGap/2) - _navW;
 private _navRightX = (_uiX + (_uiW/2)) + (_navGap/2);
 private _pulseBack = _display ctrlCreate ["RscText", 84153];
-_pulseBack ctrlSetPosition [_navLeftX, _viewY, _tw, _th];
+_pulseBack ctrlSetPosition [_navLeftX, _viewY, _navW, _th];
 _pulseBack ctrlSetBackgroundColor (["info", 0.45] call ACME_fnc_a11yColor);
 _pulseBack ctrlCommit 0;
 private _pulseBackR = _display ctrlCreate ["RscText", 84157];
-_pulseBackR ctrlSetPosition [_navRightX, _viewY, _tw, _th];
+_pulseBackR ctrlSetPosition [_navRightX, _viewY, _navW, _th];
 _pulseBackR ctrlSetBackgroundColor (["info", 0.45] call ACME_fnc_a11yColor);
 _pulseBackR ctrlCommit 0;
 
 private _toggleBtn = _display ctrlCreate ["ACME_SK_PulseButton", 84150];
-_toggleBtn ctrlSetPosition [_navLeftX, _viewY, _tw, _th];
+_toggleBtn ctrlSetPosition [_navLeftX, _viewY, _navW, _th];
 _toggleBtn ctrlSetText "< Transfuse";
 _toggleBtn ctrlSetTooltip "Previous page";
 _toggleBtn ctrlAddEventHandler ["ButtonClick", {["left"] call ACME_fnc_skPageNavigate;}];
 _toggleBtn ctrlCommit 0;
 private _toggleBtnR = _display ctrlCreate ["ACME_SK_PulseButton", 84152];
-_toggleBtnR ctrlSetPosition [_navRightX, _viewY, _tw, _th];
+_toggleBtnR ctrlSetPosition [_navRightX, _viewY, _navW, _th];
 _toggleBtnR ctrlSetText "Body Map >";
 _toggleBtnR ctrlSetTooltip "Next page";
 _toggleBtnR ctrlAddEventHandler ["ButtonClick", {["right"] call ACME_fnc_skPageNavigate;}];

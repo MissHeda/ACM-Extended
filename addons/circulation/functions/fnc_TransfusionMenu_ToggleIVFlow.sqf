@@ -16,7 +16,12 @@
  * Public: No
  */
 
+private _patient = GVAR(TransfusionMenu_Target);
 private _partIndex = ALL_BODY_PARTS find GVAR(TransfusionMenu_Selected_BodyPart);
+private _validAccess = [_patient,GVAR(TransfusionMenu_Selected_BodyPart),GVAR(TransfusionMenu_SelectIV),GVAR(TransfusionMenu_Selected_AccessSite)] call ACME_fnc_transfusionAccessValid;
+if (_partIndex < 0 || {!_validAccess}) exitWith {
+    ["No established IV/IO is selected.",2,ACE_player,13] call ACEFUNC(common,displayTextStructured);
+};
 
 if (GVAR(TransfusionMenu_SelectIV)) then {
     private _flowArray = GET_IV_FLOW(GVAR(TransfusionMenu_Target));

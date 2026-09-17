@@ -92,9 +92,16 @@ private _overlayAspect = ((_nativeRect param [2,safeZoneW*0.02,[0]]) / _nativeH)
 private _travel10 = _d getVariable ["ACME_SK_CarouselTravel10",_nativeH*0.195];
 private _overlayTravelNorm = (_travel10 / _nativeH) max 0.02 min 0.40;
 
-private _dur = [_row] call ACME_fnc_medicationSuggestedPushSec;
+private _dur = -1;
 private _durCtrl = _d displayCtrl 84831;
-if (!isNull _durCtrl) then {private _raw = ctrlText _durCtrl; if (_raw != "") then {_dur = ((parseNumber _raw) max 1) min 300;};};
+if (!isNull _durCtrl && {!(_durCtrl getVariable ["ACME_SK_GhostActive",false])}) then {
+    private _raw = ctrlText _durCtrl;
+    if (_raw != "") then {_dur = parseNumber _raw;};
+};
+if (_dur < 1 || {_dur > 300}) exitWith {
+    ["Type the push duration (1-300 seconds). The grey number is only the recommended value.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
+    false
+};
 private _magClass = ""; private _magContainer = objNull;
 if (!_virtual) then {
     _magClass = format ["ACM_Syringe_%1_%2",_size,_med];

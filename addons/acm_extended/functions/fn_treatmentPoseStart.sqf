@@ -91,7 +91,12 @@ private _actionStarted = CBA_missionTime;
 // plays a pointless weapon-away transition between DP and the incoming treatment pose.
 private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
     && {(_medic getVariable ["ACME_DP_TreatmentBusy", false])};
-private _prepDelay = if (_dpPoseHandoff) then {
+// B128: the physical Flip is a direct theatre action.  If the provider is already in DP's Wnon hold, or for any
+// ordinary roll request, select empty hands immediately and begin the crouch/medic4 move graph in this frame.
+// Do not play ACE's 0.70 s weapon-away preflight before the Flip animation.
+private _rollImmediate = _mode == "roll";
+private _prepDelay = if (_dpPoseHandoff || {_rollImmediate}) then {
+    if (currentWeapon _medic != "") then {_medic selectWeapon "";};
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime], false];
     0
 } else {

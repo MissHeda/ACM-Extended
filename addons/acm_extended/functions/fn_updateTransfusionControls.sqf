@@ -496,6 +496,13 @@ if !(_activeContext isEqualTo []) then {
 
 private _selection = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selection_IVBags", []];
 private _targetPatient = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Target", objNull];
+private _selectedAccessValid = false;
+if (!isNull _targetPatient) then {
+    private _txBodyPart = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart", ""];
+    private _txIV = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_SelectIV", true];
+    private _txSite = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_AccessSite", -1];
+    _selectedAccessValid = [_targetPatient,_txBodyPart,_txIV,_txSite] call ACME_fnc_transfusionAccessValid;
+};
 private _targetBodyPart = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart", ""];
 private _entriesForTarget = if (isNull _targetPatient) then {[]} else {_targetPatient getVariable ["ACME_infusion_BagMedications", []]};
 private _infusionSelectionIndexes = [];
@@ -804,7 +811,7 @@ if (!isNull _ctrlInject) then {_ctrlInject ctrlEnable (_bagRowSelected && {_prep
 // volume, and only when a bag row is actually selected in the transfusion list.
 if (!isNull _ctrlInfuse) then {_ctrlInfuse ctrlEnable (_bagRowSelected && {_canActive});};
 if (!isNull _ctrlGivePrep) then {
-    private _canGive = (_selectedPrepared >= 0 && {_selectedPrepared < _preparedCount}) && {!_preparedLineIsY};
+    private _canGive = _selectedAccessValid && {(_selectedPrepared >= 0 && {_selectedPrepared < _preparedCount})} && {!_preparedLineIsY};
     _ctrlGivePrep ctrlEnable _canGive;
     _ctrlGivePrep ctrlSetText "Give Infusion";
     // yellow when an infusion is selected, because this action is transfusion-bound.
@@ -873,7 +880,7 @@ if (_txSelected) then {
     if (_id != "" && {((_targetPatient getVariable ["ACME_infusion_BagMedications", []]) findIf {(_x param [23, ""]) == _id}) >= 0}) then {_txSelected = false;};
 };
 if (!isNull _ctrlHang) then {
-    _ctrlHang ctrlEnable (_txSelected && {(_txCtx param [10, 0]) > 0.5} && {(_txCtx param [3, ""]) in ["Blood","FreshBlood","Saline","Plasma","PlasmaLyte"]} && {!(ACE_player getVariable ["ACME_hang_Active", false])} && {isNull objectParent ACE_player});
+    _ctrlHang ctrlEnable (_selectedAccessValid && {_txSelected} && {(_txCtx param [10, 0]) > 0.5} && {(_txCtx param [3, ""]) in ["Blood","FreshBlood","Saline","Plasma","PlasmaLyte"]} && {!(ACE_player getVariable ["ACME_hang_Active", false])} && {isNull objectParent ACE_player});
 };
 (_display displayCtrl 86148) ctrlEnable (_txSelected && {[_txCtx, false] call ACME_fnc_pressureInfuserCan});
 if (!isNull _ctrlInfPressure) then {
@@ -976,7 +983,7 @@ if (!isNull _ctrlSpike) then {
         // prepared iv sets mode. the spike button hangs the selected stored set. it is enabled only when a real set row,
         // with non-empty lbdata, is selected in the overlay list.
         private _setSel = if (!isNull _ctrlSetsList) then { lbCurSel _ctrlSetsList } else { -1 };
-        private _setOk = (_setSel >= 0) && {!isNull _ctrlSetsList} && {(_ctrlSetsList lbData _setSel) != ""};
+        private _setOk = _selectedAccessValid && {(_setSel >= 0)} && {!isNull _ctrlSetsList} && {(_ctrlSetsList lbData _setSel) != ""};
         _ctrlSpike ctrlSetText "Hang Set";
         _ctrlSpike ctrlEnable _setOk;
     } else {
