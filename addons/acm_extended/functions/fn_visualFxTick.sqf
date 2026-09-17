@@ -324,20 +324,23 @@ if (_ketDoseNorm > 0 && {!isNil "ace_medical_status_fnc_getMedicationCount"}) th
     if !(_imLegacy isEqualType 0 && {finite _imLegacy}) then {_imLegacy = 0;};
     if !(_ivLegacy isEqualType 0 && {finite _ivLegacy}) then {_ivLegacy = 0;};
     private _legacyEffect = (((_imLegacy max 0) * 0.5) + ((_ivLegacy max 0) * 0.8)) min 1;
-    private _legacyScale = missionNamespace getVariable ["ACME_visualFx_ketamineLegacyChromEquivalentScale",0.86];
+    private _legacyScale = missionNamespace getVariable ["ACME_visualFx_ketamineLegacyChromEquivalentScale",1.00];
     private _legacyPeak = (0.06 * _legacyEffect * _legacyScale) max 0;
-    private _legacyFloor = _legacyPeak * 0.30;
+    // Match the former ACM+ACME peak magnitude with ACME alone, but make the beat easier to read: a quick rise,
+    // short relaxation, then a quiet floor before the next beat. Peak is unchanged; only the temporal contrast is
+    // sharper than the old overlapping commits.
+    private _legacyFloor = _legacyPeak * 0.24;
     private _legacyHR = _u getVariable ["ace_medical_heartRate",80];
     if !(_legacyHR isEqualType 0 && {finite _legacyHR} && {_legacyHR > 0}) then {_legacyHR = 80;};
     private _legacyRR = 60 / ((_legacyHR max 25) min 240);
     private _legacyPhase = (diag_tickTime mod _legacyRR) / (_legacyRR max 0.10);
-    private _legacyPulse = if (_legacyPhase < 0.33) then {
-        // ACM committed from low -> high across roughly the first third of the beat.
-        sin ((_legacyPhase / 0.33) * 90)
+    private _legacyPulse = if (_legacyPhase < 0.14) then {
+        sin ((_legacyPhase / 0.14) * 90)
     } else {
-        // Then it relaxed toward the 30% floor for the remainder of the beat.
-        private _r = ((_legacyPhase - 0.33) / 0.67) min 1;
-        1 - _r
+        if (_legacyPhase < 0.52) then {
+            private _r = ((_legacyPhase - 0.14) / 0.38) min 1;
+            1 - (_r ^ 0.82)
+        } else {0}
     };
     _legacyChromEq = _legacyFloor + ((_legacyPeak - _legacyFloor) * (_legacyPulse max 0 min 1));
 };

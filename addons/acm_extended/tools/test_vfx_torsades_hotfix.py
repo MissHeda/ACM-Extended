@@ -72,3 +72,16 @@ def test_mature_torsades_drives_aed_arrest_alarm():
     assert '_torsadesPulseless' in aed
     assert 'ACM_Rhythm_PVT]) || {_torsadesPulseless}' in aed
     assert '&& {!_torsadesPulselessPO}' in aed
+
+
+def test_chrom_equivalent_is_single_owner_and_wet_profile_is_unchanged():
+    cfg = read('functions/fn_initVisualEffectsConfig.sqf')
+    tick = read('functions/fn_visualFxTick.sqf')
+    assert 'ACME_visualFx_ketamineLegacyChromEquivalentScale = 1.00;' in cfg
+    assert '_acmKetChrom ppEffectEnable false;' in tick
+    assert 'private _legacyFloor = _legacyPeak * 0.24;' in tick
+    assert 'if (_legacyPhase < 0.14)' in tick
+    # Keep the accepted ketamine WetDistortion profile untouched while tuning chromatic response.
+    assert 'private _f1 = [_k,1.45,1.65,1.74,1.84]' in tick
+    assert 'private _a1 = [_k,0.0000,0.0066,0.0081,0.0098]' in tick
+    assert 'private _a3 = [_k,0.0000,0.0041,0.0051,0.0062]' in tick

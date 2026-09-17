@@ -38,5 +38,5 @@ ACME_visualFx_tunnelStart = 0.50; // same severe-range onset used by the ACM-sty
 // mild blur/diplopia + subtle vividness and motion-lag; stronger depth/zoom and chromatic separation arrive later.
 // ACME reproduces the magnitude of ACM's former ketamine chromatic pulse inside ONE PP handle. 0.86 comes close
 // to the old stacked ACM+ACME look without actually running two competing ChromAberration effects.
-ACME_visualFx_ketamineLegacyChromEquivalentScale = 0.86;
+ACME_visualFx_ketamineLegacyChromEquivalentScale = 1.00;
 

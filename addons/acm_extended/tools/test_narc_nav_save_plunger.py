@@ -40,3 +40,16 @@ def test_chrom_duplicate_reference_restored():
     t=read('functions/fn_visualFxTick.sqf')
     assert '_acmKetChrom ppEffectEnable false;' in t
     assert 'former dose/HR-synchronous contribution numerically below' in t
+
+
+def test_plunger_drag_does_not_warp_cursor_and_release_is_robust():
+    compound=read('functions/fn_skCompoundBegin.sqf')
+    waste=read('functions/fn_skWasteBegin.sqf')
+    toggle=read('functions/fn_skWasteToggleMove.sqf')
+    end=read('functions/fn_skWasteEnd.sqf')
+    assert 'setMousePosition [' not in compound
+    assert 'setMousePosition [' not in waste
+    assert 'ACME_SK_PlungerReleaseEH' in toggle
+    assert 'ACME_SK_PlungerSuppressUpUntil' in toggle
+    assert 'displayAddEventHandler ["MouseButtonDown"' in toggle
+    assert 'ACME_SK_PlungerReleaseEH' in end

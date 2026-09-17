@@ -164,11 +164,11 @@ private _h = [{
     private _bottomMouse = _maxY + _mouseOffset;
     private _floorYMouse = _floorY + _mouseOffset;
     getMousePosition params ["_mouseX", "_mouseY"];
-    private _canvasNow = call ACME_fnc_uiCanvas;
-    _canvasNow params ["_uiXNow", "", "_uiWNow", ""];
-    setMousePosition [(_uiXNow + (_uiWNow / 2)), (_bottomMouse min _mouseY max _floorYMouse)];
-
-    private _rawY = (_mouseY - _mouseOffset) min _maxY max _floorY;
+    // Do not warp/recenter the hardware cursor while dragging. The new in-place Narc Box pages and syringe-size
+    // swaps keep the same display alive, so forcing setMousePosition here can move the pointer away from the moving
+    // plunger hitbox and strand the grab state. Clamp only the Y used for the syringe calculation.
+    private _mouseYClamped = _bottomMouse min _mouseY max _floorYMouse;
+    private _rawY = (_mouseYClamped - _mouseOffset) min _maxY max _floorY;
     private _rawFill = linearConversion [_limitTop, _limitBottom, _rawY, 0, _size, true];
 
     // B25: use ACM-like direct plunger motion. Returning medication toward the vial follows the hand normally;
