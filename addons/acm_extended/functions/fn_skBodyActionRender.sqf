@@ -8,8 +8,9 @@ private _back = _d displayCtrl 84819;
 private _btn = _d displayCtrl 84820;
 if (isNull _back || {isNull _btn}) exitWith {};
 
-// Push-duration controls are available for every vascular syringe administration. The grey number is only the
-// recommended duration; the provider must type the actual push time. Hardcore Medications uses the same field.
+// Push-duration controls are available for every vascular syringe administration. The grey number is guidance
+// only. If the provider does not enter a number, the actual push defaults to 3 seconds in both normal and Hardcore
+// medication modes.
 private _hcMed = missionNamespace getVariable ["ACME_hcEff_medications",false];
 private _durLabel = _d displayCtrl 84830;
 private _durEdit = _d displayCtrl 84831;
@@ -25,7 +26,7 @@ if (isNull _durLabel) then {
         _durEdit ctrlSetText "";
         _durEdit ctrlSetTextColor [1,1,1,1];
         _durEdit ctrlSetBackgroundColor [0.02,0.03,0.06,0.94];
-        _durEdit ctrlSetTooltip "Type the number of whole seconds to push over (1-300). Grey text is only the recommended value.";
+        _durEdit ctrlSetTooltip "Optional: type whole seconds to push over (1-300). Leave it blank for 3 seconds. Grey text is the recommended value.";
         _durEdit setVariable ["ACME_SK_GhostActive",false];
         _durEdit setVariable ["ACME_SK_GhostText",""];
         _durEdit ctrlAddEventHandler ["MouseButtonDown", {
@@ -89,19 +90,21 @@ private _r = [_actionX, (_vl select 1) - (_vl select 3) - _gap, _actionW, _vl se
 _back ctrlSetPosition _r; _btn ctrlSetPosition _r;
 _back ctrlCommit 0; _btn ctrlCommit 0;
 
-{
-    private _durGap = 2 * pixelW;
-    private _durH = (_r select 3) * 0.82;
-    private _durY = (_r select 1) - _durH - (_gap * 0.65);
-    private _editW = (_r select 2) * 0.23;
-    private _labelW = (_r select 2) - _editW - _durGap;
-    _durLabel ctrlSetPosition [_r select 0, _durY, _labelW, _durH];
-    _durEdit ctrlSetPosition [(_r select 0) + _labelW + _durGap, _durY, _editW, _durH];
-    _durLabel ctrlSetFontHeight (_durH * 0.63);
-    _durEdit ctrlSetFontHeight (_durH * 0.63);
-    _durLabel ctrlCommit 0;
-    _durEdit ctrlCommit 0;
-};
+// Keep the duration row physically attached to the green Push button. This used to be ordinary executable
+// layout code; wrapping it in a bare {...} code literal stopped it from running and left the controls at their
+// default coordinates. Use the live Push rectangle every render so page-navigation/layout changes cannot offset it.
+private _pushRect = +(ctrlPosition _btn);
+private _durGap = 2 * pixelW;
+private _durH = (_pushRect select 3) * 0.82;
+private _durY = (_pushRect select 1) - _durH - (_gap * 0.65);
+private _editW = (_pushRect select 2) * 0.23;
+private _labelW = (_pushRect select 2) - _editW - _durGap;
+_durLabel ctrlSetPosition [_pushRect select 0, _durY, _labelW, _durH];
+_durEdit ctrlSetPosition [(_pushRect select 0) + _labelW + _durGap, _durY, _editW, _durH];
+_durLabel ctrlSetFontHeight (_durH * 0.63);
+_durEdit ctrlSetFontHeight (_durH * 0.63);
+_durLabel ctrlCommit 0;
+_durEdit ctrlCommit 0;
 
 private _entry = _store select _idx;
 private _id = _entry param [11,"",[""]];
@@ -169,11 +172,13 @@ if (_pending isEqualType [] && {count _pending >= 3}) then {
     if (_route != "im") then {
         private _ghost = _durEdit getVariable ["ACME_SK_GhostActive",false];
         private _rawDur = if (_ghost) then {""} else {ctrlText _durEdit};
-        private _numDur = if (_rawDur == "") then {0} else {parseNumber _rawDur};
-        _validPushTime = !_ghost && {_rawDur != ""} && {_numDur >= 1} && {_numDur <= 300};
+        private _hasTypedDuration = !_ghost && {_rawDur != ""};
+        private _numDur = if (_hasTypedDuration) then {parseNumber _rawDur} else {3};
+        // Blank or grey-placeholder means "use the 3 s fallback". Only an explicitly typed out-of-range value blocks.
+        _validPushTime = !_hasTypedDuration || {_numDur >= 1 && {_numDur <= 300}};
     };
     _btn ctrlEnable (!_busy && {_total > 0} && {_validPushTime});
-    _btn ctrlSetTooltip (if (_validPushTime) then {"Confirm administration of the currently selected syringe at the selected site"} else {"Type a push duration first. Grey text is the recommended duration only."});
+    _btn ctrlSetTooltip (if (_validPushTime) then {"Confirm administration. If no push time is entered, 3 seconds is used."} else {"Push duration must be 1-300 seconds. Grey text is only the recommendation."});
     _back ctrlSetBackgroundColor (["success",0.82] call ACME_fnc_a11yColor);
     private _showDuration = _route != "im";
     _durLabel ctrlShow _showDuration;
