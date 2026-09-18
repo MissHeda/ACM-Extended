@@ -933,7 +933,8 @@ private _isSpikingSel = (count _spikingActive > 0) && {(_spikingActive param [0,
 
 // the blood and y-line state for the selected bag and the selected access line. the FBTK is excluded, see the
 // show-gate note above, because it is a native single-bag collection kit and never a y-set blood product.
-private _selIsBlood = ((_selClass find "FieldBloodTransfusionKit") < 0) && {((toLowerANSI _selClass) find "blood") >= 0};
+private _selIsFBTK = (_selClass find "FieldBloodTransfusionKit") >= 0;
+private _selIsBlood = !_selIsFBTK && {((toLowerANSI _selClass) find "blood") >= 0};
 private _yPending = missionNamespace getVariable ["ACME_yPending", ""];
 // Built sets have their own prepared-set rows; native bag rows use the selected live line.
 private _bpSel = missionNamespace getVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart", ""];
