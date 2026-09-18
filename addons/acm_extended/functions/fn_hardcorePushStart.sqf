@@ -92,14 +92,20 @@ private _overlayAspect = ((_nativeRect param [2,safeZoneW*0.02,[0]]) / _nativeH)
 private _travel10 = _d getVariable ["ACME_SK_CarouselTravel10",_nativeH*0.195];
 private _overlayTravelNorm = (_travel10 / _nativeH) max 0.02 min 0.40;
 
-private _dur = -1;
+// The recommended grey value is guidance, not an implicit selection. A provider who does not type a duration
+// gets the original 3-second push; an explicitly entered value still controls the persistent Hardcore transaction.
+private _dur = 3;
+private _durValid = true;
 private _durCtrl = _d displayCtrl 84831;
 if (!isNull _durCtrl && {!(_durCtrl getVariable ["ACME_SK_GhostActive",false])}) then {
     private _raw = ctrlText _durCtrl;
-    if (_raw != "") then {_dur = parseNumber _raw;};
+    if (_raw != "") then {
+        _dur = parseNumber _raw;
+        _durValid = _dur >= 1 && {_dur <= 300};
+    };
 };
-if (_dur < 1 || {_dur > 300}) exitWith {
-    ["Type the push duration (1-300 seconds). The grey number is only the recommended value.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
+if (!_durValid) exitWith {
+    ["Push duration must be 1-300 seconds. Leave it blank to use 3 seconds.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
     false
 };
 private _magClass = ""; private _magContainer = objNull;
