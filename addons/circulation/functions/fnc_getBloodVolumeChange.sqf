@@ -393,7 +393,7 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
                     [_unit, _targetBodyPart, _acmeBagIndex, _acmeOriginalBag, _bagChange, _admitted, _deltaT] call ACME_fnc_fluidCommit;
                 };
                 if (_type == "FBTK") then {
-                    _bagVolumeRemaining = _bagVolumeRemaining + _bagChange;
+                    _bagVolumeRemaining = (_bagVolumeRemaining + _bagChange) min _originalVolume;
                 } else {
                     _bagVolumeRemaining = _bagVolumeRemaining - _bagChange;
                 };
