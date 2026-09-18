@@ -372,6 +372,22 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
                 };
                 _bagChange = _bagChange max 0;
                 _fluidPassRatio = [_unit,_targetBodyPart,if (_iv) then {_accessSite} else {-1}] call ACME_fnc_medicationLineFraction;
+
+                // FBTK runs in the opposite direction from an infusion. The line fraction must reduce how much
+                // blood is physically collected, not reduce donor loss after the bag has already been credited.
+                // The old order could fill a 500 mL FBTK while removing only a fraction of that from a compromised
+                // donor IV. Apply the line loss to collection first, then settle bag gain and donor loss 1:1.
+                if (_type == "FBTK") then {
+                    _bagChange = _bagChange * _fluidPassRatio;
+                    _fluidPassRatio = 1;
+
+                    // Never manufacture donor blood at extreme hypovolemia. External/internal bleeding has already
+                    // been accumulated into _bloodVolumeChange above, so this is the blood actually available for
+                    // collection in this integration step.
+                    private _donorAvailableMl = (((_bloodVolume + _bloodVolumeChange) max 0) * 1000);
+                    _bagChange = _bagChange min _donorAvailableMl;
+                };
+
                 private _admitted = _bagChange * _fluidPassRatio;
                 if (_type != "FBTK") then {
                     [_unit, _targetBodyPart, _acmeBagIndex, _acmeOriginalBag, _bagChange, _admitted, _deltaT] call ACME_fnc_fluidCommit;
