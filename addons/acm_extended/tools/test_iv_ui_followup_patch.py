@@ -50,8 +50,18 @@ def test_tray_rotation_hover_splay_and_spear_sound():
     assert "(_count min 5)" in h
     assert "_count > 5" in h
     assert "private _liveSlot = ctrlPosition _bg;" in h
-    assert "private _fanW = _sw * 0.88;" in h
-    assert "private _px = _sx + _sw - _pw - (_sw * 0.035);" in h
+    assert "private _artV = 1 - _iconBias;" in h
+    assert "private _artOffset = {" in h
+    assert "private _rectAtVisualCenter = {" in h
+    assert "private _spriteX = _bx + (_bw * 0.5) + (_baseOff select 0);" in h
+    assert "private _spriteY = _by + (_bh * 0.5) + (_baseOff select 1);" in h
+    assert "private _fanW = _bw * _fanMul;" in h
+    assert "private _fanH = _bh * _fanMul;" in h
+    assert "[_anchorX,_anchorY,_fanW,_fanH,_ang,_artU,_artV] call _rectAtVisualCenter" in h
+    assert "private _px = _sx + _sw - _pw - _insetX;" in h
+    assert "private _py = _sy + _insetY;" in h
+    assert "private _fanW = _sw * 0.88;" not in h
+    assert "private _fanH = _sh * 0.70;" not in h
     assert "[-0.030, 0.045, -100]" in h
     assert "['band','pad']" in h
     assert 'playSound "ACME_NARSPEAR_Open"' in g

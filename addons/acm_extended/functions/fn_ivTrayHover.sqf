@@ -37,9 +37,12 @@ if (count _rec < 4) exitWith {};
 _rec params ['','_slot','_base','_logoIdc'];
 private _logo = _d displayCtrl _logoIdc;
 if (isNull _logo) exitWith {};
-// Always derive the hover geometry from the LIVE tray background control. The resting catheter logo intentionally
-// uses an oversized transparent canvas so the catheter itself fills the slot after rotation; reusing that canvas for
-// fan copies makes the deck look stretched and makes screen-space badges drift away from the slot.
+
+// Use the LIVE tray box for the badge boundary. Use the original live logo canvas for every catheter copy.
+// The catheter PAA has a large transparent canvas and its opaque artwork is biased below the texture midpoint;
+// after the tray's -90 degree rotation that becomes a visible right-side bias. Shrinking the clones into the
+// tray box changes the KeepAspect fit and makes that bias much worse. Keeping every copy on the same canvas as
+// the real catheter preserves the exact texture aspect and makes the visible catheter centroid predictable.
 private _bgIdc = switch (_gauge) do {case 14:{86540}; case 16:{86544}; case 18:{86548}; default {86556};};
 private _bg = _d displayCtrl _bgIdc;
 if (!isNull _bg) then {
@@ -84,21 +87,48 @@ if (_fan isEqualTo []) then {
 };
 private _plus = _fan param [4,controlNull];
 
-// Primary catheter always grows slightly on hover; it is one of the displayed inventory needles.
-_logo ctrlSetPosition ([_base, if (_enter && {_shown > 0}) then {1.11} else {1}] call _scaleRect);
+// Approximate the opaque catheter's center inside the source canvas. fn_ivMinigameInit uses the complementary
+// 0.34 tray-icon bias because the art mass sits around 0.66 of the source height. With the tray rotation that
+// vertical texture bias becomes a screen-space right bias. We solve every fan pose around this VISUAL centroid
+// instead of around the transparent control midpoint.
+private _iconBias = missionNamespace getVariable ['ACME_iv_trayIconBias',0.34];
+if !(_iconBias isEqualType 0 && {finite _iconBias}) then {_iconBias = 0.34;};
+_iconBias = (_iconBias max 0) min 1;
+private _artU = 0.5;
+private _artV = 1 - _iconBias;
+
+private _artOffset = {
+    params ['_w','_h','_ang','_u','_v'];
+    private _dx = (_u - 0.5) * _w;
+    private _dy = (_v - 0.5) * _h;
+    private _ca = cos _ang;
+    private _sa = sin _ang;
+    [(_dx * _ca) - (_dy * _sa), (_dx * _sa) + (_dy * _ca)]
+};
+private _rectAtVisualCenter = {
+    params ['_anchorX','_anchorY','_w','_h','_ang','_u','_v'];
+    private _off = [_w,_h,_ang,_u,_v] call _artOffset;
+    [_anchorX - (_off select 0) - (_w * 0.5), _anchorY - (_off select 1) - (_h * 0.5), _w, _h]
+};
+
+_base params ['_bx','_by','_bw','_bh'];
+private _baseOff = [_bw,_bh,-90,_artU,_artV] call _artOffset;
+private _spriteX = _bx + (_bw * 0.5) + (_baseOff select 0);
+private _spriteY = _by + (_bh * 0.5) + (_baseOff select 1);
+
+// Grow the real front catheter without moving the visible catheter itself. Scaling the transparent control around
+// its geometric center is what previously made the front image shift as the source-art bias became more obvious.
+private _frontMul = if (_enter && {_shown > 0}) then {1.11} else {1};
+private _frontW = _bw * _frontMul;
+private _frontH = _bh * _frontMul;
+_logo ctrlSetPosition ([_spriteX,_spriteY,_frontW,_frontH,-90,_artU,_artV] call _rectAtVisualCenter);
 _logo ctrlSetAngle [-90,0.5,0.5,false];
 _logo ctrlCommit _ease;
 
 _slot params ['_sx','_sy','_sw','_sh'];
-// The fan gets its OWN compact canvas inside the tray box. Do not reuse _base: _base is deliberately much larger
-// than the box to compensate for transparent padding in the source catheter art.
-private _fanW = _sw * 0.88;
-private _fanH = _sh * 0.70;
-private _fanX = _sx + ((_sw - _fanW) * 0.5);
-private _fanY = _sy + ((_sh - _fanH) * 0.5);
-private _fanBase = [_fanX,_fanY,_fanW,_fanH];
-// Tight deck-style splay. The prior +/-16 degree fan read like a stretched triangle; keep the copies mostly stacked
-// under the real front catheter and use tiny offsets so the entire animation remains part of this one tray tile.
+// Keep the deck tight. The offsets are deliberately measured from the real catheter's visible midpoint, not the
+// tray box or the transparent PAA canvas. Every clone uses the same aspect-preserving canvas dimensions as the
+// live logo, so changing angle no longer stretches the artwork or throws it toward the right edge of the screen.
 private _poses = [
     [-0.030, 0.045, -100],
     [-0.012, 0.020,  -95],
@@ -106,16 +136,21 @@ private _poses = [
     [ 0.030, 0.045,  -80]
 ];
 private _cloneCount = ((_shown - 1) max 0) min 4;
+private _fanMul = 1.03;
+private _fanW = _bw * _fanMul;
+private _fanH = _bh * _fanMul;
 for '_i' from 0 to 3 do {
     private _c = _fan select _i;
     if (_enter && {_i < _cloneCount}) then {
         (_poses select _i) params ['_ox','_oy','_ang'];
-        _c ctrlSetPosition [_fanX + (_sw*_ox), _fanY + (_sh*_oy), _fanW, _fanH];
+        private _anchorX = _spriteX + (_sw * _ox);
+        private _anchorY = _spriteY + (_sh * _oy);
+        _c ctrlSetPosition ([_anchorX,_anchorY,_fanW,_fanH,_ang,_artU,_artV] call _rectAtVisualCenter);
         _c ctrlSetAngle [_ang,0.5,0.5,false];
         _c ctrlSetFade 0;
         _c ctrlCommit _ease;
     } else {
-        _c ctrlSetPosition _fanBase;
+        _c ctrlSetPosition _base;
         _c ctrlSetAngle [-90,0.5,0.5,false];
         _c ctrlSetFade 1;
         _c ctrlCommit _ease;
@@ -123,14 +158,16 @@ for '_i' from 0 to 3 do {
 };
 
 if (!isNull _plus) then {
-    // Badge is explicitly inset from the live tray box top-right corner. This keeps it inside the tile on every
-    // aspect ratio/UI scale instead of letting a stale cached rect place it in the middle of the screen.
-    private _pw = _sw * 0.22;
-    private _ph = _sh * 0.28;
-    private _px = _sx + _sw - _pw - (_sw * 0.035);
-    private _py = _sy + (_sh * 0.025);
+    // The + badge is always derived from the live tray background, never from the oversized catheter canvas.
+    // Keep a full inset on every edge so UI scale/aspect changes cannot place it outside the actual tile.
+    private _pw = _sw * 0.20;
+    private _ph = _sh * 0.25;
+    private _insetX = _sw * 0.045;
+    private _insetY = _sh * 0.035;
+    private _px = _sx + _sw - _pw - _insetX;
+    private _py = _sy + _insetY;
     _plus ctrlSetPosition [_px,_py,_pw,_ph];
-    _plus ctrlSetFontHeight (_sh * 0.23);
+    _plus ctrlSetFontHeight (_sh * 0.21);
     _plus ctrlSetFade (if (_enter && {_count > 5}) then {0} else {1});
     _plus ctrlCommit _ease;
 };
