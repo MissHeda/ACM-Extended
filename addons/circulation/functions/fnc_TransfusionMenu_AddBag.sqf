@@ -28,6 +28,15 @@ if (_targetIndex < 0) exitWith {};
 
 private _medic = ACE_player;
 private _patient = GVAR(TransfusionMenu_Target);
+
+// FBTK is a donor-collection circuit, not an infusion product. The circulation model deliberately
+// refuses to draw donor blood through IO. Reject it before inventory consumption so the kit can never
+// be hung on a line that will sit at 0 mL forever and look broken to the provider.
+private _isFBTK = (_itemClassname in FBTK_ARRAY) || {_actionClassname in FBTK_ARRAY_DATA};
+if (_isFBTK && {!GVAR(TransfusionMenu_SelectIV)}) exitWith {
+    ["FBTK blood collection requires IV access. It cannot collect through IO.", 3, ACE_player, 13] call ACEFUNC(common,displayTextStructured);
+};
+
 private _validAccess = [
     _patient,
     GVAR(TransfusionMenu_Selected_BodyPart),
