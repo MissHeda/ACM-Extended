@@ -64,9 +64,30 @@ private _bagContents = +(_IVBagsOnBodyPart select _targetIndex);
 
 _bagContents params ["_type", "_remainingVolume", "_accessType", "_accessSite", "_iv", "_bloodType", "_volume"];
 
-private _returnVolume = [_remainingVolume] call FUNC(getReturnVolume);
+private _returnVolume = if (_type == "FBTK") then {
+    // FBTK is a collection bag, so generic IV-bag floor rounding is unsafe at the nominal boundary:
+    // 499.9 mL used to become a 250 mL donor unit and 249.9 mL could become nothing even though the
+    // menu rounded those values to 500/250 mL. Snap only the near-full boundary to the kit's authored
+    // size; intentionally partial collections retain ACM's existing 250 mL floor behavior.
+    private _fullTolerance = missionNamespace getVariable ["ACME_fbtk_fullToleranceMl", 1];
+    if (!(_fullTolerance isEqualType 0) || {!finite _fullTolerance}) then {_fullTolerance = 1;};
+    _fullTolerance = (_fullTolerance max 0) min 5;
+    if (_remainingVolume >= ((_volume - _fullTolerance) max 0)) then {
+        _volume
+    } else {
+        [_remainingVolume] call FUNC(getReturnVolume)
+    }
+} else {
+    [_remainingVolume] call FUNC(getReturnVolume)
+};
 
-private _itemClassName = [_type, _returnVolume, _bloodType] call FUNC(formatFluidBagName);
+// A sub-250 mL FBTK returns the original empty kit. Use that real classname for the progress
+// display instead of constructing the nonexistent ACM_FieldBloodTransfusionKit_0.
+private _itemClassName = if (_type == "FBTK" && {_returnVolume <= 0}) then {
+    format ["ACM_FieldBloodTransfusionKit_%1", _volume]
+} else {
+    [_type, _returnVolume, _bloodType] call FUNC(formatFluidBagName)
+};
 private _itemClassNameString = getText (configFile >> "CfgWeapons" >> _itemClassName >> "displayName");
 
 private _funcParams = [_IVBags, _IVBagsOnBodyPart, _targetIndex, _itemClassName, _type, _returnVolume, _volume];
