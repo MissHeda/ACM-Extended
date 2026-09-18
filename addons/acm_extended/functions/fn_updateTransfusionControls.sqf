@@ -1024,6 +1024,10 @@ if (!isNull _ctrlSpike) then {
                 };
             };
         };
+        if (_selIsFBTK && {!_ivSel}) then {
+            _txt = "IV required";
+            _en = false;
+        };
         _ctrlSpike ctrlSetText _txt;
         _ctrlSpike ctrlEnable _en;
     };
