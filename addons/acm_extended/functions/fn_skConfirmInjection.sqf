@@ -40,21 +40,22 @@ if (_stableId == "") exitWith {
 };
 _entry params ["_med",["_size",10],["_amt",0],["_label",""],["_nsMl",0]];
 private _total = (_amt + _nsMl) max 0;
-// Vascular pushes always use the provider-entered duration. The grey recommended number is a placeholder only.
-// Hardcore Medications consumes the same field in fn_hardcorePushStart; normal mode uses it for the plunger timing
-// and delivery metadata while its rate-sensitive adverse physiology remains gated off by the Hardcore setting.
+// Vascular pushes use an explicitly entered duration when present. The grey recommendation remains display-only;
+// blank or grey-placeholder always means the original 3-second push.
 private _pushSec = 3;
 private _pushDurationValid = true;
 if (_route != "im") then {
     private _durCtrl = _d displayCtrl 84831;
     private _ghost = isNull _durCtrl || {_durCtrl getVariable ["ACME_SK_GhostActive",false]};
     private _raw = if (_ghost) then {""} else {ctrlText _durCtrl};
-    private _typed = if (_raw == "") then {0} else {parseNumber _raw};
-    _pushDurationValid = !_ghost && {_raw != ""} && {_typed >= 1} && {_typed <= 300};
-    if (_pushDurationValid) then {_pushSec = _typed;};
+    if (_raw != "") then {
+        private _typed = parseNumber _raw;
+        _pushDurationValid = _typed >= 1 && {_typed <= 300};
+        if (_pushDurationValid) then {_pushSec = _typed;};
+    };
 };
 if (!_pushDurationValid) exitWith {
-    ["Type the push duration (1-300 seconds). The grey number is only the recommended value.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
+    ["Push duration must be 1-300 seconds. Leave it blank to use 3 seconds.",2.5,ACE_player,13] call ace_common_fnc_displayTextStructured;
     false
 };
 if (_total <= 0) exitWith {
