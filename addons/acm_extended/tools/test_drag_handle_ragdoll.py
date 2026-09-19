@@ -62,6 +62,7 @@ def test_dragger_is_sprint_blocked_and_capped_near_slow_jog():
     assert "ACME_dragHandle_heavyAnimCoef = 0.48;" in runtime
     assert '[_medic,"blockSprint","ACME_dragHandle",true]' in medic
     assert "_medic setAnimSpeedCoef _desired;" in medic
+    assert "_desired = _desired min _saved;" in medic
     assert "linearConversion [0,1,_tension,1,0.72,true]" in medic
     assert '[_medic,"blockSprint","ACME_dragHandle",false]' in stop
     assert "_medic setAnimSpeedCoef _saved;" in stop
