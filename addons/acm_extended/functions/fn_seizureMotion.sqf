@@ -11,8 +11,7 @@ if (_legacyPFH isEqualType 0 && {_legacyPFH >= 0}) then {
 
 private _enabled = _on && {alive _patient}
     && {missionNamespace getVariable ["ACME_seizure_animEnabled",true]}
-    && {(missionNamespace getVariable ["ACME_seizure_motionEnabled",1]) != 0}
-    && {!(_patient getVariable ["ACME_dragHandle_active",false])};
+    && {(missionNamespace getVariable ["ACME_seizure_motionEnabled",1]) != 0};
 if (!_enabled) exitWith {
     _patient setVariable ["ACME_seizure_motionActive",false];
     // Invalidate delayed onset, ragdoll handoff, retry and GestureDone callbacks together.

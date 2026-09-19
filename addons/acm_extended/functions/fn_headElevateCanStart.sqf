@@ -6,7 +6,6 @@ if !(_patient isKindOf "CAManBase") exitWith {false};
 if (_patient isEqualTo _medic) exitWith {false};
 if (_patient getVariable ["ACME_headElevated", false]) exitWith {false};
 if (!isNull objectParent _patient || {!isNull attachedTo _patient}) exitWith {false};
-if (_patient getVariable ["ACME_dragHandle_active", false]) exitWith {false};
 if (_patient call ace_common_fnc_isBeingDragged || {_patient call ace_common_fnc_isBeingCarried}) exitWith {false};
 private _stance = stance _patient;
 if (_stance in ["STAND", "CROUCH"]) exitWith {false};

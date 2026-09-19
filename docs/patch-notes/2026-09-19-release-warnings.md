@@ -1,5 +1,7 @@
 # ACM Extended 1.2.2: release check corrections
 
+This is a historical development record. The drag handle subsequently remained on `dev` and was removed from `main`; see [release drag handle removal](2026-09-19-release-drag-removal.md). The syringe UI scaling fix remains in the public release.
+
 ## Changes
 
 - Fixed two drag handle condition errors that could interrupt attachment and release checks.

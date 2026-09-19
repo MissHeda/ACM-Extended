@@ -29,18 +29,16 @@ def test_seizure_state_precedes_collapse_and_prevents_spontaneous_wake():
     assert 'ACME_lido_seizureState' in source("core/functions/fnc_isForcedUnconscious.sqf")
     assert '"active"' in source("core/functions/fnc_isForcedUnconscious.sqf")
 
-def test_generic_settle_yields_to_real_seizure_and_drag_state():
+def test_generic_settle_yields_to_real_seizure_state():
     settle = fn("treatmentPatientSettle")
     assert '"ACME_lido_seizureState", ""' in settle
-    assert '"ACME_dragHandle_active", false' in settle
-    assert settle.index('"ACME_dragHandle_active"') < settle.index("ACME_fnc_patientAnimRequest")
+    assert settle.index('"ACME_lido_seizureState"') < settle.index("ACME_fnc_patientAnimRequest")
     assert '"ACME_seizure_active"' not in settle
 
 def test_seizure_waits_for_physics_and_transport_to_release_body():
     advance = fn("seizureGestureAdvance")
     retry = advance[:advance.index("private _gestures")]
     assert "!isAwake _patient" in retry
-    assert "ACME_dragHandle_active" in retry
     assert "ace_common_fnc_isBeingDragged" in retry
     assert "ace_common_fnc_isBeingCarried" in retry
     assert "CBA_fnc_waitAndExecute" in retry
@@ -58,33 +56,11 @@ def test_ragdoll_uses_native_impulse_without_pose_or_consciousness_toggle():
     assert "if (!_wasUncon" in collapse
 
 
-def test_unconscious_pose_cannot_pin_active_drag_ragdoll():
-    settle = source("core/overrides/fnc_applyAnimAfterRagdoll.sqf")
-    assert 'if (_unit getVariable ["ACME_dragHandle_active", false]) exitWith {};' in settle
-    assert settle.index('"ACME_dragHandle_active"') < settle.index('_unit switchMove')
+def test_manikin_pose_yields_to_seizures_and_preserves_animation_capability():
     keeper = fn("megacodeStanceLock")
-    assert "ACME_dragHandle_active" in keeper
     assert "ACME_lido_seizureState" in keeper
     spawn = fn("megacodeSpawn")
     assert spawn.index('disableAI "ALL"') < spawn.index('enableAI "ANIM"')
-
-def test_drag_impulse_is_not_blocked_waiting_for_ragdoll():
-    tick = fn("dragHandleOwnerTick")
-    assert "if (isAwake _patient) exitWith" not in tick
-    assert "ACME_fnc_forceRagdoll" in tick
-    assert "_patient addForce [_impulse,_handleModel,true];" in tick
-    assert "_patient attachTo" not in tick
-    assert "_patient setPos" not in tick
-
-
-def test_stretch_release_has_bounded_grace_and_cleanup():
-    tick = fn("dragHandleOwnerTick")
-    assert '(_distance > _releaseDist) exitWith' not in tick
-    assert "_releaseDist + 3" in tick
-    assert "(CBA_missionTime - _overSince) > 0.75" in tick
-    for name in ("startedAt", "overstretchSince"):
-        assert f'ACME_dragHandle_{name}' in fn("dragHandleStartOwner")
-        assert f'setVariable ["ACME_dragHandle_{name}",nil]' in fn("dragHandleStopOwner")
 
 def test_semifowler_rejects_upright_even_with_stale_lying_flag():
     can = fn("headElevateCanStart")
@@ -92,7 +68,8 @@ def test_semifowler_rejects_upright_even_with_stale_lying_flag():
     assert can.index('["STAND", "CROUCH"]') < can.index('private _down')
     assert 'ACM_core_Lying_State' in can
     assert '_stance == "PRONE"' in can
-    assert 'ACME_dragHandle_active' in can
+    assert 'ace_common_fnc_isBeingDragged' in can
+    assert 'ace_common_fnc_isBeingCarried' in can
 
 def test_semifowler_is_revalidated_before_side_effects_and_menu_grouping():
     start = fn("headElevateStart")

@@ -82,7 +82,7 @@ def test_scope_mixes_playing_channels_and_preserves_pathology_and_cleanup():
 
 def test_new_sqf_functions_are_registered_and_balanced():
     config = (ADDON / "config.cpp").read_text()
-    for name in ("chestSealFlipTick", "chestSealBurpReady", "dragHandleRope",
+    for name in ("chestSealFlipTick", "chestSealBurpReady",
                  "stethoscopeInit", "stethoscopeTick", "stethoscopeWeights", "stethoscopeClose"):
         assert config.count(f"class {name} {{}};") == 1
         matching(lex(fn(name)))

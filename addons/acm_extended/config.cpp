@@ -2271,18 +2271,6 @@ class CfgFunctions {
             class patientAnimRequest {};
             class patientAnimRelease {};
             class treatmentPatientSettle {};
-            // Hands-free ragdoll casualty drag handle.
-            class initDragHandleRuntime {};
-            class dragHandleWeight {};
-            class dragHandleCanStart {};
-            class dragHandleStart {};
-            class dragHandleStartOwner {};
-            class dragHandleOwnerTick {};
-            class dragHandleRope {};
-            class dragHandleStartMedic {};
-            class dragHandleStop {};
-            class dragHandleStopOwner {};
-            class dragHandleStopMedic {};
             class junctionalInjuryEntry {};
             class junctionalGuiSyncTick {};
             class aajtInjuryEntry {};
@@ -6718,14 +6706,6 @@ class CfgVehicles {
     class Man;
     class CAManBase: Man {
         class ACE_SelfActions {
-            class ACME_ReleaseDragHandleSelf {
-                displayName = "Release Drag Handle";
-                icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
-                condition = "!isNull (_player getVariable ['ACME_dragHandle_patient', objNull])";
-                statement = "[_player, _player getVariable ['ACME_dragHandle_patient', objNull], 'manual'] call ACME_fnc_dragHandleStop";
-                showDisabled = 0;
-            };
-
             // one light at a time. ACE's map flashlight menu is an insertchildren node in CfgVehicles rather than a
             // registered action, so addactiontoclass cannot reach it. its condition is extended here instead: the original
             // clause is preserved verbatim and the laryngoscope block is added to it.
@@ -6913,27 +6893,6 @@ class CfgVehicles {
         };
         class ACE_Actions {
             class ACE_MainActions {
-                // Keep patient actions in one config tree so both drag handles and Get Up are inherited.
-                class ACME_AttachDragHandle {
-                    displayName = "Attach Drag Handle";
-                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa";
-                    selection = "pelvis";
-                    distance = 2.3;
-                    condition = "_player != _target && {alive _target} && {!([_target] call ace_common_fnc_isAwake)} && {!(_target getVariable ['ACME_dragHandle_active', false])}";
-                    statement = "[_player, _target] call ACME_fnc_dragHandleStart";
-                    exceptions[] = {};
-                    showDisabled = 0;
-                };
-                class ACME_ReleaseDragHandle {
-                    displayName = "Release Drag Handle";
-                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
-                    selection = "pelvis";
-                    distance = 2.3;
-                    condition = "(_target getVariable ['ACME_dragHandle_active', false]) && {(_target getVariable ['ACME_dragHandle_dragger', objNull]) isEqualTo _player}";
-                    statement = "[_player, _target, 'manual'] call ACME_fnc_dragHandleStop";
-                    exceptions[] = {};
-                    showDisabled = 0;
-                };
                 // block a provider's "Get Up" on a patient who is obtunded. ACM_LyingState_GetUp already hides for player
                 // targets through !isplayer. this covers ai as well and is the explicit guard.
                 class ACM_LyingState_GetUp {

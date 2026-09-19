@@ -6,11 +6,6 @@ if (isNull _patient) exitWith {};
 if (!local _patient) exitWith {};
 private _preserveDeathInterventions = false;  // Full heal/respawn are real resets; death uses fn_deathFreeze instead.
 
-// A hard heal cannot leave another player speed-limited or leave ACE drag/carry hidden on this casualty.
-if (_patient getVariable ["ACME_dragHandle_active", false]) then {
-    [_patient, _patient getVariable ["ACME_dragHandle_dragger", objNull], "full_heal"] call ACME_fnc_dragHandleStopOwner;
-};
-
 if (!alive _patient && {
     (_patient getVariable ["ACME_headElevated", false])
     || {_patient getVariable ["ACME_headElev_vestRemoved", false]}

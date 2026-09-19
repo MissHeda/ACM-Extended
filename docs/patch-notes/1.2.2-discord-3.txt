@@ -33,8 +33,8 @@
 
 ## VALIDATION
 
-- Windows release creation succeeded. These additional corrections passed HEMTT strict checks and all 16 focused tests. Rebuild after pulling; gameplay still needs verification in Arma.
+- The release source passed all 31 focused tests, including strict HEMTT checks and config compilation. Pull main and rebuild to remove the drag handle; gameplay still needs verification in Arma.
 
--# **[Full patch notes](https://github.com/hesherson/ACM-Extended/blob/dev/CHANGELOG.md)**
+-# **[Full patch notes](https://github.com/hesherson/ACM-Extended/blob/main/CHANGELOG.md)**
 
 -# **[See documentation here](https://hesherson.github.io/ACM-Extended-Wiki/index.html)**

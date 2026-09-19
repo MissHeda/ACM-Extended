@@ -24,7 +24,6 @@ private _retry = {
 };
 // Physiology continues while another procedure or movement owns the casualty.
 if (!isNull objectParent _patient
-    || {_patient getVariable ["ACME_dragHandle_active",false]}
     || {_patient call ace_common_fnc_isBeingDragged}
     || {_patient call ace_common_fnc_isBeingCarried}
     || {[_patient] call ACM_core_fnc_cprActive}

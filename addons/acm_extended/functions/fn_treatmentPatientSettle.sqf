@@ -8,8 +8,7 @@ if (!local _patient) exitWith {[_patient, "treatmentPatientSettle", [_patient, _
 if (!alive _patient || {!isNull objectParent _patient}) exitWith {};
 if (_patient getVariable ["ACME_headElevated", false] || {_patient getVariable ["ACME_headElev_Suspended", false]}) exitWith {};
 if (_patient getVariable ["ACM_airway_RecoveryPosition_State", false]) exitWith {};
-if ((_patient getVariable ["ACME_lido_seizureState", ""]) == "active"
-    || {_patient getVariable ["ACME_dragHandle_active", false]}) exitWith {};
+if ((_patient getVariable ["ACME_lido_seizureState", ""]) == "active") exitWith {};
 if ((_patient getVariable ["ACME_CS_rollToken", ""]) != "") exitWith {};
 if ([_patient] call ACM_core_fnc_cprActive) exitWith {};
 if (alive (_patient getVariable ["ACM_breathing_BVM_Medic", objNull])) exitWith {};
