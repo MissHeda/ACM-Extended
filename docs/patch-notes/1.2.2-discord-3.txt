@@ -33,7 +33,7 @@
 
 ## VALIDATION
 
-- The release source passed all 31 focused tests, including strict HEMTT checks and config compilation. Pull main and rebuild to remove the drag handle; gameplay still needs verification in Arma.
+- The input fix passed 25 focused checks, including strict HEMTT checks, config compilation and duration execution checks. Rebuild from main for release; keyboard focus still needs verification in Arma.
 
 -# **[Full patch notes](https://github.com/hesherson/ACM-Extended/blob/main/CHANGELOG.md)**
 

@@ -17,7 +17,8 @@ These notes describe the combined current behavior. Later corrections take prece
 
 ### Medication pushes and IV tray
 
-- Restored typing and keyboard focus in the push duration seconds box. The duration row follows the Push button layout.
+- Reworked the Seconds to Push field with an explicitly editable control and click focus. Carousel shortcuts and click areas now leave the field available for typing.
+- Moved the gray recommended time onto a separate label so it cannot replace entered digits. Correcting an invalid duration now updates the Push button while typing. The duration row still follows the Push button layout.
 - A blank seconds field defaults to a push lasting 3 seconds in both normal and Hardcore medication modes. Gray suggested times are guidance; entering a duration selects that duration, within 1–300 seconds.
 - Restored continuous syringe plunger movement during Hardcore pushes, following the actual remaining medication volume.
 - Corrected the IV tray catheter fan's visual anchoring.
@@ -95,6 +96,8 @@ Pull `main` and rebuild the release package to include the removal. This new pac
 
 The version update changes release metadata and documentation; the cumulative gameplay changes are listed above.
 
+The medication duration followup passed 25 focused checks on this branch, including strict HEMTT diagnostics, complete config compilation and SQF execution of the duration readers and input filtering. Mouse focus and actual keyboard entry still require verification in Arma. See the detailed input patch record below.
+
 ### Detailed patch records
 
 - [Transfusion and thoracostomy](docs/patch-notes/2026-09-19-transfusion-thoracostomy.md)
@@ -104,4 +107,5 @@ The version update changes release metadata and documentation; the cumulative ga
 - [PEA morphology](docs/patch-notes/2026-09-19-pea-morphology.md)
 - [Release check corrections](docs/patch-notes/2026-09-19-release-warnings.md)
 - [Release drag handle removal](docs/patch-notes/2026-09-19-release-drag-removal.md)
+- [Medication push duration input](docs/patch-notes/2026-09-19-push-duration-input.md)
 - [Discord posts and patch index](docs/patch-notes/README.md)
