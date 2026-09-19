@@ -17,20 +17,28 @@ if (isNil "ACME_dragHandle_lightAnimCoef") then {ACME_dragHandle_lightAnimCoef =
 if (isNil "ACME_dragHandle_heavyAnimCoef") then {ACME_dragHandle_heavyAnimCoef = 0.48;};
 
 ["ACME_dragHandle_startAck",{
-    params ["_medic","_patient","_ok","_weight",["_reason",""]];
+    params ["_medic","_patient","_ok","_weight",["_reason",""],["_session",""]];
     if (isNull _medic || {!local _medic}) exitWith {};
     _medic setVariable ["ACME_dragHandle_pending",false];
     if (_ok) then {
-        [_medic,_patient,_weight] call ACME_fnc_dragHandleStartMedic;
+        // Seed the authoritative values locally before applying provider restrictions. Public-variable replication
+        // and the targeted acknowledgement use different network paths and are not required to arrive in lockstep.
+        if (_session != "" && {(_medic getVariable ["ACME_dragHandle_lastStoppedSession",""]) == _session}) exitWith {};
+        _patient setVariable ["ACME_dragHandle_active",true];
+        _patient setVariable ["ACME_dragHandle_dragger",_medic];
+        _patient setVariable ["ACME_dragHandle_weight",_weight];
+        _patient setVariable ["ACME_dragHandle_session",_session];
+        [_medic,_patient,_weight,_session] call ACME_fnc_dragHandleStartMedic;
     } else {
         if (_reason != "") then {[_reason,1.8,_medic,12] call ace_common_fnc_displayTextStructured;};
     };
 }] call CBA_fnc_addEventHandler;
 
 ["ACME_dragHandle_stopped",{
-    params ["_medic","_patient",["_reason","manual"]];
+    params ["_medic","_patient",["_reason","manual"],["_session",""]];
     if (!isNull _medic && {local _medic}) then {
-        [_medic,_patient,_reason] call ACME_fnc_dragHandleStopMedic;
+        if (_session != "") then {_medic setVariable ["ACME_dragHandle_lastStoppedSession",_session];};
+        [_medic,_patient,_reason,_session] call ACME_fnc_dragHandleStopMedic;
     };
 }] call CBA_fnc_addEventHandler;
 
