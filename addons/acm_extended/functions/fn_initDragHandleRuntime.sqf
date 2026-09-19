@@ -74,7 +74,9 @@ if (!hasInterface) exitWith {};
         "pelvis",
         (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
     ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase",0,["ACE_MainActions"],_attach] call ace_interact_menu_fnc_addActionToClass;
+    // Apply to every soldier subclass. Without useInheritance=true this only modifies the abstract CAManBase
+    // action tree and never reaches real BLUFOR/OPFOR/IND/CIV unit classes.
+    ["CAManBase",0,["ACE_MainActions"],_attach,true] call ace_interact_menu_fnc_addActionToClass;
 
     private _releaseTarget = [
         "ACME_ReleaseDragHandleTarget",
@@ -90,7 +92,7 @@ if (!hasInterface) exitWith {};
         "pelvis",
         (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
     ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase",0,["ACE_MainActions"],_releaseTarget] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase",0,["ACE_MainActions"],_releaseTarget,true] call ace_interact_menu_fnc_addActionToClass;
 
     private _releaseSelf = [
         "ACME_ReleaseDragHandleSelf",
@@ -102,7 +104,7 @@ if (!hasInterface) exitWith {};
         },
         {!isNull (_player getVariable ["ACME_dragHandle_patient",objNull])}
     ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase",1,["ACE_SelfActions"],_releaseSelf] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase",1,["ACE_SelfActions"],_releaseSelf,true] call ace_interact_menu_fnc_addActionToClass;
 }] call CBA_fnc_execNextFrame;
 
 // Reconcile active pairs from public patient state. This makes the visual naturally JIP-safe.
