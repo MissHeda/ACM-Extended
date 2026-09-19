@@ -11,6 +11,7 @@ private _reject = {
 
 if !(missionNamespace getVariable ["ACME_dragHandle_enabled",true]) exitWith {["Drag handle is disabled."] call _reject;};
 if (!alive _patient || {!alive _medic}) exitWith {["Casualty or dragger is not alive."] call _reject;};
+if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {["You cannot attach a drag handle while unconscious."] call _reject;};
 if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {["Casualty must be unconscious."] call _reject;};
 if (!(isNull (objectParent _patient)) || {!(isNull (objectParent _medic))}) exitWith {["Cannot attach the drag handle in a vehicle."] call _reject;};
 if ((_patient getVariable ["ACME_dragHandle_active",false])) exitWith {["That casualty already has a drag handle attached."] call _reject;};
@@ -20,6 +21,10 @@ if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable 
 
 private _attachDist = missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3];
 if ((_medic distance _patient) > (_attachDist + 0.35)) exitWith {["Move closer to the casualty."] call _reject;};
+
+if (!(isNull (attachedTo _patient)) && {!(_patient getVariable ["ACME_headElevated",false])}) exitWith {
+    ["Another system currently owns the casualty position."] call _reject;
+};
 
 private _lock = _patient getVariable ["ACME_patientAnimLock",[]];
 if ((count _lock) >= 5 && {(_lock param [4,-1]) > CBA_missionTime}) exitWith {["A procedure currently owns the casualty position."] call _reject;};
