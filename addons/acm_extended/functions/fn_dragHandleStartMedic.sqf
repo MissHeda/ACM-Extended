@@ -16,7 +16,7 @@ _medic setVariable ["ACME_dragHandle_weight",_weight];
 _medic setVariable ["ACME_dragHandle_tension",0];
 
 private _savedCoef = getAnimSpeedCoef _medic;
-if !(_savedCoef isEqualType 0 && {finite _savedCoef} && {_savedCoef > 0}) then {_savedCoef = 1;};
+if !(_savedCoef isEqualType 0 && {finite _savedCoef} && {_savedCoef >= 0}) then {_savedCoef = 1;};
 _medic setVariable ["ACME_dragHandle_savedAnimCoef",_savedCoef];
 _medic setVariable ["ACME_dragHandle_lastAnimCoef",-1];
 
