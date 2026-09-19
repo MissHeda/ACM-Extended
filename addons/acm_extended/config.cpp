@@ -6727,6 +6727,14 @@ class CfgVehicles {
         };
 
         class ACE_SelfActions {
+            class ACME_ReleaseDragHandleSelf {
+                displayName = "Release Drag Handle";
+                icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
+                condition = "!isNull (_player getVariable ['ACME_dragHandle_patient', objNull])";
+                statement = "[_player, _player getVariable ['ACME_dragHandle_patient', objNull], 'manual'] call ACME_fnc_dragHandleStop";
+                showDisabled = 0;
+            };
+
             // one light at a time. ACE's map flashlight menu is an insertchildren node in CfgVehicles rather than a
             // registered action, so addactiontoclass cannot reach it. its condition is extended here instead: the original
             // clause is preserved verbatim and the laryngoscope block is added to it.
