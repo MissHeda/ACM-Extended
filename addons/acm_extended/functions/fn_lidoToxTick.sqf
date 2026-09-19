@@ -59,12 +59,20 @@ private _tbiPreHern = (_tbiState getOrDefault ["cushing", false]) && {!(_tbiStat
 // without pretending to remove the toxin, so the episode can recur if the drug wears off while exposure persists.
 private _sarinCause = _patient getVariable ["ACME_sarinSeizureCause", false];
 
+// Debug-induced seizures are a temporary real cause, not an animation override. The debug action sets an expiry
+// on the patient owner; while it is live the ordinary seizure state machine owns apnea, LOC, motion and postictal.
+private _debugUntil = _patient getVariable ["ACME_debugSeizureUntil", 0];
+private _debugCause = _debugUntil > _now;
+if (!_debugCause && {_debugUntil > 0}) then {
+    _patient setVariable ["ACME_debugSeizureUntil", nil, true];
+};
+
 // A seizure cause keeps an episode running and allows recurrence after a cooldown. Lidocaine has hysteresis,
-// TBI remains the variable pre-herniation trigger, and severe Sarin is deterministic once its cause flag is set.
-private _causePresent = (_lidoLevel >= _clearThresh) || _tbiPreHern || _sarinCause;
+// TBI remains the variable pre-herniation trigger, severe Sarin is deterministic, and debug is time-bounded.
+private _causePresent = (_lidoLevel >= _clearThresh) || _tbiPreHern || _sarinCause || _debugCause;
 
 private _tbiChance   = missionNamespace getVariable ["ACME_tbi_seizureChancePerTick", 0.3];
-private _triggerNow  = (_lidoLevel >= _thresh) || _sarinCause || (_tbiPreHern && {random 1 < _tbiChance});
+private _triggerNow  = (_lidoLevel >= _thresh) || _sarinCause || _debugCause || (_tbiPreHern && {random 1 < _tbiChance});
 
 switch (_state) do {
     case "active": {
