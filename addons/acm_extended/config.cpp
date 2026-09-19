@@ -6701,8 +6701,8 @@ class CfgVehicles {
     class CAManBase: Man {
         // Config-native patient hip interaction. This is inherited by every soldier class at config load, so
         // it does not depend on postInit timing or ACE's runtime action-tree inheritance cache.
-        class ACE_Actions {
-            class ACE_MainActions {
+        class ACE_Actions: ACE_Actions {
+            class ACE_MainActions: ACE_MainActions {
                 class ACME_AttachDragHandle {
                     displayName = "Attach Drag Handle";
                     icon = "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa";
