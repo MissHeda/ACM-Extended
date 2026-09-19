@@ -1,8 +1,10 @@
-**ACM Extended 1.2.2 | Cumulative update | 3/3**
+# ACM Extended v1.2.2 - Hotfix
 
-18–19 September 2026. Combined current behavior, including the latest corrections.
+:exclamation~1:Remember to repair your mod:exclamation~1:
 
-**Finger thoracostomy and chest seals**
+-# Part 3 of 3
+
+## FINGER THORACOSTOMY AND CHEST SEALS
 
 - Added removal and burping of a seal over a finger-thoracostomy tract. After removing the seal, the existing tract can be swept again without consuming another kit, then used for a chest tube.
 - In Adjust Thoracostomy, put down the held tool. Right-click the surgical seal to remove it; scroll five notches to lift and burp a corner, and reverse the wheel to lay it flat. Select the finger and click the open tract to repeat the sweep.
@@ -12,7 +14,7 @@
 - Aftercare acts on the selected side and preserves unrelated seals and an opposite-side chest tube.
 - Current gameplay behavior: an open finger tract vents air, while sealing it can allow pressure to recur if an internal leak remains. There is no added time-open penalty or spontaneous tract-closure timer. Continuous passive blood drainage belongs to chest tubes; inadequate preparation can flag the incision for infection.
 
-**Auscultation controls, sound and posterior view**
+## AUSCULTATION CONTROLS, SOUND AND POSTERIOR VIEW
 
 - The bell opens at the cursor and is 19% larger. Hold left mouse to listen and move it with drag resistance; it shrinks by 12% while pressed. Releasing lifts it and stops contact sound.
 - Left lung, right lung and cardiac sounds mix continuously as the bell moves, without restarting their phase at each listening point.
@@ -23,14 +25,16 @@
 - Lung sounds fade out at the diaphragm. Below it, the front view retains only a narrow centerline cardiac field, fading sideways and downward; lower lateral areas are silent. The back view uses lung fields without anterior cardiac listening points.
 - Closing or replacing the scope panel removes its sound objects and restores hearing attenuation; release and focus loss clear held contact.
 
-**Visual effects, descriptors and icons**
+## VISUAL EFFECTS, DESCRIPTORS AND ICONS
 
 - Reduced ketamine water-distortion amplitudes by another 25% across dose and debug tiers, preserving wave timing, easing, blur and chromatic response.
 - Clinical descriptor mode now uses Severe Ecchymosis for extensive bruising in chest inspection and injury-list rows.
 - Dress Junctional Wound now uses the same medical-menu icon as Pressure Bandage.
 
-**Validation**
+## VALIDATION
 
-The initial ACE config correction passed its focused check and the existing 20 RC1 checks. Later patches received source/numerical checks, but the complete cumulative build still needs pytest, HEMTT and in-game verification because the command runner was unavailable.
+- The initial ACE config correction passed its focused check and the existing 20 RC1 checks. Later patches received source/numerical checks, but the complete cumulative build still needs pytest, HEMTT and in-game verification because the command runner was unavailable.
 
-Full notes: https://github.com/hesherson/ACM-Extended/blob/dev/CHANGELOG.md
+-# **[Full patch notes](https://github.com/hesherson/ACM-Extended/blob/dev/CHANGELOG.md)**
+
+-# **[See documentation here](https://hesherson.github.io/ACM-Extended-Wiki/index.html)**

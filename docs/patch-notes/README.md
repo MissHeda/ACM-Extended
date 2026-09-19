@@ -6,11 +6,29 @@ Version 1.2.2 incorporates the complete RC1 follow-up patch series and updates t
 
 ## Discord copy
 
-Each file below is one complete post under 4,000 characters. Copy the contents of each file as a separate message, in order.
+Each file below is one complete post under 4,000 characters. Copy the contents of each file as a separate message, in order. The @everyone mention appears in the first post.
 
-- [Post 1 of 3](1.2.2-discord-1.txt) (3,190 characters)
-- [Post 2 of 3](1.2.2-discord-2.txt) (2,902 characters)
-- [Post 3 of 3](1.2.2-discord-3.txt) (3,832 characters)
+- [Post 1 of 3](1.2.2-discord-1.txt) (3,248 characters)
+- [Post 2 of 3](1.2.2-discord-2.txt) (2,964 characters)
+- [Post 3 of 3](1.2.2-discord-3.txt) (3,909 characters)
+
+## Discord format
+
+Use this announcement format for release notes. Keep section headings uppercase, include the repair reminder and documentation footer, and split long announcements into posts below 4,000 characters. Use the release's actual version in the title. Place @everyone in the first post of a multipart announcement.
+
+```text
+@everyone
+
+# ACM Extended v{version} - Hotfix
+
+:exclamation~1:Remember to repair your mod:exclamation~1:
+
+## GENERAL FIXES
+
+- {Change}
+
+-# **[See documentation here](https://hesherson.github.io/ACM-Extended-Wiki/index.html)**
+```
 
 ## Individual patch records
 
