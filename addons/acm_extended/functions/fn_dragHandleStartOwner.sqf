@@ -32,7 +32,7 @@ if (_patient getVariable ["ACME_headElevated",false]) then {
 // Preserve ACE's person-drag flags, then hide its rigid attachTo drag/carry actions while this handle owns movement.
 private _oldCanDrag = _patient getVariable ["ace_dragging_canDrag",true];
 private _oldCanCarry = _patient getVariable ["ace_dragging_canCarry",true];
-_patient setVariable ["ACME_dragHandle_oldAceFlags",[_oldCanDrag,_oldCanCarry]];
+_patient setVariable ["ACME_dragHandle_oldAceFlags",[_oldCanDrag,_oldCanCarry],true];
 _patient setVariable ["ace_dragging_canDrag",false,true];
 _patient setVariable ["ace_dragging_canCarry",false,true];
 
