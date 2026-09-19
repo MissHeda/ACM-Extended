@@ -82,7 +82,8 @@ ACME_menuGroups = [
         "Rhythm: Atrial Tachycardia on/off (debug)",
         "Rhythm: Torsades / polymorphic VT on/off (debug)",
         "Rhythm: SVT on/off (debug)",
-        "Respirations: Cheyne-Stokes on/off (debug)"
+        "Respirations: Cheyne-Stokes on/off (debug)",
+        "Induce Seizure (debug)"
     ], {[] call ACME_fnc_debugEnabled}, [0.92, 0.80, 0.24, 1]]
 ];
 // Examination membership and display order share one class-based definition.
