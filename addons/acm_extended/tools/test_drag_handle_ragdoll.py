@@ -161,17 +161,22 @@ def test_head_elevation_transport_semantics_survive_drag_handle():
 
 
 def test_drag_handle_interactions_are_hip_anchored_and_in_drag_carry_menu():
+    config = read(ADDON / "config.cpp")
     runtime = read(FUN / "fn_initDragHandleRuntime.sqf")
-    gui = read(ADDON.parent / "gui" / "overrides" / "fnc_collectActions.sqf")
-    # Both external attach and release nodes are anchored to the patient's pelvis/hips.
-    assert runtime.count('"pelvis"') >= 2
-    # Runtime class insertion MUST inherit to real soldier subclasses; CAManBase itself is abstract.
-    assert '["CAManBase",0,["ACE_MainActions"],_attach,true]' in runtime
-    assert '["CAManBase",0,["ACE_MainActions"],_releaseTarget,true]' in runtime
-    assert '["CAManBase",1,["ACE_SelfActions"],_releaseSelf,true]' in runtime
-    # Medical menu uses ACE/ACM's existing Drag / Carry category key and keeps the visible-row predicate broad.
-    assert '"Attach Drag Handle", "drag"' in gui
-    assert '"Release Drag Handle", "drag"' in gui
-    assert '!([_target] call ACEFUNC(common,isAwake))' in gui
-    assert "ACME_fnc_dragHandleStart" in gui
-    assert "ACME_fnc_dragHandleStop" in gui
+    renderer = read(ADDON.parent / "gui" / "overrides" / "fnc_updateActions.sqf")
+
+    # Patient actions are config-native and therefore inherited with CAManBase itself, not registered in postInit.
+    assert "class ACME_AttachDragHandle" in config
+    assert "class ACME_ReleaseDragHandle" in config
+    assert config.count('selection = "pelvis";') >= 2
+    assert "Patient and self ACE interactions are config-native in CfgVehicles" in runtime
+    assert "ace_interact_menu_fnc_addActionToClass" not in runtime
+
+    # Drag / Carry row is injected directly by the live renderer, independent of collectActions timing.
+    assert "_selectedCategory == 'drag'" in renderer
+    assert "'Attach Drag Handle'" in renderer
+    assert "'Release Drag Handle'" in renderer
+    assert "ACME_DragHandleAttach" in renderer
+    assert "ACME_DragHandleRelease" in renderer
+    assert "ACME_fnc_dragHandleStart" in renderer
+    assert "ACME_fnc_dragHandleStop" in renderer
