@@ -2483,6 +2483,7 @@ class CfgFunctions {
             class minigameReopen {};
             class aceCursorRestore {};
             class rhythmGet {};
+            class peaIsWide {};
             class rhythmSet {};
             class rhythmActiveCommit {};
             class rhythmNativeHoldCommit {};

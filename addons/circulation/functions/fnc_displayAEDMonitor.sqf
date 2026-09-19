@@ -55,6 +55,8 @@ if !(alive _patient) then {
 };
 
 _patient setVariable [QGVAR(AED_EKGRhythm), _rhythm];
+// Re-evaluate reused trace buffers on opening, including calcium given while this panel was closed.
+_patient setVariable ["ACME_AED_Monitor_PEAForm",nil,false];
 
 private _recentShock = [_patient, true] call FUNC(recentAEDShock);
 
@@ -319,7 +321,12 @@ private _PFH = [{
     private _oldEKGRhythm = _patient getVariable [QGVAR(AED_EKGRhythm), -2];
     private _oldPORhythm = _patient getVariable [QGVAR(AED_PORhythm), -2];
     private _oldCORhythm = _patient getVariable [QGVAR(AED_CORhythm), -2];
-    private _rhythmChangeEKG = _EKGRhythm != _oldEKGRhythm;
+    // Calcium can change PEA morphology while the native rhythm stays 5. Feed that change through
+    // the existing between-complex splice, without resetting the electrical clock or restarting the sweep.
+    private _peaWide = _EKGRhythm == ACM_Rhythm_PEA && {[_patient] call ACME_fnc_peaIsWide};
+    private _peaFormChanged = isNil {_patient getVariable "ACME_AED_Monitor_PEAForm"}
+        || {_peaWide != (_patient getVariable ["ACME_AED_Monitor_PEAForm",false])};
+    private _rhythmChangeEKG = _EKGRhythm != _oldEKGRhythm || {_peaFormChanged};
     private _rhythmChangePO = _PORhythm != _oldPORhythm;
     private _rhythmChangeCO = _CORhythm != _oldCORhythm;
     private _rhythmChangeCondition = _rhythmChangeEKG || _rhythmChangePO || _rhythmChangeCO;
@@ -342,6 +349,7 @@ private _PFH = [{
 
     if (_stepCondition || {_rrChanged || {_vitalsCondition || {_rhythmChangeCondition || {_connectedCondition || {_listCondition}}}}}) then {
         _patient setVariable [QGVAR(AED_EKGRhythm), _EKGRhythm];
+        _patient setVariable ["ACME_AED_Monitor_PEAForm",_peaWide,false];
         _patient setVariable [QGVAR(AED_PORhythm), _PORhythm];
         _patient setVariable [QGVAR(AED_CORhythm), _CORhythm];
 
