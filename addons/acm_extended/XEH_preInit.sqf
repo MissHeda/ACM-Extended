@@ -487,9 +487,8 @@ private _settings = [
     // the physiology of a seizure is core gameplay and has no switch: the casualty still seizes, still loses
     // consciousness, and still carries every vital sign and consequence of it. this setting governs the BODY
     // MOTION and nothing else.
-    // Arma gives script no per-bone control on a living unit, so the convulsion is synthesised from a fast heading
-    // tremor and occasional ragdoll flops. that reads as violent on some machines and as a body sliding on others,
-    // and a unit that dislikes it needs a way to turn the visual off without turning the toxicity model off.
+    // ACME uses BI's GestureSpasm3-6 as dedicated 1.35x seizure gestures. Each gesture finishes before the next
+    // begins. The old heading tremor, random yaw jitter and repeated ragdoll-flop loop are no longer used.
     // the network block of the debug overlay. first place to look when a treatment is not taking on a patient
     // another machine owns. on by default and costs nothing while the overlay itself is off.
     [
@@ -500,7 +499,7 @@ private _settings = [
     ],
     [
         "ACME_seizure_animEnabled", "CHECKBOX",
-        ["Seizure body motion", "The convulsion ANIMATION only. OFF: a seizing casualty lies still, and the seizure itself is unchanged. They still lose consciousness, still carry the vitals, still need the treatment and still die without it. Turn this off if the tremor and the ragdoll flops read badly on your server or move casualties out of position. Takes effect immediately, including on a seizure already running."],
+        ["Seizure body motion", "The convulsion ANIMATION only. ON: active seizures cycle BI GestureSpasm3-6 at 1.35x, allowing each spasm to finish before the next begins. OFF: a seizing casualty lies still, while loss of consciousness, apnea, vitals, postictal state and treatment remain unchanged. Takes effect immediately, including on a seizure already running."],
         [_cTrau, "3. Seizures"],
         true, 1, {}
     ],
