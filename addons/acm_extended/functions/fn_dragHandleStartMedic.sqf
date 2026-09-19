@@ -3,6 +3,12 @@ params [["_medic",objNull,[objNull]],["_patient",objNull,[objNull]],["_weight",3
 if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {};
 
 _medic setVariable ["ACME_dragHandle_pending",false];
+// A stop can legitimately race the start acknowledgement, for example if the line overstretches immediately.
+// Never install provider restrictions for a transaction the patient owner has already torn down.
+if !(_patient getVariable ["ACME_dragHandle_active",false])
+    || {(_patient getVariable ["ACME_dragHandle_dragger",objNull]) isNotEqualTo _medic} exitWith {};
+
+
 _medic setVariable ["ACME_dragHandle_patient",_patient,true];
 _medic setVariable ["ACME_dragHandle_weight",_weight];
 _medic setVariable ["ACME_dragHandle_tension",0];
