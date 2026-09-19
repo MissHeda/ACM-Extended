@@ -340,6 +340,8 @@ class CfgPatches {
         // exact value. It lets testers prove which PBO Arma actually loaded instead of guessing from a workshop
         // timestamp or repository state.
         version = "1.2.2";
+        // Only HEMTT dev/launch output enables experimental development actions.
+        acme_developmentBuild = 0;
     };
 };
 

@@ -16,7 +16,7 @@
 
 ## PATIENT POSITIONING
 
-- Removed the experimental drag handle from the public release on main. It remains available on dev for further work. Standard ACE dragging and carrying remain available.
+- Release builds omit the experimental drag handle regardless of branch. It remains available in dev or launch builds from dev. Standard ACE dragging and carrying remain available.
 - Semi-Fowler's is unavailable for standing or crouching patients, including when an old lying flag remains. Eligibility is checked in the menu and again before positioning.
 
 -# **[See documentation here](https://hesherson.github.io/ACM-Extended-Wiki/index.html)**

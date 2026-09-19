@@ -10,6 +10,8 @@ These notes describe the combined current behavior. Later corrections take prece
 
 ### Build, debug and settings
 
+- Removed Attach Drag Handle and Release Drag Handle from release packages, including releases built from dev. Experimental actions are available only in dev or launch builds from the dev branch.
+
 - Fixed a missing UI scaling definition when changing syringe size in the Narc Box.
 - Fixed the duplicate ACE_Actions declaration and invalid inheritance that stopped HEMTT with L-C03/L-C04. Patient actions use the existing action tree, preserving Get Up.
 - Updated the public/runtime version and debug overlay to 1.2.2. HEMTT and native addon metadata now use 1.2.2.0.
@@ -56,7 +58,7 @@ These notes describe the combined current behavior. Later corrections take prece
 
 ### Patient positioning
 
-- Removed the experimental drag handle from the public release on main. It remains available on dev for further work. Standard ACE dragging and carrying remain available.
+- Release builds omit the experimental drag handle regardless of branch. It remains available in dev or launch builds from dev. Standard ACE dragging and carrying remain available.
 - Semi-Fowler's is unavailable for standing or crouching patients, including when an old lying flag remains. Eligibility is checked in the menu and again before positioning.
 
 ### Finger thoracostomy and chest seals
@@ -98,7 +100,11 @@ The version update changes release metadata and documentation; the cumulative ga
 
 The medication duration followup passed 25 focused checks on this branch, including strict HEMTT diagnostics, complete config compilation and SQF execution of the duration readers and input filtering. Mouse focus and actual keyboard entry still require verification in Arma. See the detailed input patch record below.
 
+The release build followup produced 14 PBOs from each branch with HEMTT 1.21.0 using `--no-bin --no-sign --no-archive`. Inspection of the packaged binary config, GUI renderer and startup script confirmed that every drag handle action and startup call is absent. The separate development build retains its actions. Main passed 9 checks with its development-only check skipped; dev passed all 21 checks. Full Windows asset binarization and in-game verification remain outstanding.
+
 ### Detailed patch records
+
+- [Release build drag handle exclusion](docs/patch-notes/2026-09-19-release-drag-build-gate.md)
 
 - [Transfusion and thoracostomy](docs/patch-notes/2026-09-19-transfusion-thoracostomy.md)
 - [Patient motion and ketamine](docs/patch-notes/2026-09-19-patient-motion.md)
