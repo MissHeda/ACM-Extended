@@ -321,6 +321,7 @@ class CfgPatches {
             "A3_Anims_F",
             "cba_main",
             "ace_main",
+            "ace_interact_menu",
             "ace_map",
             "ace_medical_status",
             "ace_medical_treatment",
@@ -6698,6 +6699,33 @@ class CfgVehicles {
 
     class Man;
     class CAManBase: Man {
+        // Config-native patient hip interaction. This is inherited by every soldier class at config load, so
+        // it does not depend on postInit timing or ACE's runtime action-tree inheritance cache.
+        class ACE_Actions {
+            class ACE_MainActions {
+                class ACME_AttachDragHandle {
+                    displayName = "Attach Drag Handle";
+                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa";
+                    selection = "pelvis";
+                    distance = 2.3;
+                    condition = "_player != _target && {alive _target} && {!([_target] call ace_common_fnc_isAwake)} && {!(_target getVariable ['ACME_dragHandle_active', false])}";
+                    statement = "[_player, _target] call ACME_fnc_dragHandleStart";
+                    exceptions[] = {};
+                    showDisabled = 0;
+                };
+                class ACME_ReleaseDragHandle {
+                    displayName = "Release Drag Handle";
+                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
+                    selection = "pelvis";
+                    distance = 2.3;
+                    condition = "(_target getVariable ['ACME_dragHandle_active', false]) && {(_target getVariable ['ACME_dragHandle_dragger', objNull]) isEqualTo _player}";
+                    statement = "[_player, _target, 'manual'] call ACME_fnc_dragHandleStop";
+                    exceptions[] = {};
+                    showDisabled = 0;
+                };
+            };
+        };
+
         class ACE_SelfActions {
             // one light at a time. ACE's map flashlight menu is an insertchildren node in CfgVehicles rather than a
             // registered action, so addactiontoclass cannot reach it. its condition is extended here instead: the original
