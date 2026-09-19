@@ -23,7 +23,16 @@ class ACME_MainMenuHelperDumpDebug: RscDisplayEmpty {
 // the hang bag uses a dedicated copy of the crew-aid loop with forced freelook.
 // ACE uses the same cfgmoves flags for its seated states. the body stays fixed and the head and camera stay
 // free.
-class CfgMovesBasic;
+// Dedicated seizure gesture actions. These are separate aliases rather than global edits of BI's GestureSpasm
+// states, so ACME gets the faster convulsion cadence without changing hit reactions or gestures used by other mods.
+class CfgMovesBasic {
+    class ManActions {
+        ACME_SeizureSpasm3[] = {"ACME_SeizureSpasm3", "Gesture"};
+        ACME_SeizureSpasm4[] = {"ACME_SeizureSpasm4", "Gesture"};
+        ACME_SeizureSpasm5[] = {"ACME_SeizureSpasm5", "Gesture"};
+        ACME_SeizureSpasm6[] = {"ACME_SeizureSpasm6", "Gesture"};
+    };
+};
 class CfgMovesMaleSdr: CfgMovesBasic {
     class States {
         // B47 provider-treatment theatre. Each wrapper inherits the exact requested BI motion but disables
@@ -1659,6 +1668,11 @@ class CfgGesturesMale {
     class Default;
     class States {
         class GestureFreezeStand;  // vanilla upper-body arm gesture base. it inherits the movement-friendly mask.
+        class GestureSpasm3;
+        class GestureSpasm4;
+        class GestureSpasm5;
+        class GestureSpasm6;
+
         class ACME_IV_Gesture: GestureFreezeStand {
             file = "\acm_extended\animations\acm_iv_stand_lh.rtm";
             looped = 1;
@@ -1667,6 +1681,13 @@ class CfgGesturesMale {
             canPullTrigger = 0;
             enableOptics = 0;
         };
+
+        // BI's four best whole-body-looking spasm gestures, isolated under ACME action names and played at 1.35x.
+        // They retain the original RTMs, masks and interpolation data. Only playback speed changes.
+        class ACME_SeizureSpasm3: GestureSpasm3 { speed = 1.35; };
+        class ACME_SeizureSpasm4: GestureSpasm4 { speed = 1.35; };
+        class ACME_SeizureSpasm5: GestureSpasm5 { speed = 1.35; };
+        class ACME_SeizureSpasm6: GestureSpasm6 { speed = 1.35; };
     };
 };
 
@@ -2471,6 +2492,7 @@ class CfgFunctions {
             class lidoEffectiveness {};
             class lidoToxTick {};
             class seizureMotion {};
+            class seizureGestureAdvance {};
             class clearAllAilments {};
             class syncToggle {};
             class syncCardiovert {};
