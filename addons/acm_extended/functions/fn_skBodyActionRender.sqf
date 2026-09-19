@@ -37,14 +37,15 @@ if (isNull _durLabel) then {
                 _ctrl setVariable ["ACME_SK_GhostActive",false];
             };
         }];
-        _durEdit ctrlAddEventHandler ["KeyDown", {
+        // Clear the grey recommendation when the edit actually receives focus, not inside KeyDown. Changing
+        // ctrlText during KeyDown races Arma's own RscEdit key processing and can swallow every attempted digit.
+        _durEdit ctrlAddEventHandler ["SetFocus", {
             params ["_ctrl"];
             if (_ctrl getVariable ["ACME_SK_GhostActive",false]) then {
                 _ctrl ctrlSetText "";
                 _ctrl ctrlSetTextColor [1,1,1,1];
                 _ctrl setVariable ["ACME_SK_GhostActive",false];
             };
-            false
         }];
         _durEdit ctrlAddEventHandler ["KeyUp", {
             params ["_ctrl"];
@@ -52,7 +53,6 @@ if (isNull _durLabel) then {
                 private _raw = ctrlText _ctrl;
                 private _clean = toString ((toArray _raw) select {_x >= 48 && {_x <= 57}});
                 if (_clean != _raw) then {_ctrl ctrlSetText _clean;};
-                call ACME_fnc_skBodyActionRender;
             };
         }];
         _durEdit ctrlAddEventHandler ["KillFocus", {
@@ -67,6 +67,9 @@ if (isNull _durLabel) then {
             };
         }];
     };
+private _durFocusCtrl = focusedCtrl _d;
+private _durFocused = !isNull _durFocusCtrl && {_durFocusCtrl isEqualTo _durEdit};
+
 private _body = (uiNamespace getVariable ["ACME_SK_View","syringe"]) == "body";
 private _editMode = uiNamespace getVariable ["ACME_SK_TagEditMode",false];
 private _busy = uiNamespace getVariable ["ACME_SK_InjectionBusy",false];
@@ -100,11 +103,15 @@ private _durY = (_pushRect select 1) - _durH - (_gap * 0.65);
 private _editW = (_pushRect select 2) * 0.23;
 private _labelW = (_pushRect select 2) - _editW - _durGap;
 _durLabel ctrlSetPosition [_pushRect select 0, _durY, _labelW, _durH];
-_durEdit ctrlSetPosition [(_pushRect select 0) + _labelW + _durGap, _durY, _editW, _durH];
 _durLabel ctrlSetFontHeight (_durH * 0.63);
-_durEdit ctrlSetFontHeight (_durH * 0.63);
 _durLabel ctrlCommit 0;
-_durEdit ctrlCommit 0;
+// RscEdit loses keyboard/caret ownership when layout/enable state is repeatedly rewritten while it has focus.
+// The UI tick renders this function continuously, so leave the edit control physically untouched during typing.
+if (!_durFocused) then {
+    _durEdit ctrlSetPosition [(_pushRect select 0) + _labelW + _durGap, _durY, _editW, _durH];
+    _durEdit ctrlSetFontHeight (_durH * 0.63);
+    _durEdit ctrlCommit 0;
+};
 
 private _entry = _store select _idx;
 private _id = _entry param [11,"",[""]];
@@ -135,7 +142,7 @@ if (_pending isEqualType [] && {count _pending >= 3}) then {
     _pending params ["_part","_site","_route"];
     if (_route != "im") then {
         private _defaultFor = _d getVariable ["ACME_HCMedPushDefaultFor",""];
-        if (_defaultFor != _id) then {
+        if (!_durFocused && {_defaultFor != _id}) then {
             private _suggested = str (round ([_entry] call ACME_fnc_medicationSuggestedPushSec));
             _durEdit setVariable ["ACME_SK_GhostText",_suggested];
             _durEdit setVariable ["ACME_SK_GhostActive",true];
@@ -182,8 +189,10 @@ if (_pending isEqualType [] && {count _pending >= 3}) then {
     _back ctrlSetBackgroundColor (["success",0.82] call ACME_fnc_a11yColor);
     private _showDuration = _route != "im";
     _durLabel ctrlShow _showDuration;
-    _durEdit ctrlShow _showDuration;
-    _durEdit ctrlEnable (_showDuration && {!_busy});
+    if (!_durFocused) then {
+        _durEdit ctrlShow _showDuration;
+        _durEdit ctrlEnable (_showDuration && {!_busy});
+    };
 } else {
     _durLabel ctrlShow false; _durEdit ctrlShow false;
     private _armed = uiNamespace getVariable ["ACME_SK_DiscardArmedId",""];
