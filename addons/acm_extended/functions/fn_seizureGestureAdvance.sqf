@@ -38,6 +38,7 @@ private _pool = _gestures - [_last];
 if (_pool isEqualTo []) then {_pool = +_gestures;};
 private _next = selectRandom _pool;
 
+_patient setVariable ["ACME_seizure_motionAdvancePending", false];
 _patient setVariable ["ACME_seizure_motionCurrentGesture", _next];
 _patient playActionNow _next;
 true
