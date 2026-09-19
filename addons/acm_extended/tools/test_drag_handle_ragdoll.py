@@ -165,9 +165,13 @@ def test_drag_handle_interactions_are_hip_anchored_and_in_drag_carry_menu():
     gui = read(ADDON.parent / "gui" / "overrides" / "fnc_collectActions.sqf")
     # Both external attach and release nodes are anchored to the patient's pelvis/hips.
     assert runtime.count('"pelvis"') >= 2
-    # Medical menu uses ACE/ACM's existing Drag / Carry category key.
+    # Runtime class insertion MUST inherit to real soldier subclasses; CAManBase itself is abstract.
+    assert '["CAManBase",0,["ACE_MainActions"],_attach,true]' in runtime
+    assert '["CAManBase",0,["ACE_MainActions"],_releaseTarget,true]' in runtime
+    assert '["CAManBase",1,["ACE_SelfActions"],_releaseSelf,true]' in runtime
+    # Medical menu uses ACE/ACM's existing Drag / Carry category key and keeps the visible-row predicate broad.
     assert '"Attach Drag Handle", "drag"' in gui
     assert '"Release Drag Handle", "drag"' in gui
-    assert "ACME_fnc_dragHandleCanStart" in gui
+    assert '!([_target] call ACEFUNC(common,isAwake))' in gui
     assert "ACME_fnc_dragHandleStart" in gui
     assert "ACME_fnc_dragHandleStop" in gui
