@@ -12,10 +12,10 @@ private _reject = {
 if !(missionNamespace getVariable ["ACME_dragHandle_enabled",true]) exitWith {["Drag handle is disabled."] call _reject;};
 if (!alive _patient || {!alive _medic}) exitWith {["Casualty or dragger is not alive."] call _reject;};
 if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {["Casualty must be unconscious."] call _reject;};
-if (!isNull objectParent _patient || {!isNull objectParent _medic}) exitWith {["Cannot attach the drag handle in a vehicle."] call _reject;};
+if (!(isNull (objectParent _patient)) || {!(isNull (objectParent _medic))}) exitWith {["Cannot attach the drag handle in a vehicle."] call _reject;};
 if ((_patient getVariable ["ACME_dragHandle_active",false])) exitWith {["That casualty already has a drag handle attached."] call _reject;};
 if (!isNull (_medic getVariable ["ACME_dragHandle_patient",objNull])) exitWith {["You already have a drag handle attached."] call _reject;};
-if (_patient call ace_common_fnc_isBeingDragged || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["Casualty is already being moved."] call _reject;};
+if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["Casualty is already being moved."] call _reject;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["Finish the current ACE drag/carry first."] call _reject;};
 
 private _attachDist = missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3];
