@@ -20,6 +20,10 @@ if (!_body) exitWith {
 
 private _expanded = (uiNamespace getVariable ["ACME_SK_CarouselExpanded",false]) || {_editMode};
 private _injectBusy = uiNamespace getVariable ["ACME_SK_InjectionBusy",false];
+// Only the legacy/display-bound normal push owns the center plunger directly. Hardcore push drains the
+// authoritative syringe row over time and therefore NEEDS carousel renders to follow the changing volume.
+private _pushAnimPFH = uiNamespace getVariable ["ACME_SK_PushAnimPFH",-1];
+private _normalPushAnimActive = _pushAnimPFH isEqualType 0 && {_pushAnimPFH >= 0};
 private _carouselBusy = uiNamespace getVariable ["ACME_SK_CarouselBusy",false];
 private _hover = (uiNamespace getVariable ["ACME_SK_CarouselHover",false]) && {!_editMode};
 private _hoverOffset = uiNamespace getVariable ["ACME_SK_CarouselHoverOffset", 99];
@@ -201,9 +205,10 @@ for "_slot" from 0 to 4 do {
         private _frac = (((_amt + _nsMl) / (_size max 0.01)) max 0) min 1;
         private _sizeRatio = switch (_size) do {case 1:{10.2/10.5};case 3:{9.83/10.5};case 5:{10.3/10.5};default{1};};
         private _py = _y + (_travel10 * _sizeRatio * _frac * (_h / ((_native select 3) max 0.001)));
-        // During a live push the center plunger is owned by fn_skConfirmInjection's frame-by-frame animator.
-        // Repainting it from stored contents would snap it backward and create the slideshow effect.
-        if !(_injectBusy && {_slot == 2}) then {_pl ctrlSetPosition [_x,_py,_w,_h];};
+        // During an ordinary display-bound push, fn_skConfirmInjection owns the center plunger frame by frame.
+        // Hardcore pushes do not use that animator: they mutate the stored syringe volume continuously, so the
+        // carousel must follow that live fraction instead of freezing the plunger in its starting position.
+        if !(_normalPushAnimActive && {_slot == 2}) then {_pl ctrlSetPosition [_x,_py,_w,_h];};
         _pl ctrlSetTextColor [1,1,1,_alpha];
 
         private _color = _e param [7,"none",[""]];
