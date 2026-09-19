@@ -40,7 +40,7 @@ private _pfh = [{
     };
 
     if (!alive _medic || {_medic getVariable ["ACE_isUnconscious",false]}
-        || {!isNull objectParent _medic}
+        || {!(isNull (objectParent _medic))}
         || {_medic getVariable ["ace_dragging_isDragging",false]}
         || {_medic getVariable ["ace_dragging_isCarrying",false]}
         || {_medic isNotEqualTo ACE_player}) exitWith {
