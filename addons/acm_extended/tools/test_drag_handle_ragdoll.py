@@ -122,3 +122,10 @@ def test_visual_harness_is_non_authoritative_and_jip_reconstructed():
     assert "drawLine3D [_drop,_handle,_col];" in runtime
     assert "forEach allUnits" in runtime
     assert "ropeCreate" not in runtime
+
+
+def test_stale_start_ack_cannot_reinstall_dragger_limits():
+    medic = read(FUN / "fn_dragHandleStartMedic.sqf")
+    assert 'ACME_dragHandle_active' in medic
+    assert 'ACME_dragHandle_dragger' in medic
+    assert 'isNotEqualTo _medic' in medic
