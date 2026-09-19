@@ -68,7 +68,11 @@ if (!hasInterface) exitWith {};
         "Attach Drag Handle",
         "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa",
         {[_player,_target] call ACME_fnc_dragHandleStart;},
-        {[_player,_target] call ACME_fnc_dragHandleCanStart;}
+        {[_player,_target] call ACME_fnc_dragHandleCanStart;},
+        {},
+        [],
+        "pelvis",
+        (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
     ] call ace_interact_menu_fnc_createAction;
     ["CAManBase",0,["ACE_MainActions"],_attach] call ace_interact_menu_fnc_addActionToClass;
 
@@ -80,7 +84,11 @@ if (!hasInterface) exitWith {};
         {
             (_target getVariable ["ACME_dragHandle_active",false])
             && {(_target getVariable ["ACME_dragHandle_dragger",objNull]) isEqualTo _player}
-        }
+        },
+        {},
+        [],
+        "pelvis",
+        (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
     ] call ace_interact_menu_fnc_createAction;
     ["CAManBase",0,["ACE_MainActions"],_releaseTarget] call ace_interact_menu_fnc_addActionToClass;
 
