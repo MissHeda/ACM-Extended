@@ -75,7 +75,10 @@ private _pfh = [{
     private _weightCoef = linearConversion [350,950,_weight,_lightCoef,_heavyCoef,true];
     private _tensionCoef = linearConversion [0,1,_tension,1,0.72,true];
     private _saved = _medic getVariable ["ACME_dragHandle_savedAnimCoef",1];
-    private _desired = ((_saved * _weightCoef * _tensionCoef) min _lightCoef) max 0.34;
+    private _desired = ((_saved * _weightCoef * _tensionCoef) min _lightCoef) max 0.30;
+// Dragging is a cap, never a speed boost. A provider already slowed below our normal floor by another
+// authoritative system keeps that lower coefficient.
+_desired = _desired min _saved;
 
     if (abs ((getAnimSpeedCoef _medic) - _desired) > 0.012) then {
         _medic setAnimSpeedCoef _desired;
