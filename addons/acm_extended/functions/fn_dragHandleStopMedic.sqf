@@ -39,10 +39,11 @@ _medic setVariable ["ACME_dragHandle_tension",nil];
 _medic setVariable ["ACME_dragHandle_savedAnimCoef",nil];
 _medic setVariable ["ACME_dragHandle_lastAnimCoef",nil];
 
-if (_reason in ["overstretch","vehicle","dragger_unconscious","patient_awake","procedure","ace_transport","death","locality"]) then {
+if (_reason in ["overstretch","patient_vehicle","dragger_vehicle","dragger_unconscious","patient_awake","procedure","ace_transport","death","locality"]) then {
     private _msg = switch (_reason) do {
         case "overstretch": {"Drag handle released: tether overstretched."};
-        case "vehicle": {"Drag handle released: vehicle transition."};
+        case "patient_vehicle": {"Drag handle released: casualty loaded into a vehicle."};
+        case "dragger_vehicle": {"Drag handle released: dragger entered a vehicle."};
         case "dragger_unconscious": {"Drag handle released: dragger incapacitated."};
         case "patient_awake": {"Drag handle released: casualty regained consciousness."};
         case "procedure": {"Drag handle released: a procedure took over the casualty position."};
