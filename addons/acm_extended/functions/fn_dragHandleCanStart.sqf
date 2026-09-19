@@ -23,7 +23,7 @@ if (_medic getVariable ["ace_dragging_isCarrying",false]) exitWith {false};
 
 // Head elevation is deliberately allowed: the owner start function tears it down through the same transport
 // lifecycle as ACE dragging. Any other attachment means another system owns the casualty's transform.
-if (!isNull attachedTo _patient && {!(_patient getVariable ["ACME_headElevated",false])}) exitWith {false};
+if (!(isNull (attachedTo _patient)) && {!(_patient getVariable ["ACME_headElevated",false])}) exitWith {false};
 
 // A modal patient-animation lease means somebody is actively doing a procedure that owns the casualty pose.
 private _lock = _patient getVariable ["ACME_patientAnimLock",[]];
