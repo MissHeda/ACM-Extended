@@ -7,9 +7,9 @@ def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8-sig", errors="strict")
 
 
-def test_rc1_is_the_cfgpatches_version():
+def test_release_is_the_cfgpatches_version():
     config = read("config.cpp")
-    assert 'version = "1.2.1-rc1";' in config
+    assert 'version = "1.2.2";' in config
 
 
 def test_both_debug_pages_render_cfgpatches_version():

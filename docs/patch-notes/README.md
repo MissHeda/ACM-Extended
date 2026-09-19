@@ -1,16 +1,16 @@
 # ACM Extended patch notes
 
-The [cumulative 1.2.1-rc1 notes](../../CHANGELOG.md) combine all follow-up patches from 18–19 September 2026 through commit [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424).
+The [cumulative 1.2.2 notes](../../CHANGELOG.md) combine all follow-up patches from 18–19 September 2026 through commit [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424).
 
-Use the cumulative notes for current behavior. The dated records below retain the implementation history and validation details; later corrections supersede earlier descriptions, particularly seizure speed/startup and drag-handle presentation.
+Version 1.2.2 incorporates the complete RC1 follow-up patch series and updates the public, debug and build versions. Use the cumulative notes for current behavior. The dated records below retain the implementation history and validation details; later corrections supersede earlier descriptions, particularly seizure speed/startup and drag-handle presentation.
 
 ## Discord copy
 
 Each file below is one complete post under 4,000 characters. Copy the contents of each file as a separate message, in order.
 
-- [Post 1 of 3](1.2.1-rc1-discord-1.txt) (3,181 characters)
-- [Post 2 of 3](1.2.1-rc1-discord-2.txt) (2,908 characters)
-- [Post 3 of 3](1.2.1-rc1-discord-3.txt) (3,838 characters)
+- [Post 1 of 3](1.2.2-discord-1.txt) (3,190 characters)
+- [Post 2 of 3](1.2.2-discord-2.txt) (2,902 characters)
+- [Post 3 of 3](1.2.2-discord-3.txt) (3,832 characters)
 
 ## Individual patch records
 

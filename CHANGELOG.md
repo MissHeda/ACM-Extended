@@ -1,15 +1,15 @@
 # ACM Extended patch notes
 
-## 1.2.1-rc1 cumulative hotfixes
+## 1.2.2 cumulative update
 
-Updated 19 September 2026. Consolidates all follow-up patches from 18–19 September, through [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424). The [covered commit range](https://github.com/hesherson/ACM-Extended/compare/f2b6c482123aff1a60234e4d2b737e44de33767c...8fd12c016f17504b05781925f095d75f0fbe9424) includes 132 commits.
+Updated 19 September 2026. Version 1.2.2 incorporates the complete 1.2.1-rc1 patch series and aligns the release metadata. Consolidates all follow-up patches from 18–19 September, through [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424). The [covered commit range](https://github.com/hesherson/ACM-Extended/compare/f2b6c482123aff1a60234e4d2b737e44de33767c...8fd12c016f17504b05781925f095d75f0fbe9424) includes 132 commits.
 
 These notes describe the combined current behavior. Later corrections take precedence over intermediate implementations in the individual patch records.
 
 ### Build, debug and settings
 
 - Fixed the duplicate ACE_Actions declaration and invalid inheritance that stopped HEMTT with L-C03/L-C04. Drag-handle actions now share the existing patient action tree, preserving Get Up and release actions.
-- The debug overlay identifies this build as 1.2.1-rc1. The HEMTT project version remains 1.4.5.0.
+- Updated the public/runtime version and debug overlay to 1.2.2. HEMTT and native addon metadata now use 1.2.2.0.
 - Separated shared gameplay settings from client preferences. Gameplay rules remain globally controlled; presentation, accessibility, interface and debug preferences are client-owned and cannot be overridden by the server or mission.
 
 ### Medication pushes and IV tray
@@ -94,7 +94,7 @@ The initial ACE action-config correction passed its focused config check and the
 
 The command runner became unavailable during the later work. The complete cumulative build has **not** been verified with pytest, HEMTT or Arma. In-game confirmation remains necessary for seizure startup and speed, ragdoll dragging, chest animations, transfusion selection, audible auscultation mixing and PEA transitions, including remote-owned patients.
 
-This consolidation changes documentation only.
+The version update changes release metadata and documentation; the cumulative gameplay changes are listed above.
 
 ### Detailed patch records
 
