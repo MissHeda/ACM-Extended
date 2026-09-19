@@ -7,6 +7,8 @@ private _activeMedic = _patient getVariable ["ACME_dragHandle_dragger",objNull];
 if (isNull _medic) then {_medic = _activeMedic;};
 if (!isNull _activeMedic && {!isNull _medic} && {_activeMedic isNotEqualTo _medic}) exitWith {};
 
+private _session = _patient getVariable ["ACME_dragHandle_session",""];
+
 private _pfh = _patient getVariable ["ACME_dragHandle_forcePFH",-1];
 if (_pfh isEqualType 0 && {_pfh >= 0}) then {[_pfh] call CBA_fnc_removePerFrameHandler;};
 _patient setVariable ["ACME_dragHandle_forcePFH",-1];
@@ -18,6 +20,7 @@ _patient setVariable ["ace_dragging_canCarry",_oldFlags param [1,true],true];
 _patient setVariable ["ACME_dragHandle_active",false,true];
 _patient setVariable ["ACME_dragHandle_dragger",objNull,true];
 _patient setVariable ["ACME_dragHandle_weight",nil,true];
+_patient setVariable ["ACME_dragHandle_session","",true];
 _patient setVariable ["ACME_dragHandle_tension",nil];
 _patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 
@@ -25,5 +28,5 @@ _patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 ["ACME_headElev_transportUp",[_patient]] call CBA_fnc_localEvent;
 
 if (!isNull _medic) then {
-    ["ACME_dragHandle_stopped",[_medic,_patient,_reason],_medic] call CBA_fnc_targetEvent;
+    ["ACME_dragHandle_stopped",[_medic,_patient,_reason,_session],_medic] call CBA_fnc_targetEvent;
 };
