@@ -1,7 +1,7 @@
 // Patient-owner PhysX loop. addForce is an impulse for one frame, so every impulse is scaled by diag_deltaTime.
 // This makes the drag spring frame-rate independent.
 params ["_args","_handle"];
-_args params ["_patient","_medic","_weight","_lastRagdoll",["_stuckSince",-1]];
+_args params ["_patient","_medic","_weight","_lastRagdoll"];
 
 private _stop = {
     params ["_reason"];
@@ -68,19 +68,14 @@ if (_stretch > 0.01 && {_distance > 0.01}) then {
     };
 };
 
-// ACE eventually parks an unconscious casualty in a locked pose. If meaningful tether tension is present but the
-// body remains nearly motionless while the medic is moving, wake a fresh ragdoll. The long cooldown prevents
-// obstacle snags from becoming a repeated flop loop.
-private _bodySpeed = vectorMagnitude (velocity _patient);
+// ACE's own drag eligibility uses the engine isAwake command specifically as its "not ragdolled" test for a
+// living person. Use that same signal instead of guessing from velocity: an obstacle-snagged ragdoll may be nearly
+// motionless and must remain physically snagged, while an unconscious casualty that has settled back into a
+// non-ragdoll pose needs one fresh ragdoll wakeup before addForce can articulate the limbs again.
 private _medicSpeed = vectorMagnitude (velocity _medic);
-if (_tension > 0.24 && {_medicSpeed > 0.65} && {_bodySpeed < 0.12}) then {
-    if (_stuckSince < 0) then {_stuckSince = CBA_missionTime; _args set [4,_stuckSince];};
-    if ((CBA_missionTime - _stuckSince) > 0.45 && {(CBA_missionTime - _lastRagdoll) > 1.8}) then {
-        [_patient] call ACME_fnc_forceRagdoll;
-        _lastRagdoll = CBA_missionTime;
-        _args set [3,_lastRagdoll];
-        _args set [4,CBA_missionTime];
-    };
-} else {
-    if (_stuckSince >= 0) then {_args set [4,-1];};
+if (_tension > 0.12 && {_medicSpeed > 0.45} && {isAwake _patient}
+    && {(CBA_missionTime - _lastRagdoll) > 1.8}) then {
+    [_patient] call ACME_fnc_forceRagdoll;
+    _lastRagdoll = CBA_missionTime;
+    _args set [3,_lastRagdoll];
 };
