@@ -8,9 +8,8 @@ if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
 // head elevation is sacred. a head-elevated casualty must stay elevated through a seizure, because the elevation is
 // only ever removed by another person, through lower head or a maneuver that suspends it, and never by the
 // seizure of the patient.
-// so for an elevated patient we do not suspend the elevation and do not ragdoll them out of the pose, and the
-// seizure simply tremors them in place, because fn_seizuremotion already suppresses its ragdoll flops for
-// elevated-head patients.
+// so for an elevated patient we do not suspend the elevation and do not ragdoll them out of the pose. The
+// GestureSpasm seizure layer can run without changing the patient's heading or tearing down the elevation hold.
 // we still knock them unconscious if they are somehow awake, and we hold the elevated pose right after, so the
 // unconscious-collapse of the engine does not drop them out of it.
 private _headElevated = _patient getVariable ["ACME_headElevated", false];
@@ -35,11 +34,10 @@ if (_headElevated) then {
         }, [_patient], 0.4] call CBA_fnc_waitAndExecute;
     };
 } else {
-    // not elevated: the normal seizure collapse. force the ragdoll fall even when they are already unconscious, so the
-    // onset and each recurrence read as a drop rather than the body simply starting to twitch in place.
-    // the forced ragdoll is ANIMATION, so it obeys ACME_seizure_animEnabled. the knockout above is PHYSIOLOGY, a
-    // generalized seizure abolishes consciousness, so it always runs. with the motion switched off the casualty
-    // goes down and lies still instead of being thrown into a flop, and everything clinical is identical.
+    // Not elevated: retain one onset/recurrence collapse even when already unconscious, so the episode has a
+    // readable loss-of-tone transition before the spasm gestures begin. There are no repeated seizure ragdoll flops
+    // anymore. The forced onset collapse is ANIMATION, so it obeys ACME_seizure_animEnabled; the knockout above is
+    // PHYSIOLOGY and always runs.
     if (_wasUncon && {missionNamespace getVariable ["ACME_seizure_animEnabled", true]}) then {
         [_patient] call ACME_fnc_forceRagdoll;
     };
