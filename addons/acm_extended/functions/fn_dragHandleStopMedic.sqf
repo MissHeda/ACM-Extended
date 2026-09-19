@@ -1,6 +1,10 @@
 // Local provider cleanup. Idempotent so both an owner stop event and the local watchdog can call it safely.
-params [["_medic",objNull,[objNull]],["_patient",objNull,[objNull]],["_reason","manual",[""]]];
+params [["_medic",objNull,[objNull]],["_patient",objNull,[objNull]],["_reason","manual",[""]],["_session","",[""]]];
 if (isNull _medic || {!local _medic}) exitWith {};
+
+private _currentSession = _medic getVariable ["ACME_dragHandle_session",""];
+// A delayed stop from an older transaction must never tear down a newer harness session.
+if (_session != "" && {_currentSession != ""} && {_session != _currentSession}) exitWith {};
 
 private _pfh = _medic getVariable ["ACME_dragHandle_medicPFH",-1];
 if (_pfh isEqualType 0 && {_pfh >= 0}) then {[_pfh] call CBA_fnc_removePerFrameHandler;};
@@ -26,6 +30,8 @@ if (_last < 0 || {abs (_cur - _last) < 0.04}) then {
 };
 
 _medic setVariable ["ACME_dragHandle_patient",objNull,true];
+if (_session != "") then {_medic setVariable ["ACME_dragHandle_lastStoppedSession",_session];};
+_medic setVariable ["ACME_dragHandle_session",""];
 _medic setVariable ["ACME_dragHandle_pending",false];
 _medic setVariable ["ACME_dragHandle_stopPending",false];
 _medic setVariable ["ACME_dragHandle_weight",nil];
