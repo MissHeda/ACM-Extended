@@ -41,7 +41,11 @@ if (_reason == "procedure" && {_patient getVariable ["ACME_headElev_TransportPen
         {
             params ["_p"];
             if (!isNull _p && {alive _p}) then {
-                ["ACME_headElev_transportUp",[_p]] call CBA_fnc_localEvent;
+                if (local _p) then {
+                    ["ACME_headElev_transportUp",[_p]] call CBA_fnc_localEvent;
+                } else {
+                    ["ACME_headElev_transportUp",[_p],_p] call CBA_fnc_targetEvent;
+                };
             };
         },
         [_patient]
