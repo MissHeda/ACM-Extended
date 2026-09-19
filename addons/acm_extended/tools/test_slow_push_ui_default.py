@@ -61,3 +61,24 @@ def test_recommended_times_remain_display_only_gray_guidance():
         ("Rocuronium", 30),
     ]:
         assert f'case "{med}": {{{seconds}}};' in rec
+
+
+def test_seconds_edit_preserves_focus_and_does_not_swallow_keys():
+    body = read("functions/fn_skBodyActionRender.sqf")
+    tick = read("functions/fn_skUiTick.sqf")
+    assert 'ctrlAddEventHandler ["SetFocus"' in body
+    assert 'ctrlAddEventHandler ["KeyDown"' not in body
+    assert 'call ACME_fnc_skBodyActionRender;' not in body.split('ctrlAddEventHandler ["KeyUp"', 1)[1].split('}];', 1)[0]
+    assert 'ctrlIDC _focus) != 84831' in tick
+    assert 'if (!_durFocused) then {' in body
+
+
+def test_hardcore_push_plunger_tracks_authoritative_remaining_volume():
+    carousel = read("functions/fn_skCarouselRender.sqf")
+    tick = read("functions/fn_hardcorePushTick.sqf")
+    assert 'ACME_SK_PushAnimPFH' in carousel
+    assert '_normalPushAnimActive' in carousel
+    assert 'if !(_normalPushAnimActive && {_slot == 2})' in carousel
+    assert 'private _plUi = _open displayCtrl 84422;' in tick
+    assert '_plUi ctrlSetPosition' in tick
+    assert '_remainUi' in tick
