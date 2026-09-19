@@ -4,7 +4,7 @@ if (isNull _medic || {isNull _patient} || {_medic isEqualTo _patient}) exitWith 
 if !(missionNamespace getVariable ["ACME_dragHandle_enabled",true]) exitWith {false};
 if !(_patient isKindOf "CAManBase") exitWith {false};
 if (!alive _medic || {!alive _patient}) exitWith {false};
-if (!isNull objectParent _medic || {!isNull objectParent _patient}) exitWith {false};
+if (!(isNull (objectParent _medic)) || {!(isNull (objectParent _patient))}) exitWith {false};
 if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {false};
 if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {false};
 
