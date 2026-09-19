@@ -236,7 +236,7 @@ if (alive _patient) then {
     "ACME_lido_seizureState", "ACME_lido_seizurePhaseEnd", "ACME_seizure_rrDrive",
     "ACME_sarinSeizureCause",
     "ACME_seizure_motionActive", "ACME_seizure_motionGestureEH", "ACME_seizure_motionCurrentGesture",
-    "ACME_seizure_motionRetryPending",
+    "ACME_seizure_motionRetryPending", "ACME_seizure_motionAdvancePending",
     // Legacy motion fields remain in the scrub list so a hot-reloaded casualty can never keep the old jitter worker.
     "ACME_seizure_motionPFH", "ACME_seizure_motionBaseDir", "ACME_seizure_motionAnimIdx",
     "ACME_seizure_motionPhase", "ACME_seizure_motionPhaseEnd",
