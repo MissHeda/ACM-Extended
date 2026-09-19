@@ -2503,6 +2503,7 @@ class CfgFunctions {
             class rhythmThresholdTick {};
             class lidoEffectiveness {};
             class lidoToxTick {};
+            class debugInduceSeizure {};
             class seizureMotion {};
             class seizureGestureAdvance {};
             class clearAllAilments {};
@@ -9292,6 +9293,25 @@ class ace_medical_treatment_actions {
         callbackSuccess = "_this call ACME_fnc_debugCheyneStokes";
         callbackFailure = "";
         callbackProgress = "";
+        items[] = {};
+    };
+
+    // Head-only seizure test. This enters the real ACME seizure physiology rather than playing gestures alone.
+    // It is invisible unless the provider has the ACME Debug Menu setting enabled.
+    class ACME_DebugInduceSeizure: CheckPulse {
+        displayName = "Induce Seizure (debug)";
+        displayNameProgress = "";
+        category = "advanced";
+        treatmentLocations[] = {"All"};
+        medicRequired = 0;
+        treatmentTime = 0.01;
+        allowedSelections[] = {"Head"};
+        condition = "[] call ACME_fnc_debugEnabled";
+        callbackSuccess = "_this call ACME_fnc_debugInduceSeizure";
+        callbackFailure = "";
+        callbackProgress = "";
+        animationMedic = "";
+        animationMedicProne = "";
         items[] = {};
     };
     // field shortcut. an empty flush drawn from a hung dirty-epi bag is one 10 mcg push.
