@@ -83,9 +83,10 @@ ACME_seizure_ragdollChance  = 0.7;
 ACME_seizure_ragdollDur     = 1.2;
 ACME_seizure_camShake       = 1;
 
-// Severe ACM Sarin/nerve-agent toxicity now enters the same seizure state machine instead of using intermittent
-// local camera shake. This threshold intentionally matches ACM's existing severe-neurologic/airway-spasm band.
-ACME_sarin_seizureThreshold = 60;
+// ACM Sarin/nerve-agent seizure activity now enters the same seizure state machine instead of using intermittent
+// local camera shake. 10 is ACM's original onset for the Midazolam-suppressible seizure/shake effect; the separate
+// airway-spasm/critical band still begins at buildup 60.
+ACME_sarin_seizureThreshold = 10;
 
 // TBI pre-herniation seizures. this is the per-tick chance to start a seizure while the brain sits in the
 // pre-herniation decompensation stage, with cushing engaged and no herniation yet. a high value gives a
