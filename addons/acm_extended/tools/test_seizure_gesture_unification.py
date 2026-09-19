@@ -68,6 +68,7 @@ def test_old_visual_tuning_is_explicitly_inert():
     cfg = read(ADDON / "functions" / "fn_initDrugPhysiologyConfig.sqf")
     motion = read(ADDON / "functions" / "fn_seizureMotion.sqf")
     assert "Legacy visual tuning names are retained as inert compatibility values" in cfg
+    assert "ACME_sarin_seizureThreshold = 10;" in cfg
     for name in [
         "ACME_seizure_jerkHz",
         "ACME_seizure_yawAmp",
