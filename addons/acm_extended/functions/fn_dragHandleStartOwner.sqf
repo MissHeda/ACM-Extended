@@ -10,6 +10,7 @@ private _reject = {
 };
 
 if !(missionNamespace getVariable ["ACME_dragHandle_enabled",true]) exitWith {["Drag handle is disabled."] call _reject;};
+if (_medic isEqualTo _patient) exitWith {["You cannot attach a drag handle to yourself."] call _reject;};
 if (!alive _patient || {!alive _medic}) exitWith {["Casualty or dragger is not alive."] call _reject;};
 if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {["You cannot attach a drag handle while unconscious."] call _reject;};
 if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {["Casualty must be unconscious."] call _reject;};
@@ -18,6 +19,11 @@ if ((_patient getVariable ["ACME_dragHandle_active",false])) exitWith {["That ca
 if (!isNull (_medic getVariable ["ACME_dragHandle_patient",objNull])) exitWith {["You already have a drag handle attached."] call _reject;};
 if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["Casualty is already being moved."] call _reject;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["Finish the current ACE drag/carry first."] call _reject;};
+
+if (!isNil "ace_common_fnc_canInteractWith"
+    && {!([_medic,_patient,[]] call ace_common_fnc_canInteractWith)}) exitWith {
+    ["You cannot interact with the casualty right now."] call _reject;
+};
 
 private _interactionOwner = _patient getVariable ["ace_common_owner",objNull];
 if (!isNull _interactionOwner && {_interactionOwner isNotEqualTo _medic}) exitWith {
