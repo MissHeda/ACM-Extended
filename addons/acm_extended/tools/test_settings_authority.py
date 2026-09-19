@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -144,19 +145,13 @@ def setting_scope(text: str, name: str) -> int:
 
 
 def _all_setting_names(text: str) -> list[str]:
-    names: list[str] = []
-    marker = '["ACME_'
-    pos = 0
-    while True:
-        pos = text.find(marker, pos)
-        if pos < 0:
-            break
-        start = pos + 2
-        end = text.find('"', start)
-        if end > start:
-            names.append(text[start:end])
-        pos = end + 1
-    return names
+    return [
+        m.group(1)
+        for m in re.finditer(
+            r'\[\s*"(ACME_[^"]+)"\s*,\s*"(?:CHECKBOX|SLIDER|LIST|EDITBOX|COLOR)"',
+            text,
+        )
+    ]
 
 
 def test_true_client_preferences_are_local_only_and_non_overridable():
