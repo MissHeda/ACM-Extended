@@ -46,11 +46,12 @@ if (_state != "active") then {
     [_patient] call ACME_fnc_seizureCollapse;
     [_patient,true] call ACME_fnc_seizureMotion;
 } else {
-    // Already seizing from another cause: extend only the debug cause window. Do not restart the collapse/gesture.
+    // Extend the cause and recover an interrupted visual driver without repeating the collapse.
     private _phaseEnd = _patient getVariable ["ACME_lido_seizurePhaseEnd",_until];
     if (_phaseEnd < _until) then {
         [_patient,"ACME_lido_seizurePhaseEnd",_until] call ACME_fnc_setVarNet;
     };
+    [_patient,true] call ACME_fnc_seizureMotion;
 };
 
 if (!isNull _medic) then {

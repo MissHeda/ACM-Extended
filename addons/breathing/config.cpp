@@ -35,6 +35,7 @@ class RscText;
 class RscLine;
 class RscStructuredText;
 class RscButtonMenu;
+class RscButton;
 class RscPicture;
 
 #include "\x\ACM\addons\core\UI_defines.hpp"

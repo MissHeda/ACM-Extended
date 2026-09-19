@@ -9,7 +9,7 @@ class GVAR(Stethoscope_Dialog) {
 
     class ControlsBackground {
         class BodyBackground: RscPicture {
-            idc = -1;
+            idc = IDC_STETHOSCOPE_BODY;
             x = QUOTE(ACM_STETHOSCOPE_BG_POS_X_CENTER(180));
             y = QUOTE(ACM_STETHOSCOPE_BG_POS_Y_CENTER(135,36));
             w = QUOTE(ACM_STETHOSCOPE_POS_W(180));
@@ -168,6 +168,24 @@ class GVAR(Stethoscope_Dialog) {
             text = "";
         };
 
+        class ViewLabel: TopText {
+            idc = IDC_STETHOSCOPE_VIEW_LABEL;
+            x = QUOTE(safeZoneX + safeZoneW * 0.02);
+            y = QUOTE(safeZoneY + safeZoneH * 0.10);
+            w = QUOTE(safeZoneW * 0.23);
+            h = QUOTE(safeZoneH * 0.05);
+            sizeEx = QUOTE(GUI_GRID_H * 0.8 * NORMALIZE_SIZEEX);
+            text = "Anterior (front)";
+        };
+        class ChangeView: RscButton {
+            idc = IDC_STETHOSCOPE_VIEW;
+            x = QUOTE(safeZoneX + safeZoneW * 0.02);
+            y = QUOTE(safeZoneY + safeZoneH * 0.16);
+            w = QUOTE(safeZoneW * 0.23);
+            h = QUOTE(safeZoneH * 0.05);
+            text = "View back";
+            onButtonClick = "private _d = ctrlParent (_this select 0); [_d, if ((_d getVariable ['ACME_stethView','front']) == 'front') then {'back'} else {'front'}] call ACME_fnc_stethoscopeSetView;";
+        };
         class Bell: RscPicture {
             idc = IDC_STETHOSCOPE_BELL;
             x = QUOTE(ACM_pxToScreen_X(960));

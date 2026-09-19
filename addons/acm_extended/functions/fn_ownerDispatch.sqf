@@ -8,6 +8,14 @@ if (!local _patient) exitWith {
     } else {  };
 };
 switch (_operation) do {
+    case "stethoscopeLungs": {
+        _args params [["_epoch",-1]];
+        if (alive _patient && {_epoch == ([_patient] call ACME_fnc_clinicalEpoch)}
+            && {CBA_missionTime >= (_patient getVariable ["ACME_stethNextLungUpdate",-1])}) then {
+            _patient setVariable ["ACME_stethNextLungUpdate",CBA_missionTime + 0.5];
+            [_patient] call ACM_breathing_fnc_updateLungState;
+        };
+    };
     case "suctionState": {_args call ACME_fnc_suctionStateLocal;};
     case "ecgJostle": {_args call ACME_fnc_ecgJostleLocal;};
     case "medicationLine": {_args call ACME_fnc_medicationLineLocal;};

@@ -21,7 +21,8 @@ if (_healed) exitWith {
     _patient setVariable ["ACM_breathing_Stethoscope_LungState", [0,0], true];
 };
 
-private _lungState = _patient getVariable ["ACM_breathing_Stethoscope_LungState", [0,0]];
+private _lungState = +(_patient getVariable ["ACM_breathing_Stethoscope_LungState", [0,0]]);
+private _previous = +_lungState;
 
 // State 3 is dynamic edema presentation, not a structural unilateral injury. Clear stale edema first and rebuild it
 // from current overload/aspiration physiology below. States 1/2 remain the authoritative traumatic lung finding.
@@ -57,15 +58,10 @@ private _aspEdema = (_patient getVariable ["ACME_aspiration_edema",0]) max 0 min
 private _edemaActive = (_overload > (missionNamespace getVariable ["ACME_edema_threshold",0.5]))
     || {_aspEdema >= (missionNamespace getVariable ["ACME_aspiration_edemaCrackleThreshold",0.12])};
 
-if (_state == 0) exitWith {
-    _patient setVariable ["ACM_breathing_Stethoscope_LungState", [[0,0],[3,3]] select _edemaActive, true];
+// Rebuild the presentation so draining fluid can remove an old traumatic or edema finding.
+// Preserve the native affected side while trauma remains, and broadcast only actual changes.
+_lungState = [[0,0],[3,3]] select _edemaActive;
+if (_state > 0) then {_lungState set [_affectedIndex,_state];};
+if !(_lungState isEqualTo _previous) then {
+    _patient setVariable ["ACM_breathing_Stethoscope_LungState",_lungState,true];
 };
-
-_lungState set [_affectedIndex, _state];
-if (_edemaActive) then {
-    for "_i" from 0 to 1 do {
-        if (_i != _affectedIndex && {(_lungState param [_i,0]) == 0}) then {_lungState set [_i,3];};
-    };
-};
-
-_patient setVariable ["ACM_breathing_Stethoscope_LungState", _lungState, true];

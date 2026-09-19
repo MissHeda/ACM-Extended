@@ -1,4 +1,6 @@
 from pathlib import Path
+import math
+import re
 
 ADDON = Path(__file__).resolve().parents[1]
 ROOT = ADDON.parent
@@ -10,9 +12,18 @@ def read(path: Path) -> str:
 
 def test_seizure_gestures_are_isolated_and_105x():
     s = read(ADDON / "config.cpp")
-    for n in range(3, 7):
+    # Positive config speed is cycles/second. A shared 1.05 would crush every clip to 0.95 seconds.
+    native_speeds = {3: 0.238, 4: 0.2325, 5: 0.2069, 6: 0.1287}
+    for n, native in native_speeds.items():
         assert f'ACME_SeizureSpasm{n}[] = {{"ACME_SeizureSpasm{n}", "Gesture"}};' in s
-        assert f'class ACME_SeizureSpasm{n}: GestureSpasm{n} {{ speed = 1.05; }};' in s
+        match = re.search(
+            rf'class ACME_SeizureSpasm{n}: GestureSpasm{n}\s*\{{\s*speed\s*=\s*([0-9.]+);',
+            s,
+        )
+        assert match, f"missing isolated speed for spasm {n}"
+        speed = float(match.group(1))
+        assert math.isclose(speed / native, 1.05, rel_tol=1e-6)
+        assert 3.9 < 1 / speed < 7.5
 
 
 def test_motion_uses_gesture_done_not_old_jitter_driver():

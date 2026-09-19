@@ -1,6 +1,9 @@
 // Chest-space coordinates use Stethoscope_Dialog.hpp's GUI grid, independent of aspect ratio.
 // Return [right lung, left lung, heart]. No positive floor outside the listening area.
-params ["_chestX","_chestY"];
+params ["_chestX","_chestY",["_view","front"]];
+// Channel identities are anatomical: the patient's right lung is on screen-right in the back view.
+private _posterior = _view == "back";
+if (_posterior) then {_chestX = 40 - _chestX;};
 private _smooth = {
     params ["_a","_b","_value"];
     private _t = linearConversion [_a,_b,_value,0,1,true];
@@ -18,6 +21,12 @@ private _heartFocus = 0;
     private _distance = sqrt ((_chestX - _hx)^2 + ((_chestY - _hy)^2));
     _heartFocus = _heartFocus max (1 - ([0.7,3.0,_distance] call _smooth));
 } forEach [[17.6,1.3],[22.5,1.3],[22.7,3.4],[22.9,5.6]];
+if (_posterior) then {_heartFocus = 0;};
+private _points = if (_posterior) then {
+    [[[15,-2.5],[15,1.5],[13.5,6.3],[12.5,11.0]], [[25,-2.5],[25,1.5],[26.5,6.3],[27.5,11.0]]]
+} else {
+    [[[15.8,-3.7],[15.5,1.3],[13,6.3],[12.1,11.3]], [[24.5,-3.7],[24.5,1.3],[27.7,6.3],[28.9,11.3]]]
+};
 private _lungGains = [];
 {
     private _pointGain = 0;
@@ -28,10 +37,7 @@ private _lungGains = [];
     } forEach _x;
     _lungGains pushBack ((0.20 + 0.75 * _pointGain) * _upper * _diaphragm * _outer
         * (1 - 0.80 * _sternum) * (1 - 0.65 * _heartFocus));
-} forEach [
-    [[15.8,-3.7],[15.5,1.3],[13,6.3],[12.1,11.3]],
-    [[24.5,-3.7],[24.5,1.3],[27.7,6.3],[28.9,11.3]]
-];
+} forEach _points;
 private _right = (_lungGains select 0) * (1 - _leftMix);
 private _left = (_lungGains select 1) * _leftMix;
 private _heartDistance = sqrt ((_chestX - 20.5)^2 + (_chestY - 1.5)^2);
@@ -43,4 +49,4 @@ private _centerline = 1 - ([0.15,2.0,abs (_chestX - 20)] call _smooth);
 private _lowerHeart = 0.18 * _centerline * (1 - ([13.2,21,_chestY] call _smooth));
 private _lowerBlend = [9.5,13.2,_chestY] call _smooth;
 _heart = _heart * (1 - _lowerBlend) + _lowerHeart * _lowerBlend;
-[_right,_left,_heart]
+[_right,_left,if (_posterior) then {0} else {_heart}]

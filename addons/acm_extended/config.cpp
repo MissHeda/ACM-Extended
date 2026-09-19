@@ -1687,10 +1687,12 @@ class CfgGesturesMale {
 
         // BI's four best whole-body-looking spasm gestures, isolated under ACME action names and played at 1.05x.
         // They retain the original RTMs, masks and interpolation data. Only playback speed changes.
-        class ACME_SeizureSpasm3: GestureSpasm3 { speed = 1.05; };
-        class ACME_SeizureSpasm4: GestureSpasm4 { speed = 1.05; };
-        class ACME_SeizureSpasm5: GestureSpasm5 { speed = 1.05; };
-        class ACME_SeizureSpasm6: GestureSpasm6 { speed = 1.05; };
+        // Positive speed is clip cycles/second, not a playback multiplier.
+        // BI Spasm3-6: 0.238, 0.2325, 0.2069, 0.1287, each multiplied by 1.05.
+        class ACME_SeizureSpasm3: GestureSpasm3 { speed = 0.2499; };
+        class ACME_SeizureSpasm4: GestureSpasm4 { speed = 0.244125; };
+        class ACME_SeizureSpasm5: GestureSpasm5 { speed = 0.217245; };
+        class ACME_SeizureSpasm6: GestureSpasm6 { speed = 0.135135; };
     };
 };
 
@@ -2559,6 +2561,7 @@ class CfgFunctions {
             class treatmentPoseSync {};
             class beginStethoscopeAction {};
             class stethoscopeInit {};
+            class stethoscopeSetView {};
             class stethoscopeTick {};
             class stethoscopeWeights {};
             class stethoscopeClose {};
@@ -6302,17 +6305,17 @@ class CfgSounds {
     };
     class ACM_Stethoscope_Breath_Normal_Crackles {
         name = "ACM_Stethoscope_Breath_Normal_Crackles";
-        sound[] = {"acm_extended\sound\breathing_normal_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_normal_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     class ACM_Stethoscope_Breath_Fast_Crackles {
         name = "ACM_Stethoscope_Breath_Fast_Crackles";
-        sound[] = {"acm_extended\sound\breathing_fast_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_fast_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     class ACM_Stethoscope_Breath_Slow_Crackles {
         name = "ACM_Stethoscope_Breath_Slow_Crackles";
-        sound[] = {"acm_extended\sound\breathing_slow_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_slow_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     // HPMK deploy, one-shot. it is the foil and shell rustle when a medic wraps the blanket.

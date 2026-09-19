@@ -521,6 +521,8 @@ if (_fractureState != 0) then {
 };
 
 // Internal bleeding indicator
+private _bruisingText = ["STR_ACM_Breathing_InspectChest_Bruising_Short"] call ACME_fnc_clinTerm;
+if (_bruisingText == "") then {_bruisingText = LELSTRING(breathing,InspectChest_Bruising_Short);};
 private _selectionN_InternalBleeding = [_target, _selectionN] call EFUNC(damage,getBodyPartInternalBleeding);
 private _HTXFluid = _target getVariable [QEGVAR(breathing,Hemothorax_Fluid), 0];
 
@@ -529,14 +531,14 @@ switch (true) do {
         private _colorAdjustment = linearConversion [0.5, 1.5, _HTXFluid, 0.75, 0.45, true];
         if (_selectionN_InternalBleeding > 0.15) then {
             _colorAdjustment = _colorAdjustment max (linearConversion [0.15, 0.5, _selectionN_InternalBleeding, 0.75, 0.45, true]);
-            _entries pushBack [(format ["%1 (%2)", LELSTRING(breathing,InspectChest_Bruising_Short), LELSTRING(breathing,GUI_LowerAndUpperChest)]), [_colorAdjustment, 0.1, 0.6, 1]];
+            _entries pushBack [(format ["%1 (%2)", _bruisingText, LELSTRING(breathing,GUI_LowerAndUpperChest)]), [_colorAdjustment, 0.1, 0.6, 1]];
         } else {
-            _entries pushBack [(format ["%1 (%2)", LELSTRING(breathing,InspectChest_Bruising_Short), LELSTRING(breathing,GUI_UpperChest)]), [_colorAdjustment, 0.1, 0.6, 1]];
+            _entries pushBack [(format ["%1 (%2)", _bruisingText, LELSTRING(breathing,GUI_UpperChest)]), [_colorAdjustment, 0.1, 0.6, 1]];
         };
     };
     case (_selectionN_InternalBleeding > 0.15): {
         private _colorAdjustment = linearConversion [0.15, 0.5, _selectionN_InternalBleeding, 0.75, 0.45, true];
-        _entries pushBack [LELSTRING(breathing,InspectChest_Bruising_Short), [_colorAdjustment, 0.1, 0.6, 1]];
+        _entries pushBack [_bruisingText, [_colorAdjustment, 0.1, 0.6, 1]];
     };
     default {};
 };

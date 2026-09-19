@@ -41,7 +41,7 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
 [[_medic, _patient, _bodyPart], {  // on start.
     params ["_medic", "_patient", "_bodyPart"];
 
-    [_patient] call ACM_breathing_fnc_updateLungState;  // todo: this probably needs moving.
+    [_patient,"stethoscopeLungs",[[_patient] call ACME_fnc_clinicalEpoch]] call ACME_fnc_ownerDispatch;
 
     // Auscultation gets one owner-authoritative patient pose lease for the whole scope session. Elevated and
     // otherwise downed casualties are held directly in the normal face-up rest. There is deliberately no

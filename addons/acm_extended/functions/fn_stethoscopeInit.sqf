@@ -2,7 +2,8 @@
 disableSerialization;
 params ["_display"];
 if (isNull _display) exitWith {};
-_display setVariable ["ACME_stethPressed",false];
+[_display,"front"] call ACME_fnc_stethoscopeSetView;
+_display setVariable ["ACME_stethNextLungUpdate",-1];
 _display setVariable ["ACME_stethCursor",getMousePosition];
 _display setVariable ["ACME_stethLastFrame",diag_tickTime];
 _display setVariable ["ACME_stethNextBeat",-1];
@@ -13,10 +14,15 @@ _display setVariable ["ACME_stethBellSize",_size];
 getMousePosition params ["_x","_y"];
 _bell ctrlSetPosition [_x - (_size select 0)/2,_y - (_size select 1)/2];
 _bell ctrlCommit 0;
+_bell ctrlEnable false;
 private _down = {
     params ["_source","_button"];
     if (_button != 0) exitWith {false};
     private _d = if (_source isEqualType controlNull) then {ctrlParent _source} else {_source};
+    // The view button must retain its normal click and button sound.
+    (ctrlPosition (_d displayCtrl 81006)) params ["_bx","_by","_bw","_bh"];
+    getMousePosition params ["_mx","_my"];
+    if (_mx >= _bx && {_mx <= _bx + _bw} && {_my >= _by} && {_my <= _by + _bh}) exitWith {false};
     _d setVariable ["ACME_stethPressed",true];
     true
 };
@@ -25,7 +31,7 @@ private _up = {
     if (_button != 0) exitWith {false};
     private _d = if (_source isEqualType controlNull) then {ctrlParent _source} else {_source};
     _d setVariable ["ACME_stethPressed",false];
-    true
+    false
 };
 _display displayAddEventHandler ["MouseButtonDown",_down];
 _display displayAddEventHandler ["MouseButtonUp",_up];
@@ -33,13 +39,14 @@ _display displayAddEventHandler ["MouseButtonUp",_up];
 {
     _x ctrlAddEventHandler ["MouseButtonDown",_down];
     _x ctrlAddEventHandler ["MouseButtonUp",_up];
-} forEach allControls _display;
+} forEach ((allControls _display) select {!(ctrlIDC _x in [81002,81006])});
 
 // Independent local emitters preserve each playing clip's phase as the bell crosses the chest.
 // say3D follows its emitter. Moving each emitter along the camera's vertical axis changes
 // native distance attenuation continuously, without restarting samples or fading the world mixer.
 private _channels = [];
-for "_i" from 0 to 2 do {
+// Right/left breath, heart, then right/left basal crackles.
+for "_i" from 0 to 4 do {
     private _emitter = "#particlesource" createVehicleLocal (positionCameraToWorld [0,22,0]);
     _channels pushBack [_emitter,objNull,0];
 };
