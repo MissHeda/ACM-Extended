@@ -18,7 +18,7 @@ private _valid = if (_iv) then {
 };
 if (!_valid) exitWith {};
 
-[["transfusionSelectIV", _iv], ["transfusionSelectedBodyPart", _bodyPart], ["transfusionSelectedAccessSite", if (_iv) then {_site} else {0}]] call ACM_circulation_fnc_setLocalUiState;
+[[["transfusionSelectIV", _iv], ["transfusionSelectedBodyPart", _bodyPart], ["transfusionSelectedAccessSite", if (_iv) then {_site} else {0}]]] call ACM_circulation_fnc_setLocalUiState;
 call ACM_circulation_fnc_TransfusionMenu_UpdateSelection;
 [false] call ACM_circulation_fnc_TransfusionMenu_UpdateBagList;
 

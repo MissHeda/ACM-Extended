@@ -63,7 +63,6 @@ private _settings = [
     ["ACME_hc_hpmk",     "CHECKBOX", ["[HARDCORE] Rewarming", "Slower rewarming; hypothermia bites harder. Takes effect immediately."], [_cSys, "Hardcore"], false, 1, { call ACME_fnc_applyHardcore; }],
     ["ACME_hc_tbi",      "CHECKBOX", ["[HARDCORE] TBI", "Shorter compensation, faster herniation, tighter osmo ceiling. Takes effect immediately; a casualty already carrying a TBI keeps the severity they were given."], [_cSys, "Hardcore"], false, 1, { call ACME_fnc_applyHardcore; }],
     ["ACME_hc_circ",     "CHECKBOX", ["[HARDCORE] Shock", "Lower shock floor, shorter push-dose, more distal surges. Takes effect immediately."], [_cSys, "Hardcore"], false, 1, { call ACME_fnc_applyHardcore; }],
-    ["ACME_hc_transfusion", "CHECKBOX", ["[HARDCORE] Transfusion", "Blood requires a Y-type blood tubing set, and a >=250mL saline bag on hand to flush the line. The line must be flushed with saline between blood units. Takes effect immediately; a transfusion already running is not interrupted."], [_cSys, "Hardcore"], false, 1, { call ACME_fnc_applyHardcore; }],
     ["ACME_hc_medications", "CHECKBOX", ["[HARDCORE] Medications", "Enable rate-sensitive IV/IO syringe pushes, resumable one-handed pushes, and rapid-administration consequences. Closing or reopening medical menus does not interrupt an active push."], [_cSys, "Hardcore"], false, 1, { call ACME_fnc_applyHardcore; }],
 
 

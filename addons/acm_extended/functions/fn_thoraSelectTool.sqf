@@ -14,7 +14,9 @@ private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 if (_tool == "tube" && {!_explicitClosure} && {_held in ["seal", "tube"]}) then {_tool = _held;};
 if (_held isEqualTo _tool) then {_tool = "";};
 
-if (_tool in ["scalpel", "kelly", "finger"] && {
+private _repeatFinger = _tool == "finger" && {[_medic, _patient,
+    uiNamespace getVariable ["ACME_Thora_Side", "right"]] call ACME_fnc_thoraCanSweep};
+if (_tool in ["scalpel", "kelly", "finger"] && {!_repeatFinger} && {
     !([_medic, "thoracostomy"] call ACME_fnc_procedureAllowed)
     || {([_medic, _patient] call ACME_fnc_thoraKitItem) == ""}
 }) exitWith {};

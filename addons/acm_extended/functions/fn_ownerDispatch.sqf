@@ -62,6 +62,7 @@ switch (_operation) do {
     case "debugSeizure": { _args call ACME_fnc_debugInduceSeizure; };
     case "tbiInit": { _args call ACME_fnc_tbiInit; };
     case "thoraDrain": { [_patient] call ACME_fnc_thoraPassiveDrain; };
+    case "thoraAftercare": {_args call ACME_fnc_thoraAftercareLocal;};
     case "nrbState": { _args call ACME_fnc_nrbStateLocal; };
     case "nrbAck": { _args call ACME_fnc_nrbOxygenAck; };
     case "chestEffect": { _args call ACME_fnc_chestSealEffectLocal; };

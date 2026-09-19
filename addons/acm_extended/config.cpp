@@ -1204,16 +1204,14 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         };
     };
 
-    // y-type blood tubing set, for hardcore transfusion.
-    // this is a blood administration set with two spikes, for blood and saline, that share a single drip chamber
-    // and patient line. with hardcore transfusion enabled, a spike of a blood bag consumes one of these instead of
-    // a plain iv line, and the line must be primed or flushed with 250 ml or more of saline between units.
+    // Standard blood administration set with blood and saline spikes sharing one patient line.
+    // Any supported saline bag can be paired; the line consumes only the configured flush volume.
     class ACME_YTubing: ACE_ItemCore {
         dlc = "ACM_Extended";
         scope = 2;
         author = "mavis";
         displayName = "Y-Type Blood Tubing Set (QTTS)";
-        descriptionShort = "Blood administration set (dual-spike, in-line filter). Required to spike blood under Hardcore: transfusion. Flush the line with >=250mL saline between units.";
+        descriptionShort = "Blood administration set (dual-spike, in-line filter). Pair blood with a compatible saline bag. Flush the line when prompted; no 250mL bag minimum.";
         picture = "\acm_extended\ui\items\y_tubing_qtts_ca.paa";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
@@ -2334,6 +2332,10 @@ class CfgFunctions {
             class thoraTick {};
             class thoraBumpVer {};
             class thoraMouseDown {};
+            class thoraAftercareLocal {};
+            class thoraCanSweep {};
+            class thoraSealAt {};
+            class thoraSealScroll {};
             class thoraSideStateCommit {};
             class thoraMouseUp {};
             class thoraSelectTool {};
@@ -2966,7 +2968,7 @@ class ACME_EJTransfusionHotspot: RscButton {
     colorBorder[] = {0,0,0,0};
     soundEnter[] = {};
     soundPush[] = {};
-    soundClick[] = {};
+    soundClick[] = {"\a3\ui_f\data\sound\rscbutton\soundClick", 0.09, 1};
     soundEscape[] = {};
     shadow = 0;
     sizeEx = 0;

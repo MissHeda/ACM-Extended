@@ -507,9 +507,6 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
                             _unit setVariable ["ACME_YLineDirty", _d, true];
                         };
                     };
-                    if (missionNamespace getVariable ["ACME_hcEff_transfusion", false]) then {
-                        _unit setVariable ["ACME_bloodLineDirty", true, true];
-                    };
                     ["ACME_Empty", 0, _accessType, _accessSite, _iv, _bloodType, _originalVolume, _freshBloodID, _bagUid]
                 } else {
                     // a non-blood bag, saline or crystalloid, that drains is removed, as ACM does.

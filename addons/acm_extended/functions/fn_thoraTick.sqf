@@ -25,6 +25,9 @@ if (!isNull _thPat) then {
         _thPat getVariable [format ["ACME_thora_tube_%1", _sideSeen], false],
         _thPat getVariable [format ["ACME_thora_sealed_%1", _sideSeen], false],
         _thPat getVariable [format ["ACME_thora_closed_%1", _sideSeen], false]];
+    if (!(_closureSeen select 2) || {_closureSeen select 1}) then {
+        uiNamespace setVariable ["ACME_Thora_Burp", ["", 0, 0, false]];
+    };
     // Closure values can arrive separately from the version. Observe the values too.
     if (_tv != (uiNamespace getVariable ["ACME_thora_verSeen", -1])
         || {!(_closureSeen isEqualTo (_display getVariable ["ACME_Thora_ClosureSeen", []]))}) then {

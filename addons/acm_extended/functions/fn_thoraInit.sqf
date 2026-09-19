@@ -53,6 +53,7 @@ uiNamespace setVariable ["ACME_Thora_Side", _side];
 uiNamespace setVariable ["ACME_Thora_OnZone", false];
 uiNamespace setVariable ["ACME_Thora_Palpating", false];
 uiNamespace setVariable ["ACME_Thora_CurUV", []];
+uiNamespace setVariable ["ACME_Thora_Burp", ["", 0, 0, false]];
 
 uiNamespace setVariable ["ACME_Thora_ZoneRight", missionNamespace getVariable ["ACME_thora_zoneRight", [0.482, 0.443, 0.055, 0.050]]];
 uiNamespace setVariable ["ACME_Thora_ZoneLeft",  missionNamespace getVariable ["ACME_thora_zoneLeft",  [0.515, 0.443, 0.055, 0.050]]];
@@ -322,3 +323,8 @@ private _pfh = [ACME_fnc_thoraTick, 0, []] call CBA_fnc_addPerFrameHandler;
 uiNamespace setVariable ["ACME_Thora_PFH", _pfh];
 _display displayAddEventHandler ["MouseButtonDown", {_this call ACME_fnc_thoraMouseDown}];
 _display displayAddEventHandler ["MouseButtonUp", {_this call ACME_fnc_thoraMouseUp}];
+// Pictures can swallow wheel events before they reach the display. Bind all created controls as well.
+_display displayAddEventHandler ["MouseZChanged", {_this call ACME_fnc_thoraSealScroll}];
+{_x ctrlAddEventHandler ["MouseZChanged", {_this call ACME_fnc_thoraSealScroll}];} forEach allControls _display;
+_surface ctrlSetTooltip "Chest seal: empty hands, RMB to remove; scroll to lift a corner and burp, reverse to lay it down.";
+

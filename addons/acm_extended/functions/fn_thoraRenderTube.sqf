@@ -34,6 +34,15 @@ private _icU = _su + ((cos _iang) * (_ilenUV / 2));
 private _icV = _sv + ((sin _iang) * (_ilenUV / 2));
 private _af = uiNamespace getVariable ["ACME_Thora_AspectFix", 0.5625];
 ([if (_placed) then {"tube"} else {"seal"}, _side] call ACME_fnc_thoraClosureArt) params ["_texture", "_size", "_anchor"];
+// Reuse the existing five-frame chest-seal peel artwork at the surgical incision.
+private _burp = uiNamespace getVariable ["ACME_Thora_Burp", ["", 0, 0, false]];
+if (!_placed && {_dressed} && {(_burp select 0) == _side}) then {
+    private _frame = (round (_burp select 1)) max 0 min 5;
+    if (_frame > 0) then {
+        private _corner = if ((_burp select 2) > 0) then {"left"} else {"right"};
+        _texture = format ["\acm_extended\ui\chest_seal\burp_%1\chest_seal_burp_%1_frame_0%2_ca.paa", _corner, _frame];
+    };
+};
 private _h = _bh * _size;
 private _w = _h * _af;
 _anchor params ["_au", "_av"];

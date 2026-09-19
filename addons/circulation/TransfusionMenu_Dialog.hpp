@@ -241,18 +241,18 @@ class GVAR(TransfusionMenu_Dialog) {
             sizeEx = QUOTE(GUI_GRID_H * 0.9 * NORMALIZE_SIZEEX);
             class Items {};
         };
-        class ToggleIV: RscButtonMenu {
-            idc = 86009;
-            x = QUOTE(ACM_UI_CANVAS_X + (ACM_UI_CANVAS_W / 2) - (ACM_UI_CANVAS_W / 6.9));
+        class SwitchTargetInventory: RscButtonMenu {
+            idc = -1;
+            x = QUOTE(ACM_UI_CANVAS_X + (ACM_UI_CANVAS_W / 2) + (ACM_UI_CANVAS_W / 7.8));
             y = QUOTE(safeZoneY + (safeZoneH * 0.155));
             w = QUOTE(ACM_UI_CANVAS_W / 65);
             h = QUOTE(safeZoneH / 35);
             shadow = 0;
             font = "RobotoCondensed";
             sizeEx = "0";
-            action = QUOTE(call FUNC(TransfusionMenu_ToggleIV));
-            textureNoShortcut = QPATHTOF(ui\transfusionmenu\ivtoggle_ca.paa);
-            tooltip = CSTRING(TransfusionMenu_ToggleIV);
+            action = QUOTE(call FUNC(TransfusionMenu_SwitchTargetInventory));
+            textureNoShortcut = QPATHTOF(ui\transfusionmenu\inventory_select_ca.paa);
+            tooltip = CSTRING(Common_SwitchTargetInventory);
             colorBackground[] = {1,1,1,0};
             colorBackgroundFocused[] = {1,1,1,0};
             period = 0;
@@ -315,13 +315,6 @@ class GVAR(TransfusionMenu_Dialog) {
         {
             idc = IDC_TRANSFUSIONMENU_RIGHTLISTPANEL;
             x = QUOTE(ACM_UI_CANVAS_X + (ACM_UI_CANVAS_W / 2) + (ACM_UI_CANVAS_W / 7.75));
-        };
-        class SwitchTargetInventory: ToggleIV {
-            idc = -1;
-            x = QUOTE(ACM_UI_CANVAS_X + (ACM_UI_CANVAS_W / 2) + (ACM_UI_CANVAS_W / 7.8));
-            action = QUOTE(call FUNC(TransfusionMenu_SwitchTargetInventory));
-            textureNoShortcut = QPATHTOF(ui\transfusionmenu\inventory_select_ca.paa);
-            tooltip = CSTRING(Common_SwitchTargetInventory);
         };
         class AddBagButton: StopTransfusionButton {
             text = CSTRING(TransfusionMenu_AddBag_Display);

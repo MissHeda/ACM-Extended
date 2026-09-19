@@ -50,33 +50,12 @@ ACME_hcEff_tbi    = missionNamespace getVariable ["ACME_hc_tbi", false];
 ACME_hcEff_rhythm = missionNamespace getVariable ["ACME_hc_rhythm", false];
 ACME_hcEff_circ   = missionNamespace getVariable ["ACME_hc_circ", false];
 ACME_hcEff_nrb    = missionNamespace getVariable ["ACME_hc_nrb", false];
-ACME_hcEff_transfusion = missionNamespace getVariable ["ACME_hc_transfusion", false];
 ACME_hcEff_medications = missionNamespace getVariable ["ACME_hc_medications", false];
 private _juncBleedMult = missionNamespace getVariable ["ACME_junctionalBleedMult", 1.0];
 private _juncFreqMult  = missionNamespace getVariable ["ACME_junctionalFreqMult", 1.0];
 
-// transfusion.
-// the citrate and calcium model already exists in fn_circhandle: the citrate load per liter, a threshold before it
-// bites, the ionised calcium that falls out of it, and the coagulation multiplier that follows. hardcore tunes
-// that model rather than running a second one beside it.
-// a previous build did run a second one, on three variable names that did not exist anywhere in the addon, and its
-// only real effect was to write a corrupted value into ACME_hypo_temp, which twenty-five other places read. that
-// function is deleted.
-if (ACME_hcEff_transfusion) then {
-    ACME_ca_citrateThreshold = 1;  // citrate starts binding after one unit rather than later.
-    ACME_ca_citratePerLiter  = 0.30;  // and it binds harder per liter.
-    ACME_ca_coagMaxMult      = 1.9;  // uncorrected calcium costs more clotting.
-    ACME_ca_floor            = 0.30;  // and it can fall further before it bottoms out.
-    ACME_hypo_coagStartTemp  = 36;  // cold blood starts costing clotting sooner.
-    ACME_hypo_coagMaxMult    = 2.1;  // and it costs more of it.
-} else {
-    ACME_ca_citrateThreshold = 2;
-    ACME_ca_citratePerLiter  = 0.22;
-    ACME_ca_coagMaxMult      = 1.4;
-    ACME_ca_floor            = 0.45;
-    ACME_hypo_coagStartTemp  = 35;
-    ACME_hypo_coagMaxMult    = 1.6;
-};
+// Transfusion uses the standard circulation/resuscitation defaults for every mission.
+// Old exports of the retired transfusion setting do not alter physiology or bag access.
 // Clinical wording reads ACME_hc_descriptors directly. It has no difficulty cache.
 // Other Hardcore systems retain their effective values below.
 ACME_hcEff_vesicant  = missionNamespace getVariable ["ACME_hc_vesicant", false];
