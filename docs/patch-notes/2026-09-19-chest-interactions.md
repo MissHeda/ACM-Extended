@@ -2,6 +2,7 @@
 
 ## Changes
 
+- Dress Junctional Wound uses the same medical-menu icon as Pressure Bandage.
 - Seizure spasm aliases now play at 1.05x. Already-unconscious patients retain their existing supine, prone or elevated posture at onset, including debug-induced episodes. Awake patients still become unconscious.
 - Drag handles use a real native rope with the helper endpoints used by ACE fast-roping. The patient owner creates one replicated rope per session. Stop, deletion and locality handoff clean up the objects. ACE fast-roping is now an explicit addon dependency.
 - Dragging enters ragdoll with Arma's native addForce command. Removed the prone switchMove and one-frame consciousness toggle. Pulling no longer waits for that animation transition. Existing weight, fatigue, pace and overstretch limits remain.

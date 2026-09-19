@@ -1,5 +1,6 @@
 ACM Extended 1.2.1-rc1 | Chest interactions and patient motion
 
+• Dress Junctional Wound now uses the Pressure Bandage icon.
 • Seizure animations reduced to 1.05x. Debug seizures on already-unconscious patients keep their existing posture.
 • Drag handles now use the native rope and helpers used by ACE fast-roping. Removed the prone reset and changed ragdoll entry to native force.
 • Chest-seal burping has a shared 10-second patient cooldown, one activity entry per accepted burp and a provider treatment animation. Applies to traumatic and thoracostomy seals.

@@ -8210,6 +8210,7 @@ class ace_medical_treatment_actions {
     };
     class ACME_WrapJunctional: CheckPulse {
         displayName = "Dress Junctional Wound";
+        ACM_menuIcon = "ACM_PressureBandage";
         displayNameProgress = "Dressing junctional wound...";
         category = "bandage";
         treatmentLocations[] = {"All"};
