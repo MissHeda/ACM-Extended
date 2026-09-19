@@ -59,6 +59,7 @@ switch (_operation) do {
     case "hpmkRemove": { _args call ACME_fnc_hpmkRemove; };
     case "autoBP": { _args call ACME_fnc_toggleAutoBP; };
     case "cheyne": { _args call ACME_fnc_debugCheyneStokes; };
+    case "debugSeizure": { _args call ACME_fnc_debugInduceSeizure; };
     case "tbiInit": { _args call ACME_fnc_tbiInit; };
     case "thoraDrain": { [_patient] call ACME_fnc_thoraPassiveDrain; };
     case "nrbState": { _args call ACME_fnc_nrbStateLocal; };
