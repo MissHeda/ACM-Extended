@@ -31,20 +31,41 @@ private _visualEnabled =
 if (!_visualEnabled) exitWith {
     _patient setVariable ["ACME_seizure_motionActive", false];
     _patient setVariable ["ACME_seizure_motionRetryPending", false];
+    _patient setVariable ["ACME_seizure_motionAdvancePending", false];
 
     private _eh = _patient getVariable ["ACME_seizure_motionGestureEH", -1];
     if (_eh isEqualType 0 && {_eh >= 0}) then {
         _patient removeEventHandler ["GestureDone", _eh];
     };
     _patient setVariable ["ACME_seizure_motionGestureEH", -1];
+
+    // Stop only our gesture layer. Do not stomp a carry/drag/treatment gesture that interrupted the seizure.
+    private _gs = toLowerANSI (gestureState _patient);
+    if ((_gs find "acme_seizurespasm") >= 0) then {
+        _patient playActionNow "gestureNo";
+    };
     _patient setVariable ["ACME_seizure_motionCurrentGesture", ""];
 };
 
-// Idempotent: the physiology tick may call this every update while the seizure is active.
-if (_patient getVariable ["ACME_seizure_motionActive", false]) exitWith {};
+// Idempotent: the physiology tick may call this every update while the seizure is active. If another animation
+// unexpectedly interrupts our gesture, recover on the next physiology tick instead of leaving the patient frozen.
+// An empty current gesture is the intentional onset-settle window, and AdvancePending protects the one-frame handoff
+// after GestureDone from launching two gestures.
+if (_patient getVariable ["ACME_seizure_motionActive", false]) exitWith {
+    private _current = _patient getVariable ["ACME_seizure_motionCurrentGesture", ""];
+    private _advPending = _patient getVariable ["ACME_seizure_motionAdvancePending", false];
+    private _retryPending = _patient getVariable ["ACME_seizure_motionRetryPending", false];
+    if (_current != "" && {!_advPending} && {!_retryPending}) then {
+        private _gs = toLowerANSI (gestureState _patient);
+        if ((_gs find "acme_seizurespasm") < 0) then {
+            [_patient] call ACME_fnc_seizureGestureAdvance;
+        };
+    };
+};
 
 _patient setVariable ["ACME_seizure_motionActive", true];
 _patient setVariable ["ACME_seizure_motionRetryPending", false];
+_patient setVariable ["ACME_seizure_motionAdvancePending", false];
 _patient setVariable ["ACME_seizure_motionCurrentGesture", ""];
 
 // Remove a stale event handler before installing the single owner for this seizure episode.
@@ -64,10 +85,15 @@ private _eh = _patient addEventHandler ["GestureDone", {
     if ((toLowerANSI _gesture) find (toLowerANSI _current) < 0) exitWith {};
 
     // Leave the completed gesture's final frame cleanly, then begin the next one on the next scheduler frame.
+    // Mark the handoff so the physiology tick cannot also start a second gesture during this one-frame gap.
+    _unit setVariable ["ACME_seizure_motionAdvancePending", true];
     [{
         params ["_p"];
-        if (!isNull _p && {_p getVariable ["ACME_seizure_motionActive", false]}) then {
-            [_p] call ACME_fnc_seizureGestureAdvance;
+        if (!isNull _p) then {
+            _p setVariable ["ACME_seizure_motionAdvancePending", false];
+            if (_p getVariable ["ACME_seizure_motionActive", false]) then {
+                [_p] call ACME_fnc_seizureGestureAdvance;
+            };
         };
     }, [_unit]] call CBA_fnc_execNextFrame;
 }];
