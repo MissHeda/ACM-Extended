@@ -36,6 +36,8 @@ def test_drag_handle_uses_owner_authoritative_addforce_not_attachto():
     assert "ACME_dragHandle_damping" in tick
     assert "ACME_dragHandle_maxAccel" in tick
     assert "ACME_fnc_forceRagdoll" in start
+    assert "isAwake _patient" in tick
+    assert "private _bodySpeed" not in tick
     assert "_patient attachTo" not in tick
     assert "_patient attachTo" not in start
 
