@@ -37,8 +37,11 @@ private _pfh = [{
     params ["_args","_handle"];
     _args params ["_medic","_patient","_weight"];
 
-    if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {
+    if (isNull _medic || {!local _medic}) exitWith {
         [_handle] call CBA_fnc_removePerFrameHandler;
+    };
+    if (isNull _patient) exitWith {
+        [_medic,objNull,"lost"] call ACME_fnc_dragHandleStopMedic;
     };
     if !(_patient getVariable ["ACME_dragHandle_active",false])
         || {(_patient getVariable ["ACME_dragHandle_dragger",objNull]) isNotEqualTo _medic} exitWith {
