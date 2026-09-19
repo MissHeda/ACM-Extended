@@ -73,6 +73,34 @@ if (_step > 0.000001) then {
 _job set ["carryMl",_carry];
 _job set ["batchElapsed",(_job getOrDefault ["batchElapsed",0]) + _dt];
 missionNamespace setVariable ["ACME_HCMedPushJob",_job];
+
+// Keep the open Narc Box plunger physically tied to the authoritative remaining syringe volume at tick rate.
+// A full carousel repaint is intentionally throttled below, but the single plunger control is cheap enough to
+// update every 50 ms and gives a visibly continuous push instead of appearing frozen between UI refreshes.
+private _open = findDisplay 84000;
+if (!isNull _open) then {
+    private _stableUi = _job getOrDefault ["stableId",""];
+    private _storeUi = +(_medic getVariable ["ACME_narcStore",[]]);
+    private _idxUi = _storeUi findIf {(_x param [11,"",[""]]) == _stableUi};
+    if (_idxUi >= 0) then {
+        private _rowUi = _storeUi select _idxUi;
+        private _sizeUi = _rowUi param [1,10,[0]];
+        private _remainUi = ((_rowUi param [2,0,[0]]) + (_rowUi param [4,0,[0]])) max 0;
+        private _fracUi = ((_remainUi / (_sizeUi max 0.01)) max 0) min 1;
+        private _barUi = _open displayCtrl 84420;
+        private _plUi = _open displayCtrl 84422;
+        if (!isNull _barUi && {!isNull _plUi}) then {
+            private _brUi = +(ctrlPosition _barUi);
+            private _nativeUi = _open getVariable ["ACME_SK_CarouselNativeRect",[0,0,1,1]];
+            private _travel10Ui = _open getVariable ["ACME_SK_CarouselTravel10",safeZoneH*0.17];
+            private _ratioUi = switch (_sizeUi) do {case 1:{10.2/10.5};case 3:{9.83/10.5};case 5:{10.3/10.5};default{1};};
+            private _yUi = (_brUi select 1) + (_travel10Ui * _ratioUi * _fracUi * ((_brUi select 3) / (((_nativeUi select 3) max 0.001))));
+            _plUi ctrlSetPosition [_brUi select 0,_yUi,_brUi select 2,_brUi select 3];
+            _plUi ctrlCommit 0;
+        };
+    };
+};
+
 [false] call ACME_fnc_hardcorePushSendBatch;
 _job = missionNamespace getVariable ["ACME_HCMedPushJob",_job];
 if ((_job getOrDefault ["pushedMl",0]) >= (_job getOrDefault ["targetMl",0]) - 0.0005) exitWith {
