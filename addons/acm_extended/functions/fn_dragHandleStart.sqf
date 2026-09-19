@@ -1,8 +1,12 @@
 // Provider-side request to attach the ACME drag handle.
 params [["_medic",objNull,[objNull]],["_patient",objNull,[objNull]]];
-if !([_medic,_patient] call ACME_fnc_dragHandleCanStart) exitWith {false};
-if (!local _medic) exitWith {false};
+if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
+if (_medic isEqualTo _patient) exitWith {false};
+if (_medic getVariable ["ACME_dragHandle_pending",false]) exitWith {false};
+if (!isNull (_medic getVariable ["ACME_dragHandle_patient",objNull])) exitWith {false};
 
+// Do not let a strict client-side visibility predicate silently eat the click. The patient owner performs the
+// authoritative validation below and returns a specific reason if a race/conflict appeared after the menu painted.
 _medic setVariable ["ACME_dragHandle_pending",true];
 [_patient,"dragHandleStart",[_patient,_medic]] call ACME_fnc_ownerDispatch;
 
