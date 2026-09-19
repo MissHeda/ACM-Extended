@@ -90,6 +90,50 @@ _menuActions = _menuActions select {
     private _class = toLower (_x param [8, '']);
     !(_class in ['checkairway', 'checkbreathing']) || {_bodyPart == 0 && {!isNull _target} && {alive _target}}
 };
+
+// Drag Handle is injected at paint time instead of collection time. This guarantees the row exists in the live
+// Drag / Carry page even if ACE/ACM rebuilt its action array before ACME runtime functions were available.
+if (_selectedCategory == 'drag' && {!isNull _target} && {ACE_player != _target}) then {
+    private _dragHandleActive = _target getVariable ['ACME_dragHandle_active', false];
+    private _dragHandleMedic = _target getVariable ['ACME_dragHandle_dragger', objNull];
+
+    if (_dragHandleActive && {_dragHandleMedic isEqualTo ACE_player}) then {
+        _menuActions pushBack [
+            'Release Drag Handle',
+            'drag',
+            {true},
+            {
+                ace_medical_gui_pendingReopen = false;
+                [ACE_player, ace_medical_gui_target, 'manual'] call ACME_fnc_dragHandleStop;
+            },
+            [],
+            '',
+            [],
+            '',
+            'ACME_DragHandleRelease',
+            ''
+        ];
+    } else {
+        if (!_dragHandleActive && {alive _target} && {!([_target] call ace_common_fnc_isAwake)}) then {
+            _menuActions pushBack [
+                'Attach Drag Handle',
+                'drag',
+                {true},
+                {
+                    ace_medical_gui_pendingReopen = false;
+                    [ACE_player, ace_medical_gui_target] call ACME_fnc_dragHandleStart;
+                },
+                [],
+                '',
+                [],
+                '',
+                'ACME_DragHandleAttach',
+                ''
+            ];
+        };
+    };
+};
+
 // Dog tags always remain the last standalone examination, even if another addon
 // supplied group metadata or the native collector fallback has no class metadata.
 private _dogTagLabel = getText (configFile >> 'ace_medical_treatment_actions' >> 'CheckDogTags' >> 'displayName');
