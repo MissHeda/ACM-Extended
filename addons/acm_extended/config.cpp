@@ -9306,7 +9306,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 0.01;
         allowedSelections[] = {"Head"};
-        condition = "[] call ACME_fnc_debugEnabled";
+        condition = "([] call ACME_fnc_debugEnabled) && {alive _patient} && {!(_patient getVariable ['ace_medical_inCardiacArrest', false])}";
         callbackSuccess = "_this call ACME_fnc_debugInduceSeizure";
         callbackFailure = "";
         callbackProgress = "";
