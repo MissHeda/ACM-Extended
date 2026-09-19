@@ -91,6 +91,8 @@ def test_transaction_yields_to_conflicting_transport_and_locality():
     assert '"locality"' in tick
     assert '"vehicle"' in tick
     assert '"overstretch"' in tick
+    assert '"patient_awake"' in tick
+    assert '"procedure"' in tick
 
 
 def test_drag_handle_and_seizure_visuals_do_not_fight():
