@@ -23,7 +23,7 @@ params ["_patient", "_buildup", "_isExposed", "_isExposedExternal", "_activePPE"
 _activePPE params ["_filtered", "_protectedBody", "_protectedEyes", "_filterLevel"];
 
 // ACME unifies ACM's severe nerve-agent seizure with the same generalized seizure machine used by TBI and
-// lidocaine toxicity. The old local addCamShake "seizure" presentation is deliberately retired; once Sarin
+// lidocaine toxicity. The old local camera-jitter "seizure" presentation is deliberately retired; once Sarin
 // reaches the severe neurologic band the casualty gets the same LOC, apnea, postictal state, benzo response and
 // 1.35x GestureSpasm3-6 convulsion sequence as every other ACME seizure source.
 private _sarinSeizureThreshold = missionNamespace getVariable ["ACME_sarin_seizureThreshold", 60];
