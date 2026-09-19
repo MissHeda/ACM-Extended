@@ -335,7 +335,10 @@ class CfgPatches {
             "ACM_disability"
         };
         author = "mavis";
-        version = "1.2.1";
+        // RC marker is intentionally part of CfgPatches.version because every debug-overlay page reads this
+        // exact value. It lets testers prove which PBO Arma actually loaded instead of guessing from a workshop
+        // timestamp or repository state.
+        version = "1.2.1-rc1";
     };
 };
 
