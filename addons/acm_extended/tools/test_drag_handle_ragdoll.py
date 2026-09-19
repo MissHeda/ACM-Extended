@@ -90,7 +90,8 @@ def test_transaction_yields_to_conflicting_transport_and_locality():
     assert '"dragHandleStart"' in dispatch
     assert '"dragHandleStop"' in dispatch
     assert '"locality"' in tick
-    assert '"vehicle"' in tick
+    assert '"patient_vehicle"' in tick
+    assert '"dragger_vehicle"' in tick
     assert '"overstretch"' in tick
     assert '"patient_awake"' in tick
     assert '"procedure"' in tick
@@ -157,3 +158,16 @@ def test_head_elevation_transport_semantics_survive_drag_handle():
     assert 'ACME_headElev_TransportPending' in stop
     assert 'CBA_fnc_waitUntilAndExecute' in stop
     assert '"ACME_headElev_transportUp"' in stop
+
+
+def test_drag_handle_interactions_are_hip_anchored_and_in_drag_carry_menu():
+    runtime = read(FUN / "fn_initDragHandleRuntime.sqf")
+    gui = read(ADDON.parent / "gui" / "overrides" / "fnc_collectActions.sqf")
+    # Both external attach and release nodes are anchored to the patient's pelvis/hips.
+    assert runtime.count('"pelvis"') >= 2
+    # Medical menu uses ACE/ACM's existing Drag / Carry category key.
+    assert '"Attach Drag Handle", "drag"' in gui
+    assert '"Release Drag Handle", "drag"' in gui
+    assert "ACME_fnc_dragHandleCanStart" in gui
+    assert "ACME_fnc_dragHandleStart" in gui
+    assert "ACME_fnc_dragHandleStop" in gui
