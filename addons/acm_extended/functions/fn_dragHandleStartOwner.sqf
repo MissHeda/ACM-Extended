@@ -71,13 +71,19 @@ if (!isNil "ACME_fnc_seizureMotion" && {(_patient getVariable ["ACME_lido_seizur
     [_patient,false] call ACME_fnc_seizureMotion;
 };
 
+private _ropeObjects = [_patient,_medic,true] call ACME_fnc_dragHandleRope;
+if (_ropeObjects isEqualTo []) exitWith {
+    [_patient,_medic,"rope_failed"] call ACME_fnc_dragHandleStopOwner;
+    ["Could not attach the drag rope."] call _reject;
+};
+
 // Wake a fresh ragdoll from ACE's normally locked unconscious pose.
 [_patient] call ACME_fnc_forceRagdoll;
 
 private _oldPFH = _patient getVariable ["ACME_dragHandle_forcePFH",-1];
 if (_oldPFH isEqualType 0 && {_oldPFH >= 0}) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
 
-private _args = [_patient,_medic,_weight,CBA_missionTime];
+private _args = [_patient,_medic,_weight,CBA_missionTime,_ropeObjects];
 private _pfh = [{_this call ACME_fnc_dragHandleOwnerTick;},0,_args] call CBA_fnc_addPerFrameHandler;
 _patient setVariable ["ACME_dragHandle_forcePFH",_pfh];
 

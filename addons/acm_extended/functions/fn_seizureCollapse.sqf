@@ -1,6 +1,5 @@
 // drop a patient unconscious, if they are not already, and collapse them into the ACE unconscious ragdoll. it is
-// called at the onset of every seizure episode so the patient visibly falls before convulsing, and again on each
-// recurrence after a cooldown. it runs where the patient is local, because the lido tick is local to the patient.
+// Standing patients collapse at onset. Already-down patients keep their current pose and start the spasm layer. it runs where the patient is local, because the lido tick is local to the patient.
 // call it as [_patient] call ACME_fnc_seizureCollapse.
 params ["_patient"];
 if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
@@ -33,15 +32,9 @@ if (_headElevated) then {
             };
         }, [_patient], 0.4] call CBA_fnc_waitAndExecute;
     };
-} else {
-    // Not elevated: retain one onset/recurrence collapse even when already unconscious, so the episode has a
-    // readable loss-of-tone transition before the spasm gestures begin. There are no repeated seizure ragdoll flops
-    // anymore. The forced onset collapse is ANIMATION, so it obeys ACME_seizure_animEnabled; the knockout above is
-    // PHYSIOLOGY and always runs.
-    if (_wasUncon && {missionNamespace getVariable ["ACME_seizure_animEnabled", true]}) then {
-        [_patient] call ACME_fnc_forceRagdoll;
-    };
 };
+// Already unconscious: preserve supine/prone/head-elevated placement. An extra collapse would
+// replace the patient's posture before the first spasm, including during a debug-induced seizure.
 
 // an OPA cannot stay seated against a clenching, convulsing jaw, so it is expelled at seizure onset. an i-gel or
 // SGA, at the oral slot value "SGA", and a nasal NPA are more secure and stay put, so only an actual OPA is

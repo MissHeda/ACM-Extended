@@ -4,7 +4,7 @@
 // extra ragdolls. That produced the fine "jitter", body slewing and sliding that this system is replacing.
 //
 // The seizure visual now uses BI's GestureSpasm3, 4, 5 and 6 through ACME-specific CfgGestures aliases. Those
-// aliases play at 1.35x speed and preserve BI's original RTM/mask data. GestureDone advances the sequence, so
+// aliases play at 1.05x speed and preserve BI's original RTM/mask data. GestureDone advances the sequence, so
 // every individual spasm completes before another begins. The variants are randomized without immediate repeats.
 //
 // This function owns VISUALS only. Loss of consciousness, apnea, HR response, postictal state and treatment are

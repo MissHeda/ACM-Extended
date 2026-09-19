@@ -1,6 +1,6 @@
 // Advance the visible seizure to the next BI spasm gesture. Each gesture is allowed to finish normally;
 // fn_seizureMotion's GestureDone handler calls this again only after the current ACME seizure gesture completes.
-// The four chosen BI gestures are aliased in config.cpp with speed = 1.35, so this does not touch global
+// The four chosen BI gestures are aliased in config.cpp with speed = 1.05, so this does not touch global
 // animation speed or alter the same gestures when another system/mod uses them.
 params ["_patient"];
 if (isNull _patient || {!local _patient} || {!alive _patient}) exitWith {};

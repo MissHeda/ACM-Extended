@@ -7,6 +7,8 @@ private _activeMedic = _patient getVariable ["ACME_dragHandle_dragger",objNull];
 if (isNull _medic) then {_medic = _activeMedic;};
 if (!isNull _activeMedic && {!isNull _medic} && {_activeMedic isNotEqualTo _medic}) exitWith {};
 
+[_patient,_medic,false] call ACME_fnc_dragHandleRope;
+
 private _session = _patient getVariable ["ACME_dragHandle_session",""];
 
 private _pfh = _patient getVariable ["ACME_dragHandle_forcePFH",-1];

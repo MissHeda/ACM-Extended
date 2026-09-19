@@ -9,6 +9,7 @@ private _dir = if (_delta > 0) then {1} else {-1};
 private _burp = uiNamespace getVariable ["ACME_Thora_Burp", ["", 0, 0, false]];
 _burp params ["_burpSide", "_frame", "_openDir", "_fired"];
 if (_burpSide != _side) then {_frame = 0; _openDir = _dir; _fired = false;};
+if (_frame == 0 && {!([_patient] call ACME_fnc_chestSealBurpReady)}) exitWith {false};
 if (_dir == _openDir) then {_frame = (_frame + 1) min 5;} else {_frame = (_frame - 1) max 0;};
 if (_frame >= 5 && {!_fired}) then {
     [_patient, "thoraAftercare", [_patient, _medic, _side, "burp",

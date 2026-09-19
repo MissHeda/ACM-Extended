@@ -8,11 +8,11 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig", errors="strict")
 
 
-def test_seizure_gestures_are_isolated_and_135x():
+def test_seizure_gestures_are_isolated_and_105x():
     s = read(ADDON / "config.cpp")
     for n in range(3, 7):
         assert f'ACME_SeizureSpasm{n}[] = {{"ACME_SeizureSpasm{n}", "Gesture"}};' in s
-        assert f'class ACME_SeizureSpasm{n}: GestureSpasm{n} {{ speed = 1.35; }};' in s
+        assert f'class ACME_SeizureSpasm{n}: GestureSpasm{n} {{ speed = 1.05; }};' in s
 
 
 def test_motion_uses_gesture_done_not_old_jitter_driver():

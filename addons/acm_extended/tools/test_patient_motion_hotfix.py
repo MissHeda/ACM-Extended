@@ -46,12 +46,17 @@ def test_seizure_waits_for_physics_and_transport_to_release_body():
     assert "CBA_fnc_waitAndExecute" in retry
     assert "ACME_seizure_motionActive" in retry
 
-def test_ragdoll_unlocks_before_collapse_and_guards_deferred_work():
+def test_ragdoll_uses_native_impulse_without_pose_or_consciousness_toggle():
     ragdoll = fn("forceRagdoll")
-    assert ragdoll.index("_patient setUnconscious false") < ragdoll.index('"AmovPpneMstpSnonWnonDnon"') < ragdoll.index("_p setUnconscious true")
-    deferred = ragdoll.split('[{', 1)[1]
-    for guard in ("!local _p", "!alive _p", "ACME_fnc_clinicalEpoch", "objectParent _p", "ACE_isUnconscious", "ACME_dragHandle_session"):
-        assert guard in deferred[:deferred.index("_p setUnconscious true")]
+    assert "_patient addForce [[0,0,-1],_point,true];" in ragdoll
+    for forbidden in ("_patient setUnconscious false", '"AmovPpneMstpSnonWnonDnon"',
+                      "CBA_fnc_execNextFrame", "_patient setPos"):
+        assert forbidden not in ragdoll
+    assert "!local _patient" in ragdoll and "objectParent _patient" in ragdoll
+    collapse = fn("seizureCollapse")
+    assert "ACME_fnc_forceRagdoll" not in collapse
+    assert "if (!_wasUncon" in collapse
+
 
 def test_unconscious_pose_cannot_pin_active_drag_ragdoll():
     settle = source("core/overrides/fnc_applyAnimAfterRagdoll.sqf")
@@ -63,14 +68,14 @@ def test_unconscious_pose_cannot_pin_active_drag_ragdoll():
     spawn = fn("megacodeSpawn")
     assert spawn.index('disableAI "ALL"') < spawn.index('enableAI "ANIM"')
 
-def test_drag_wakes_before_force_without_requiring_provider_motion():
+def test_drag_impulse_is_not_blocked_waiting_for_ragdoll():
     tick = fn("dragHandleOwnerTick")
-    wake = tick.split("if (isAwake _patient) exitWith {", 1)[1].split("if (_stretch", 1)[0]
-    assert "ACME_fnc_forceRagdoll" in wake
-    assert "_medicSpeed" not in wake
-    assert tick.index("if (isAwake _patient)") < tick.index("_patient addForce")
+    assert "if (isAwake _patient) exitWith" not in tick
+    assert "ACME_fnc_forceRagdoll" in tick
+    assert "_patient addForce [_impulse,_handleModel,true];" in tick
     assert "_patient attachTo" not in tick
     assert "_patient setPos" not in tick
+
 
 def test_stretch_release_has_bounded_grace_and_cleanup():
     tick = fn("dragHandleOwnerTick")

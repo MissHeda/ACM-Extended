@@ -30,7 +30,7 @@ def test_drag_handle_functions_are_registered_and_started():
 def test_drag_handle_uses_owner_authoritative_addforce_not_attachto():
     tick = read(FUN / "fn_dragHandleOwnerTick.sqf")
     start = read(FUN / "fn_dragHandleStartOwner.sqf")
-    assert "_patient addForce [_impulse,_handleModel,false];" in tick
+    assert "_patient addForce [_impulse,_handleModel,true];" in tick
     assert "diag_deltaTime" in tick
     assert "ACME_dragHandle_springAccelPerM" in tick
     assert "ACME_dragHandle_damping" in tick
@@ -116,14 +116,22 @@ def test_hard_reset_and_stop_restore_owned_state():
     assert 'setVariable ["ace_dragging_canCarry",_oldFlags param [1,true],true]' in stop
 
 
-def test_visual_harness_is_non_authoritative_and_jip_reconstructed():
+def test_rope_is_created_once_by_owner_and_cleaned_on_stop_or_deletion():
     runtime = read(FUN / "fn_initDragHandleRuntime.sqf")
-    assert 'addMissionEventHandler ["Draw3D"' in runtime
-    assert "Eight-segment waist loop" in runtime
-    assert "drawLine3D [_rear,_drop,_col];" in runtime
-    assert "drawLine3D [_drop,_handle,_col];" in runtime
-    assert "forEach allUnits" in runtime
+    rope = read(FUN / "fn_dragHandleRope.sqf")
+    start = read(FUN / "fn_dragHandleStartOwner.sqf")
+    stop = read(FUN / "fn_dragHandleStopOwner.sqf")
+    tick = read(FUN / "fn_dragHandleOwnerTick.sqf")
+    assert "drawLine3D" not in runtime
     assert "ropeCreate" not in runtime
+    assert "ace_fastroping_helper" in rope
+    assert "ropeCreate [_a,[0,0,0],_b,[0,0,0],_length]" in rope
+    assert 'setVariable ["ACME_dragHandle_ropeObjects",_objects,true]' in rope
+    assert "ACME_fnc_dragHandleRope" in start
+    assert "[_patient,_medic,false] call ACME_fnc_dragHandleRope;" in stop
+    assert "if (isNull _patient) exitWith" in tick
+    assert "ropeDestroy (_ropeObjects select 0)" in tick
+    assert "_patient attachTo" not in rope
 
 
 def test_stale_start_ack_cannot_reinstall_dragger_limits():

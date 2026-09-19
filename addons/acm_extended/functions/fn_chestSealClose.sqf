@@ -1,3 +1,13 @@
+// Cancel a pending provider-entry wait before any patient-session restoration.
+uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
+private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
+if (!isNull _flipMedic && {local _flipMedic}
+    && {(_flipMedic getVariable ["ACME_DP_PauseTreatmentClass",""]) == "chestsealflip"}) then {
+    _flipMedic setVariable ["ACME_DP_Paused",false];
+    _flipMedic setVariable ["ACME_DP_PauseTreatmentClass",""];
+    _flipMedic setVariable ["ACME_DP_TreatmentBusy",false];
+    _flipMedic setVariable ["ACME_DP_IdleStart",CBA_missionTime];
+};
 // this fires first, before anything in this function can run or fail. the order against the keydown probes is the
 // whole answer: a close landing at the same instant ACE's cursormenu is created means creating a second child
 // display of 46 destroyed the first, and display mode is structurally impossible.

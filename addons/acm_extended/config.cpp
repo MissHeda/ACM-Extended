@@ -321,6 +321,7 @@ class CfgPatches {
             "A3_Anims_F",
             "cba_main",
             "ace_main",
+            "ace_fastroping",
             "ace_interact_menu",
             "ace_map",
             "ace_medical_status",
@@ -1684,12 +1685,12 @@ class CfgGesturesMale {
             enableOptics = 0;
         };
 
-        // BI's four best whole-body-looking spasm gestures, isolated under ACME action names and played at 1.35x.
+        // BI's four best whole-body-looking spasm gestures, isolated under ACME action names and played at 1.05x.
         // They retain the original RTMs, masks and interpolation data. Only playback speed changes.
-        class ACME_SeizureSpasm3: GestureSpasm3 { speed = 1.35; };
-        class ACME_SeizureSpasm4: GestureSpasm4 { speed = 1.35; };
-        class ACME_SeizureSpasm5: GestureSpasm5 { speed = 1.35; };
-        class ACME_SeizureSpasm6: GestureSpasm6 { speed = 1.35; };
+        class ACME_SeizureSpasm3: GestureSpasm3 { speed = 1.05; };
+        class ACME_SeizureSpasm4: GestureSpasm4 { speed = 1.05; };
+        class ACME_SeizureSpasm5: GestureSpasm5 { speed = 1.05; };
+        class ACME_SeizureSpasm6: GestureSpasm6 { speed = 1.05; };
     };
 };
 
@@ -2275,6 +2276,7 @@ class CfgFunctions {
             class dragHandleStart {};
             class dragHandleStartOwner {};
             class dragHandleOwnerTick {};
+            class dragHandleRope {};
             class dragHandleStartMedic {};
             class dragHandleStop {};
             class dragHandleStopOwner {};
@@ -2308,6 +2310,7 @@ class CfgFunctions {
             class chestSealBumpVer {};
             class chestSealPeel {};
             class chestSealBurp {};
+            class chestSealBurpReady {};
             class chestSealOcclusionTick {};
             class hcCircTick {};
             class hcVentTick {};
@@ -2323,6 +2326,7 @@ class CfgFunctions {
             class chestSealSealAt {};
             class chestSealSnd {};
             class chestSealFlip {};
+            class chestSealFlipTick {};
             class thoraOpen {};
             class thoraInit {};
             class thoraClose {};
@@ -2554,6 +2558,10 @@ class CfgFunctions {
             class treatmentPoseStop {};
             class treatmentPoseSync {};
             class beginStethoscopeAction {};
+            class stethoscopeInit {};
+            class stethoscopeTick {};
+            class stethoscopeWeights {};
+            class stethoscopeClose {};
             class ivLineCreate {};
             class ivLineDestroy {};
             // megacode kelly, the zeus training manikin and its control panel.

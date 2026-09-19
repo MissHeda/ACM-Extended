@@ -1,14 +1,25 @@
 // Patient-owner PhysX loop. addForce is an impulse for one frame, so every impulse is scaled by diag_deltaTime.
 // This makes the drag spring frame-rate independent.
 params ["_args","_handle"];
-_args params ["_patient","_medic","_weight","_lastRagdoll"];
+_args params ["_patient","_medic","_weight","_lastRagdoll",["_ropeObjects",[]]];
 
 private _stop = {
     params ["_reason"];
     [_patient,_medic,_reason] call ACME_fnc_dragHandleStopOwner;
 };
 
-if (isNull _patient || {isNull _medic}) exitWith {["lost"] call _stop;};
+if (isNull _patient) exitWith {
+    // The deleted unit can no longer provide its stored object handles.
+    if !(_ropeObjects isEqualTo []) then {
+        ropeDestroy (_ropeObjects select 0);
+        {if (!isNull _x) then {deleteVehicle _x;};} forEach (_ropeObjects select [1]);
+    };
+    [_handle] call CBA_fnc_removePerFrameHandler;
+    if (!isNull _medic) then {
+        ["ACME_dragHandle_stopped",[_medic,_patient,"lost"],_medic] call CBA_fnc_targetEvent;
+    };
+};
+if (isNull _medic) exitWith {["lost"] call _stop;};
 if (!local _patient) exitWith {
     // Do not leave a half-owned physics transaction after locality migration. The old owner retires its PFH and
     // asks the new owner to perform an ordinary teardown. A later interaction can immediately attach again.
@@ -62,13 +73,11 @@ private _stretch = (_distance - _slack) max 0;
 private _tension = linearConversion [_slack,_releaseDist,_distance,0,1,true];
 _patient setVariable ["ACME_dragHandle_tension",_tension];
 
-// Wake a settled animated body before applying impulses. Do this even while the provider
-// is still standing: waiting for speed/tension let the provider outrun the initial collapse.
-if (isAwake _patient) exitWith {
-    if ((CBA_missionTime - _lastRagdoll) > 0.5) then {
-        [_patient] call ACME_fnc_forceRagdoll;
-        _args set [3,CBA_missionTime];
-    };
+// For a living Man, isAwake is false while ragdoll is active. addForce itself can enter
+// ragdoll, so never block the pull waiting for a separate animation to unlock first.
+if (isAwake _patient && {(CBA_missionTime - _lastRagdoll) > 0.25}) then {
+    [_patient] call ACME_fnc_forceRagdoll;
+    _args set [3,CBA_missionTime];
 };
 
 if (_stretch > 0.01 && {_distance > 0.01}) then {
@@ -93,7 +102,7 @@ if (_stretch > 0.01 && {_distance > 0.01}) then {
         private _dt = (diag_deltaTime max 0.001) min 0.05;
         private _physMass = (getMass _patient) max 55;
         private _impulse = _dir vectorMultiply (_physMass * _accel * _dt);
-        _patient addForce [_impulse,_handleModel,false];
+        _patient addForce [_impulse,_handleModel,true];
     };
 };
 

@@ -1,6 +1,5 @@
 // ACME hands-free ragdoll drag handle.
-// Physics stays patient-owner authoritative; provider locomotion is local; the rope/harness is a client-side
-// visualization reconstructed from public transaction state, so JIP needs no persistent visual objects.
+// Physics stays patient-owner authoritative; provider locomotion is local.
 if (missionNamespace getVariable ["ACME_dragHandle_runtimeInstalled",false]) exitWith {};
 missionNamespace setVariable ["ACME_dragHandle_runtimeInstalled",true];
 
@@ -57,82 +56,6 @@ if (!isNil "ace_advanced_fatigue_fnc_addDutyFactor"
     }] call ace_advanced_fatigue_fnc_addDutyFactor;
 };
 
-if (!hasInterface) exitWith {};
-
-// Patient and self ACE interactions are config-native in CfgVehicles. Keeping them out of postInit avoids
-// action-tree timing/inheritance failures and guarantees the patient node is anchored to the pelvis selection.
-
-// Reconcile active pairs from public patient state. This makes the visual naturally JIP-safe.
-ACME_dragHandle_visualPairs = createHashMap;
-[{
-    private _seen = [];
-    {
-        private _patient = _x;
-        if (_patient getVariable ["ACME_dragHandle_active",false]) then {
-            private _medic = _patient getVariable ["ACME_dragHandle_dragger",objNull];
-            if (!isNull _medic) then {
-                private _key = netId _patient;
-                _seen pushBack _key;
-                ACME_dragHandle_visualPairs set [_key,[_medic,_patient]];
-            };
-        };
-    } forEach allUnits;
-    {
-        if !(_x in _seen) then {ACME_dragHandle_visualPairs deleteAt _x;};
-    } forEach +(keys ACME_dragHandle_visualPairs);
-},0.75,[]] call CBA_fnc_addPerFrameHandler;
-
-// Rope/harness visual. A real PhysX rope is intentionally not authoritative here; the patient physics comes only
-// from addForce. The drawn loop cannot yank or launch either unit, cannot desync ownership, and follows the
-// ragdoll's carry-handle area every render frame.
-addMissionEventHandler ["Draw3D",{
-    {
-        private _pair = ACME_dragHandle_visualPairs get _x;
-        _pair params ["_medic","_patient"];
-        if (isNull _medic || {isNull _patient}) then {continue};
-        if !(_patient getVariable ["ACME_dragHandle_active",false]) then {continue};
-        if ((_medic distance cameraOn) > 80 && {(_patient distance cameraOn) > 80}) then {continue};
-
-        private _handleModel = _patient selectionPosition "Spine3";
-        if !(_handleModel isEqualType [] && {count _handleModel >= 3} && {vectorMagnitude _handleModel > 0.05}) then {_handleModel=[0,0,0.78];};
-        private _handle = _patient modelToWorldVisual _handleModel;
-        private _drop = _medic modelToWorldVisual [0,-0.25,0.58];
-        private _rear = _medic modelToWorldVisual [0,-0.18,0.93];
-
-        private _slack = missionNamespace getVariable ["ACME_dragHandle_slackLength",1.0];
-        private _release = missionNamespace getVariable ["ACME_dragHandle_releaseDistance",2.65];
-        private _t = linearConversion [_slack,_release,_drop vectorDistance _handle,0,1,true];
-        private _col = [
-            0.42 + (0.48 * _t),
-            0.34 - (0.18 * _t),
-            0.18 - (0.08 * _t),
-            0.95
-        ];
-
-        // Eight-segment waist loop.
-        private _ring = [];
-        for "_i" from 0 to 7 do {
-            private _a = _i * 45;
-            _ring pushBack (_medic modelToWorldVisual [0.25 * sin _a,0.17 * cos _a,0.93]);
-        };
-        for "_i" from 0 to 7 do {
-            drawLine3D [_ring select _i,_ring select ((_i + 1) mod 8),_col];
-        };
-        drawLine3D [_rear,_drop,_col];
-        drawLine3D [_drop,_handle,_col];
-        // A flat, 3.6 cm webbing silhouette instead of a single pixel tether.
-        // Parallel strokes use the same safe render-only primitive as the original harness.
-        {
-            _x params ["_from", "_to"];
-            private _across = (_to vectorDiff _from) vectorCrossProduct ((positionCameraToWorld [0,0,0]) vectorDiff _from);
-            if (vectorMagnitude _across > 0.001) then {
-                _across = vectorNormalized _across;
-                {
-                    private _offset = _across vectorMultiply _x;
-                    drawLine3D [_from vectorAdd _offset,_to vectorAdd _offset,_col];
-                } forEach [-0.018,-0.009,0.009,0.018];
-            };
-        } forEach [[_rear,_drop],[_drop,_handle]];
-
-    } forEach +(keys ACME_dragHandle_visualPairs);
-}];
+// Patient and self ACE interactions are config-native in CfgVehicles.
+// The patient owner creates one networked ACE fast-roping helper/rope pair per session.
+// Engine replication supplies JIP visuals; clients must not draw or create duplicate tethers.

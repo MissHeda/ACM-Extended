@@ -32,6 +32,7 @@ params [["_src", displayNull], ["_scroll", 0]];
 if (!hasInterface) exitWith {false};
 if (_scroll == 0) exitWith {false};
 
+if ((uiNamespace getVariable ["ACME_CS_FlipLockedUntil",0]) > diag_tickTime) exitWith {false};
 private _maxFrame = 5;
 // 1 is up and -1 is down. only the sign carries meaning, because a mouse can report any magnitude.
 private _dir = if (_scroll > 0) then { 1 } else { -1 };
@@ -53,6 +54,7 @@ private _lockIdx = uiNamespace getVariable ["ACME_CS_BurpIdx", -1];
 // DOWN peels from the RIGHT and UP peels from the LEFT. the side names the art folder directly,
 // ui/chest_seal/burp_left and burp_right, so there is no mapping to get backwards.
 if (_lockIdx != _onSeal) exitWith {
+    if (!([uiNamespace getVariable ["ACME_CS_Patient",objNull]] call ACME_fnc_chestSealBurpReady)) exitWith {false};
     uiNamespace setVariable ["ACME_CS_BurpIdx", _onSeal];
     uiNamespace setVariable ["ACME_CS_BurpFrame", 1];
     uiNamespace setVariable ["ACME_CS_BurpFired", false];
@@ -69,6 +71,7 @@ if (_lockIdx != _onSeal) exitWith {
 // THE SAME SEAL, ALREADY LOCKED. the locked direction lifts and the other lays down. the side never changes.
 private _fr = uiNamespace getVariable ["ACME_CS_BurpFrame", 0];
 if (!(_fr isEqualType 0) || {!finite _fr}) then { _fr = 0; };
+if (_fr <= 0 && {!([uiNamespace getVariable ["ACME_CS_Patient",objNull]] call ACME_fnc_chestSealBurpReady)}) exitWith {false};
 private _openDir = uiNamespace getVariable ["ACME_CS_BurpDir", 0];
 
 if (_dir isEqualTo _openDir) then {

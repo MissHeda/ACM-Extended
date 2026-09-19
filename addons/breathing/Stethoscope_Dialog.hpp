@@ -4,7 +4,7 @@ class GVAR(Stethoscope_Dialog) {
     idd = IDC_STETHOSCOPE;
     movingEnable = 0;
     onLoad = "";
-    onUnload = QUOTE(uiNamespace setVariable [ARR_2(QQGVAR(Stethoscope_DLG),nil)]);
+    onUnload = "_this call ACME_fnc_stethoscopeClose;";
     objects[] = {};
 
     class ControlsBackground {
@@ -151,7 +151,7 @@ class GVAR(Stethoscope_Dialog) {
             h = QUOTE(safeZoneH / 10);
             colorText[] = {1,1,1,1};
             colorBackground[] = {0,0,0,0};
-            text = CSTRING(Stethoscope_Using);
+            text = "Hold left mouse to listen and drag. Release to lift the bell.";
             lineSpacing = 0;
             sizeEx = QUOTE(GUI_GRID_H * 1.4 * NORMALIZE_SIZEEX);
             fixedWidth = 0;
@@ -168,34 +168,14 @@ class GVAR(Stethoscope_Dialog) {
             text = "";
         };
 
-        class Bell: RscButtonMenu {
+        class Bell: RscPicture {
             idc = IDC_STETHOSCOPE_BELL;
-            soundClick[] = {};
-            soundEnter[] = {};
-            soundPush[] = {};
-            soundEscape[] = {};
             x = QUOTE(ACM_pxToScreen_X(960));
             y = QUOTE(ACM_pxToScreen_Y(800));
-            w = QUOTE(ACM_pxToScreen_W(128));
-            h = QUOTE(ACM_pxToScreen_H(128));
+            w = QUOTE(ACM_pxToScreen_W(152));
+            h = QUOTE(ACM_pxToScreen_H(152));
             shadow = 0;
-            font = "RobotoCondensed";
-            sizeEx = "0";
-            onMouseButtonUp = QUOTE(call FUNC(Stethoscope_MoveBell));
-            textureNoShortcut = QPATHTOF(ui\stethoscope_bell.paa);
-            tooltip = CSTRING(Stethoscope_MoveBell);
-            colorBackground[] = {1,1,1,0};
-            colorBackgroundFocused[] = {1,1,1,0};
-            period = 0;
-            periodFocus = 0;
-            periodOver = 0;
-            class ShortcutPos
-            {
-                left = 0;
-                top = 0;
-                w = QUOTE(ACM_pxToScreen_W(128));
-                h = QUOTE(ACM_pxToScreen_H(128));
-            };
+            text = QPATHTOF(ui\stethoscope_bell.paa);
         };
     };
 };
