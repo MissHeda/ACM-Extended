@@ -59,59 +59,8 @@ if (!isNil "ace_advanced_fatigue_fnc_addDutyFactor"
 
 if (!hasInterface) exitWith {};
 
-// Target and self interactions. This is deliberately separate from ACE Drag/Carry; it never calls attachTo.
-[{
-    if (isNil "ace_interact_menu_fnc_createAction") exitWith {};
-
-    private _attach = [
-        "ACME_AttachDragHandle",
-        "Attach Drag Handle",
-        "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa",
-        {[_player,_target] call ACME_fnc_dragHandleStart;},
-        {
-            _player != _target
-            && {!isNull _target}
-            && {alive _target}
-            && {!(_target call ace_common_fnc_isAwake)}
-            && {!(_target getVariable ["ACME_dragHandle_active",false])}
-        },
-        {},
-        [],
-        "pelvis",
-        (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
-    ] call ace_interact_menu_fnc_createAction;
-    // Apply to every soldier subclass. Without useInheritance=true this only modifies the abstract CAManBase
-    // action tree and never reaches real BLUFOR/OPFOR/IND/CIV unit classes.
-    ["CAManBase",0,["ACE_MainActions"],_attach,true] call ace_interact_menu_fnc_addActionToClass;
-
-    private _releaseTarget = [
-        "ACME_ReleaseDragHandleTarget",
-        "Release Drag Handle",
-        "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa",
-        {[_player,_target,"manual"] call ACME_fnc_dragHandleStop;},
-        {
-            (_target getVariable ["ACME_dragHandle_active",false])
-            && {(_target getVariable ["ACME_dragHandle_dragger",objNull]) isEqualTo _player}
-        },
-        {},
-        [],
-        "pelvis",
-        (missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3])
-    ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase",0,["ACE_MainActions"],_releaseTarget,true] call ace_interact_menu_fnc_addActionToClass;
-
-    private _releaseSelf = [
-        "ACME_ReleaseDragHandleSelf",
-        "Release Drag Handle",
-        "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa",
-        {
-            private _p = _player getVariable ["ACME_dragHandle_patient",objNull];
-            [_player,_p,"manual"] call ACME_fnc_dragHandleStop;
-        },
-        {!isNull (_player getVariable ["ACME_dragHandle_patient",objNull])}
-    ] call ace_interact_menu_fnc_createAction;
-    ["CAManBase",1,["ACE_SelfActions"],_releaseSelf,true] call ace_interact_menu_fnc_addActionToClass;
-}] call CBA_fnc_execNextFrame;
+// Patient and self ACE interactions are config-native in CfgVehicles. Keeping them out of postInit avoids
+// action-tree timing/inheritance failures and guarantees the patient node is anchored to the pelvis selection.
 
 // Reconcile active pairs from public patient state. This makes the visual naturally JIP-safe.
 ACME_dragHandle_visualPairs = createHashMap;
