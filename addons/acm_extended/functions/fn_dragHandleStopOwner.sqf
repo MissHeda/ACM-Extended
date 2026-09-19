@@ -19,7 +19,7 @@ _patient setVariable ["ACME_dragHandle_active",false,true];
 _patient setVariable ["ACME_dragHandle_dragger",objNull,true];
 _patient setVariable ["ACME_dragHandle_weight",nil,true];
 _patient setVariable ["ACME_dragHandle_tension",nil];
-_patient setVariable ["ACME_dragHandle_oldAceFlags",nil];
+_patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 
 // Restore passive head elevation after the casualty has been put back down.
 ["ACME_headElev_transportUp",[_patient]] call CBA_fnc_localEvent;
