@@ -54,6 +54,39 @@ if ("ace_dragging" call ACEFUNC(common,isModLoaded)) then {
         }
     ];
 
+    // ACME hands-free ragdoll drag handle. Keep this inside the same native Drag / Carry category as ACE's
+    // ordinary Drag and Carry actions. The world interaction is anchored at the pelvis/hips; the medical-menu
+    // route is category-based, so it intentionally does not depend on whichever medical body part was last selected.
+    ACEGVAR(medical_gui,actions) pushBack [
+        "Attach Drag Handle", "drag",
+        {
+            ACE_player != ACEGVAR(medical_gui,target)
+            && {[ACE_player, ACEGVAR(medical_gui,target)] call ACME_fnc_dragHandleCanStart}
+        },
+        {
+            ACEGVAR(medical_gui,pendingReopen) = false;
+            [ACE_player, ACEGVAR(medical_gui,target)] call ACME_fnc_dragHandleStart;
+        },
+        [],
+        ""
+    ];
+
+    ACEGVAR(medical_gui,actions) pushBack [
+        "Release Drag Handle", "drag",
+        {
+            private _target = ACEGVAR(medical_gui,target);
+            !isNull _target
+            && {_target getVariable ["ACME_dragHandle_active", false]}
+            && {(_target getVariable ["ACME_dragHandle_dragger", objNull]) isEqualTo ACE_player}
+        },
+        {
+            ACEGVAR(medical_gui,pendingReopen) = false;
+            [ACE_player, ACEGVAR(medical_gui,target), "manual"] call ACME_fnc_dragHandleStop;
+        },
+        [],
+        ""
+    ];
+
     ACEGVAR(medical_gui,actions) pushBack [
         LLSTRING(AssistCarry), "drag",
         {
