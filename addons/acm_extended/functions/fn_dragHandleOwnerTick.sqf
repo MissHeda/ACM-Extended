@@ -18,16 +18,24 @@ if (!local _patient) exitWith {
 if !(_patient getVariable ["ACME_dragHandle_active",false]) exitWith {[_handle] call CBA_fnc_removePerFrameHandler;};
 if (!alive _patient || {!alive _medic}) exitWith {["death"] call _stop;};
 if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {["dragger_unconscious"] call _stop;};
+if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {
+    ["patient_awake"] call _stop;
+};
 if (!(isNull (objectParent _patient)) || {!(isNull (objectParent _medic))}) exitWith {["vehicle"] call _stop;};
 if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["ace_transport"] call _stop;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["ace_transport"] call _stop;};
+
+// A procedure that takes explicit ownership of the casualty pose supersedes the harness. Do not let PhysX pull
+// against thoracostomy, airway positioning, auscultation or any other patient-animation lease.
+private _animLock = _patient getVariable ["ACME_patientAnimLock",[]];
+if ((count _animLock) >= 5 && {(_animLock param [4,-1]) > CBA_missionTime}) exitWith {["procedure"] call _stop;};
 
 private _handleModel = _patient selectionPosition "Spine3";
 if !(_handleModel isEqualType [] && {count _handleModel >= 3} && {vectorMagnitude _handleModel > 0.05}) then {
     _handleModel = [0,0,0.78];
 };
-private _patientPos = _patient modelToWorldVisual _handleModel;
-private _anchor = _medic modelToWorldVisual [0,-0.30,0.55];
+private _patientPos = _patient modelToWorld _handleModel;
+private _anchor = _medic modelToWorld [0,-0.30,0.55];
 private _delta = [
     (_anchor select 0) - (_patientPos select 0),
     (_anchor select 1) - (_patientPos select 1),
