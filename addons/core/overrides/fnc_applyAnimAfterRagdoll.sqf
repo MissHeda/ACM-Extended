@@ -23,6 +23,11 @@ if !(IS_UNCONSCIOUS(_unit) &&                   // do not run if unit is conscio
     {alive _unit &&                             // do not run if unit is dead
     {isNull objectParent _unit}}) exitWith {};  // do not run if unit in any vehicle
 
+// A live drag handle owns PhysX. Pinning its casualty to an unconscious/lying
+// animation here cancels the ragdoll that the owner is trying to pull.
+// This handler runs on each observer too, so use the replicated session flag.
+if (_unit getVariable ["ACME_dragHandle_active", false]) exitWith {};
+
 private _animsArray = ACEGVAR(medical_engine,animations) getOrDefault [toLowerANSI _anim, [""]];
 private _random = (toArray (hashValue _unit)) param [0, 0];
 private _index = _random % (count _animsArray);

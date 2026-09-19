@@ -35,8 +35,6 @@ ACME_circ_activePatients pushBackUnique _patient;
 
 private _state = _patient getVariable ["ACME_lido_seizureState",""];
 if (_state != "active") then {
-    [_patient] call ACME_fnc_seizureCollapse;
-
     private _maxSec = missionNamespace getVariable ["ACME_lido_seizureMaxSec",120];
     if !(_maxSec isEqualType 0 && {finite _maxSec}) then {_maxSec = 120;};
     private _phaseEnd = _now + (_maxSec max _duration);
@@ -44,6 +42,8 @@ if (_state != "active") then {
     [_patient,"ACME_lido_seizureState","active"] call ACME_fnc_setVarNet;
     [_patient,"ACME_lido_seizurePhaseEnd",_phaseEnd] call ACME_fnc_setVarNet;
     [_patient,"ACME_seizure_rrDrive",missionNamespace getVariable ["ACME_lido_seizureApneaRR",0]] call ACME_fnc_setVarNet;
+    // Publish the clinical state before collapse: delayed animation/settle handlers must see its owner.
+    [_patient] call ACME_fnc_seizureCollapse;
     [_patient,true] call ACME_fnc_seizureMotion;
 } else {
     // Already seizing from another cause: extend only the debug cause window. Do not restart the collapse/gesture.

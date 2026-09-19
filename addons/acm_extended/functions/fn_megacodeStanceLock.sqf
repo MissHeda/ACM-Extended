@@ -22,6 +22,10 @@ private _pfh = [{
     // do not fight an active carry or drag, meaning attached, or a vehicle mount.
     if (!isNull objectParent _u || {!isNull attachedTo _u}) exitWith {};
 
+    // Seizure motion and hands-free dragging own the body until they finish.
+    if (_u getVariable ["ACME_dragHandle_active", false]
+        || {(_u getVariable ["ACME_lido_seizureState", ""]) == "active"}) exitWith {};
+
     private _rest = missionNamespace getVariable ["ACME_megacode_restAnim", "ACM_LyingState"];
     private _as = toLowerANSI animationState _u;
     // re-assert only when the unit has drifted to an upright or transitional stance. the lying, unconscious and

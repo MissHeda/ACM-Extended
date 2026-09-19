@@ -526,12 +526,13 @@ if (_ketWetDebugHandle >= 0) then {
         private _f3 = [_k,0.80,0.92,0.98,1.04] call _tierLerp;
         private _f4 = [_k,0.58,0.67,0.72,0.77] call _tierLerp;
 
+        // Displacement amplitudes reduced by 25% at every tier; timing and other visual layers are unchanged.
         // Bias ketamine toward horizontal visual drift with a smaller vertical component. This feels less like
         // generic underwater bobbing and more like altered lateral swimming/perceptual slippage.
-        private _a1 = [_k,0.0000,0.0066,0.0081,0.0098] call _tierLerp;
-        private _a2 = [_k,0.0000,0.0049,0.0061,0.0072] call _tierLerp;
-        private _a3 = [_k,0.0000,0.0041,0.0051,0.0062] call _tierLerp;
-        private _a4 = [_k,0.0000,0.0030,0.0038,0.0046] call _tierLerp;
+        private _a1 = [_k,0.0000,0.004950,0.006075,0.007350] call _tierLerp;
+        private _a2 = [_k,0.0000,0.003675,0.004575,0.005400] call _tierLerp;
+        private _a3 = [_k,0.0000,0.003075,0.003825,0.004650] call _tierLerp;
+        private _a4 = [_k,0.0000,0.002250,0.002850,0.003450] call _tierLerp;
         private _phase1 = [_k,0.40,0.46,0.50,0.54] call _tierLerp;
         private _phase2 = [_k,0.24,0.27,0.30,0.33] call _tierLerp;
         private _tail1 = [_k,9.0,9.4,9.7,10.0] call _tierLerp;

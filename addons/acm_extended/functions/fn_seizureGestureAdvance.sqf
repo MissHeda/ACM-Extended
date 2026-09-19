@@ -9,7 +9,10 @@ if !(missionNamespace getVariable ["ACME_seizure_animEnabled", true]) exitWith {
 
 // Do not fight seat, drag or carry animation ownership. The seizure physiology continues normally and the
 // gesture driver retries once the patient has a free animation layer again.
-if (!isNull objectParent _patient || {_patient call ace_common_fnc_isBeingDragged} || {_patient call ace_common_fnc_isBeingCarried}) exitWith {
+if (!isNull objectParent _patient || {!isAwake _patient}
+    || {_patient getVariable ["ACME_dragHandle_active", false]}
+    || {_patient call ace_common_fnc_isBeingDragged}
+    || {_patient call ace_common_fnc_isBeingCarried}) exitWith {
     if !(_patient getVariable ["ACME_seizure_motionRetryPending", false]) then {
         _patient setVariable ["ACME_seizure_motionRetryPending", true];
         [{

@@ -62,6 +62,8 @@ _patient setVariable ["ACME_dragHandle_dragger",_medic,true];
 _patient setVariable ["ACME_dragHandle_weight",_weight,true];
 _patient setVariable ["ACME_dragHandle_session",_session,true];
 _patient setVariable ["ACME_dragHandle_tension",0];
+_patient setVariable ["ACME_dragHandle_startedAt",CBA_missionTime];
+_patient setVariable ["ACME_dragHandle_overstretchSince",-1];
 
 // A seizure remains physiologically active, but the spasm gesture yields to the live ragdoll while it is being dragged.
 // fn_seizureMotion also checks this flag so the physiology tick cannot immediately restart the gesture.

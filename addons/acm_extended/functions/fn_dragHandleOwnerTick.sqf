@@ -44,12 +44,32 @@ private _delta = [
 ];
 private _distance = vectorMagnitude _delta;
 private _releaseDist = missionNamespace getVariable ["ACME_dragHandle_releaseDistance",2.65];
-if (_distance > _releaseDist) exitWith {["overstretch"] call _stop;};
+// A single stretched frame during collapse or network interpolation is not a broken tether.
+// Keep a hard escape limit for teleports and a short, bounded grace for ordinary startup/snags.
+private _started = _patient getVariable ["ACME_dragHandle_startedAt",CBA_missionTime];
+private _overSince = _patient getVariable ["ACME_dragHandle_overstretchSince",-1];
+if (_distance > _releaseDist && {(CBA_missionTime - _started) > 1}) then {
+    if (_overSince < 0) then {_overSince = CBA_missionTime;};
+} else {
+    _overSince = -1;
+};
+_patient setVariable ["ACME_dragHandle_overstretchSince",_overSince];
+if (_distance > (_releaseDist + 3)
+    || {_overSince >= 0 && {(CBA_missionTime - _overSince) > 0.75}}) exitWith {["overstretch"] call _stop;};
 
 private _slack = missionNamespace getVariable ["ACME_dragHandle_slackLength",1.0];
 private _stretch = (_distance - _slack) max 0;
 private _tension = linearConversion [_slack,_releaseDist,_distance,0,1,true];
 _patient setVariable ["ACME_dragHandle_tension",_tension];
+
+// Wake a settled animated body before applying impulses. Do this even while the provider
+// is still standing: waiting for speed/tension let the provider outrun the initial collapse.
+if (isAwake _patient) exitWith {
+    if ((CBA_missionTime - _lastRagdoll) > 0.5) then {
+        [_patient] call ACME_fnc_forceRagdoll;
+        _args set [3,CBA_missionTime];
+    };
+};
 
 if (_stretch > 0.01 && {_distance > 0.01}) then {
     // Limit vertical authority. The upper-torso attachment still helps the body climb steps, but cannot launch it.
@@ -77,14 +97,3 @@ if (_stretch > 0.01 && {_distance > 0.01}) then {
     };
 };
 
-// ACE's own drag eligibility uses the engine isAwake command specifically as its "not ragdolled" test for a
-// living person. Use that same signal instead of guessing from velocity: an obstacle-snagged ragdoll may be nearly
-// motionless and must remain physically snagged, while an unconscious casualty that has settled back into a
-// non-ragdoll pose needs one fresh ragdoll wakeup before addForce can articulate the limbs again.
-private _medicSpeed = vectorMagnitude (velocity _medic);
-if (_tension > 0.12 && {_medicSpeed > 0.45} && {isAwake _patient}
-    && {(CBA_missionTime - _lastRagdoll) > 1.8}) then {
-    [_patient] call ACME_fnc_forceRagdoll;
-    _lastRagdoll = CBA_missionTime;
-    _args set [3,_lastRagdoll];
-};

@@ -22,6 +22,8 @@ _patient setVariable ["ACME_dragHandle_dragger",objNull,true];
 _patient setVariable ["ACME_dragHandle_weight",nil,true];
 _patient setVariable ["ACME_dragHandle_session","",true];
 _patient setVariable ["ACME_dragHandle_tension",nil];
+_patient setVariable ["ACME_dragHandle_startedAt",nil];
+_patient setVariable ["ACME_dragHandle_overstretchSince",nil];
 _patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 
 // Restore passive head elevation after the casualty has been put back down. A casualty loaded into a vehicle

@@ -91,6 +91,12 @@ _menuActions = _menuActions select {
     !(_class in ['checkairway', 'checkbreathing']) || {_bodyPart == 0 && {!isNull _target} && {alive _target}}
 };
 
+// Do not retain a cached positioning row after the casualty stands up.
+_menuActions = _menuActions select {
+    (toLower (_x param [8, ''])) != 'acme_elevatehead'
+        || {[_target, ACE_player] call ACME_fnc_headElevateCanStart}
+};
+
 // Drag Handle is injected at paint time instead of collection time. This guarantees the row exists in the live
 // Drag / Carry page even if ACE/ACM rebuilt its action array before ACME runtime functions were available.
 if (_selectedCategory == 'drag' && {!isNull _target} && {ACE_player != _target}) then {

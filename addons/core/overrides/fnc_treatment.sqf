@@ -5,6 +5,16 @@
  */
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
+// This debug command has no physical treatment or provider animation. Execute directly,
+// so empty-hands preflight, the progress bar and the generic patient settle cannot consume the click.
+if (_classname == "ACME_DebugInduceSeizure") exitWith {
+    if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
+    if !((toLowerANSI _bodyPart) == "head" && {[] call ACME_fnc_debugEnabled}) exitWith {false};
+    if !(_this call ace_medical_treatment_fnc_canTreat) exitWith {false};
+    [_patient, "debugSeizure", [_medic, _patient]] call ACME_fnc_ownerDispatch;
+    true
+};
+
 // Direct Pressure is an immediate medical-menu state toggle, not an ACE timed treatment. Running it through the
 // normal treatment pipeline closes the medical menu for the progress dialog and invokes the generic weapon/stance
 // preflight before callbackSuccess. Apply/Stop therefore execute here and repaint the existing menu in place.

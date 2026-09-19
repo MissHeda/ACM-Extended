@@ -120,5 +120,19 @@ addMissionEventHandler ["Draw3D",{
         };
         drawLine3D [_rear,_drop,_col];
         drawLine3D [_drop,_handle,_col];
+        // A flat, 3.6 cm webbing silhouette instead of a single pixel tether.
+        // Parallel strokes use the same safe render-only primitive as the original harness.
+        {
+            _x params ["_from", "_to"];
+            private _across = (_to vectorDiff _from) vectorCrossProduct ((positionCameraToWorld [0,0,0]) vectorDiff _from);
+            if (vectorMagnitude _across > 0.001) then {
+                _across = vectorNormalized _across;
+                {
+                    private _offset = _across vectorMultiply _x;
+                    drawLine3D [_from vectorAdd _offset,_to vectorAdd _offset,_col];
+                } forEach [-0.018,-0.009,0.009,0.018];
+            };
+        } forEach [[_rear,_drop],[_drop,_handle]];
+
     } forEach +(keys ACME_dragHandle_visualPairs);
 }];

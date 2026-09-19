@@ -23,8 +23,8 @@ def test_visual_debug_is_client_local_and_spawn_clean():
     assert 'private _zeroKetProfile' in tick
     assert '_ketWetDebugHandle ppEffectCommit 0;' in tick
     assert 'private _f1 = [_k,1.24,1.42,1.50,1.58]' in tick
-    assert 'private _a1 = [_k,0.0000,0.0066,0.0081,0.0098]' in tick
-    assert 'private _a3 = [_k,0.0000,0.0041,0.0051,0.0062]' in tick
+    assert 'private _a1 = [_k,0.0000,0.004950,0.006075,0.007350]' in tick
+    assert 'private _a3 = [_k,0.0000,0.003075,0.003825,0.004650]' in tick
     assert 'private _shockWetDebug = [0,0.28,0.62,0.96]' in tick
     assert 'private _co2WetDebug = [0,0.20,0.48,0.78]' in tick
     assert 'private _dbgTunnel' in tick
@@ -75,14 +75,14 @@ def test_mature_torsades_drives_aed_arrest_alarm():
     assert '&& {!_torsadesPulselessPO}' in aed
 
 
-def test_chrom_equivalent_is_single_owner_and_wet_profile_is_unchanged():
+def test_chrom_equivalent_is_single_owner_and_wet_profile_is_reduced():
     cfg = read('functions/fn_initVisualEffectsConfig.sqf')
     tick = read('functions/fn_visualFxTick.sqf')
     assert 'ACME_visualFx_ketamineLegacyChromEquivalentScale = 1.00;' in cfg
     assert '_acmKetChrom ppEffectEnable false;' in tick
     assert 'private _legacyFloor = _legacyPeak * 0.24;' in tick
     assert 'if (_legacyPhase < 0.14)' in tick
-    # Keep the accepted ketamine WetDistortion profile untouched while tuning chromatic response.
+    # Preserve frequency and chromatic behavior while reducing water displacement.
     assert 'private _f1 = [_k,1.24,1.42,1.50,1.58]' in tick
-    assert 'private _a1 = [_k,0.0000,0.0066,0.0081,0.0098]' in tick
-    assert 'private _a3 = [_k,0.0000,0.0041,0.0051,0.0062]' in tick
+    assert 'private _a1 = [_k,0.0000,0.004950,0.006075,0.007350]' in tick
+    assert 'private _a3 = [_k,0.0000,0.003075,0.003825,0.004650]' in tick
