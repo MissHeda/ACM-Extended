@@ -129,3 +129,18 @@ def test_stale_start_ack_cannot_reinstall_dragger_limits():
     assert 'ACME_dragHandle_active' in medic
     assert 'ACME_dragHandle_dragger' in medic
     assert 'isNotEqualTo _medic' in medic
+
+
+def test_network_acknowledgements_are_session_guarded():
+    start_owner = read(FUN / "fn_dragHandleStartOwner.sqf")
+    start_medic = read(FUN / "fn_dragHandleStartMedic.sqf")
+    stop_owner = read(FUN / "fn_dragHandleStopOwner.sqf")
+    stop_medic = read(FUN / "fn_dragHandleStopMedic.sqf")
+    runtime = read(FUN / "fn_initDragHandleRuntime.sqf")
+    assert '"ACME_dragHandle_session"' in start_owner
+    assert "ACME_dragHandle_sessionSerial" in start_owner
+    assert "ACME_dragHandle_lastStoppedSession" in start_medic
+    assert '"ACME_dragHandle_session","",true' in stop_owner
+    assert "_session != _currentSession" in stop_medic
+    assert "Public-variable replication" in runtime
+    assert 'ACME_dragHandle_lastStoppedSession' in runtime
