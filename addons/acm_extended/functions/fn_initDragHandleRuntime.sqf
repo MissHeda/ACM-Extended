@@ -68,7 +68,13 @@ if (!hasInterface) exitWith {};
         "Attach Drag Handle",
         "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa",
         {[_player,_target] call ACME_fnc_dragHandleStart;},
-        {[_player,_target] call ACME_fnc_dragHandleCanStart;},
+        {
+            _player != _target
+            && {!isNull _target}
+            && {alive _target}
+            && {!(_target call ace_common_fnc_isAwake)}
+            && {!(_target getVariable ["ACME_dragHandle_active",false])}
+        },
         {},
         [],
         "pelvis",
