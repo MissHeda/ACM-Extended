@@ -6703,33 +6703,6 @@ class CfgVehicles {
 
     class Man;
     class CAManBase: Man {
-        // Config-native patient hip interaction. This is inherited by every soldier class at config load, so
-        // it does not depend on postInit timing or ACE's runtime action-tree inheritance cache.
-        class ACE_Actions: ACE_Actions {
-            class ACE_MainActions: ACE_MainActions {
-                class ACME_AttachDragHandle {
-                    displayName = "Attach Drag Handle";
-                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa";
-                    selection = "pelvis";
-                    distance = 2.3;
-                    condition = "_player != _target && {alive _target} && {!([_target] call ace_common_fnc_isAwake)} && {!(_target getVariable ['ACME_dragHandle_active', false])}";
-                    statement = "[_player, _target] call ACME_fnc_dragHandleStart";
-                    exceptions[] = {};
-                    showDisabled = 0;
-                };
-                class ACME_ReleaseDragHandle {
-                    displayName = "Release Drag Handle";
-                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
-                    selection = "pelvis";
-                    distance = 2.3;
-                    condition = "(_target getVariable ['ACME_dragHandle_active', false]) && {(_target getVariable ['ACME_dragHandle_dragger', objNull]) isEqualTo _player}";
-                    statement = "[_player, _target, 'manual'] call ACME_fnc_dragHandleStop";
-                    exceptions[] = {};
-                    showDisabled = 0;
-                };
-            };
-        };
-
         class ACE_SelfActions {
             class ACME_ReleaseDragHandleSelf {
                 displayName = "Release Drag Handle";
@@ -6924,10 +6897,31 @@ class CfgVehicles {
                 };
             };
         };
-        // block a provider's "Get Up" on a patient who is obtunded. ACM_LyingState_GetUp already hides for player
-        // targets through !isplayer. this covers ai as well and is the explicit guard.
         class ACE_Actions {
             class ACE_MainActions {
+                // Keep patient actions in one config tree so both drag handles and Get Up are inherited.
+                class ACME_AttachDragHandle {
+                    displayName = "Attach Drag Handle";
+                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\loadVehicle_ca.paa";
+                    selection = "pelvis";
+                    distance = 2.3;
+                    condition = "_player != _target && {alive _target} && {!([_target] call ace_common_fnc_isAwake)} && {!(_target getVariable ['ACME_dragHandle_active', false])}";
+                    statement = "[_player, _target] call ACME_fnc_dragHandleStart";
+                    exceptions[] = {};
+                    showDisabled = 0;
+                };
+                class ACME_ReleaseDragHandle {
+                    displayName = "Release Drag Handle";
+                    icon = "\a3\ui_f\data\IGUI\Cfg\Actions\unloadVehicle_ca.paa";
+                    selection = "pelvis";
+                    distance = 2.3;
+                    condition = "(_target getVariable ['ACME_dragHandle_active', false]) && {(_target getVariable ['ACME_dragHandle_dragger', objNull]) isEqualTo _player}";
+                    statement = "[_player, _target, 'manual'] call ACME_fnc_dragHandleStop";
+                    exceptions[] = {};
+                    showDisabled = 0;
+                };
+                // block a provider's "Get Up" on a patient who is obtunded. ACM_LyingState_GetUp already hides for player
+                // targets through !isplayer. this covers ai as well and is the explicit guard.
                 class ACM_LyingState_GetUp {
                     condition = "!(isPlayer _target) && {(_target getVariable ['ACM_core_Lying_State', false]) && {alive _target} && {!(_target getVariable ['ACE_isUnconscious', false])} && {!(_target getVariable ['ace_evacuation_casualtyTicketClaimed', false])} && {!(_target getVariable ['ACME_obtunded', false])}}";
                     statement = "[_target, true] call ACM_core_fnc_getUp";
