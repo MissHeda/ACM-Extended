@@ -54,7 +54,7 @@ if (!isNil "ACME_fnc_seizureMotion" && {(_patient getVariable ["ACME_lido_seizur
 private _oldPFH = _patient getVariable ["ACME_dragHandle_forcePFH",-1];
 if (_oldPFH isEqualType 0 && {_oldPFH >= 0}) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
 
-private _args = [_patient,_medic,_weight,CBA_missionTime,-1];
+private _args = [_patient,_medic,_weight,CBA_missionTime];
 private _pfh = [{_this call ACME_fnc_dragHandleOwnerTick;},0,_args] call CBA_fnc_addPerFrameHandler;
 _patient setVariable ["ACME_dragHandle_forcePFH",_pfh];
 
