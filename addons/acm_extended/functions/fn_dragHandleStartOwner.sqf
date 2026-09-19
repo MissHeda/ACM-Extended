@@ -19,6 +19,11 @@ if (!isNull (_medic getVariable ["ACME_dragHandle_patient",objNull])) exitWith {
 if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["Casualty is already being moved."] call _reject;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["Finish the current ACE drag/carry first."] call _reject;};
 
+private _interactionOwner = _patient getVariable ["ace_common_owner",objNull];
+if (!isNull _interactionOwner && {_interactionOwner isNotEqualTo _medic}) exitWith {
+    ["Another provider currently owns the casualty interaction."] call _reject;
+};
+
 private _attachDist = missionNamespace getVariable ["ACME_dragHandle_attachDistance",2.3];
 if ((_medic distance _patient) > (_attachDist + 0.35)) exitWith {["Move closer to the casualty."] call _reject;};
 
