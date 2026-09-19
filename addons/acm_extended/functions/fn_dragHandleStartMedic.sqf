@@ -6,9 +6,9 @@ _medic setVariable ["ACME_dragHandle_pending",false];
 // A stop can legitimately race the start acknowledgement, for example if the line overstretches immediately.
 // Never install provider restrictions for a transaction the patient owner has already torn down.
 if (_session != "" && {(_medic getVariable ["ACME_dragHandle_lastStoppedSession",""]) == _session}) exitWith {};
-if !(_patient getVariable ["ACME_dragHandle_active",false])
+if (!(_patient getVariable ["ACME_dragHandle_active",false])
     || {(_patient getVariable ["ACME_dragHandle_dragger",objNull]) isNotEqualTo _medic}
-    || {_session != "" && {(_patient getVariable ["ACME_dragHandle_session",""]) != _session}} exitWith {};
+    || {_session != "" && {(_patient getVariable ["ACME_dragHandle_session",""]) != _session}}) exitWith {};
 
 _medic setVariable ["ACME_dragHandle_patient",_patient,true];
 _medic setVariable ["ACME_dragHandle_session",_session];
@@ -45,8 +45,8 @@ private _pfh = [{
     if (isNull _patient) exitWith {
         [_medic,objNull,"lost"] call ACME_fnc_dragHandleStopMedic;
     };
-    if !(_patient getVariable ["ACME_dragHandle_active",false])
-        || {(_patient getVariable ["ACME_dragHandle_dragger",objNull]) isNotEqualTo _medic} exitWith {
+    if (!(_patient getVariable ["ACME_dragHandle_active",false])
+        || {(_patient getVariable ["ACME_dragHandle_dragger",objNull]) isNotEqualTo _medic}) exitWith {
         [_medic,_patient,"lost"] call ACME_fnc_dragHandleStopMedic;
     };
 

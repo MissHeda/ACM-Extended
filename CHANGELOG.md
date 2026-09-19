@@ -2,12 +2,14 @@
 
 ## 1.2.2 cumulative update
 
-Updated 19 September 2026. Version 1.2.2 incorporates the complete 1.2.1-rc1 patch series and aligns the release metadata. Consolidates all subsequent patches from 18–19 September, through [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424). The [covered commit range](https://github.com/hesherson/ACM-Extended/compare/f2b6c482123aff1a60234e4d2b737e44de33767c...8fd12c016f17504b05781925f095d75f0fbe9424) includes 132 commits.
+Updated 19 September 2026. Version 1.2.2 incorporates the complete 1.2.1-rc1 patch series and aligns the release metadata. Consolidates all subsequent patches from 18–19 September, through [8fd12c0](https://github.com/hesherson/ACM-Extended/commit/8fd12c016f17504b05781925f095d75f0fbe9424). The [covered commit range](https://github.com/hesherson/ACM-Extended/compare/f2b6c482123aff1a60234e4d2b737e44de33767c...8fd12c016f17504b05781925f095d75f0fbe9424) includes 132 commits. The release check corrections below are also included.
 
 These notes describe the combined current behavior. Later corrections take precedence over intermediate implementations in the individual patch records.
 
 ### Build, debug and settings
 
+- Fixed two drag handle condition errors that could interrupt attachment and release checks.
+- Fixed a missing UI scaling definition when changing syringe size in the Narc Box.
 - Fixed the duplicate ACE_Actions declaration and invalid inheritance that stopped HEMTT with L-C03/L-C04. Drag handle actions now share the existing patient action tree, preserving Get Up and release actions.
 - Updated the public/runtime version and debug overlay to 1.2.2. HEMTT and native addon metadata now use 1.2.2.0.
 - Separated shared gameplay settings from client preferences. Gameplay rules remain globally controlled; presentation, accessibility, interface and debug preferences are controlled by each client and cannot be overridden by the server or mission.
@@ -92,7 +94,7 @@ These notes describe the combined current behavior. Later corrections take prece
 
 The initial ACE action config correction passed its focused config check and the existing 20 RC1, drag and seizure checks at that point. Subsequent patches received source or numerical checks covering registration, class duplication, UI selection, animation ownership, sound mixing, waveform samples and handling of stale callbacks.
 
-The command runner became unavailable during the later work. The complete cumulative build has **not** been verified with pytest, HEMTT or Arma. Confirmation in Arma remains necessary for seizure startup and speed, ragdoll dragging, chest animations, transfusion selection, audible auscultation mixing and PEA transitions, including patients owned by another machine.
+The supplied Windows release log confirms successful packaging of 14 PBOs for 1.2.2.0, with 28 UI scaling warnings and five drag condition warnings. Both causes are now corrected. HEMTT 1.21.0 strict checks passed across 16 addon configs, 1,591 SQF files and 12 stringtables with no code diagnostics, and all 16 focused tests passed. Rebuild the release package after pulling these corrections. Confirmation in Arma remains necessary for seizure startup and speed, ragdoll dragging, chest animations, transfusion selection, audible auscultation mixing and PEA transitions, including patients owned by another machine.
 
 The version update changes release metadata and documentation; the cumulative gameplay changes are listed above.
 
@@ -103,4 +105,5 @@ The version update changes release metadata and documentation; the cumulative ga
 - [Chest interactions, drag rope and held auscultation](docs/patch-notes/2026-09-19-chest-interactions.md)
 - [Final seizure speed correction, posterior auscultation and clinical descriptors](docs/patch-notes/2026-09-19-auscultation-seizures.md)
 - [PEA morphology](docs/patch-notes/2026-09-19-pea-morphology.md)
+- [Release check corrections](docs/patch-notes/2026-09-19-release-warnings.md)
 - [Discord posts and patch index](docs/patch-notes/README.md)

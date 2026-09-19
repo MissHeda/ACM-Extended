@@ -1,3 +1,4 @@
+#include "\x\ACM\addons\circulation\script_component.hpp"
 #include "\x\ACM\addons\circulation\SyringeDraw_defines.hpp"
 /* Change Narc Box syringe size without destroying/recreating the dialog. */
 disableSerialization;
