@@ -21,7 +21,8 @@ if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {["dragger_unconsci
 if !((_patient getVariable ["ACE_isUnconscious",false]) || {lifeState _patient == "INCAPACITATED"}) exitWith {
     ["patient_awake"] call _stop;
 };
-if (!(isNull (objectParent _patient)) || {!(isNull (objectParent _medic))}) exitWith {["vehicle"] call _stop;};
+if (!(isNull (objectParent _patient))) exitWith {["patient_vehicle"] call _stop;};
+if (!(isNull (objectParent _medic))) exitWith {["dragger_vehicle"] call _stop;};
 if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["ace_transport"] call _stop;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["ace_transport"] call _stop;};
 
