@@ -59,6 +59,7 @@ def test_full_heal_clears_new_gesture_state():
         "ACME_seizure_motionGestureEH",
         "ACME_seizure_motionCurrentGesture",
         "ACME_seizure_motionRetryPending",
+        "ACME_seizure_motionAdvancePending",
     ]:
         assert f'"{name}"' in s
 
