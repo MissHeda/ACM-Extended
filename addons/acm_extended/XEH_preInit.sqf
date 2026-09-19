@@ -101,10 +101,10 @@ private _settings = [
         [1, 4, 2, 1], 1, {}
     ],
 
-    // the IV mini-game panel. these are client-side presentation only: the difficulty model is expressed in
-    // BODY-WIDTH FRACTIONS, so the vein, the tolerance and the safe radii scale with the limb together and the
-    // ratio the stick is judged on is identical at every size. a bigger arm is easier to AIM at with a mouse
-    // and is exactly as hard clinically.
+    // IV mini-game settings are explicitly split by authority. Pure presentation/accessibility choices are
+    // CBA local-only (2), so a server can never overwrite them. Anything that changes the actual procedural
+    // success threshold or shared vein geometry is global-only (1), so every provider sees the same gameplay
+    // rules even when the mission maker never configured CBA overrides.
     [
         "ACME_iv_uiScaleV3", "SLIDER",
         ["IV panel: panel size", "1.0 is now the former 1.10 panel size. Minimum preserves the previous absolute minimum; maximum remains 50% larger than the new default. Use Up/Down arrows to pan an enlarged limb. Targets and placed items scale together; tray controls remain on screen. Takes effect the next time the panel opens."],
