@@ -30,7 +30,7 @@ private _lock = _patient getVariable ["ACME_patientAnimLock",[]];
 if ((count _lock) >= 5 && {(_lock param [4,-1]) > CBA_missionTime}) exitWith {false};
 
 if (!isNil "ace_common_fnc_canInteractWith") then {
-    if !([_medic,_patient,["isNotInside"]] call ace_common_fnc_canInteractWith) exitWith {false};
+    if !([_medic,_patient,[]] call ace_common_fnc_canInteractWith) exitWith {false};
 };
 
 true
