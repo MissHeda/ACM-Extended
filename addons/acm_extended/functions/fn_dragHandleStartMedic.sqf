@@ -49,8 +49,8 @@ private _pfh = [{
 
     private _handleModel = _patient selectionPosition "Spine3";
     if !(_handleModel isEqualType [] && {count _handleModel >= 3} && {vectorMagnitude _handleModel > 0.05}) then {_handleModel=[0,0,0.78];};
-    private _pp = _patient modelToWorldVisual _handleModel;
-    private _anchor = _medic modelToWorldVisual [0,-0.30,0.55];
+    private _pp = _patient modelToWorld _handleModel;
+    private _anchor = _medic modelToWorld [0,-0.30,0.55];
     private _dist = _pp vectorDistance _anchor;
     private _slack = missionNamespace getVariable ["ACME_dragHandle_slackLength",1.0];
     private _release = missionNamespace getVariable ["ACME_dragHandle_releaseDistance",2.65];
