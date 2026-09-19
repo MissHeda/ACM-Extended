@@ -26,7 +26,10 @@ private _visualEnabled =
     _on
     && {alive _patient}
     && {missionNamespace getVariable ["ACME_seizure_animEnabled", true]}
-    && {(missionNamespace getVariable ["ACME_seizure_motionEnabled", 1]) != 0};
+    && {(missionNamespace getVariable ["ACME_seizure_motionEnabled", 1]) != 0}
+    // A drag-handle casualty stays a live ragdoll. Seizure physiology continues, but the gesture layer yields
+    // until the handle is released so it cannot fight PhysX for ownership of the body.
+    && {!(_patient getVariable ["ACME_dragHandle_active", false])};
 
 if (!_visualEnabled) exitWith {
     _patient setVariable ["ACME_seizure_motionActive", false];
