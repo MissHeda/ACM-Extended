@@ -24,8 +24,27 @@ _patient setVariable ["ACME_dragHandle_session","",true];
 _patient setVariable ["ACME_dragHandle_tension",nil];
 _patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 
-// Restore passive head elevation after the casualty has been put back down.
-["ACME_headElev_transportUp",[_patient]] call CBA_fnc_localEvent;
+// Restore passive head elevation after the casualty has been put back down. If a pose-owning procedure
+// forced the release, wait until that procedure gives the patient animation lease back before trying to re-elevate.
+if (_reason == "procedure" && {_patient getVariable ["ACME_headElev_TransportPending",false]}) then {
+    [
+        {
+            params ["_p"];
+            if (isNull _p || {!alive _p}) exitWith {true};
+            private _lock = _p getVariable ["ACME_patientAnimLock",[]];
+            !((count _lock) >= 5 && {(_lock param [4,-1]) > CBA_missionTime})
+        },
+        {
+            params ["_p"];
+            if (!isNull _p && {alive _p}) then {
+                ["ACME_headElev_transportUp",[_p]] call CBA_fnc_localEvent;
+            };
+        },
+        [_patient]
+    ] call CBA_fnc_waitUntilAndExecute;
+} else {
+    ["ACME_headElev_transportUp",[_patient]] call CBA_fnc_localEvent;
+};
 
 if (!isNull _medic) then {
     ["ACME_dragHandle_stopped",[_medic,_patient,_reason,_session],_medic] call CBA_fnc_targetEvent;
