@@ -109,31 +109,31 @@ private _settings = [
         "ACME_iv_uiScaleV3", "SLIDER",
         ["IV panel: panel size", "1.0 is now the former 1.10 panel size. Minimum preserves the previous absolute minimum; maximum remains 50% larger than the new default. Use Up/Down arrows to pan an enlarged limb. Targets and placed items scale together; tray controls remain on screen. Takes effect the next time the panel opens."],
         [_cIV, "Mini-game panel"],
-        [0.6486486486, 1.5, 1, 2], 0, {}
+        [0.6486486486, 1.5, 1, 2], 2, {}
     ],
     [
         "ACME_iv_trayIconBias", "SLIDER",
         ["IV panel: tray icon height", "Where the catheter sits inside its tray box. 0 is the top, 0.5 is centered, 1 is the bottom. The art has its bulk low in its own canvas, so centered reads as low."],
         [_cIV, "Mini-game panel"],
-        [0, 1, 0.34, 2], 0, {}
+        [0, 1, 0.34, 2], 2, {}
     ],
     [
         "ACME_iv_bruiseMaxAlpha", "SLIDER",
         ["IV panel: bruise maximum opacity", "A miss bruise never gets more opaque than this. At full opacity it reads as a solid blob stuck on the skin and buries the puncture hole drawn on top of it."],
         [_cIV, "Mini-game panel"],
-        [0.2, 1, 0.9, 2], 0, {}
+        [0.2, 1, 0.9, 2], 2, {}
     ],
     [
         "ACME_iv_bruiseBoost14", "SLIDER",
         ["IV panel: 14g bruise size", "Widens the 14g bruise before it is clamped to fit the limb. The stock radii sit close enough together that a narrow site flattened all three gauges to the same visible size."],
         [_cIV, "Mini-game panel"],
-        [1, 2.5, 1.45, 2], 0, {}
+        [1, 2.5, 1.45, 2], 2, {}
     ],
     [
         "ACME_iv_prepMarksToClean", "SLIDER",
         ["IV panel: scrub coverage to prep", "How many scrub marks the alcohol pad must lay before the site counts as prepped. A mark is only laid once the cursor has MOVED, so this cannot be satisfied by holding still."],
         [_cIV, "Mini-game panel"],
-        [4, 40, 16, 0], 0, {}
+        [4, 40, 16, 0], 1, {}
     ],
 
     // palpation. how the fingertip reports what is under it, and how the veins of the antecubital fossa are
@@ -142,49 +142,49 @@ private _settings = [
         "ACME_iv_palpModel", "LIST",
         ["IV panel: palpation feel", "How the palpating finger reports a vein. Classic is the old proximity ramp, kept for comparison. Ridge gives a small green core with a hard taper. Pulse breathes at the casualty's own heart rate, deeper on a better vein. Edge brightens at the walls of the vessel and softens dead center."],
         [_cIV, "Palpation"],
-        [[0, 1, 2, 3], ["Classic (old behavior)", "Ridge", "Pulse", "Edge"], 1], 0, {}
+        [[0, 1, 2, 3], ["Classic (old behavior)", "Ridge", "Pulse", "Edge"], 1], 2, {}
     ],
     [
         "ACME_iv_phenotypeForce", "LIST",
         ["Venous phenotype (singleplayer only)", "Forces the antecubital vein arrangement for testing. Auto derives it from the Steam UID in multiplayer, exactly as ACM derives blood type, so a player's veins are the same every session. IGNORED in multiplayer, where the UID is the authority."],
         [_cIV, "Palpation"],
-        [[0, 1, 2, 3, 4], ["Auto (UID)", "N pattern", "M pattern", "No communicator", "One side dominant"], 0], 0, {}
+        [[0, 1, 2, 3, 4], ["Auto (UID)", "N pattern", "M pattern", "No communicator", "One side dominant"], 0], 2, {}
     ],
     [
         "ACME_iv_dotSize", "SLIDER",
         ["IV panel: palpation dot size", "Base size of the palpating fingertip. The palpation models shrink it further as it closes, so a bigger base makes the four modes easier to tell apart."],
         [_cIV, "Palpation"],
-        [0.010, 0.045, 0.024, 3], 0, {}
+        [0.010, 0.045, 0.024, 3], 2, {}
     ],
     [
         "ACME_iv_prepDabAlpha", "SLIDER",
         ["Alcohol redness opacity", "Uniform redness strength across prepared skin. Wipe speed and repeated passes do not create random dark patches."],
         [_cIV, "Palpation"],
-        [0.01, 0.20, 0.085, 3], 0, {}
+        [0.01, 0.20, 0.085, 3], 2, {}
     ],
     [
         "ACME_iv_prepDabSize", "SLIDER",
         ["Alcohol pad footprint", "Width of the smooth-edged, consistent prep footprint as a fraction of the limb canvas."],
         [_cIV, "Palpation"],
-        [0.015, 0.080, 0.032, 3], 0, {}
+        [0.015, 0.080, 0.032, 3], 2, {}
     ],
     [
         "ACME_iv_prepHoldSec", "SLIDER",
         ["IV panel: antiseptic hold time", "Seconds the scrub marks stay at full strength before they begin to fade."],
         [_cIV, "Palpation"],
-        [5, 180, 45, 0], 0, {}
+        [5, 180, 45, 0], 2, {}
     ],
     [
         "ACME_iv_prepFadeSec", "SLIDER",
         ["IV panel: antiseptic fade time", "Seconds the scrub marks take to fade away once the hold time has passed."],
         [_cIV, "Palpation"],
-        [5, 180, 40, 0], 0, {}
+        [5, 180, 40, 0], 2, {}
     ],
     [
         "ACME_iv_fossaSpread", "SLIDER",
         ["IV panel: fossa vein spread", "How far apart the cephalic and basilic sit either side of the antecubital midline, in body fractions. Larger makes the three fossa veins easier to tell apart by feel."],
         [_cIV, "Palpation"],
-        [0.015, 0.06, 0.03, 3], 0, {}
+        [0.015, 0.06, 0.03, 3], 1, {}
     ],
 
     // the roller clamp, which is client-side because it is pure ux.
@@ -192,19 +192,19 @@ private _settings = [
         "ACME_infusion_clampScrollStep", "SLIDER",
         ["Scroll step", "Clamp travel per mouse-wheel notch (fraction of full travel)."],
         [_cIV, "Roller clamp"],
-        [0.01, 0.25, 0.10, 2], 0, {}
+        [0.01, 0.25, 0.10, 2], 2, {}
     ],
     [
         "ACME_infusion_clampScrollInvert", "CHECKBOX",
         ["Invert scroll direction", "Flip which way the wheel moves on scroll."],
         [_cIV, "Roller clamp"],
-        false, 0, {}
+        false, 2, {}
     ],
     [
         "ACME_infusion_clampSfxEnabled", "CHECKBOX",
         ["Clamp sounds", "Play the roller-clamp tick while adjusting."],
         [_cIV, "Roller clamp"],
-        true, 0, {}
+        true, 2, {}
     ],
 
     // auto bp, which is global.
@@ -339,7 +339,7 @@ private _settings = [
         "ACME_debug_enabled", "CHECKBOX",
         ["Debug menu", "Master switch for the on-screen ACME debug menu."],
         [_cDbg, "Overlay"],
-        false, 0, {
+        false, 2, {
             missionNamespace setVariable ["ACME_debug_enabled", _this, false];
             uiNamespace setVariable ["ACME_debug_enabled", _this];
             ACME_debug_enabled = _this;
@@ -351,31 +351,31 @@ private _settings = [
         "ACME_debug_showInfusions", "CHECKBOX",
         ["Debug: infusions section", "Per-bag medication, volume, drip rate, clamp position, dose, and flow state."],
         [_cDbg, "Overlay"],
-        true, 0, {}
+        true, 2, {}
     ],
     [
         "ACME_debug_showTBI", "CHECKBOX",
         ["Debug: TBI section", "MAP/ICP/CPP, severity, sodium, volume gate, Cushing/herniation state, pupils, GCS-M."],
         [_cDbg, "Overlay"],
-        true, 0, {}
+        true, 2, {}
     ],
     [
         "ACME_debug_showAutoBP", "CHECKBOX",
         ["Debug: auto BP section", "Tracked auto-BP patients and countdown to next reading."],
         [_cDbg, "Overlay"],
-        true, 0, {}
+        true, 2, {}
     ],
     [
         "ACME_debug_showCirc", "CHECKBOX",
         ["Debug: circulation section", "bpOffset, shock severity, pressor/push-dose support, ICH risk, medic push-dose charges."],
         [_cDbg, "Overlay"],
-        true, 0, {}
+        true, 2, {}
     ],
     [
         "ACME_debug_scale", "SLIDER",
         ["Debug menu text scale", "Multiplier on debug menu text size."],
         [_cDbg, "Overlay"],
-        [0.7, 1.5, 1, 1], 0, {}
+        [0.7, 1.5, 1, 1], 2, {}
     ],
     // OBTUNDATION, ALL OF IT, IN ONE PLACE AND IN THE ORDER YOU WOULD READ IT.
     // it used to be three settings in two top level categories and three subcategories, and none of them said the
@@ -402,7 +402,7 @@ private _settings = [
         "ACME_obtunded_autoEnable", "CHECKBOX",
         ["2. Automatic entry from vitals", "Requires 1. Obtundation. Lets a casualty's own SpO2 and MAP put them into the state. OFF: the system still runs, and only a Zeus module or the debug toggle can trigger it. The five entry settings below tune this."],
         [_cTrau, "2. Obtundation"],
-        true, 0, {}
+        true, 1, {}
     ],
     [
         "ACME_obtunded_dwellEnter", "SLIDER",
@@ -495,13 +495,13 @@ private _settings = [
         "ACME_debug_showNetwork", "CHECKBOX",
         ["Debug overlay: network section", "Adds a NETWORK block to the right column of the debug overlay: this machine's role, who owns the patient, whether the network layers installed, outstanding edit requests, live gesture viewers and the send interval. Requires the debug overlay itself to be on."],
         [_cDbg, "Overlay"],
-        true, 0, {}
+        true, 2, {}
     ],
     [
         "ACME_seizure_animEnabled", "CHECKBOX",
         ["Seizure body motion", "The convulsion ANIMATION only. ON: active seizures cycle BI GestureSpasm3-6 at 1.35x, allowing each spasm to finish before the next begins. OFF: a seizing casualty lies still, while loss of consciousness, apnea, vitals, postictal state and treatment remain unchanged. Takes effect immediately, including on a seizure already running."],
         [_cTrau, "3. Seizures"],
-        true, 1, {}
+        true, 2, {}
     ],
     // newer systems: the full-off toggles.
     // each of these is read live at the top of the tick of that system, so unticking one stops it immediately and
@@ -546,7 +546,7 @@ private _settings = [
         "ACME_hang_useRope", "CHECKBOX",
         ["IV line: physical rope", "ON (default): the IV line is a real PhysX rope (the engine default rope, like ACE fastroping) that hangs between the bag and the patient, collides with terrain, and needs no model file. OFF: no IV line is drawn at all (there is no Draw3D fallback)."],
         [_cIV, "IV line"],
-        true, 0, {}
+        true, 2, {}
     ]
 ];
 
