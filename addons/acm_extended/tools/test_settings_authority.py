@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -8,17 +7,156 @@ def read(rel: str) -> str:
     return (ROOT / rel).read_text(encoding="utf-8-sig", errors="strict")
 
 
+def _setting_array(text: str, name: str) -> str:
+    needle = f'"{name}"'
+    idx = text.find(needle)
+    assert idx >= 0, f"missing setting: {name}"
+    start = text.rfind("[", 0, idx)
+    assert start >= 0
+
+    depth = 0
+    in_string = False
+    in_line_comment = False
+    in_block_comment = False
+    i = start
+    while i < len(text):
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+
+        if in_line_comment:
+            if ch == "\n":
+                in_line_comment = False
+            i += 1
+            continue
+        if in_block_comment:
+            if ch == "*" and nxt == "/":
+                in_block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if in_string:
+            if ch == '"' and nxt == '"':
+                i += 2
+                continue
+            if ch == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if ch == "/" and nxt == "/":
+            in_line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            in_block_comment = True
+            i += 2
+            continue
+        if ch == '"':
+            in_string = True
+            i += 1
+            continue
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+        i += 1
+
+    raise AssertionError(f"unterminated setting array: {name}")
+
+
+def _top_level_parts(array_text: str) -> list[str]:
+    body = array_text[1:-1]
+    parts: list[str] = []
+    start = 0
+    square = curly = paren = 0
+    in_string = False
+    in_line_comment = False
+    in_block_comment = False
+
+    i = 0
+    while i < len(body):
+        ch = body[i]
+        nxt = body[i + 1] if i + 1 < len(body) else ""
+
+        if in_line_comment:
+            if ch == "\n":
+                in_line_comment = False
+            i += 1
+            continue
+        if in_block_comment:
+            if ch == "*" and nxt == "/":
+                in_block_comment = False
+                i += 2
+            else:
+                i += 1
+            continue
+        if in_string:
+            if ch == '"' and nxt == '"':
+                i += 2
+                continue
+            if ch == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if ch == "/" and nxt == "/":
+            in_line_comment = True
+            i += 2
+            continue
+        if ch == "/" and nxt == "*":
+            in_block_comment = True
+            i += 2
+            continue
+        if ch == '"':
+            in_string = True
+            i += 1
+            continue
+
+        if ch == "[":
+            square += 1
+        elif ch == "]":
+            square -= 1
+        elif ch == "{":
+            curly += 1
+        elif ch == "}":
+            curly -= 1
+        elif ch == "(":
+            paren += 1
+        elif ch == ")":
+            paren -= 1
+        elif ch == "," and square == 0 and curly == 0 and paren == 0:
+            parts.append(body[start:i].strip())
+            start = i + 1
+        i += 1
+
+    parts.append(body[start:].strip())
+    return parts
+
+
 def setting_scope(text: str, name: str) -> int:
-    # ACME settings are literal CBA arrays. Capture through category/default into the isGlobal slot.
-    pattern = re.compile(
-        r'\[\s*"' + re.escape(name) +
-        r'"\s*,\s*"(?:CHECKBOX|SLIDER|LIST|EDITBOX|COLOR)"'
-        r'[\s\S]*?\]\s*,\s*([012])\s*,\s*(?:\{|\w)',
-        re.MULTILINE,
-    )
-    m = pattern.search(text)
-    assert m, f"missing setting or scope: {name}"
-    return int(m.group(1))
+    parts = _top_level_parts(_setting_array(text, name))
+    assert len(parts) >= 6, f"setting has no explicit CBA scope: {name}"
+    assert parts[5] in {"0", "1", "2"}, (name, parts[5])
+    return int(parts[5])
+
+
+def _all_setting_names(text: str) -> list[str]:
+    names: list[str] = []
+    marker = '["ACME_'
+    pos = 0
+    while True:
+        pos = text.find(marker, pos)
+        if pos < 0:
+            break
+        start = pos + 2
+        end = text.find('"', start)
+        if end > start:
+            names.append(text[start:end])
+        pos = end + 1
+    return names
 
 
 def test_true_client_preferences_are_local_only_and_non_overridable():
@@ -88,14 +226,12 @@ def test_shared_gameplay_settings_are_global_only():
 
 
 def test_no_acme_setting_uses_ambiguous_overridable_scope_zero():
-    # CBA scope 0 means "local, but mission/server may overwrite it". ACME now intentionally uses:
-    # 1 for shared gameplay and 2 for genuinely client-owned presentation/accessibility.
-    combined = read("XEH_preInit.sqf") + "\n" + read("XEH_settings.hpp")
-    setting_heads = re.finditer(
-        r'\[\s*"(ACME_[^"]+)"\s*,\s*"(CHECKBOX|SLIDER|LIST|EDITBOX|COLOR)"',
-        combined,
-    )
-    names = [m.group(1) for m in setting_heads]
-    assert names
-    for name in names:
-        assert setting_scope(combined, name) in (1, 2), name
+    # CBA scope 0 means local but mission/server-overridable. ACME intentionally uses only:
+    # 1 = shared gameplay, 2 = genuinely client-owned presentation/accessibility.
+    pre = read("XEH_preInit.sqf")
+    extra = read("XEH_settings.hpp")
+    for text in (pre, extra):
+        names = _all_setting_names(text)
+        assert names
+        for name in names:
+            assert setting_scope(text, name) in (1, 2), name
