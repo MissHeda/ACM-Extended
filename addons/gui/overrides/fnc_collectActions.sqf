@@ -95,44 +95,6 @@ if ("ace_dragging" call ACEFUNC(common,isModLoaded)) then {
     ];
 };
 
-// ACME drag handle is part of the medical menu's Drag / Carry category regardless of ACE's ordinary drag
-// action-registration guard. Visibility is intentionally broad and stable: an unconscious living casualty shows
-// Attach Drag Handle unless a handle is already active. The click itself is owner-authoritative and returns a
-// specific rejection if another interaction/procedure wins a race after this row is painted.
-ACEGVAR(medical_gui,actions) pushBack [
-    "Attach Drag Handle", "drag",
-    {
-        private _target = ACEGVAR(medical_gui,target);
-        ACE_player != _target
-        && {!isNull _target}
-        && {alive _target}
-        && {!([_target] call ACEFUNC(common,isAwake))}
-        && {!(_target getVariable ["ACME_dragHandle_active", false])}
-    },
-    {
-        ACEGVAR(medical_gui,pendingReopen) = false;
-        [ACE_player, ACEGVAR(medical_gui,target)] call ACME_fnc_dragHandleStart;
-    },
-    [],
-    ""
-];
-
-ACEGVAR(medical_gui,actions) pushBack [
-    "Release Drag Handle", "drag",
-    {
-        private _target = ACEGVAR(medical_gui,target);
-        !isNull _target
-        && {_target getVariable ["ACME_dragHandle_active", false]}
-        && {(_target getVariable ["ACME_dragHandle_dragger", objNull]) isEqualTo ACE_player}
-    },
-    {
-        ACEGVAR(medical_gui,pendingReopen) = false;
-        [ACE_player, ACEGVAR(medical_gui,target), "manual"] call ACME_fnc_dragHandleStop;
-    },
-    [],
-    ""
-];
-
 // testing code for multi-line
 // for "_i" from 0 to 12 do {
 //     GVAR(actions) pushBack [format ["Example %1", _i], "medication", {true}, compile format ['systemChat "%1"', _i]]
