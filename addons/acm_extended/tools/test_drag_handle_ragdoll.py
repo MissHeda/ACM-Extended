@@ -145,3 +145,15 @@ def test_network_acknowledgements_are_session_guarded():
     assert "_session != _currentSession" in stop_medic
     assert "Public-variable replication" in runtime
     assert 'ACME_dragHandle_lastStoppedSession' in runtime
+
+
+def test_head_elevation_transport_semantics_survive_drag_handle():
+    start = read(FUN / "fn_dragHandleStartOwner.sqf")
+    stop = read(FUN / "fn_dragHandleStopOwner.sqf")
+    tick = read(FUN / "fn_dragHandleOwnerTick.sqf")
+    assert '"ACME_headElev_transportDown"' in start
+    assert '"patient_vehicle"' in tick
+    assert '"dragger_vehicle"' in tick
+    assert 'ACME_headElev_TransportPending' in stop
+    assert 'CBA_fnc_waitUntilAndExecute' in stop
+    assert '"ACME_headElev_transportUp"' in stop
