@@ -24,8 +24,12 @@ _patient setVariable ["ACME_dragHandle_session","",true];
 _patient setVariable ["ACME_dragHandle_tension",nil];
 _patient setVariable ["ACME_dragHandle_oldAceFlags",nil,true];
 
-// Restore passive head elevation after the casualty has been put back down. If a pose-owning procedure
+// Restore passive head elevation after the casualty has been put back down. A casualty loaded into a vehicle
+// intentionally loses the pending elevation, matching ACE carry-to-cargo semantics. If a pose-owning procedure
 // forced the release, wait until that procedure gives the patient animation lease back before trying to re-elevate.
+if (_reason == "patient_vehicle") then {
+    _patient setVariable ["ACME_headElev_TransportPending",nil,true];
+} else {
 if (_reason == "procedure" && {_patient getVariable ["ACME_headElev_TransportPending",false]}) then {
     [
         {
@@ -44,6 +48,7 @@ if (_reason == "procedure" && {_patient getVariable ["ACME_headElev_TransportPen
     ] call CBA_fnc_waitUntilAndExecute;
 } else {
     ["ACME_headElev_transportUp",[_patient]] call CBA_fnc_localEvent;
+};
 };
 
 if (!isNull _medic) then {
