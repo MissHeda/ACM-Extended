@@ -71,4 +71,6 @@ switch (_operation) do {
     case "patientAnimRequest": {_args call ACME_fnc_patientAnimRequest;};
     case "patientAnimRelease": {_args call ACME_fnc_patientAnimRelease;};
     case "treatmentPatientSettle": {_args call ACME_fnc_treatmentPatientSettle;};
+    case "dragHandleStart": {_args call ACME_fnc_dragHandleStartOwner;};
+    case "dragHandleStop": {_args call ACME_fnc_dragHandleStopOwner;};
 };
