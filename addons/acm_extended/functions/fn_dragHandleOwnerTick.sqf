@@ -10,15 +10,16 @@ private _stop = {
 
 if (isNull _patient || {isNull _medic}) exitWith {["lost"] call _stop;};
 if (!local _patient) exitWith {
+    // Do not leave a half-owned physics transaction after locality migration. The old owner retires its PFH and
+    // asks the new owner to perform an ordinary teardown. A later interaction can immediately attach again.
     [_handle] call CBA_fnc_removePerFrameHandler;
-    _patient setVariable ["ACME_dragHandle_forcePFH",-1];
-    [_patient,"dragHandleStart",[_patient,_medic]] call ACME_fnc_ownerDispatch;
+    [_patient,"dragHandleStop",[_patient,_medic,"locality"]] call ACME_fnc_ownerDispatch;
 };
 if !(_patient getVariable ["ACME_dragHandle_active",false]) exitWith {[_handle] call CBA_fnc_removePerFrameHandler;};
 if (!alive _patient || {!alive _medic}) exitWith {["death"] call _stop;};
 if (_medic getVariable ["ACE_isUnconscious",false]) exitWith {["dragger_unconscious"] call _stop;};
-if (!isNull objectParent _patient || {!isNull objectParent _medic}) exitWith {["vehicle"] call _stop;};
-if (_patient call ace_common_fnc_isBeingDragged || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["ace_transport"] call _stop;};
+if (!(isNull (objectParent _patient)) || {!(isNull (objectParent _medic))}) exitWith {["vehicle"] call _stop;};
+if ((_patient call ace_common_fnc_isBeingDragged) || {_patient call ace_common_fnc_isBeingCarried}) exitWith {["ace_transport"] call _stop;};
 if (_medic getVariable ["ace_dragging_isDragging",false] || {_medic getVariable ["ace_dragging_isCarrying",false]}) exitWith {["ace_transport"] call _stop;};
 
 private _handleModel = _patient selectionPosition "Spine3";
