@@ -58,7 +58,7 @@ if (_stretch > 0.01 && {_distance > 0.01}) then {
         private _damping = missionNamespace getVariable ["ACME_dragHandle_damping",2.1];
         private _maxAccel = missionNamespace getVariable ["ACME_dragHandle_maxAccel",5.2];
         private _weightScale = linearConversion [350,950,_weight,1,0.58,true];
-        private _accel = (((_stretch * _spring) - (_closing * _damping)) max 0) min _maxAccel) * _weightScale;
+        private _accel = ((((_stretch * _spring) - (_closing * _damping)) max 0) min _maxAccel) * _weightScale;
 
         // addForce uses impulse units. Multiply desired acceleration by physical mass and frame time.
         private _dt = (diag_deltaTime max 0.006) min 0.05;
