@@ -42,9 +42,14 @@ _patient setVariable ["ace_dragging_canDrag",false,true];
 _patient setVariable ["ace_dragging_canCarry",false,true];
 
 private _weight = [_patient] call ACME_fnc_dragHandleWeight;
+private _serial = (missionNamespace getVariable ["ACME_dragHandle_sessionSerial",0]) + 1;
+missionNamespace setVariable ["ACME_dragHandle_sessionSerial",_serial];
+private _session = format ["dh:%1:%2:%3",owner _patient,floor (CBA_missionTime * 1000),_serial];
+
 _patient setVariable ["ACME_dragHandle_active",true,true];
 _patient setVariable ["ACME_dragHandle_dragger",_medic,true];
 _patient setVariable ["ACME_dragHandle_weight",_weight,true];
+_patient setVariable ["ACME_dragHandle_session",_session,true];
 _patient setVariable ["ACME_dragHandle_tension",0];
 
 // A seizure remains physiologically active, but the spasm gesture yields to the live ragdoll while it is being dragged.
@@ -63,4 +68,4 @@ private _args = [_patient,_medic,_weight,CBA_missionTime];
 private _pfh = [{_this call ACME_fnc_dragHandleOwnerTick;},0,_args] call CBA_fnc_addPerFrameHandler;
 _patient setVariable ["ACME_dragHandle_forcePFH",_pfh];
 
-["ACME_dragHandle_startAck",[_medic,_patient,true,_weight,""],_medic] call CBA_fnc_targetEvent;
+["ACME_dragHandle_startAck",[_medic,_patient,true,_weight,"",_session],_medic] call CBA_fnc_targetEvent;
