@@ -2266,6 +2266,17 @@ class CfgFunctions {
             class patientAnimRequest {};
             class patientAnimRelease {};
             class treatmentPatientSettle {};
+            // Hands-free ragdoll casualty drag handle.
+            class initDragHandleRuntime {};
+            class dragHandleWeight {};
+            class dragHandleCanStart {};
+            class dragHandleStart {};
+            class dragHandleStartOwner {};
+            class dragHandleOwnerTick {};
+            class dragHandleStartMedic {};
+            class dragHandleStop {};
+            class dragHandleStopOwner {};
+            class dragHandleStopMedic {};
             class junctionalInjuryEntry {};
             class junctionalGuiSyncTick {};
             class aajtInjuryEntry {};
