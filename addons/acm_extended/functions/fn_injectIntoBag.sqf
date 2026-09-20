@@ -4,7 +4,7 @@ if (_context isEqualTo []) exitWith {};
 if ((missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "") exitWith {};
 private _mode = _context select 0;
 private _drawDisplay = findDisplay 84000;
-private _ml = uiNamespace getVariable ["ACME_SK_WasteFill", missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0]];
+private _ml = missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0];
 private _med = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Medication", ""];
 private _size = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10];
 
@@ -16,7 +16,7 @@ private _size = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size"
 if (finite _ml) then {_ml = (round ((_ml max 0) * 100)) / 100;};
 if (_ml <= 0 || {!finite _ml} || {_ml > _size + 0.001}) exitWith {};
 if !(_med in (missionNamespace getVariable ["ACME_infusion_allowedMedications", []])) exitWith {};
-if (uiNamespace getVariable ["ACME_SK_WasteMoving", false]) exitWith {};
+if (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]) exitWith {};
 private _hardMax = _size;
 if (!isNull _drawDisplay) then {
     private _sessionMax = (["limit", _med, _ml, _drawDisplay] call ACME_fnc_vialSession) min _size;

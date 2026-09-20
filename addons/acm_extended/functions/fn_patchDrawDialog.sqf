@@ -11,11 +11,22 @@ if (isNull _display) exitWith {};
 private _context = missionNamespace getVariable ["ACME_infusion_pendingContext", []];
 private _mode = if (_context isEqualTo []) then {"active"} else {_context select 0};
 
-// Prep Infusion deliberately uses the Narc Box compound plunger engine instead of maintaining a second syringe
-// movement implementation.  This gives infusion prep the exact same cursor/plunger geometry, physical-vial limit,
-// endpoint snapping and DrawnAmount calculation as the known-good Narc Box path.  We only replace the buttons below.
-if ((uiNamespace getVariable ["ACME_SK_WasteStage", ""]) != "compound") then {
-    call ACME_fnc_skCompoundBegin;
+// Prep Infusion is one medication at a time, so use ACM's native syringe mover directly.
+// The previous implementation borrowed the Narc Box compound layer, but that layer assumes every
+// pull is finalized with Draw and advances a component floor. Prep Infusion never performs that
+// component-lock step, which made release/re-grab and return-to-vial behavior diverge.
+// Native Syringe_Draw already has ACME's exact physical-vial clamp in its live drag loop.
+if ((uiNamespace getVariable ["ACME_SK_WasteStage", ""]) != "") then {
+    [] call ACME_fnc_skWasteEnd;
+};
+uiNamespace setVariable ["ACME_SK_WasteStage", ""];
+uiNamespace setVariable ["ACME_SK_WasteMoving", false];
+missionNamespace setVariable ["ACM_circulation_SyringeDraw_Moving", false];
+
+private _nativePlunger = _display displayCtrl 84009;
+if (!isNull _nativePlunger) then {
+    _nativePlunger ctrlSetEventHandler ["MouseButtonUp", "call ACM_circulation_fnc_Syringe_Draw_Move"];
+    _nativePlunger ctrlSetTooltip "Click to grab the plunger, move to draw or return medication, click again to release";
 };
 private _topText = ["Select medication, pull syringe, then inject into active saline bag", "Select medication, pull syringe, then prep the saline bag"] select (_mode == "prepared");
 private _bottomText = ["Active bag infusion mode", "Prepared bag mode - use Give Prep after inserting the IV/IO"] select (_mode == "prepared");
@@ -108,7 +119,8 @@ _tallyBody ctrlCommit 0;
 ACM_circulation_SyringeDraw_InventorySelection = 0;
 [] call ACM_circulation_fnc_Syringe_UpdateMedicationList;
 
-// The Narc Box compound PFH owns the live plunger. This PFH only refreshes stock/tally and button state.
+// ACM's native Syringe_Draw continuous action owns the live plunger. This PFH only refreshes
+// the infusion stock/tally and button state; it never writes plunger position or draw volume.
 private _stockPFH = _display getVariable ["ACME_infusionStockPFH", -1];
 if (_stockPFH < 0) then {
     _stockPFH = [{
