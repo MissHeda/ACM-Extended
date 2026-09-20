@@ -203,6 +203,9 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             canPullTrigger = 0;
             enableOptics = 0;
             enableBinocular = 0;
+            // The inherited Jets crew-aid state carries movement sound events. ACME uses this animation only as
+            // silent medical theatre, so disable inherited animation sounds and prevent jump_sfx lookups.
+            soundEnabled = 0;
             looped = 0;
             connectFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.20, "ACM_GenericContinuous", 0.15};
             interpolateFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.20, "ACM_GenericContinuous", 0.15};
@@ -252,6 +255,9 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             canPullTrigger = 0;
             enableOptics = 0;
             enableBinocular = 0;
+            // The parent cinematic loop also carries sound edges intended for deck crew movement. The frozen
+            // medical hold must be silent or Arma can repeatedly request the inherited jump_sfx class.
+            soundEnabled = 0;
             // The stock cinematic loop carries RTM movement. Running it at its authored speed is what makes a player
             // drift across the terrain while simply holding the bag. Keep the first raised-bag frame effectively
             // stationary on every client, while still leaving an explicit interrupt path into the authored lower-bag
@@ -281,6 +287,8 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             canPullTrigger = 0;
             enableOptics = 0;
             enableBinocular = 0;
+            // Do not inherit the Jets deck-crew foot/jump sound edge on the lower-bag animation.
+            soundEnabled = 0;
             looped = 0;
             // A non-looping exit with no ConnectTo can be skipped by the move graph. Give the hold a real route into
             // this state and let this state finish naturally into the normal empty-handed crouch.
