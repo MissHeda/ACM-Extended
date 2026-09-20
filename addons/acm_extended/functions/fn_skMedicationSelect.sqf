@@ -7,6 +7,14 @@ if (isNull _display) exitWith {};
 private _med = _list lbData _index;
 if (_med == "") exitWith {};
 
+// The visible ACME medication row drives ACM's hidden backing list. Do not wait for ACM's next per-frame pass
+// to publish the selected medication into the syringe session: a fast click-and-pull could otherwise keep the
+// previous medication identity/max dose for one frame. Bind the exact selected row immediately, matching the
+// normal Narc Box source identity before the plunger can move.
+missionNamespace setVariable ["ACM_circulation_SyringeDraw_Medication", _med];
+missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected_Index", _index];
+missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected", true];
+
 private _stage = uiNamespace getVariable ["ACME_SK_WasteStage", ""];
 if (_stage in ["compound","draw"] && {uiNamespace getVariable ["ACME_SK_WasteMoving", false]}) exitWith {};
 
@@ -33,5 +41,7 @@ if (_stage in ["compound","draw"]) then {
     };
 };
 
-["select", _med, _reserved, _display] call ACME_fnc_vialSession;
+private _selectedLimit = ["select", _med, _reserved, _display] call ACME_fnc_vialSession;
+private _size = (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10]) max 0.1;
+missionNamespace setVariable ["ACM_circulation_SyringeDraw_MaxDose", (_selectedLimit max 0) min _size];
 [_display] call ACME_fnc_skMedicationStockRefresh;

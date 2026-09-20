@@ -42,13 +42,13 @@ if (_patient getVariable [QGVAR(CarryAssist_State), false]) exitWith {
 
     // The on-screen Cancel hint is LMB. Handle the real mouse event as well as
     // CBA's synthetic DIK code, and consume Escape before the pause menu takes it.
-    private _oldDisplay = missionNamespace getVariable [QGVAR(CarryAssistCancel_Display), displayNull];
+    private _oldDisplay = uiNamespace getVariable [QGVAR(CarryAssistCancel_Display), displayNull];
     {
         _x params ["_event", "_id"];
         if (!isNull _oldDisplay && {_id >= 0}) then {_oldDisplay displayRemoveEventHandler [_event, _id];};
     } forEach (missionNamespace getVariable [QGVAR(CarryAssistCancel_DisplayEHs), []]);
     private _main = findDisplay 46;
-    GVAR(CarryAssistCancel_Display) = _main;
+    uiNamespace setVariable [QGVAR(CarryAssistCancel_Display), _main];
     GVAR(CarryAssistCancel_DisplayEHs) = [];
     if (!isNull _main) then {
         GVAR(CarryAssistCancel_Epoch) = _epoch;
@@ -85,13 +85,13 @@ if (_patient getVariable [QGVAR(CarryAssist_State), false]) exitWith {
     private _id = missionNamespace getVariable [QGVAR(CarryAssistCancel_MouseID), -1];
     if (!(_id isEqualTo -1) && {!(_id isEqualTo "")}) then {[_id, "keydown"] call CBA_fnc_removeKeyHandler;};
     GVAR(CarryAssistCancel_MouseID) = -1;
-    private _main = missionNamespace getVariable [QGVAR(CarryAssistCancel_Display), displayNull];
+    private _main = uiNamespace getVariable [QGVAR(CarryAssistCancel_Display), displayNull];
     {
         _x params ["_event", "_id"];
         if (!isNull _main && {_id >= 0}) then {_main displayRemoveEventHandler [_event, _id];};
     } forEach (missionNamespace getVariable [QGVAR(CarryAssistCancel_DisplayEHs), []]);
     GVAR(CarryAssistCancel_DisplayEHs) = [];
-    GVAR(CarryAssistCancel_Display) = displayNull;
+    uiNamespace setVariable [QGVAR(CarryAssistCancel_Display), displayNull];
 
     ["", "", ""] call ACEFUNC(interaction,showMouseHint);
 

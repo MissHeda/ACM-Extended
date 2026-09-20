@@ -3,12 +3,31 @@ private _context = missionNamespace getVariable ["ACME_infusion_pendingContext",
 if (_context isEqualTo []) exitWith {};
 if ((missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "") exitWith {};
 private _mode = _context select 0;
+private _drawDisplay = findDisplay 84000;
 private _ml = missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0];
 private _med = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Medication", ""];
 private _size = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10];
+
+// Commit the exact row that is selected in ACM's backing medication list. The visible ACME row maps one-to-one to
+// this list, so this removes the last timing window where a previous draw-session medication could be committed if
+// the provider selected a new drug and immediately pulled/injected.
+if (!isNull _drawDisplay) then {
+    private _medList = _drawDisplay displayCtrl 84006;
+    private _sel = if (isNull _medList) then {-1} else {lbCurSel _medList};
+    private _selectedMed = if (_sel >= 0) then {_medList lbData _sel} else {""};
+    if (_selectedMed != "") then {
+        _med = _selectedMed;
+        missionNamespace setVariable ["ACM_circulation_SyringeDraw_Medication", _med];
+        missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected_Index", _sel];
+        missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected", true];
+    };
+};
+
+// Syringe stock and filled-syringe payloads are represented to 0.01 mL. Snapshot the plunger at the same precision
+// before source debit and bag registration so the amount removed from the vial is exactly the amount put in the bag.
+if (finite _ml) then {_ml = (round ((_ml max 0) * 100)) / 100;};
 if (_ml <= 0 || {!finite _ml} || {_ml > _size + 0.001}) exitWith {};
 if !(_med in (missionNamespace getVariable ["ACME_infusion_allowedMedications", []])) exitWith {};
-private _drawDisplay = findDisplay 84000;
 if (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]) exitWith {};
 private _hardMax = _size;
 if (!isNull _drawDisplay) then {
