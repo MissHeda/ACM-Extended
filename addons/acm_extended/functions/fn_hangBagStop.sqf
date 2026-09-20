@@ -68,9 +68,8 @@ private _teardown = {
     private _sameEpisode = (_medic getVariable ["ACME_hang_Start", -2]) == _episodeStart;
     private _providerCanRestore = _sameEpisode && {!(_medic getVariable ["ACME_hang_Active", false])};
 
-    // Gear restoration is separate from presentation recovery. A dead provider is still a lootable/interactable
-    // unit and must get the temporarily removed primary/launcher back. If locality moved, route the one-shot restore
-    // to the new owner; the published snapshot and episode fingerprint make stale callbacks harmless.
+    // Equipment restoration is independent of animation/life state. A dead provider is still lootable and must
+    // get the primary/launcher which Hang Bag temporarily removed. Locality transfer routes the one-shot restore.
     if (_providerCanRestore) then {
         if (local _medic) then {
             [_medic, _episodeStart] call ACME_fnc_hangBagRestoreWeapons;
@@ -98,6 +97,7 @@ private _teardown = {
             if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
             if ((_m getVariable ["ACME_hang_Start", -2]) != _episodeStart) exitWith {};
             if (_m getVariable ["ACME_hang_Active", false]) exitWith {};
+            if ([_m] call ACME_fnc_providerStanceOwned) exitWith {};
             _m setUnitPos "AUTO";
         }, [_medic, _episodeStart], 0.85] call CBA_fnc_waitAndExecute;
     };
@@ -159,10 +159,12 @@ _medic setVariable ["ACME_hang_Pose", nil];
 _medic setVariable ["ACME_hang_PoseRetryAt", nil];
 _medic setVariable ["ACME_hang_Raising", false];
 
-if (!isNull _patient && {(_patient getVariable ["ACME_hang_Medic", objNull]) isEqualTo _medic}) then {
-    _patient setVariable ["ACME_hang_flowMult", 1, true];
-    _patient setVariable ["ACME_hang_Medic", objNull, true];
+if (!isNull _patient) then {
+    // Release only this exact claim. A delayed stop from an earlier episode cannot clear a newer Hang Bag.
+    [_patient, "hangBagRelease", [_medic, _episodeStart]] call ACME_fnc_ownerDispatch;
 };
+_medic setVariable ["ACME_hang_Claimed", false, false];
+_medic setVariable ["ACME_hang_ClaimRequestedAt", 0, false];
 if (!_silent) then {
     ["IV bag lowered.", 2, _medic] call ace_common_fnc_displayTextStructured;
 };

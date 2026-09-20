@@ -25,5 +25,11 @@ if (!isNull _op) then {
     private _tok=(_op getVariable ["ACME_MC_animTok",0])+1;
     _op setVariable ["ACME_MC_animTok",_tok,false];
     [_op,"Acts_Kore_TalkingOverRadio_out"] call ACME_fnc_doAnim;
-    [{params ["_u","_t"]; if (!isNull _u && {(_u getVariable ["ACME_MC_animTok",-1])==_t}) then {_u switchMove ""; _u setUnitPos "AUTO";};},[_op,_tok],1.0] call CBA_fnc_waitAndExecute;
+    [{
+        params ["_u","_t"];
+        if (isNull _u || {!local _u} || {!alive _u} || {(_u getVariable ["ACME_MC_animTok",-1]) != _t}) exitWith {};
+        if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
+        _u switchMove "";
+        _u setUnitPos "AUTO";
+    },[_op,_tok],1.0] call CBA_fnc_waitAndExecute;
 };

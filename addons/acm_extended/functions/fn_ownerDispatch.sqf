@@ -8,6 +8,12 @@ if (!local _patient) exitWith {
     } else {  };
 };
 switch (_operation) do {
+    case "coolerBoxTake": {_args call ACME_fnc_coolerBoxTakeCommit;};
+    case "coolerBoxPack": {_args call ACME_fnc_coolerBoxPackCommit;};
+    case "vialLease": {
+        _args params [["_medic",objNull,[objNull]],["_op","claim",[""]],["_token","",[""]]];
+        [_patient,_medic,_op,_token] call ACME_fnc_vialLeaseCommit;
+    };
     case "careGrace": {
         _args params [["_duration", 0, [0]]];
         if (finite _duration && {_duration >= 0}) then {
@@ -159,6 +165,7 @@ switch (_operation) do {
     };
     case "ivSite": {_args call ACME_fnc_ivPlacementLocal;};
     case "preparedAttach": {_args call ACME_fnc_preparedAttachLocal;};
+    case "preparedHang": {_args call ACME_fnc_preparedHangCommit;};
     case "arrest": {_args call ACME_fnc_arrestLocal;};
     case "rhythmSet": {_args call ACME_fnc_rhythmSet;};
     case "rhythmToggle": {_args call ACME_fnc_rhythmToggle;};

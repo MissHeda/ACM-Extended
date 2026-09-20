@@ -85,6 +85,9 @@ if (local _medic && {alive _medic} && {!(_medic getVariable ["ACE_isUnconscious"
                 if (isNull _u || {!local _u} || {!alive _u} || {!isNull objectParent _u}) exitWith {};
                 if ((_u getVariable ["ACME_treatmentPoseState", []]) isNotEqualTo []) exitWith {};
                 if ((_u getVariable ["ACME_treatmentPoseEpoch", 0]) != _ep) exitWith {};
+                // A different controller may have acquired the provider after this treatment ended without touching
+                // treatmentPoseEpoch. Never let the old delayed stance release break that newer pose.
+                if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
                 _u setUnitPos "AUTO";
             }, [_unit, _endedEpoch], 0.85] call CBA_fnc_waitAndExecute;
         }, [_medic, _currentEpoch], 0.12] call CBA_fnc_waitAndExecute;

@@ -14,6 +14,7 @@ uiNamespace setVariable ["ACME_SK_TagEditMode", false];
 uiNamespace setVariable ["ACME_SK_CarouselZoneHover", false];
 uiNamespace setVariable ["ACME_SK_PendingInjection", []];
 uiNamespace setVariable ["ACME_SK_DiscardArmedId", ""];
+[ACE_player] call ACME_fnc_vialLeaseRelease;
 {
     private _h = uiNamespace getVariable [_x, -1];
     if (_h >= 0) then {[_h] call CBA_fnc_removePerFrameHandler;};

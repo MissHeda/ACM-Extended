@@ -84,6 +84,7 @@ private _prepUntil = CBA_missionTime + ((_prepDelay max 0) max 0.05);
                 if (isNull _unit || {!local _unit} || {!alive _unit} || {!isNull objectParent _unit}) exitWith {};
                 if ((_unit getVariable ["ACME_headElev_medicAnimToken", -1]) != _finishedToken) exitWith {};
                 if (_unit getVariable ["ACME_headElev_seqActive", false]) exitWith {};
+                if ([_unit] call ACME_fnc_providerStanceOwned) exitWith {};
                 _unit setUnitPos "AUTO";
             }, [_u, _token], 0.25] call CBA_fnc_waitAndExecute;
         };

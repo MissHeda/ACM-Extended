@@ -37,6 +37,7 @@ if (alive _medic && {isNull objectParent _medic}) then {
         params ["_m"];
         if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
         if (_m getVariable ["ACME_headElev_seqActive", false]) exitWith {};
+        if ([_m] call ACME_fnc_providerStanceOwned) exitWith {};
         _m setUnitPos "AUTO";
     }, [_medic], 0.25] call CBA_fnc_waitAndExecute;
 };

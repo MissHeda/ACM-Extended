@@ -1871,12 +1871,15 @@ class CfgFunctions {
             class preparedAttachRequest {};
             class preparedAttachLocal {};
             class preparedAttachAck {};
+            class preparedHangCommit {};
+            class preparedHangResult {};
             class bagIdentity {};
             class infusionRegisterLocal {};
             class infusionRegisterCore {};
             class infusionAck {};
             class infusionRetire {};
             class infusionRemoveLocal {};
+            class infusionRemoveResult {};
             class yFlushStart {};
             class yFlushTick {};
             class clinicalBagMove {};
@@ -2084,6 +2087,11 @@ class CfgFunctions {
             class coolerBoxApplyScale {};
             class coolerBoxPackUp {};
             class coolerBoxColdChainTick {};
+            class coolerBoxTake {};
+            class coolerBoxTakeCommit {};
+            class coolerBoxTakeResult {};
+            class coolerBoxPackCommit {};
+            class coolerBoxPackResult {};
             class popClots {};
             class clotPopTick {};
             class cancelInfusionDraw {};
@@ -2560,6 +2568,7 @@ class CfgFunctions {
             class treatmentGesture {};
             class treatmentPoseStop {};
             class treatmentPoseSync {};
+            class providerStanceOwned {};  // Batch 07
             class beginStethoscopeAction {};
             class stethoscopeInit {};
             class stethoscopeSetView {};
@@ -2757,6 +2766,10 @@ class CfgFunctions {
             class vialTake {};
             class openVialStoreCommit {};
             class vialRefund {};
+            class vialLeaseCommit {};
+            class vialLeaseEnsure {};
+            class vialLeaseRelease {};
+            class vialLeaseResult {};
             class infusionVialVolume {};
             class infusionTakeSupplies {};
             class infusionRefundSupplies {};
@@ -3022,7 +3035,7 @@ class ACME_RollerClamp_Dialog {
     enableSimulation = 1;
     onLoad = "[_this select 0] call ACME_fnc_minigameInputInstall; call ACME_fnc_onClampLoad";
     onMouseZChanged = "_this call ACME_fnc_scrollClamp";
-    onUnload = "uiNamespace setVariable ['ACME_RollerClamp_DLG', displayNull]; uiNamespace setVariable ['ACME_RollerClamp_InitDisplay', displayNull]; uiNamespace setVariable ['ACME_RollerClamp_Dragging', false]; uiNamespace setVariable ['ACME_RollerClamp_ReleaseOnUp', false]; uiNamespace setVariable ['ACME_RollerClamp_Track', []];";
+    onUnload = "[uiNamespace getVariable ['ACME_RollerClamp_Position',1], true, false] call ACME_fnc_setClampPosition; uiNamespace setVariable ['ACME_RollerClamp_DLG', displayNull]; uiNamespace setVariable ['ACME_RollerClamp_InitDisplay', displayNull]; uiNamespace setVariable ['ACME_RollerClamp_Dragging', false]; uiNamespace setVariable ['ACME_RollerClamp_ReleaseOnUp', false]; uiNamespace setVariable ['ACME_RollerClamp_Track', []];";
 
     class ControlsBackground {
         class ACME_Backdrop: RscText {

@@ -44,8 +44,15 @@ private _fnc_stopSfx = {
 {
     private _u = _x;
     if (isNull _u || {!local _u}) then { continue; };
-    if (!alive _u || {!(_u getVariable ["ACME_nrb_on", false])}) then {
-        if (!isNull _u) then { [_u] call _fnc_stopSfx; [_u, false, -1, -1, true, false] call ACME_fnc_nrbStateCommit; };
+    // Death freezes oxygen delivery, but it must not make the physical mask disappear.  The corpse keeps the same
+    // ACME_nrb_on/hasO2 evidence until a medic explicitly removes it; only sound and active delivery are stopped.
+    // This also prevents the presence/absence of the Remove NRB action from becoming a death-state oracle.
+    if (!alive _u) then {
+        [_u] call _fnc_stopSfx;
+        continue;
+    };
+    if !(_u getVariable ["ACME_nrb_on", false]) then {
+        [_u] call _fnc_stopSfx;
         continue;
     };
     private _now = CBA_missionTime;

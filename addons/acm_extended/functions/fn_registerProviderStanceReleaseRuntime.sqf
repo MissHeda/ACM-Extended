@@ -105,11 +105,9 @@
         [{
             params ["_m"];
             if (isNull _m || {!local _m} || {!alive _m} || {!isNull objectParent _m}) exitWith {};
-            if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false])
-                && {_m isEqualTo ACE_player}) exitWith {};
-            if ((_m getVariable ["ACME_treatmentPoseState", []]) isNotEqualTo []
-                || {_m getVariable ["ACME_rollProviderActive", false]}
-                || {_m getVariable ["ACME_headElev_seqActive", false]}) exitWith {};
+            // Completion events can be followed immediately by another action or by the medical menu reopening.
+            // The ended treatment no longer owns stance at this point, so a newer owner always wins.
+            if ([_m] call ACME_fnc_providerStanceOwned) exitWith {};
             _m setUnitPos "AUTO";
         }, [_medic], 0.12] call CBA_fnc_waitAndExecute;
     }] call CBA_fnc_addEventHandler;

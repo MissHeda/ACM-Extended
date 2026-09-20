@@ -8,6 +8,7 @@ ACME_NA2_ownerInstalled = true;
 ["ACME_rehangUsedBagResult", {_this call ACME_fnc_rehangUsedBagResult;}] call CBA_fnc_addEventHandler;
 ["ACME_yRefillResult", {_this call ACME_fnc_yRefillResult;}] call CBA_fnc_addEventHandler;
 ["ACME_discardYTubingResult", {_this call ACME_fnc_discardYTubingResult;}] call CBA_fnc_addEventHandler;
+["ACME_vialLeaseResult", {_this call ACME_fnc_vialLeaseResult;}] call CBA_fnc_addEventHandler;
 ["ACME_hpmkReturnItem", {
     params [["_receiver", objNull, [objNull]]];
     if (!isNull _receiver && {local _receiver}) then {
