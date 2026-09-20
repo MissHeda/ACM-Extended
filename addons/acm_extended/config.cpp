@@ -2539,6 +2539,7 @@ class CfgFunctions {
             class hangBagVisualSync {};
             class hangBagTick {};
             class hangBagStop {};
+            class hangBagRestoreWeapons {};
             class hangBagInputLock {};
             class hangBagHint {};
             class hangBagTuneOpen {};
