@@ -551,7 +551,25 @@ if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
         [_unit, ""] call EFUNC(circulation,updateActiveFluidBags);
         _unit setVariable [QEGVAR(circulation,IV_Bags_FreshBloodEffect), 0, true];
     } else {
-        _unit setVariable [QEGVAR(circulation,IV_Bags), _fluidBags, _syncValues];
+        // The casualty owner changes bag volume every medical tick, but ACM's normal whole-patient sync cadence
+        // is too sparse for a remote medic who is actively watching the transfusion menu. Keep the exact map local
+        // every tick and publish a changed map at no more than 4 Hz. This makes remote bag volume visibly flow
+        // without returning to per-frame network spam.
+        private _acmeBagUiSig = str _fluidBags;
+        private _acmeBagUiLastSig = _unit getVariable ["ACME_transfusionUiBagSig", ""];
+        private _acmeBagUiLastAt = _unit getVariable ["ACME_transfusionUiBagSyncAt", -1];
+        private _acmeBagUiChanged = _acmeBagUiSig != _acmeBagUiLastSig;
+        private _acmeBagUiPublish = _syncValues || {
+            _acmeBagUiChanged && {
+                _acmeBagUiLastAt < 0 || {(CBA_missionTime - _acmeBagUiLastAt) >= 0.25}
+            }
+        };
+
+        _unit setVariable [QEGVAR(circulation,IV_Bags), _fluidBags, _acmeBagUiPublish];
+        if (_acmeBagUiPublish) then {
+            _unit setVariable ["ACME_transfusionUiBagSig", _acmeBagUiSig, false];
+            _unit setVariable ["ACME_transfusionUiBagSyncAt", CBA_missionTime, false];
+        };
         _unit setVariable [QEGVAR(circulation,IV_Bags_FreshBloodEffect), _freshBloodEffectiveness, _syncValues];
     };
 };
