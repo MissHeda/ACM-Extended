@@ -7749,6 +7749,38 @@ class ace_medical_treatment_actions {
     class RemoveIV_14_Upper { condition = "false"; };
     class RemoveIV_14_Middle { condition = "false"; };
     class RemoveIV_14_Lower { condition = "false"; };
+
+    // IO removal is kept independent from the native peripheral-IV removal hierarchy.  The IV rows above are
+    // intentionally hidden because peripheral catheters come out through the IV minigame.  IOs have no draggable
+    // hub, so they need their own medical-menu removal actions.  Using ACME-owned classes here prevents a later
+    // change to RemoveIV_16_Upper from suppressing IO removal through config inheritance/load-order merging.
+    class RemoveIO_FAST1 { condition = "false"; };
+    class RemoveIO_EZ { condition = "false"; };
+    class ACME_RemoveIO_FAST1 {
+        displayName = "$STR_ACM_Circulation_RemoveIO_FAST1";
+        displayNameProgress = "$STR_ACM_Circulation_RemoveIO_FAST1_Progress";
+        icon = "";
+        category = "advanced";
+        treatmentLocations = 0;
+        medicRequired = 0;
+        treatmentTime = 3.5;
+        allowedSelections[] = {"Body"};
+        allowSelfTreatment = 0;
+        items[] = {};
+        consumeItem = 0;
+        condition = "[_patient, _bodyPart, 4] call ACM_circulation_fnc_hasIO";
+        callbackSuccess = "[_medic, _patient, _bodyPart, 4, false, false] call ACM_circulation_fnc_setIV";
+        ACM_menuIcon = "ACM_IO_FAST";
+    };
+    class ACME_RemoveIO_EZ: ACME_RemoveIO_FAST1 {
+        displayName = "$STR_ACM_Circulation_RemoveIO_EZ";
+        displayNameProgress = "$STR_ACM_Circulation_RemoveIO_EZ_Progress";
+        allowedSelections[] = {"LeftArm", "RightArm", "LeftLeg", "RightLeg"};
+        condition = "[_patient, _bodyPart, 3] call ACM_circulation_fnc_hasIO";
+        callbackSuccess = "[_medic, _patient, _bodyPart, 3, false, false] call ACM_circulation_fnc_setIV";
+        ACM_menuIcon = "ACM_IO_EZ";
+    };
+
     class InsertIO_FAST1: InsertIV_16_Upper {
         // B45 keeps ACM's insertion mechanics, then an owner-local setIVLocal handler guarantees a moderate-pain
         // floor. Fluid through the IO invokes ACME_fnc_ioPainResponse for max pain and delayed syncope.
