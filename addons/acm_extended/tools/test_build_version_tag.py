@@ -9,9 +9,7 @@ def read(rel: str) -> str:
 
 def test_release_is_the_cfgpatches_version():
     config = read("config.cpp")
-    assert 'version = "1.2.2";' in config
-
-
+    assert 'version = "1.2.2.1";' in config
 def test_both_debug_pages_render_cfgpatches_version():
     for rel in [
         "functions/fn_debugMenuClinical.sqf",
