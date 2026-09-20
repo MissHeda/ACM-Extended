@@ -227,7 +227,22 @@ private _fnc_updateSelectedMedication = {
         private _ctrlPlunger = _display displayCtrl IDC_SYRINGEDRAW_PLUNGER;
         private _ctrlPlungerVisual = _display displayCtrl GVAR(SyringeDraw_Ctrl_PlungerVisual);
 
-        private _bottomLimit = linearConversion [0, _size, GVAR(SyringeDraw_MaxDose), GVAR(SyringeDraw_Ctrl_LimitTop), GVAR(SyringeDraw_Ctrl_LimitBottom), true];
+        // ACME partial-vial accounting is stricter than ACM's configured vial volume after the first bag injection.
+        // Read the session ceiling inside the actual drag loop so there is no one-frame window where selecting the
+        // medication restores a full-vial MaxDose and lets the plunger overshoot the remaining physical solution.
+        // This also makes ACM the single writer of the plunger while it is moving; ACME only supplies the limit.
+        private _effectiveMax = GVAR(SyringeDraw_MaxDose);
+        if !(isNil "ACME_fnc_vialSession") then {
+            private _acmeDisplay = uiNamespace getVariable [QGVAR(SyringeDraw_DLG), displayNull];
+            private _acmeMed = GVAR(SyringeDraw_Medication);
+            if (!isNull _acmeDisplay && {_acmeMed != ""}) then {
+                _effectiveMax = ["limit", _acmeMed, GVAR(SyringeDraw_DrawnAmount), _acmeDisplay] call ACME_fnc_vialSession;
+            };
+        };
+        _effectiveMax = (_effectiveMax max 0) min _size;
+        GVAR(SyringeDraw_MaxDose) = _effectiveMax;
+
+        private _bottomLimit = linearConversion [0, _size, _effectiveMax, GVAR(SyringeDraw_Ctrl_LimitTop), GVAR(SyringeDraw_Ctrl_LimitBottom), true];
         private _bottomLimitMouse = _bottomLimit + (0.026 * (0.55 / (getResolution select 5)));
 
         getMousePosition params ["_mouseX", "_mouseY"];
@@ -248,6 +263,10 @@ private _fnc_updateSelectedMedication = {
         _ctrlPlungerVisual ctrlCommit 0;
 
         private _amountDrawn = linearConversion [GVAR(SyringeDraw_Ctrl_LimitTop), GVAR(SyringeDraw_Ctrl_LimitBottom), _newY, 0, _size, true];
+        _amountDrawn = (_amountDrawn max 0) min _effectiveMax;
+        // Preserve exact 0.00 / vial-limit endpoints rather than leaving a 0.01 mL geometry remnant.
+        if ((_effectiveMax - _amountDrawn) <= 0.015 && {_newY >= _bottomLimit - (2 * pixelH)}) then {_amountDrawn = _effectiveMax;};
+        if (_amountDrawn <= 0.015 && {_newY <= GVAR(SyringeDraw_Ctrl_LimitTop) + (2 * pixelH)}) then {_amountDrawn = 0;};
 
         GVAR(SyringeDraw_DrawnAmount) = _amountDrawn;
     };

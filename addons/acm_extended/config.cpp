@@ -2776,6 +2776,7 @@ class CfgFunctions {
             class infusionRefundSupplies {};
             class queueInfusionClamp {};
             class infusionDrawStock {};
+            class syringeDrawSetAmount {};
             class sedationComponents {};
             class proceduralAnalgesiaOnBoard {};
             class proceduralAnesthetized {};

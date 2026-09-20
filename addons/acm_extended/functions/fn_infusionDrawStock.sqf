@@ -18,14 +18,17 @@ if (_med != "") then {
     private _hardMax = (ACM_circulation_SyringeDraw_Size min (_limit max 0)) max 0;
     ACM_circulation_SyringeDraw_MaxDose = _hardMax;
 
-    // Never allow infusion prep's state to get ahead of the physical vial even for one UI frame. skUiTick owns
-    // the continuous physical stop; this is the commit-side belt-and-suspenders clamp for the first pull.
+    // If shared stock/source changed underneath an already-staged draw, repair amount and artwork together.
+    // Never write DrawnAmount alone: that is what makes the native hit-control and visible plunger separate.
     if (_drawn > _hardMax + 0.0001) then {
-        ACM_circulation_SyringeDraw_DrawnAmount = _hardMax;
+        [_hardMax, _display, false] call ACME_fnc_syringeDrawSetAmount;
         _drawn = _hardMax;
     };
 };
 private _busy = (missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "";
-(_display displayCtrl 84003) ctrlEnable (!_busy && {_drawn > 0} && {_med in _allowed});
+private _moving = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false];
+// Commit only a settled plunger. Clicking Inject Into Bag while the plunger is still captured used to let the
+// native drag loop and the reset path write the controls at the same time.
+(_display displayCtrl 84003) ctrlEnable (!_busy && {!_moving} && {_drawn > 0} && {_med in _allowed});
 [_display] call ACME_fnc_skMedicationStockRefresh;
 [] call ACME_fnc_infusionRefreshTally;
