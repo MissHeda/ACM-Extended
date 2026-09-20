@@ -2401,6 +2401,7 @@ class CfgFunctions {
             class headElevAnimGuard {};
             class doAnimHeld {};
             class setVarNet {};
+            class setVarNetApprox {};
             class headElevDeathRelease {};
             class headElevVestRestore {};
             class headElevWatch {};

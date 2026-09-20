@@ -17,7 +17,7 @@ private _now = CBA_missionTime;
             _type = toLowerANSI (_forced param [0,"none"]);
             _sev = (_forced param [1,0]) max 0 min 1;
         } else {
-            _u setVariable ["ACME_shock_forced", [], true];
+            [_u,"ACME_shock_forced",[]] call ACME_fnc_setVarNet;
         };
     };
 
@@ -55,8 +55,8 @@ private _now = CBA_missionTime;
 
     // Publish source-separated hemodynamic drives. The authoritative fork-native HR/resistance endpoints
     // compose these once with native physiology; this PFH never fights those writers directly.
-    _u setVariable ["ACME_shock_resistDelta", _svrAdj, true];
-    _u setVariable ["ACME_shock_hrAdj", _hrAdj, true];
+    [_u,"ACME_shock_resistDelta",_svrAdj,0.10,2] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_shock_hrAdj",_hrAdj,0.10,2] call ACME_fnc_setVarNetApprox;
 
     // Forced cardiogenic/neurogenic shock needs a pressure-failure component even with preserved blood volume.
     // Reuse ACME's established shock MAP-drop state, and relinquish it cleanly when this layer no longer owns it.
@@ -64,24 +64,36 @@ private _now = CBA_missionTime;
     if (_type in ["cardiogenic","neurogenic","obstructive"]) then {
         private _circ = _u getVariable ["ACME_circ_State",createHashMap];
         if !(_circ isEqualType createHashMap) then {_circ = createHashMap;};
+        private _oldActive = _circ getOrDefault ["shockActive",false];
+        private _oldSeverity = _circ getOrDefault ["shockSeverity",0];
         _circ set ["shockActive",true];
         _circ set ["shockSeverity",_sev];
-        _u setVariable ["ACME_circ_State",_circ,true];
+        if (!_oldActive || {abs (_oldSeverity - _sev) >= 0.005}) then {
+            _u setVariable ["ACME_circ_State",_circ,true];
+        } else {
+            _u setVariable ["ACME_circ_State",_circ,false];
+        };
         _u setVariable ["ACME_shock_ownsCirc",true,false];
         if (!isNil "ACME_circ_activePatients") then {ACME_circ_activePatients pushBackUnique _u;};
     } else {
         if (_ownsCirc) then {
             private _circ = _u getVariable ["ACME_circ_State",createHashMap];
             if (_circ isEqualType createHashMap) then {
+                private _wasActive = _circ getOrDefault ["shockActive",false];
+                private _wasSeverity = _circ getOrDefault ["shockSeverity",0];
                 _circ set ["shockActive",false];
                 _circ set ["shockSeverity",0];
-                _u setVariable ["ACME_circ_State",_circ,true];
+                if (_wasActive || {_wasSeverity != 0}) then {
+                    _u setVariable ["ACME_circ_State",_circ,true];
+                } else {
+                    _u setVariable ["ACME_circ_State",_circ,false];
+                };
             };
             _u setVariable ["ACME_shock_ownsCirc",false,false];
         };
     };
 
-    _u setVariable ["ACME_shock_phenotype",_type,true];
-    _u setVariable ["ACME_shock_severity",_sev,true];
-    _u setVariable ["ACME_shock_warm",(_type == "distributive" || {_type == "neurogenic"}),true];
+    [_u,"ACME_shock_phenotype",_type] call ACME_fnc_setVarNet;
+    [_u,"ACME_shock_severity",_sev,0.002,2] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_shock_warm",(_type == "distributive" || {_type == "neurogenic"})] call ACME_fnc_setVarNet;
 } forEach allUnits;

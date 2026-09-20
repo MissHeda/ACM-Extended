@@ -87,11 +87,15 @@
 
     private _spo2 = _u getVariable ["ace_medical_spo2",100];
     private _worst = (_u getVariable ["ACME_MC_aarWorstSpO2",100]) min _spo2;
-    _u setVariable ["ACME_MC_aarWorstSpO2",_worst,true];
+    if (_worst < (_u getVariable ["ACME_MC_aarWorstSpO2",100])) then {
+        _u setVariable ["ACME_MC_aarWorstSpO2",_worst,true];
+    };
     private _bp = if (!isNil "ace_medical_status_fnc_getBloodPressure") then {[_u] call ace_medical_status_fnc_getBloodPressure} else {[0,0]};
     _bp params ["_dbp","_sbp"];
     private _lowSBP = (_u getVariable ["ACME_MC_aarLowestSBP",999]) min _sbp;
-    _u setVariable ["ACME_MC_aarLowestSBP",_lowSBP,true];
+    if (_lowSBP < (_u getVariable ["ACME_MC_aarLowestSBP",999])) then {
+        _u setVariable ["ACME_MC_aarLowestSBP",_lowSBP,true];
+    };
     private _hypoxBand = if (_spo2 < 80) then {2} else {if (_spo2 < 90) then {1} else {0}};
     if (_hypoxBand > (_last getOrDefault ["hypox",0])) then {[_u,"hypoxia",format ["SpO2 crossed %1%%",if (_hypoxBand==2) then {80} else {90}],_hypoxBand] call ACME_fnc_megacodeAARRecord;};
     _last set ["hypox",_hypoxBand];

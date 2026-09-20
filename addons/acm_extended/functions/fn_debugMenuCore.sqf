@@ -692,10 +692,10 @@ _linesR pushBack ([
 
 if (missionNamespace getVariable ["ACME_debug_showCirc", true]) then {
     private _circState = _patient getVariable ["ACME_circ_State", createHashMap];
-    private _shock = [_patient, "ACME_circ_shockSeverity", 0] call _fnNum;
+    private _shock = _circState getOrDefault ["shockSeverity", 0];
     private _bpOffset = [_patient, "ACME_circ_bpOffset", 0] call _fnNum;
     private _hrPin = [_patient, "ACME_rhythm_HRPin", 0] call _fnNum;
-    private _pressor = [_patient, "ACME_circ_pressorSupport", 0] call _fnNum;
+    private _pressor = _circState getOrDefault ["pressorSupport", 0];
     private _pde = [_patient, "ACME_pde_support", 0] call _fnNum;
     private _distal = [_patient, "ACME_circ_distalPressorSpike", 0] call _fnNum;
     private _ca = [_patient, "ACME_calciumCredit", 0] call _fnNum;
@@ -877,7 +877,8 @@ _linesR pushBack "";
 _linesR pushBack format ["<t color='%1'>RHYTHM / AED</t>", _cSect];
 private _nativeRhythm = round ([_patient, "ACM_circulation_Cardiac_RhythmState", 0] call _fnNum);
 private _customRhythm = round ([_patient, "ACME_rhythm_active", 0] call _fnNum);
-private _visualRhythm = round ([_patient, "ACME_AED_VisualRhythm", 0] call _fnNum);
+private _aedRhythm = round ([_patient, "ACM_circulation_AED_EKGRhythm", _nativeRhythm] call _fnNum);
+private _visualRhythm = if (_customRhythm >= 100 && {!(_aedRhythm in [-1,1,2])}) then {_customRhythm} else {_aedRhythm};
 private _rhColor = [_nativeRhythm, _customRhythm] call _fnColorRhythm;
 _linesR pushBack ([
     ["Active", _customRhythm, _rhColor, 7, 7] call _fnKV,

@@ -38,9 +38,11 @@
     private _extraMult = (1 / (_strength max 0.10)) max 1 min 3.0;
 
     private _published = (_base * _extraMult) max 1 min 5;
-    _u setVariable ["ACME_coag_clotStrength",_strength,true];
-    _u setVariable ["ACME_coag_dilutionSeverity",_dilutionSeverity,true];
-    _u setVariable ["ACME_coag_extraMult",_extraMult,true];
-    _u setVariable ["ACME_ca_coagMult",_published,true];
+    // The 5 Hz physiology remains exact on the patient owner. Observers only need
+    // clinically meaningful changes, plus a periodic refresh for locality/JIP safety.
+    [_u,"ACME_coag_clotStrength",_strength,0.002,3] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_coag_dilutionSeverity",_dilutionSeverity,0.002,3] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_coag_extraMult",_extraMult,0.005,3] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_ca_coagMult",_published,0.005,3] call ACME_fnc_setVarNetApprox;
     _u setVariable ["ACME_coag_lastPublished",_published,false];
 } forEach allUnits;

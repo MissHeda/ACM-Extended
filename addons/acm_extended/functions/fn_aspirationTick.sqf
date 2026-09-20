@@ -35,8 +35,10 @@ private _now = CBA_missionTime;
         private _gain = linearConversion [1,8,_stage,0.06,0.32,true] * _protection;
         if (_gain > 0.005) then {
             _load = (_load + _gain) min 1;
-            _u setVariable ["ACME_aspiration_load",_load,true];
-            _u setVariable ["ACME_aspiration_lastAt",_now,true];
+            [_u,"ACME_aspiration_load",_load,0.001,5] call ACME_fnc_setVarNetApprox;
+            // Used only by this owner-side model; a raw scheduler timestamp has no
+            // cross-machine meaning and never needs to be replicated.
+            _u setVariable ["ACME_aspiration_lastAt",_now,false];
             if (!isNil "ace_medical_treatment_fnc_addToLog") then {
                 [_u,"airway",format ["Aspiration suspected (lung burden %1%%)",round (_load*100)],[]] call ace_medical_treatment_fnc_addToLog;
             };
@@ -53,7 +55,7 @@ private _now = CBA_missionTime;
     if (_load > 0) then {
         private _recovery = if ((_u getVariable ["ace_medical_spo2",90]) >= 94) then {0.00006} else {0.00002};
         _load = (_load - (_recovery * _dt)) max 0;
-        _u setVariable ["ACME_aspiration_load",_load,true];
+        [_u,"ACME_aspiration_load",_load,0.001,5] call ACME_fnc_setVarNetApprox;
     };
 
     // Aspiration pneumonitis can progress to non-cardiogenic pulmonary edema from inflammatory capillary leak.
@@ -73,10 +75,10 @@ private _now = CBA_missionTime;
     // manifestation extends established injury without double-counting the same aspiration event.
     private _injury = _load max (0.85 * _edema);
     private _crackleThreshold = missionNamespace getVariable ["ACME_aspiration_edemaCrackleThreshold",0.12];
-    _u setVariable ["ACME_aspiration_edema",_edema,true];
-    _u setVariable ["ACME_aspiration_edemaActive",_edema >= _crackleThreshold,true];
-    _u setVariable ["ACME_aspiration_injury",_injury,true];
-    _u setVariable ["ACME_aspiration_SpO2Penalty",30 * _injury,true];
+    [_u,"ACME_aspiration_edema",_edema,0.001,5] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_aspiration_edemaActive",_edema >= _crackleThreshold] call ACME_fnc_setVarNet;
+    [_u,"ACME_aspiration_injury",_injury,0.001,5] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_aspiration_SpO2Penalty",30 * _injury,0.03,5] call ACME_fnc_setVarNetApprox;
 
     // Spontaneous-breathing physiology. Ventilated oxygenation consumes the same effective injury through
     // ACME_fnc_ventOxygenation, where PEEP can recruit part of the flooded/collapsed lung.
@@ -99,8 +101,8 @@ private _now = CBA_missionTime;
     private _lastAdj = _u getVariable ["ACME_aspiration_lastRRAdj",0];
     private _nativeRR = (_curRR - _lastAdj) max 0;
     private _adj = 14 * _injury;
-    _u setVariable ["ACM_core_TargetVitals_RespirationRate",(_nativeRR + _adj) min 45,true];
+    [_u,"ACM_core_TargetVitals_RespirationRate",(_nativeRR + _adj) min 45,0.02,3] call ACME_fnc_setVarNetApprox;
     _u setVariable ["ACME_aspiration_lastRRAdj",_adj,false];
-    _u setVariable ["ACME_aspiration_RRDrive",_adj,true];
-    _u setVariable ["ACME_aspiration_shunt",0.30 * _injury,true];
+    [_u,"ACME_aspiration_RRDrive",_adj,0.02,5] call ACME_fnc_setVarNetApprox;
+    [_u,"ACME_aspiration_shunt",0.30 * _injury,0.0005,5] call ACME_fnc_setVarNetApprox;
 } forEach allUnits;

@@ -25,8 +25,8 @@ if (!alive _d) exitWith {[_d] call ACME_fnc_megacodeRespawn;};
 if (_d getVariable ["ace_medical_inCardiacArrest",false]) then {[_d,0,false] call ACME_fnc_megacodeArrest;};
 if (_d getVariable ["ACE_isUnconscious",false]) then {[_d,false] call ace_medical_status_fnc_setUnconsciousState;};
 
-_d setVariable ["ACME_MC_arrestElapsed",0,true];
-_d setVariable ["ACME_MC_arrestLast",CBA_missionTime,true];
+_d setVariable ["ACME_MC_arrestElapsed",0,false];
+_d setVariable ["ACME_MC_arrestLast",CBA_missionTime,false];
 _d setVariable ["ACME_MC_dying",false,true];
 _d setVariable ["ACME_AED_ElectricalRateRhythm",-999,false];
 _d setVariable ["ACME_AED_ElectricalRateLastUpdate",-1,false];

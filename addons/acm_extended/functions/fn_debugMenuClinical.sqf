@@ -211,7 +211,7 @@ _left pushBack (["Ext", format ["%1 mL/min", round _bleedMlMin], _bleedCol, "Jun
 _left pushBack (["Internal", format ["%1", round _intBleed], if (_intBleed > 0) then {_cBad} else {_cGood}, "Hemo", format ["%1", round _hemoBleed], if (_hemoBleed > 0) then {_cBad} else {_cGood}] call _pair);
 _left pushBack (["Cap", format ["%1", round _capBleed], if (_capBleed > 0) then {_cWarn} else {_cGood}, "SrcTot", format ["%1 mL/min", round _totalBleed], if (_totalBleed >= 500) then {_cBad} else {if (_totalBleed > 0) then {_cWarn} else {_cGood}}] call _pair);
 _left pushBack (["Vaso", _vaso toFixed 2, _cLabel, "Plate", _plate toFixed 2, if (_plate < 1.5) then {_cWarn} else {_cGood}] call _pair);
-private _pressor = _patient getVariable ["ACME_circ_pressorSupport", 0];
+private _pressor = _circState getOrDefault ["pressorSupport", 0];
 private _svr = _patient getVariable ["ace_medical_peripheralResistance", 100];
 _left pushBack (["Pressor", _pressor toFixed 2, if (_pressor > 0) then {_cGood} else {_cMute}, "SVR", round _svr, _cLabel] call _pair);
 _left pushBack (["Ca", _calcium toFixed 2, _cLabel, "Coag", (_circState getOrDefault ["coagMult", 1]) toFixed 2, _cLabel] call _pair);
@@ -294,7 +294,8 @@ _left pushBack (["Obtund", [_obt] call _yn, if (_obt) then {_cWarn} else {_cMute
 // Resuscitation / rhythm.
 private _nativeRh = _patient getVariable ["ACM_circulation_Cardiac_RhythmState", 0];
 private _activeRh = _patient getVariable ["ACME_rhythm_active", 0];
-private _visualRh = _patient getVariable ["ACME_AED_VisualRhythm", 0];
+private _aedRh = _patient getVariable ["ACM_circulation_AED_EKGRhythm", _nativeRh];
+private _visualRh = if (_activeRh >= 100 && {!(_aedRh in [-1,1,2])}) then {_activeRh} else {_aedRh};
 private _cpr = _patient getVariable ["ACM_circulation_isPerformingCPR", false];
 private _revArr = _patient getVariable ["ACM_circulation_ReversibleCardiacArrest_State", false];
 private _shockRes = _patient getVariable ["ACM_circulation_CardiacArrest_ShockResistant", false];
@@ -402,7 +403,7 @@ if (_fluidRows isEqualTo []) then {
 private _acid = _circState getOrDefault ["totalAcidosis", _circState getOrDefault ["acidosis", 0]];
 private _paCO2 = _circState getOrDefault ["paCO2", 40];
 private _coag = _circState getOrDefault ["coagMult", 1];
-private _shock = _patient getVariable ["ACME_circ_shockSeverity", 0];
+private _shock = _circState getOrDefault ["shockSeverity", 0];
 _right pushBack (["METABOLIC"] call _sect);
 _right pushBack (["Acid", _acid toFixed 2, if (_acid >= 0.65) then {_cBad} else {if (_acid >= 0.30) then {_cWarn} else {_cGood}}, "PaCO2", _paCO2 toFixed 0, if (_paCO2 > 70) then {_cBad} else {if (_paCO2 > 50) then {_cWarn} else {_cGood}}] call _pair);
 _right pushBack (["Coag", _coag toFixed 2, if (_coag > 1.5) then {_cBad} else {if (_coag > 1.1) then {_cWarn} else {_cGood}}, "Shock", _shock toFixed 2, if (_shock > 0.6) then {_cBad} else {if (_shock > 0.2) then {_cWarn} else {_cGood}}] call _pair);

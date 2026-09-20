@@ -243,7 +243,7 @@ private _getMedEffect = {
     } else {
         _caMAPdrop = (_caMAPdrop - _caStep) max _caMAPtarget;  // repleted calcium. the pressure comes back gradually.
     };
-    [_patient, "ACME_ca_mapDropEased", _caMAPdrop] call ACME_fnc_setVarNet;
+    [_patient,"ACME_ca_mapDropEased",_caMAPdrop,0.02,2] call ACME_fnc_setVarNetApprox;
     _state set ["caMAPdrop", _caMAPdrop];
     private _coagMult = linearConversion [1, _caFloor, _ionizedCa, 1, (missionNamespace getVariable ["ACME_ca_coagMaxMult", 1.4]), true];
 
@@ -294,7 +294,7 @@ private _getMedEffect = {
     _state set ["acidCoagMult", _acidCoag];
     // the combined coagulopathy is calcium times hypothermia times acidosis. the native circulation drainer
     // reads it.
-    [_patient, "ACME_ca_coagMult", (_coagMult * _hypoCoag * _acidCoag)] call ACME_fnc_setVarNet;
+    [_patient,"ACME_ca_coagMult",(_coagMult * _hypoCoag * _acidCoag),0.005,2] call ACME_fnc_setVarNetApprox;
     _state set ["coagMult", (_coagMult * _hypoCoag * _acidCoag)];
 
     // Route observations do not synthesize drug dose or turn norepinephrine into epinephrine.
@@ -396,7 +396,7 @@ private _getMedEffect = {
     private _caSteady = _caElemMgMin / _caClear;  // the mg/dl plateau for the current elemental drive.
     private _caK = 0.693 / _caHalfMin;  // the per-minute elimination rate constant.
     _caSerum = (_caSerum + (_caK * (_caSteady - _caSerum) * (_dt / 60))) max 0;
-    [_patient, "ACME_ca_serumLevel", _caSerum] call ACME_fnc_setVarNet;
+    [_patient,"ACME_ca_serumLevel",_caSerum,0.002,3] call ACME_fnc_setVarNetApprox;
     private _caSerumOd = linearConversion [
         (missionNamespace getVariable ["ACME_ca_serumTherapeuticHigh", 1.0]),
         (missionNamespace getVariable ["ACME_ca_serumOverdoseArrest", 4.0]),
@@ -415,7 +415,7 @@ private _getMedEffect = {
     private _amioSteady = _amioRateMgMin / _amioClear;
     private _amioK = 0.693 / _amioHalfMin;
     _amioSerum = (_amioSerum + (_amioK * (_amioSteady - _amioSerum) * (_dt / 60))) max 0;
-    [_patient, "ACME_amio_serumLevel", _amioSerum] call ACME_fnc_setVarNet;
+    [_patient,"ACME_amio_serumLevel",_amioSerum,0.005,3] call ACME_fnc_setVarNetApprox;
 
     // amiodarone and magnesium vasodilate, which drops resistance and lowers bp, and they ride their fast
     // fractions. calcium is handled separately below, because acute hypercalcemia does the opposite early on.
@@ -496,7 +496,7 @@ private _getMedEffect = {
     private _lidoDecay = exp (-_lidoKSec * _dt);
     _lidoLevel = (_lidoLevel * _lidoDecay + ((_lidoDrive / 60) / _lidoVd)
         * (1 - _lidoDecay) / _lidoKSec) max 0;
-    [_patient, "ACME_lido_serumLevel", _lidoLevel] call ACME_fnc_setVarNet;
+    [_patient,"ACME_lido_serumLevel",_lidoLevel,0.005,3] call ACME_fnc_setVarNetApprox;
 
     // lidocaine toxicity arc, the seizure. it reads the level just computed, drives apnea through the dedicated
     // seizure rr channel, and sets ACME_lido_seizureState, which the hr drive block and the debug line below
@@ -521,7 +521,7 @@ private _getMedEffect = {
     private _esmDecay = exp (-_esmK * _dt);
     private _esmInput = _deliveredRates getOrDefault ["Esmolol",0];
     private _esmSerum = (_esmOld * _esmDecay + (_esmInput / 60 / _esmVd) * (1 - _esmDecay) / _esmK) max 0;
-    [_patient, "ACME_esmolol_serumLevel", _esmSerum] call ACME_fnc_setVarNet;
+    [_patient,"ACME_esmolol_serumLevel",_esmSerum,0.005,3] call ACME_fnc_setVarNetApprox;
     // esmolol overdose band. past the therapeutic ceiling, where the serum exceeds
     // ACME_esmolol_serumTherapeuticHigh, the beta-blockade stops being rate control and becomes toxicity: a
     // high-grade av block, which is a severe bradycardia applied in the sinus drive below, plus hypotension. the
@@ -1110,8 +1110,8 @@ private _getMedEffect = {
     };
 
     // Diagnostic mirror only; the common getter is the source, never a consumer of this cache.
-    [_patient, "ACME_vent_etco2Adj", _etco2Observed] call ACME_fnc_setVarNet;
-    [_patient, "ACME_vent_etco2AdjAt", CBA_missionTime] call ACME_fnc_setVarNet;
+    [_patient,"ACME_vent_etco2Adj",_etco2Observed,0.10,2] call ACME_fnc_setVarNetApprox;
+    _patient setVariable ["ACME_vent_etco2AdjAt",CBA_missionTime,false];
 
     _state set ["paCO2", _paCO2];
     _state set ["paCO2Burden", linearConversion [_paCO2Normal, _paCO2Max, _paCO2, 0, 1, true]];
@@ -1141,11 +1141,11 @@ private _getMedEffect = {
     private _hypoBluntFrac = (_hypoBlunt max 0) min 0.95;
     private _support = _rawSupport * (1 - _acidBluntFrac) * (1 - _hypoBluntFrac);
     private _supportLoss = (_rawSupport - _support) max 0;
-    [_patient, "ACME_pressorResistAdd", ((_resistAdd max 0) * (1 - _acidBluntFrac) * (1 - _hypoBluntFrac))] call ACME_fnc_setVarNet;
+    [_patient,"ACME_pressorResistAdd",((_resistAdd max 0) * (1 - _acidBluntFrac) * (1 - _hypoBluntFrac)),0.10,2] call ACME_fnc_setVarNetApprox;
     // Distributive shock and hypocalcemia change tone, not a second final-pressure offset.
     private _nativeR = _patient getVariable ["ACME_nativeResistance", 100];
     private _toneDelta = -(_shockDrop + _caMAPdrop) * (_nativeR / (_nativeMAPforAcid max 1));
-    [_patient, "ACME_circ_resistDelta", _toneDelta] call ACME_fnc_setVarNet;
+    [_patient,"ACME_circ_resistDelta",_toneDelta,0.10,2] call ACME_fnc_setVarNetApprox;
     _state set ["rawPressorSupport", _rawSupport];
     _state set ["effectivePressorSupport", _support];
     _state set ["pressorSupportLoss", _supportLoss];
@@ -1338,7 +1338,7 @@ private _getMedEffect = {
         _hrDrive = if (_hrDrive < 0) then { _ventRelief } else { _hrDrive min _ventRelief };
     };
 
-    [_patient, "ACME_hrTarget_circ", _hrDrive] call ACME_fnc_setVarNet;
+    [_patient,"ACME_hrTarget_circ",_hrDrive,0.25,2] call ACME_fnc_setVarNetApprox;
 
     // NA3: native HR integration consumes source-separated targets. Never overwrite its resting baseline here.
     // ICH risk from an epi-equivalent MAP overshoot.
