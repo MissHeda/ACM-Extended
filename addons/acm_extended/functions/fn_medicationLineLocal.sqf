@@ -102,6 +102,34 @@ if (_iv && {_site == -1}) then {
 if (_operation == "flush") then {
     private _flushFraction = [_patient, _bodyPart, _site] call ACME_fnc_medicationLineFraction;
     private _flushAdmittedMl = 10 * ((_flushFraction max 0) min 1);
+    // Keep a compact, owner-authored visual record of carrier fluid that actually went into tissue.
+    // The owner updates exact accumulated volume locally and publishes the compact state at most once per second
+    // unless severity changes. The last published total also survives patient locality transfer.
+    private _acmeLeakMl = (10 - _flushAdmittedMl) max 0;
+    private _acmeLeakSite = _site;
+    private _acmeLeakPart = toLowerANSI (_bodyPart);
+    if (_acmeLeakMl > 0.001 && {_acmeLeakSite in [0,1,2]}
+        && {_acmeLeakPart in ["leftarm","rightarm","leftleg","rightleg"]}) then {
+        private _visualKey = format ["ACME_ivInfiltrationVisual_%1_%2", _acmeLeakPart, _acmeLeakSite];
+        private _priorVisual = _patient getVariable [_visualKey, [0, -1, 0, -1]];
+        private _priorSeverity = _priorVisual param [0, 0];
+        private _priorFlowAt = _priorVisual param [1, -1];
+        private _totalMl = _priorVisual param [2, 0];
+        private _lastPublishedAt = _priorVisual param [3, -1];
+        private _life = missionNamespace getVariable ["ACME_iv_bruiseLifeSec", 1200];
+        if !(_life isEqualType 0 && {finite _life} && {_life > 1}) then {_life = 1200;};
+        if !(_totalMl isEqualType 0 && {finite _totalMl} && {_totalMl >= 0}) then {_totalMl = 0;};
+        if (_priorFlowAt >= 0 && {(serverTime - _priorFlowAt) > _life}) then {_totalMl = 0;};
+        _totalMl = _totalMl + _acmeLeakMl;
+        private _severity = ceil (linearConversion [0.01, 50, _totalMl, 1, 10, true]);
+        _severity = (_severity max 1) min 10;
+        private _state = [_severity, serverTime, _totalMl, _lastPublishedAt];
+        _patient setVariable [_visualKey, _state, false];
+        if (_severity != _priorSeverity || {_lastPublishedAt < 0} || {(serverTime - _lastPublishedAt) >= 1}) then {
+            _state set [3, serverTime];
+            _patient setVariable [_visualKey, _state, true];
+        };
+    };
     if (_flushAdmittedMl > 0) then {
         [_patient, [["salineVolume", (_patient getVariable ["ACM_circulation_Saline_Volume", 0]) + (_flushAdmittedMl / 1000)]], true] call ACM_circulation_fnc_setRuntimeState;
     };

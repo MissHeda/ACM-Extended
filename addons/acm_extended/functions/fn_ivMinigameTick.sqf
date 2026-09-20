@@ -149,10 +149,10 @@ if (!isNull _clean) then {
 {
     _x params ["_bc", "_bt"];
     if (!isNull _bc && {[_bt] call _finite} && {_bt >= 0}) then {
-        // the age is on CBA_missionTime, the same clock fn_ivInfiltrated stamps and fn_ivMinigameRenderMarks
-        // reads. the two curves are identical on purpose: if they disagree, the bruise steps brightness the
-        // moment the fade loop hands over to the render path.
-        private _e = CBA_missionTime - _bt;
+        // Miss marks are stamped with shared serverTime so every observer sees the same bruise age. Keep this
+        // per-frame fade on that same clock. Mixing CBA_missionTime here made fresh remote marks look old and
+        // jump straight to full opacity on clients whose local CBA clock differed from the shared stamp.
+        private _e = serverTime - _bt;
         private _cap = (missionNamespace getVariable ["ACME_iv_bruiseMaxAlpha", 0.90]);
         if (!(_cap isEqualType 0) || {!finite _cap}) then { _cap = 0.90 };
         _cap = (_cap max 0.05) min 1;
@@ -160,7 +160,7 @@ if (!isNull _clean) then {
         private _out  = missionNamespace getVariable ["ACME_iv_bruiseFadeOutSec", 300];
         private _fadeIn = (missionNamespace getVariable ["ACME_iv_bruiseFadeInSec", 5.0]) max 0.1;
         private _al = switch (true) do {
-            case (_e < 0):              { _cap };
+            case (_e < 0):              { 0 };
             case (_e < _fadeIn):        { (_e / _fadeIn) * _cap };
             case (_e < (_life - _out)): { _cap };
             case (_e < _life):          { _cap * (((_life - _e) / (_out max 1)) max 0) };

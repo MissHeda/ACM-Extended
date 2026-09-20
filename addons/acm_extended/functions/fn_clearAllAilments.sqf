@@ -293,7 +293,12 @@ _patient setVariable ["ACME_vesicant_painApplied", nil, true];
 // safely.
 {
     private _cbp = _x;
-    { _patient setVariable [format ["ACME_ivCompromised_%1_%2", _cbp, _x], nil, true]; } forEach [0, 1, 2];
+    {
+        _patient setVariable [format ["ACME_ivCompromised_%1_%2", _cbp, _x], nil, true];
+        if (_cbp != "head") then {
+            _patient setVariable [format ["ACME_ivInfiltrationVisual_%1_%2", _cbp, _x], nil, true];
+        };
+    } forEach [0, 1, 2];
 } forEach ["leftarm", "rightarm", "leftleg", "rightleg", "head"];
 
 // shock, plus the circulation chemistry and state, which fn_circhandle rebuilds fresh.

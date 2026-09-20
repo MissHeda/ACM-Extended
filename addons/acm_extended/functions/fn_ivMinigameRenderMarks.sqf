@@ -201,7 +201,7 @@ if (!isNull _patient && {_bp in ["leftarm", "rightarm", "leftleg", "rightleg"]})
                     private _out  = missionNamespace getVariable ["ACME_iv_bruiseFadeOutSec", 300];
                     private _fadeIn = (missionNamespace getVariable ["ACME_iv_bruiseFadeInSec", 5.0]) max 0.1;
                     _al = switch (true) do {
-                        case (_e < 0):                { _cap };  // a stamp from the future, so treat it as fresh.
+                        case (_e < 0):                { 0 };     // shared-clock skew: fresh means not visible yet, never full opacity.
                         case (_e < _fadeIn):          { (_e / _fadeIn) * _cap };
                         case (_e < (_life - _out)):   { _cap };
                         case (_e < _life):            { _cap * (((_life - _e) / (_out max 1)) max 0) };
