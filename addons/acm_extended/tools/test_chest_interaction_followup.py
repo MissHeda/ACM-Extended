@@ -33,7 +33,7 @@ def test_closing_a_panel_invalidates_pending_roll_before_restoration():
     assert 'if (!_current) exitWith {};' in fn("chestSealFlipTick")
 
 
-def test_both_burp_paths_commit_shared_cooldown_before_effects():
+def test_both_burp_paths_check_patient_ownership_without_a_timer():
     for name in ("chestSealBurp", "thoraAftercareLocal"):
         source = fn(name)
         gate = source.index("call ACME_fnc_chestSealBurpReady")
@@ -41,13 +41,15 @@ def test_both_burp_paths_commit_shared_cooldown_before_effects():
         assert gate < source.index("call ACME_fnc_chestSealLogOnce")
         assert gate < source.index('"chestSealBurpGesture"')
     gate = fn("chestSealBurpReady")
-    assert "ACME_fnc_clinicalEpoch" in gate
     assert "local _patient" in gate
-    assert 'serverTime + 6' in gate
+    assert not any(t.kind == "ident" and t.value in ("serverTime", "CBA_missionTime", "diag_tickTime") for t in lex(gate))
+    assert "ACME_CS_burpCooldown" not in gate
+    assert '_medic, 0] call ACME_fnc_chestSealLogOnce' in fn("chestSealBurp")
+    assert '_medic,0] call ACME_fnc_chestSealLogOnce' in fn("thoraAftercareLocal")
     assert 'case "chestSealBurpGesture"' in fn("ownerDispatch")
 
 
-def test_burp_cooldown_still_allows_laying_the_corner_flat():
+def test_seal_validation_still_allows_laying_the_corner_flat():
     assert 'if (_fr <= 0 && {' in fn("chestSealScroll")
     assert 'if (_frame == 0 && {' in fn("thoraSealScroll")
 
