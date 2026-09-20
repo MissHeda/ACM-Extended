@@ -7,15 +7,15 @@ ACME_clinical_activePatients = [];
 ["ACME_piAck", {_this call ACME_fnc_pressureInfuserAck;}] call CBA_fnc_addEventHandler;
 ["ACME_preparedAck", {_this call ACME_fnc_preparedAttachAck;}] call CBA_fnc_addEventHandler;
 ["ACME_preparedHangResult", {_this call ACME_fnc_preparedHangResult;}] call CBA_fnc_addEventHandler;
-// Retry only identified, unacknowledged attachments. Never refund merely because a packet was delayed.
+// Retry only identified, unacknowledged attachments. The reusable pressure infuser never changes inventory state.
 [{
     private _cuffs = missionNamespace getVariable ["ACME_piPending", createHashMap];
     {
         private _r = _cuffs get _x;
         if (_r select 3) then {if (CBA_missionTime - (_r select 2) > 60) then {_cuffs deleteAt _x;}; continue;};
         private _patient = _r select 0;
-        // Deletion also removes any committed cuff. Packet delay alone never returns inventory.
-        if (isNull _patient) then {[_x, false, true, "Patient deleted. The pending cuff was returned."] call ACME_fnc_pressureInfuserAck;}
+        // Deletion also removes any committed cuff. There is no inventory refund because the infuser is never consumed.
+        if (isNull _patient) then {[_x, false, false, "Patient deleted. The pending pressure-infuser request was cancelled."] call ACME_fnc_pressureInfuserAck;}
         else {[_patient, "pressureCuff", _r select 1] call ACME_fnc_ownerDispatch;};
     } forEach keys _cuffs;
     private _injections = missionNamespace getVariable ["ACME_infusionPending", createHashMap];
