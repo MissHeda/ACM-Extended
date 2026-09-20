@@ -43,12 +43,17 @@ def test_forced_amount_correction_keeps_numeric_hitbox_and_art_together():
     assert 'class syringeDrawSetAmount {};' in (ROOT / "config.cpp").read_text(encoding="utf-8")
 
 
-def test_infusion_commit_requires_settled_plunger_and_rechecks_real_stock():
+def test_infusion_uses_shared_narcbox_mover_and_rechecks_real_stock():
+    patch = acme("fn_patchDrawDialog.sqf")
     stock = acme("fn_infusionDrawStock.sqf")
     inject = acme("fn_injectIntoBag.sqf")
-    assert 'private _moving = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false];' in stock
-    assert '!_moving' in stock
-    assert 'if (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]) exitWith {};' in inject
+    assert 'call ACME_fnc_skCompoundBegin;' in patch
+    assert 'ACME_SK_WasteMoving' in stock
+    assert 'ACME_SK_WasteFill' in stock
+    assert 'setMousePosition' not in stock
+    assert 'ctrlSetPosition' not in stock
+    assert 'ACME_fnc_syringeDrawSetAmount' not in stock
+    assert 'if (uiNamespace getVariable ["ACME_SK_WasteMoving", false]) exitWith {};' in inject
     assert 'ACME_fnc_infusionVialVolume' in inject
     assert '_sessionMax min _stockMax min _size' in inject
     assert 'Confirm the dose and inject again.' in inject
@@ -63,9 +68,32 @@ def test_successful_bag_injection_resets_plunger_and_native_selection_atomically
     assert 'ACM_circulation_SyringeDraw_MedicationSelected = false;' in src
 
 
-def test_stock_refresh_never_changes_amount_without_moving_artwork_too():
+def test_infusion_stock_refresh_is_not_a_second_plunger_writer():
     src = acme("fn_infusionDrawStock.sqf")
-    assert '[_hardMax, _display, false] call ACME_fnc_syringeDrawSetAmount;' in src
-    # Regression: a variable-only clamp causes the visible plunger to remain at the old volume.
-    block = src.split('if (_drawn > _hardMax + 0.0001) then {', 1)[1].split('};', 1)[0]
-    assert 'SyringeDraw_DrawnAmount =' not in block
+    assert 'setMousePosition' not in src
+    assert 'ctrlSetPosition' not in src
+    assert 'SyringeDraw_DrawnAmount =' not in src
+    assert 'SyringeDraw_MaxDose =' not in src
+
+
+def test_infusion_identity_stays_locked_while_solution_is_in_syringe():
+    select = acme("fn_skListSelect.sqf")
+    inject = acme("fn_injectIntoBag.sqf")
+    assert 'ACME_SK_WasteFill' in select
+    assert '_data != _currentMed' in select
+    assert 'Do not re-resolve the drug' in inject
+    assert 'lbCurSel _medList' not in inject
+
+
+def test_infusion_close_never_autosaves_transient_compound_syringe():
+    close = acme("fn_skClose.sqf")
+    assert 'private _infusion = !((_display getVariable ["ACME_SK_Return", []]) isEqualTo []);' in close
+    assert '!_infusion' in close
+    assert 'call ACME_fnc_skCompoundCommit;' in close
+
+
+def test_one_ml_prep_uses_same_narcbox_fill_math_for_large_vials():
+    compound = acme("fn_skCompoundBegin.sqf")
+    assert 'private _size = ACM_circulation_SyringeDraw_Size;' in compound
+    assert 'private _maxFill = (_floorMl + ((_size - _floorMl) min _newAvailable))' in compound
+    assert 'private _rawFill = linearConversion [_limitTop, _limitBottom, _rawY, 0, _size, true];' in compound

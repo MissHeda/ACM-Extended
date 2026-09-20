@@ -4,7 +4,10 @@ disableSerialization;
 params ["_display"];
 private _restore = uiNamespace getVariable ["ACME_SK_RestoreMouse", []];
 private _switch = (_restore isEqualType []) && {count _restore == 2};
-if (!_switch && {(uiNamespace getVariable ["ACME_SK_WasteStage", ""]) == "compound"}) then {
+private _infusion = !((_display getVariable ["ACME_SK_Return", []]) isEqualTo []);
+// Infusion prep borrows the Narc Box compound plunger engine, but its contents are committed only by Inject Into Bag.
+// Never let the Narc Box close handler auto-save that transient infusion syringe as a stored compound syringe.
+if (!_switch && {!_infusion} && {(uiNamespace getVariable ["ACME_SK_WasteStage", ""]) == "compound"}) then {
     call ACME_fnc_skPendingTagCommit;
     call ACME_fnc_skCompoundCommit;
 };

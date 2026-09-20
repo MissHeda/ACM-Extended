@@ -4,31 +4,19 @@ if (_context isEqualTo []) exitWith {};
 if ((missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "") exitWith {};
 private _mode = _context select 0;
 private _drawDisplay = findDisplay 84000;
-private _ml = missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0];
+private _ml = uiNamespace getVariable ["ACME_SK_WasteFill", missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0]];
 private _med = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Medication", ""];
 private _size = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10];
 
-// Commit the exact row that is selected in ACM's backing medication list. The visible ACME row maps one-to-one to
-// this list, so this removes the last timing window where a previous draw-session medication could be committed if
-// the provider selected a new drug and immediately pulled/injected.
-if (!isNull _drawDisplay) then {
-    private _medList = _drawDisplay displayCtrl 84006;
-    private _sel = if (isNull _medList) then {-1} else {lbCurSel _medList};
-    private _selectedMed = if (_sel >= 0) then {_medList lbData _sel} else {""};
-    if (_selectedMed != "") then {
-        _med = _selectedMed;
-        missionNamespace setVariable ["ACM_circulation_SyringeDraw_Medication", _med];
-        missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected_Index", _sel];
-        missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected", true];
-    };
-};
+// The Narc Box draw session owns medication identity while solution is in the syringe. Do not re-resolve the drug
+// from a UI row at commit time; that was a second source of truth and could debit a different drug after a fast click.
 
 // Syringe stock and filled-syringe payloads are represented to 0.01 mL. Snapshot the plunger at the same precision
 // before source debit and bag registration so the amount removed from the vial is exactly the amount put in the bag.
 if (finite _ml) then {_ml = (round ((_ml max 0) * 100)) / 100;};
 if (_ml <= 0 || {!finite _ml} || {_ml > _size + 0.001}) exitWith {};
 if !(_med in (missionNamespace getVariable ["ACME_infusion_allowedMedications", []])) exitWith {};
-if (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]) exitWith {};
+if (uiNamespace getVariable ["ACME_SK_WasteMoving", false]) exitWith {};
 private _hardMax = _size;
 if (!isNull _drawDisplay) then {
     private _sessionMax = (["limit", _med, _ml, _drawDisplay] call ACME_fnc_vialSession) min _size;
@@ -70,6 +58,13 @@ ACM_circulation_SyringeDraw_MaxDose = 0;
 ACM_circulation_SyringeDraw_MedicationSelected_Index = -1;
 ACM_circulation_SyringeDraw_Medication = "";
 ACM_circulation_SyringeDraw_MedicationSelected = false;
+// Reset the shared Narc Box compound mover to an empty syringe without replacing it with an infusion-only draw loop.
+uiNamespace setVariable ["ACME_SK_WasteMoving", false];
+uiNamespace setVariable ["ACME_SK_WasteFloorMl", 0];
+uiNamespace setVariable ["ACME_SK_WasteFill", 0];
+uiNamespace setVariable ["ACME_SK_CompoundComponents", []];
+uiNamespace setVariable ["ACME_SK_CompoundVials", []];
+uiNamespace setVariable ["ACME_SK_CompoundDrawCount", 0];
 if (!isNull _display) then {
     ["clear", "", 0, _display] call ACME_fnc_vialSession;
     private _medListB25 = _display displayCtrl 84006;

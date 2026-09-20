@@ -15,8 +15,8 @@ if ((missionNamespace getVariable ["ACME_infusion_pendingInject", ""]) != "") ex
 
 // A pulled plunger is only a proposed dose. Supplies are not consumed until Inject Into Bag succeeds. Do not let
 // Done make an un-injected syringe look as though it became part of the bag mixture.
-private _drawn = missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0];
-private _moving = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false];
+private _drawn = uiNamespace getVariable ["ACME_SK_WasteFill", missionNamespace getVariable ["ACM_circulation_SyringeDraw_DrawnAmount", 0]];
+private _moving = uiNamespace getVariable ["ACME_SK_WasteMoving", missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]];
 if (_moving || {_drawn > 0.0005}) exitWith {
     [ACE_player, "Medication is still in the syringe. Inject it into the bag or return the plunger to 0 mL before pressing Done."] call ACME_fnc_clinicalNotice;
 };

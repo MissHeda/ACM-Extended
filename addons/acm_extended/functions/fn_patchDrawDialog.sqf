@@ -10,6 +10,13 @@ if (isNull _display) exitWith {};
 
 private _context = missionNamespace getVariable ["ACME_infusion_pendingContext", []];
 private _mode = if (_context isEqualTo []) then {"active"} else {_context select 0};
+
+// Prep Infusion deliberately uses the Narc Box compound plunger engine instead of maintaining a second syringe
+// movement implementation.  This gives infusion prep the exact same cursor/plunger geometry, physical-vial limit,
+// endpoint snapping and DrawnAmount calculation as the known-good Narc Box path.  We only replace the buttons below.
+if ((uiNamespace getVariable ["ACME_SK_WasteStage", ""]) != "compound") then {
+    call ACME_fnc_skCompoundBegin;
+};
 private _topText = ["Select medication, pull syringe, then inject into active saline bag", "Select medication, pull syringe, then prep the saline bag"] select (_mode == "prepared");
 private _bottomText = ["Active bag infusion mode", "Prepared bag mode - use Give Prep after inserting the IV/IO"] select (_mode == "prepared");
 
@@ -101,8 +108,7 @@ _tallyBody ctrlCommit 0;
 ACM_circulation_SyringeDraw_InventorySelection = 0;
 [] call ACM_circulation_fnc_Syringe_UpdateMedicationList;
 
-// Run every frame because this loop owns the physical-vial plunger hard stop. Expensive stock/tally repainting is
-// throttled internally to 10 Hz, so the per-frame portion is only local cursor/control arithmetic.
+// The Narc Box compound PFH owns the live plunger. This PFH only refreshes stock/tally and button state.
 private _stockPFH = _display getVariable ["ACME_infusionStockPFH", -1];
 if (_stockPFH < 0) then {
     _stockPFH = [{
@@ -110,7 +116,7 @@ if (_stockPFH < 0) then {
         _args params ["_display"];
         if (isNull _display) exitWith {[_handle] call CBA_fnc_removePerFrameHandler;};
         [] call ACME_fnc_infusionDrawStock;
-    }, 0, [_display]] call CBA_fnc_addPerFrameHandler;
+    }, 0.1, [_display]] call CBA_fnc_addPerFrameHandler;
     _display setVariable ["ACME_infusionStockPFH", _stockPFH];
     _display displayAddEventHandler ["Unload", {
         params ["_d"];

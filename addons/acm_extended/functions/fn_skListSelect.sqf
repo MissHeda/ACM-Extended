@@ -14,6 +14,16 @@ if (_kind == "medication") then {
 if (!_available) exitWith {_back setVariable ["ACME_SK_FlashAt", diag_tickTime];};
 private _stage = uiNamespace getVariable ["ACME_SK_WasteStage", ""];
 if (_kind == "medication" && {(_stage in ["compound","draw"] && {uiNamespace getVariable ["ACME_SK_WasteMoving", false]}) || {!(_stage in ["compound","draw"]) && {!(ctrlEnabled _list)}}}) exitWith {};
+// Prep Infusion borrows the compound plunger engine only for its proven movement math; unlike a stored compound
+// syringe, one uncommitted infusion pull must stay tied to one medication. Do not let a row change relabel solution
+// that is already physically in the syringe. Return to 0 mL or Inject Into Bag before selecting another drug.
+if (_kind == "medication" && {!((_d getVariable ["ACME_SK_Return", []]) isEqualTo [])}) then {
+    private _fill = uiNamespace getVariable ["ACME_SK_WasteFill", 0];
+    private _currentMed = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Medication", ""];
+    if (_fill > 0.0005 && {_currentMed != ""} && {_data != _currentMed}) exitWith {
+        _back setVariable ["ACME_SK_FlashAt", diag_tickTime];
+    };
+};
 private _index = -1;
 if (_kind == "medication") then {
     for "_i" from 0 to ((lbSize _list) - 1) do {if ((_list lbData _i) == _data) exitWith {_index = _i;};};
