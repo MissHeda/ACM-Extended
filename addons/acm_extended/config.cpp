@@ -1879,7 +1879,6 @@ class CfgFunctions {
             class infusionAck {};
             class infusionRetire {};
             class infusionRemoveLocal {};
-            class infusionRemoveResult {};
             class yFlushStart {};
             class yFlushTick {};
             class clinicalBagMove {};
@@ -2087,11 +2086,6 @@ class CfgFunctions {
             class coolerBoxApplyScale {};
             class coolerBoxPackUp {};
             class coolerBoxColdChainTick {};
-            class coolerBoxTake {};
-            class coolerBoxTakeCommit {};
-            class coolerBoxTakeResult {};
-            class coolerBoxPackCommit {};
-            class coolerBoxPackResult {};
             class popClots {};
             class clotPopTick {};
             class cancelInfusionDraw {};

@@ -8,8 +8,6 @@ if (!local _patient) exitWith {
     } else {  };
 };
 switch (_operation) do {
-    case "coolerBoxTake": {_args call ACME_fnc_coolerBoxTakeCommit;};
-    case "coolerBoxPack": {_args call ACME_fnc_coolerBoxPackCommit;};
     case "vialLease": {
         _args params [["_medic",objNull,[objNull]],["_op","claim",[""]],["_token","",[""]]];
         [_patient,_medic,_op,_token] call ACME_fnc_vialLeaseCommit;
