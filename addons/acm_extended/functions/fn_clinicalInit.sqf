@@ -6,6 +6,7 @@ ACME_clinical_activePatients = [];
 ["ACME_infusionAck", {[{ _this call ACME_fnc_infusionAck; }, _this] call CBA_fnc_execNextFrame;}] call CBA_fnc_addEventHandler;
 ["ACME_piAck", {_this call ACME_fnc_pressureInfuserAck;}] call CBA_fnc_addEventHandler;
 ["ACME_preparedAck", {_this call ACME_fnc_preparedAttachAck;}] call CBA_fnc_addEventHandler;
+["ACME_preparedHangResult", {_this call ACME_fnc_preparedHangResult;}] call CBA_fnc_addEventHandler;
 // Retry only identified, unacknowledged attachments. Never refund merely because a packet was delayed.
 [{
     private _cuffs = missionNamespace getVariable ["ACME_piPending", createHashMap];
@@ -34,6 +35,21 @@ ACME_clinical_activePatients = [];
         private _epoch = _v param [3, [_patient] call ACME_fnc_clinicalEpoch];
         [_patient, "preparedAttach", [_args, _x, _epoch]] call ACME_fnc_ownerDispatch;
     } forEach keys _pending;
+    private _hangPending = missionNamespace getVariable ["ACME_preparedHangPending", createHashMap];
+    {
+        private _r = _hangPending get _x;
+        if (_r param [3, false]) then {
+            if (CBA_missionTime - (_r param [2, CBA_missionTime]) > 60) then {_hangPending deleteAt _x;};
+            continue;
+        };
+        private _target = _r param [0, objNull];
+        private _args = _r param [1, []];
+        if (isNull _target) then {
+            [_x, false, "Patient deleted. The prepared set was not consumed."] call ACME_fnc_preparedHangResult;
+        } else {
+            [_target, "preparedHang", _args] call ACME_fnc_ownerDispatch;
+        };
+    } forEach keys _hangPending;
 }, 2, []] call CBA_fnc_addPerFrameHandler;
 
 ["ACME_clinicalNotice", {_this call ACME_fnc_clinicalNotice;}] call CBA_fnc_addEventHandler;

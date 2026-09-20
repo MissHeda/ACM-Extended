@@ -38,12 +38,14 @@ private _ctrlPush = _display displayCtrl 84004;
 _ctrlPush ctrlShow false;
 _ctrlPush ctrlEnable false;
 
+// Prep Infusion has no destructive Cancel state. Every accepted injection is already physically in the bag, so the
+// lower-right action is the single Done/confirm control. It finalizes the accepted mixture and returns to Transfuse.
 private _ctrlCancel = _display displayCtrl 84005;
 _ctrlCancel ctrlShow true;
 _ctrlCancel ctrlEnable true;
-_ctrlCancel ctrlSetText "Cancel";
-_ctrlCancel ctrlSetTooltip "Cancel medication infusion";
-_ctrlCancel ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_cancelInfusionDraw"];
+_ctrlCancel ctrlSetText "Done";
+_ctrlCancel ctrlSetTooltip "Confirm the medications in this bag and return to Transfuse";
+_ctrlCancel ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_infusionDone"];
 _ctrlCancel ctrlSetPosition [_rightX, _buttonY, _buttonW, _buttonH];
 _ctrlCancel ctrlSetFontHeight (safeZoneH / 42);
 _ctrlCancel ctrlCommit 0;
@@ -55,16 +57,13 @@ _ctrlSwitch ctrlEnable false;
 private _ctrlInventoryText = _display displayCtrl 84008;
 _ctrlInventoryText ctrlSetText "Allowed infusion medications";
 
-// the infusion-mode ui changes.
-// the body map toggle, 84150, has no meaning while injecting into a bag, so it becomes a done button that closes the
-// infusion menu.
-// The tally reports all accepted components. Closing never undoes committed injections.
+// The normal Body Map / page-navigation control has no meaning in infusion mode. Keep exactly one completion
+// control: the bottom-right Done button above. A second Done in the navigation strip was ambiguous and made the
+// old Cancel button look as though it would undo already-injected medication.
 private _doneBtn = _display displayCtrl 84150;
 if (!isNull _doneBtn) then {
-    _doneBtn ctrlSetText "Done";
-    _doneBtn ctrlSetTooltip "Finish and close the infusion menu";
-    _doneBtn ctrlSetEventHandler ["ButtonClick", "call ACME_fnc_infusionDone"];
-    _doneBtn ctrlCommit 0;
+    _doneBtn ctrlShow false;
+    _doneBtn ctrlEnable false;
 };
 // hide the route toggle, which is body-view only, in infusion mode.
 private _routeBtn = _display displayCtrl 84151;
