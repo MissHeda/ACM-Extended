@@ -119,7 +119,13 @@ uiNamespace setVariable ["ACME_vent_powerHolder", _pwrHolder];
 private _hasBooted = _pwrHolder getVariable ["ACME_vent_hasBooted", false];
 private _targetConfigured = _target getVariable ["ACME_vent_configured", false];
 uiNamespace setVariable ["ACME_vent_doBoot", _wasOn && {!_hasBooted} && {!_targetConfigured}];
-if (_wasOn && {!_hasBooted}) then { _pwrHolder setVariable ["ACME_vent_hasBooted", true, true]; };
+if (_wasOn && {!_hasBooted}) then {
+    if (local _pwrHolder) then {
+        _pwrHolder setVariable ["ACME_vent_hasBooted", true, true];
+    } else {
+        [_pwrHolder, "ventPowerState", [ACE_player, true, true, _pwrHolder getVariable ["ACME_vent_custodyId", ""]]] call ACME_fnc_ownerDispatch;
+    };
+};
 
 // One pending open per client. Every delayed callback carries its original provider and generation.
 private _serial = 1 + (uiNamespace getVariable ["ACME_vent_openSerial", 0]);

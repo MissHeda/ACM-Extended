@@ -1,15 +1,20 @@
 /* NA3 identified owner-local shock transaction. Unscheduled event/call only; no suspension before commit. */
-params ["_medic", "_patient", "_id", "_epoch", "_expectedLast", "_expectedSync", "_sentAt"];
+params ["_medic", "_patient", "_id", "_epoch", "_expectedLast", "_expectedSync", "_sentAtServer"];
 if (isNull _patient || {isNull _medic}) exitWith {};
 if (!local _patient) exitWith {[_patient, "shock", _this] call ACME_fnc_ownerDispatch;};
-if (_epoch != ([_patient] call ACME_fnc_clinicalEpoch) || {CBA_missionTime - _sentAt > 30}) exitWith {};
+if (_epoch != ([_patient] call ACME_fnc_clinicalEpoch)
+    || {serverTime - _sentAtServer > 30}
+    || {_sentAtServer - serverTime > 2}) exitWith {};
 private _history = +(_patient getVariable ["ACME_shockCommitted", []]);
 if (_id in _history) exitWith {};
 private _last = _patient getVariable ["ACM_circulation_AED_LastShock", -60];
-if (_last != _expectedLast || {(_patient getVariable ["ACME_sync_armed", false]) != _expectedSync}) exitWith {
+if (_last != _expectedLast) exitWith {
     [_medic, "Device state changed. Review the rhythm and charge before shocking again."] call ACME_fnc_clinicalNotice;
 };
-if ((_patient getVariable ["ACM_circulation_AED_Provider", objNull]) != _medic) exitWith {};
+// Base ACM's AED_Provider is the casualty itself, not the operator. Validate the actual medic carried by the
+// monitor/API request instead of comparing against that legacy sentinel.
+if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake)}
+    || {(_medic distance _patient) > ace_medical_gui_maxDistance}) exitWith {};
 if (!([_medic, _patient] call ACM_circulation_fnc_AED_CanAdministerShock)) exitWith {};
 private _rhythm = [_patient] call ACME_fnc_rhythmGet;
 private _organized = _rhythm in [4,100,101,103,104]; // B67: native perfusing VT is an organized SYNC rhythm, not a defibrillation rhythm.
@@ -21,9 +26,20 @@ if (_expectedSync && {_defib}) exitWith {
 _history pushBack _id;
 if (count _history > 64) then {_history deleteRange [0, count _history - 64];};
 _patient setVariable ["ACME_shockCommitted", _history, true];
-[_patient, [["aedCharged", false], ["aedInUse", false], ["aedLastShock", CBA_missionTime], ["aedShockTotal", 1 + (_patient getVariable ["ACM_circulation_AED_ShockTotal", 0])]], true] call ACM_circulation_fnc_setRuntimeState;
+private _runtime = [
+    ["aedCharged", false],
+    ["aedInUse", false],
+    ["aedShockTotal", 1 + (_patient getVariable ["ACM_circulation_AED_ShockTotal", 0])]
+];
+// Native ACM's AED_LastShock drives defibrillation refractory behavior. A synchronized cardioversion must not
+// poison that clock or make a later indicated defibrillation inside 60 seconds behave like a repeat shock.
+if (!_expectedSync) then {_runtime pushBack ["aedLastShock", CBA_missionTime];};
+[_patient, _runtime, true] call ACM_circulation_fnc_setRuntimeState;
 [_medic, [["aedMedicInUse", false]], true] call ACM_circulation_fnc_setRuntimeState;
-_patient setVariable ["ACME_sync_lastShock", CBA_missionTime, true];
+// Owner-local clinical clock for synchronized cardioversion persistence, plus one shared server clock for every
+// physical shock so monitor/pulse clients never compare the casualty owner's CBA_missionTime to their own clock.
+if (_expectedSync) then {_patient setVariable ["ACME_sync_lastShock", CBA_missionTime, true];};
+_patient setVariable ["ACME_aed_lastShockServer", serverTime, true];
 [_patient, CBA_missionTime + (missionNamespace getVariable ["ACME_rhythmNativeShockGraceSec", 10]), true, false] call ACME_fnc_rhythmNativeShockGraceCommit;
 [_patient, "", -1, true, false] call ACME_fnc_rhythmNativeHoldCommit;
 [_patient, 0, false, false, false] call ACME_fnc_rhythmNativeHighHRFloorCommit;

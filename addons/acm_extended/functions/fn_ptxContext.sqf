@@ -127,9 +127,9 @@ if (_ventDriving) then {
 };
 private _provider = _patient getVariable ["ACM_breathing_BVM_provider", objNull];
 if !(_provider isEqualType objNull) then {_provider = objNull;};
-private _lastBreath = _patient getVariable ["ACM_breathing_BVM_lastBreath", -100];
+private _lastBreath = _patient getVariable ["ACME_bvm_lastBreathServer", -100];
 if !(_lastBreath isEqualType 0 && {finite _lastBreath}) then {_lastBreath = -100;};
-private _breathAge = CBA_missionTime - _lastBreath;
+private _breathAge = (serverTime - _lastBreath) max 0;
 if (alive _provider && {_breathAge >= 0} && {_breathAge <= 12}) then {_ppvFactor = _ppvFactor max 1.5;};
 
 [_open, _total, _ventCapacity, _bleedSource, _ppvFactor max 1 min 3, _hasDrain, _hasSealOutlet]

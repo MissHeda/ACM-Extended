@@ -3579,9 +3579,21 @@
     true
   ],
   [
+    "ACME_sync_armed",
+    "",
+    true,
+    false
+  ],
+  [
     "ACME_sync_lastShock",
     "cba",
     true
+  ],
+  [
+    "ACME_aed_lastShockServer",
+    "",
+    true,
+    false
   ],
   [
     "ACME_sync_ledPulsePeriod",

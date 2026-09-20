@@ -185,7 +185,7 @@ ACME_tbi_activePatients = ACME_tbi_activePatients select {!isNull _x && {local _
         private _alpha = (_dt / (_tau max 0.1)) min 1;
         private _spontR = _spontPrev + ((_spontRaw - _spontPrev) * _alpha);
         _state set ["co2RRsmooth", _spontR];
-        private _bagFresh = (CBA_missionTime - (_patient getVariable ["ACME_bvm_lastBreath", -1e9]))
+        private _bagFresh = ((serverTime - (_patient getVariable ["ACME_bvm_lastBreathServer", -1e9])) max 0)
             < (missionNamespace getVariable ["ACME_tbi_bvmFreshSec", 12]);
         private _bagR = if (_bagFresh) then { _patient getVariable ["ACME_bvm_rate", 0] } else { 0 };
         private _effRate = _spontR max _bagR;

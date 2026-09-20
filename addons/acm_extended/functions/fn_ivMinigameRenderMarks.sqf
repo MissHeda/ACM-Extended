@@ -193,11 +193,10 @@ if (!isNull _patient && {_bp in ["leftarm", "rightarm", "leftleg", "rightleg"]})
                 // A BRUISE HAS A LIFE OF ABOUT TWENTY MINUTES.
                 // it darkens over the configured fade-in as blood tracks into the tissue, holds at the cap, then fades
                 // out over the last stretch as it resolves. a puncture HOLE has no life and stays for the body.
-                // the clock is CBA_missionTime, written by fn_ivInfiltrated, so the age is the same on every
-                // machine and a bruise does not read as older on a client that has been running longer.
+                // Bruise creation uses shared serverTime, so every observer sees the same age regardless of client uptime.
                 private _al = _cap;
                 if (_mmiss >= 0) then {
-                    private _e = CBA_missionTime - _mmiss;
+                    private _e = serverTime - _mmiss;
                     private _life = missionNamespace getVariable ["ACME_iv_bruiseLifeSec", 1200];
                     private _out  = missionNamespace getVariable ["ACME_iv_bruiseFadeOutSec", 300];
                     private _fadeIn = (missionNamespace getVariable ["ACME_iv_bruiseFadeInSec", 5.0]) max 0.1;

@@ -1945,6 +1945,14 @@ class CfgFunctions {
             class transfusionYTubing {};
             class transfusionFlushLine {};
             class transfusionPullBag {};
+            class transfusionPullCommit {};
+            class transfusionPullResult {};
+            class rehangUsedBagCommit {};
+            class rehangUsedBagResult {};
+            class yRefillCommit {};
+            class yRefillResult {};
+            class discardYTubingCommit {};
+            class discardYTubingResult {};
             class discardYTubing {};
             class resumeSiteFlow {};
             class togglePreparedSets {};
@@ -2053,6 +2061,7 @@ class CfgFunctions {
             class ivExtravasationState {};
             class visualBruiseState {};
             class ivMinigameAddMark {};
+            class ivMarkCommit {};
             class ivMinigameClick {};
             class ivMinigameRefreshBandSlot {};
             class ivTrayHover {};
@@ -2101,6 +2110,9 @@ class CfgFunctions {
             class updateTransfusionAccessHotspots {};
             class selectTransfusionAccess {};
             class transfusionAccessValid {};
+            class transfusionRemoveBagCommit {};
+            class transfusionRemoveBagResult {};
+            class transfusionFlowToggleCommit {};
             class updateEJTransfusionMenu {};
             class selectEJTransfusionSite {};
             class adjustDripRate {};
@@ -2647,6 +2659,7 @@ class CfgFunctions {
             class ventEffectiveSettings {};
             class ventSimpleManualBreath {};
             class ventManualBreath {};
+            class ventManualBreathCommit {};
             class ventAlarmTick {};
             class ventHoldClear {};
             class ventMmbUp {};
@@ -2654,6 +2667,7 @@ class CfgFunctions {
             class ventPowerOff {};
             class ventPowerDown {};
             class ventStopHard {};
+            class ventHardStopCommit {};
             class ventAlarmSilence {};
             class ventAlarmWindow {};
             class ventAlarmSeverity {};
@@ -3001,6 +3015,9 @@ class ACME_CoolerHotspot: RscButton {
 // onload wins. everything else on the dialog is inherited from ACM untouched.
 class ACM_circulation_Lifepak_Monitor_Dialog {
     onLoad = "_this call ACME_fnc_aedSyncSetup";
+    // Local operator/SYNC intent belongs to this display only. Clear it on close so an out-of-dialog
+    // AdministerShock call cannot reuse a stale local SYNC choice from an older patient/session.
+    onUnload = "uiNamespace setVariable ['ACM_circulation_AEDMonitor_DLG', nil]; uiNamespace setVariable ['ACME_sync_localArmed', nil]; missionNamespace setVariable ['ACM_circulation_AED_Monitor_Medic', objNull]";
 };
 
 class ACME_RollerClamp_Dialog {
@@ -8509,9 +8526,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 20;
         allowedSelections[] = {"LeftLeg","RightLeg"};
         condition = "!(_patient getVariable ['ACME_AAJT_inguinal', false])";
-        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
+        callbackStart = "[_this select 1, 'aajtApplying', [toLowerANSI (_this select 2), true]] call ACME_fnc_ownerDispatch";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
-        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
+        callbackFailure = "[_this select 1, 'aajtApplying', ['', false]] call ACME_fnc_ownerDispatch";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {"ACME_AAJT_S"};
@@ -8545,9 +8562,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 20;
         allowedSelections[] = {"LeftArm","RightArm"};
         condition = "((toLowerANSI _bodyPart) == 'leftarm' && {!(_patient getVariable ['ACME_AAJT_axillaleft', false])}) || {(toLowerANSI _bodyPart) == 'rightarm' && {!(_patient getVariable ['ACME_AAJT_axillaright', false])}}";
-        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, toLowerANSI (_this select 2)], true]";
+        callbackStart = "[_this select 1, 'aajtApplying', [toLowerANSI (_this select 2), true]] call ACME_fnc_ownerDispatch";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
-        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
+        callbackFailure = "[_this select 1, 'aajtApplying', ['', false]] call ACME_fnc_ownerDispatch";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {"ACME_AAJT_S"};
@@ -8581,9 +8598,9 @@ class ace_medical_treatment_actions {
         treatmentTime = 20;
         allowedSelections[] = {"Body"};
         condition = "!(_patient getVariable ['ACME_AAJT_zone3', false])";
-        callbackStart = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [time, 'body'], true]";
+        callbackStart = "[_this select 1, 'aajtApplying', ['body', true]] call ACME_fnc_ownerDispatch";
         callbackSuccess = "_this call ACME_fnc_aajtApply";
-        callbackFailure = "(_this select 1) setVariable ['ACME_Junc_AAJTApplying', [], true]";
+        callbackFailure = "[_this select 1, 'aajtApplying', ['', false]] call ACME_fnc_ownerDispatch";
         callbackProgress = "";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic4";
         items[] = {"ACME_AAJT_S"};

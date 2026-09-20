@@ -304,4 +304,4 @@ if (_doubleSpace) then {
     [_patient, "quick_view", _hintLogFormat, (_logArray + _hintLogArray)] call ACEFUNC(medical_treatment,addToLog);
 };
 
-_patient setVariable [QGVAR(AirwayChecked_Time), CBA_missionTime, true];
+[QGVAR(setAirwayCheckedTime), [_patient], _patient] call CBA_fnc_targetEvent;

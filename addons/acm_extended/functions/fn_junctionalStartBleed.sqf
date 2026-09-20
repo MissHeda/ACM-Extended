@@ -87,7 +87,11 @@ private _handle = [{
             private _rebleedDur = missionNamespace getVariable ["ACME_xstatRebleedTime", 120];  // 2 min to a full rebleed.
             private _rebleedMax = missionNamespace getVariable ["ACME_xstatRebleedMaxFrac", 0.5];  // at most half the original.
             private _rebleed = 0;
-            if (_dwell > _dwellLimit) then {
+            private _rebled = _dwell > _dwellLimit;
+            if ((_unit getVariable [format ["ACME_Junc_XStatRebled_%1", _x], false]) isNotEqualTo _rebled) then {
+                _unit setVariable [format ["ACME_Junc_XStatRebled_%1", _x], _rebled, true];
+            };
+            if (_rebled) then {
                 // the fraction of the way through the 2-minute rebleed ramp, 0 to 1. it starts at a trickle and climbs.
                 private _rf = ((_dwell - _dwellLimit) / (_rebleedDur max 0.001)) max 0 min 1;
                 _rebleed = _norm * _rebleedMax * _rf;
@@ -263,11 +267,14 @@ private _handle = [{
 
     // past the exit gate, a junctional wound is still bleeding. the ambient leak is a deletable sound-source object
     // rather than a say3d, so an important action can stop it immediately instead of queueing.
+    // Leak scheduling is public because important treatment sounds may reserve the same patient from another
+    // client or the server. serverTime is therefore the only valid clock domain for this small audio scheduler.
+    private _audioNow = serverTime;
     private _leakNext = _unit getVariable ["ACME_JuncLeakNext", -1];
-    if (_leakNext < 0) then { _leakNext = time; };
+    if (_leakNext < 0) then { _leakNext = _audioNow; };
     private _busyUntil = _unit getVariable ["ACME_SfxBusyUntil", -1];
 
-    if (time >= _leakNext && {time >= _busyUntil}) then {
+    if (_audioNow >= _leakNext && {_audioNow >= _busyUntil}) then {
         private _oldLeak = _unit getVariable ["ACME_JuncLeakSfxSrc", objNull];
         if (!isNull _oldLeak) then { deleteVehicle _oldLeak; };
 
@@ -283,9 +290,9 @@ private _handle = [{
             };
         }, [_unit, _leakSrc], 2.38] call CBA_fnc_waitAndExecute;
 
-        _leakNext = time + 5 + random 5;
+        _leakNext = _audioNow + 5 + random 5;
     };
-    if (time < _busyUntil) then {
+    if (_audioNow < _busyUntil) then {
         _leakNext = _leakNext max (_busyUntil + 0.5 + random 2);
     };
     _unit setVariable ["ACME_JuncLeakNext", _leakNext, true];

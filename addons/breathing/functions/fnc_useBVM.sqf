@@ -242,10 +242,9 @@ if (_medic getVariable ["ACME_DP_Active", false] && {!isNil "ACME_fnc_directPres
             playSound3D [QPATHTO_R(sound\bvm_squeeze.wav), _patient, false, getPosASL _patient, 12, 1, 12]; // 1.227s
             GVAR(BVM_BreathCount) = GVAR(BVM_BreathCount) + 1;
             if (GVAR(BVM_BreathCount) > 1 && (GET_AIRWAYSTATE(_patient) > 0)) then {
-                _patient setVariable [QGVAR(BVM_lastBreath), CBA_missionTime, true];
-                if (_patient getVariable [QGVAR(BVM_ConnectedOxygen), false]) then {
-                    _patient setVariable [QGVAR(BVM_lastBreathOxygen), CBA_missionTime, true];
-                };
+                // Oxygen physiology consumes these timestamps on the casualty owner. Never stamp them with the
+                // provider client's mission clock; one owner-routed event per delivered breath is sufficient.
+                [_patient, "bvmBreath", [_patient getVariable [QGVAR(BVM_ConnectedOxygen), false]]] call ACME_fnc_ownerDispatch;
             };
 
             if (GVAR(BVM_PortableOxygen)) then {

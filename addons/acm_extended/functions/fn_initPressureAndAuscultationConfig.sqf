@@ -34,3 +34,29 @@ if (isNil "ACME_DP_BleedRecalcEH") then {
         };
     }] call CBA_fnc_addEventHandler;
 };
+
+// Dedicated-server cleanup for providers that vanish before their local DP PFH can run teardown. The casualty
+// owner clears only this provider's exact marker, so disconnect/death cannot erase a replacement hold.
+if (isServer && {isNil "ACME_DP_ServerCleanupInstalled"}) then {
+    ACME_DP_ServerCleanupInstalled = true;
+    ACME_DP_ServerReleaseProvider = {
+        params ["_unit"];
+        if (isNull _unit) exitWith {};
+        private _patient = _unit getVariable ["ACME_DP_Patient", objNull];
+        private _part = _unit getVariable ["ACME_DP_Part", ""];
+        if (!isNull _patient && {_part != ""}) then {
+            [_patient, "directPressureMarker", [_unit, _part, false]] call ACME_fnc_ownerDispatch;
+        };
+        _unit setVariable ["ACME_DP_Active", false, true];
+        _unit setVariable ["ACME_DP_Patient", objNull, true];
+    };
+    addMissionEventHandler ["HandleDisconnect", {
+        params ["_unit"];
+        [_unit] call ACME_DP_ServerReleaseProvider;
+        false
+    }];
+    addMissionEventHandler ["EntityKilled", {
+        params ["_unit"];
+        [_unit] call ACME_DP_ServerReleaseProvider;
+    }];
+};

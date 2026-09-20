@@ -18,10 +18,6 @@ if (_medic getVariable ["ACME_DP_Active", false]) exitWith {
 // Clear any stale PFH/key/patient markers left by an interrupted prior hold before starting a new one.
 [true, _medic] call ACME_fnc_directPressureStop;
 
-// This synchronized marker is read by bleeding systems on the casualty owner. It is temporarily cleared by the
-// tick whenever movement or another maneuver means the provider is no longer physically maintaining pressure.
-_patient setVariable [format ["ACME_DP_press_%1", _bodyPart], _medic, true];
-
 if (_bodyPart == "body") then {
     [_medic, _patient, _bodyPart] call ACME_fnc_directPressureTorso;
 } else {
@@ -30,8 +26,4 @@ if (_bodyPart == "body") then {
     } else {
         [_medic, _patient, _bodyPart] call ACME_fnc_directPressureLimb;
     };
-};
-
-if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
-    ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
 };

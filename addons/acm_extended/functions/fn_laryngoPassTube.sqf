@@ -75,8 +75,8 @@ if (!isNull _dlg) then {
         // it rather than at an anchor that only approximates it.
         (uiNamespace getVariable ["ACME_laryngo_frame", [0,0,1,1]]) params ["_ffx","_ffy","_ffw","_ffh"];
         if (_ffw > 0 && {_ffh > 0}) then {
-            _patient setVariable ["ACME_ETT_TipFrac",
-                [(((_tp select 0) - _ffx) / _ffw), (((_tp select 1) - _ffy) / _ffh)], true];
+            private _tipFrac = [(((_tp select 0) - _ffx) / _ffw), (((_tp select 1) - _ffy) / _ffh)];
+            [_patient, "tip", [_tipFrac]] call ACME_fnc_ettMigrationStateCommit;
         };
     };
 };

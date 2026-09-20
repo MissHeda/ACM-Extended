@@ -11,6 +11,12 @@
 // _this is [_medic, _patient, _bodyPart].
 params ["_medic", "_patient", "_bodyPart"];
 if (isNull _patient) exitWith {};
+if (!local _patient) exitWith {
+    [_patient, "xstatApply", [_medic, _bodyPart]] call ACME_fnc_ownerDispatch;
+    if (hasInterface && {!isNull _medic} && {_medic isEqualTo ACE_player}) then {
+        ["XStat inserted.", 3.5, _medic] call ace_common_fnc_displayTextStructured;
+    };
+};
 private _p = toLowerANSI _bodyPart;
 if !(_p in ["leftarm", "rightarm", "leftleg", "rightleg"]) exitWith {
     ["XStat may only be used on an axillary or inguinal junctional wound.", 2.5] call ace_common_fnc_displayTextStructured;
@@ -38,4 +44,6 @@ if (local _patient) then { _patient forceWalk _legXStat } else { [_patient, _leg
 // the wound was an open bleeder, so the pfh is already running. this simply guarantees it, and the ramp.
 [_patient] call ACME_fnc_junctionalStartBleed;
 
-["XStat inserted.", 3.5] call ace_common_fnc_displayTextStructured;
+if (hasInterface && {!isNull _medic} && {_medic isEqualTo ACE_player}) then {
+    ["XStat inserted.", 3.5, _medic] call ace_common_fnc_displayTextStructured;
+};

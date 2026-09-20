@@ -73,12 +73,7 @@ private _yieldedClinical = _medic getVariable ["ACME_DP_ClinicalYield", false];
 
 if (_mustYieldClinical) exitWith {
     if (!_yieldedClinical) then {
-        if ((_patient getVariable [format ["ACME_DP_press_%1", _bodyPart], objNull]) isEqualTo _medic) then {
-            _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], objNull, true];
-            if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
-                ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
-            };
-        };
+        [_patient, "directPressureMarker", [_medic, _bodyPart, false]] call ACME_fnc_ownerDispatch;
         _medic setVariable ["ACME_DP_ClinicalYield", true];
         _medic setVariable ["ACME_DP_ClinicalYieldStart", CBA_missionTime];
     };
@@ -93,10 +88,7 @@ if (_yieldedClinical) then {
     _medic setVariable ["ACME_DP_NextClot", (_medic getVariable ["ACME_DP_NextClot", CBA_missionTime]) + _yieldDuration];
     _medic setVariable ["ACME_DP_ClinicalYield", false];
     _medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
-    _patient setVariable [format ["ACME_DP_press_%1", _bodyPart], _medic, true];
-    if (_bodyPart in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
-        ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
-    };
+    [_patient, "directPressureMarker", [_medic, _bodyPart, true]] call ACME_fnc_ownerDispatch;
 };
 
 private _held = CBA_missionTime - (_medic getVariable ["ACME_DP_Start", CBA_missionTime]);
@@ -104,4 +96,7 @@ if (_held < 15) exitWith {};
 if (CBA_missionTime < (_medic getVariable ["ACME_DP_NextClot", 0])) exitWith {};
 _medic setVariable ["ACME_DP_NextClot", CBA_missionTime + 2];
 
-[_patient, _bodyPart, 2, 3, true, false] call ACM_damage_fnc_clotWoundsOnBodyPart;
+// Wound arrays belong to the casualty owner. The provider owns only the hold timer/animation; ask the patient
+// owner to perform this clot attempt against its current wound state so simultaneous damage/coagulation cannot
+// race a remote client's read/modify/write.
+[_patient, "directPressureClot", [_medic, _bodyPart]] call ACME_fnc_ownerDispatch;

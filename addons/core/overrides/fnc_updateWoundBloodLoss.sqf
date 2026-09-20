@@ -49,7 +49,7 @@ private _juncNativeFactor = {
     switch (_state) do {
         case "wrapped": {0};
         case "xstat": {
-            private _at = _unit getVariable [format ["ACME_Junc_XStatAt_%1", _part], CBA_missionTime];
+            private _at = _unit getVariable [format ["ACME_Junc_XStatAt_%1", _part], time];
             private _dwell = (time - _at) max 0;
             private _ramp = missionNamespace getVariable ["ACME_xstatRampTime", 12];
             private _seatRemain = 1 - ((_dwell / (_ramp max 0.01)) min 1);

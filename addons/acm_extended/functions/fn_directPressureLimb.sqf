@@ -17,7 +17,6 @@ _medic setVariable ["ACME_DP_LastPoseAssert", 0];
 _medic setVariable ["ACME_DP_ClinicalYield", false];
 _medic setVariable ["ACME_DP_ClinicalYieldStart", 0];
 _medic setVariable ["ACME_DP_OwnsContinuous", false];
-_patient setVariable ["ACME_DP_LimbMedic", _medic, true];
 
 // Direct pressure over a fractured limb is a severe pain stimulus. Run it on the patient owner so ACE pain and
 // wake-state changes remain local-authoritative. The handler itself is edge-triggered and cooldown-gated.
@@ -46,6 +45,9 @@ private _partShort = [_bodyPart, "abbr"] call ACME_fnc_bodyPartName;
  "%1 started Direct pressure on %2",
  "%1 started Direct pressure on %2",
  [[_medic, false, true] call ace_common_fnc_getName, _partShort]] call ACME_fnc_medLog;
+
+// Publish the clinical pressure marker only after provider-local episode state is fully initialized.
+[_patient, "directPressureMarker", [_medic, _bodyPart, true]] call ACME_fnc_ownerDispatch;
 
 private _pfh = [ACME_fnc_directPressureTick, 0, [_medic, _patient, _bodyPart, "limb"]] call CBA_fnc_addPerFrameHandler;
 _medic setVariable ["ACME_DP_PFH", _pfh];

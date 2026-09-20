@@ -33,6 +33,7 @@ GVAR(EKG_Tick) = CBA_missionTime;
 _patient setVariable ["ACME_AED_MonitorCursorTime", GVAR(EKG_Tick), false];
 
 GVAR(AED_Monitor_Target) = _patient;
+GVAR(AED_Monitor_Medic) = _medic;  // local operator; AED_Provider is a legacy patient sentinel in base ACM.
 
 uiNamespace setVariable [QGVAR(AEDMonitor_DLG),(findDisplay IDC_LIFEPAK_MONITOR)];
 

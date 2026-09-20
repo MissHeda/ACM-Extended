@@ -82,13 +82,12 @@ if (_showTriage) exitWith {
 // Build display-local headers only when grouping is enabled. The collected actions already
 // carry the correct categories and order for both grouped and flat menus.
 private _menuActions = missionNamespace getVariable ['ace_medical_gui_actions', []];
-// Check Airway and Check Breathing are head-only live assessments.  canTreatCached can retain an
-// eligibility result for a frame while the body selection or alive state changes, and grouped children replace
-// their condition with {true} after collection.  Apply the anatomical/death gate again at paint time so these
-// two exact actions can never leak onto the chest or remain on a corpse.
+// Check Airway and Check Breathing are head-only assessments. canTreatCached deliberately keeps these evidence
+// checks available on corpses for AAR/training continuity, so the paint layer must not reintroduce a death-only
+// gate which leaks patient death. Re-apply anatomy only because grouped children replace their condition after collection.
 _menuActions = _menuActions select {
     private _class = toLower (_x param [8, '']);
-    !(_class in ['checkairway', 'checkbreathing']) || {_bodyPart == 0 && {!isNull _target} && {alive _target}}
+    !(_class in ['checkairway', 'checkbreathing']) || {_bodyPart == 0 && {!isNull _target}}
 };
 
 // Do not retain a cached positioning row after the casualty stands up.

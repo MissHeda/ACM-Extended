@@ -25,19 +25,8 @@ private _d3 = _medic getVariable ["ACME_DP_Draw3D", -1];
 if (_d3 >= 0) then {removeMissionEventHandler ["Draw3D", _d3];};
 if (!_otherManeuver) then {[] call ace_interaction_fnc_hideMouseHint;};
 
-if (!isNull _patient) then {
-    if ((_patient getVariable ["ACME_DP_TorsoMedic", objNull]) isEqualTo _medic) then {
-        _patient setVariable ["ACME_DP_TorsoMedic", objNull, true];
-    };
-    if ((_patient getVariable ["ACME_DP_LimbMedic", objNull]) isEqualTo _medic) then {
-        _patient setVariable ["ACME_DP_LimbMedic", objNull, true];
-    };
-    if (_part != "" && {(_patient getVariable [format ["ACME_DP_press_%1", _part], objNull]) isEqualTo _medic}) then {
-        _patient setVariable [format ["ACME_DP_press_%1", _part], objNull, true];
-        if (_part in ["leftarm", "rightarm", "leftleg", "rightleg"]) then {
-            ["ACME_DP_recalcBleed", [_patient], _patient] call CBA_fnc_targetEvent;
-        };
-    };
+if (!isNull _patient && {_part != ""}) then {
+    [_patient, "directPressureMarker", [_medic, _part, false]] call ACME_fnc_ownerDispatch;
 };
 
 // Break only our decorative hold. Priority 2 remains a narrow safety fallback when the engine is physically still

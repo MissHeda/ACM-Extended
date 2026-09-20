@@ -11,9 +11,11 @@ private _ok = false;
 private _refund = _spent;
 private _message = "Pressure cuff request rejected: the patient or bag changed.";
 private _found = [];
+// _issued is retained in the wire format for compatibility only. It originates on the provider client and must
+// never be compared with the casualty owner's CBA_missionTime. Epoch, stable bag identity, live bag contents,
+// medic distance and idempotent receipts already make delayed/retried requests safe.
 if (alive _patient && {alive _medic} && {(_medic distance _patient) <= 5}
-    && {_epoch == ([_patient] call ACME_fnc_clinicalEpoch)}
-    && {CBA_missionTime - _issued <= 30} && {_issued <= CBA_missionTime + 1}) then {
+    && {_epoch == ([_patient] call ACME_fnc_clinicalEpoch)}) then {
     {
         private _i = _y findIf {(_x param [8, ""]) == _bagId};
         if (_i >= 0) exitWith { _found = _y select _i; };

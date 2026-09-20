@@ -115,17 +115,18 @@
     }] call CBA_fnc_addEventHandler;
 } forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];
 
-// Zone 3 posture control must distinguish a treatment animation from a genuine attempt to stand. These events
-// originate on the provider's client, so publish a short patient timestamp that the owner-local AAJT watcher reads.
+// Zone 3 posture control must distinguish a treatment animation from a genuine attempt to stand. Treatment
+// events fire on the provider client, but the posture watcher runs on the casualty owner. Send only a duration;
+// the casualty owner stamps the actual deadline on its own CBA_missionTime clock.
 ["ace_treatmentStarted", {
     params ["_medic", "_patient"];
     if (isNull _patient || {!(_patient getVariable ["ACME_AAJT_zone3", false])}) exitWith {};
-    _patient setVariable ["ACME_AAJT_treatmentGraceUntil", CBA_missionTime + 120, true];
+    [_patient, "aajtGrace", [120]] call ACME_fnc_ownerDispatch;
 }] call CBA_fnc_addEventHandler;
 {
     [_x, {
         params ["_medic", "_patient"];
         if (isNull _patient || {!(_patient getVariable ["ACME_AAJT_zone3", false])}) exitWith {};
-        _patient setVariable ["ACME_AAJT_treatmentGraceUntil", CBA_missionTime + 0.9, true];
+        [_patient, "aajtGrace", [0.9]] call ACME_fnc_ownerDispatch;
     }] call CBA_fnc_addEventHandler;
 } forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];
