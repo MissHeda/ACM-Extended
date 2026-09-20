@@ -224,9 +224,6 @@ call ACME_fnc_initNarcBoxConfig;
 // Phase 47: shared network publication tolerance.
 call ACME_fnc_initNetworkSyncConfig;
 
-// Phase 24: ACRE2 obtunded speech-pulse configuration and delayed language registration.
-call ACME_fnc_initAcreBabbleRuntime;
-
 // Phase 24: Intubation geometry plus procedure darkness, adaptation and cyanosis presentation tunables.
 call ACME_fnc_initProcedureEnvironmentConfig;
 

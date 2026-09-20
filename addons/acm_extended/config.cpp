@@ -1742,7 +1742,6 @@ class CfgFunctions {
             class initNrbRuntime {};
             class initHangBagRuntime {};
             class initHpmkCoreRuntime {};
-            class initAcreBabbleRuntime {};
             class initProcedureEnvironmentConfig {};
             class registerHpmkVisualRuntime {};
             class registerChestSealPresenceRuntime {};
@@ -2424,9 +2423,6 @@ class CfgFunctions {
             class obtundedTick {};
             class obtundedInputLock {};
             class obtundedVoice {};
-            class acreBabbleInit {};
-            class acreBabbleSet {};
-            class acreBabbleTick {};
             class obtundedApply {};
             class obtundedTransition {};
             class obtundedSet {};
@@ -6323,17 +6319,17 @@ class CfgSounds {
     };
     class ACM_Stethoscope_Breath_Normal_Crackles {
         name = "ACM_Stethoscope_Breath_Normal_Crackles";
-        sound[] = {"acm_extended\sound\breathing_normal_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_normal_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     class ACM_Stethoscope_Breath_Fast_Crackles {
         name = "ACM_Stethoscope_Breath_Fast_Crackles";
-        sound[] = {"acm_extended\sound\breathing_fast_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_fast_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     class ACM_Stethoscope_Breath_Slow_Crackles {
         name = "ACM_Stethoscope_Breath_Slow_Crackles";
-        sound[] = {"acm_extended\sound\breathing_slow_crackles.ogg", "db+16", 1};
+        sound[] = {"acm_extended\sound\breathing_slow_crackles.ogg", "db+10", 1};
         titles[] = {};
     };
     // HPMK deploy, one-shot. it is the foil and shell rustle when a medic wraps the blanket.
