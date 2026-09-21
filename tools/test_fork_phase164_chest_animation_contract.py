@@ -15,7 +15,8 @@ def test_release_animation_finishes_supine():
 def test_chest_workspace_move_exists():
     s = read("addons/acm_extended/config.cpp")
     assert "class ACME_ChestSealWorkspace:" in s
-    assert '"AinvPknlMstpSnonWnonDnon_medic4", 0.10' in s
+    assert "class ACME_ChestSealWorkspace: ACM_CPR_Stop" in s
+    assert '"AinvPknlMstpSnonWnonDnon_medic4", 0.08' in s
 
 def test_carrier_provider_uses_medic4_and_exact_ready_handshake():
     s = read("addons/acm_extended/functions/fn_chestAccessVestProvider.sqf")
@@ -46,7 +47,7 @@ def test_restore_is_visible_reverse_sequence():
     loadout = begin.index("_loadout set [4,+_saved]")
     release = begin.index('"ACME_HeadElevPatientRelease"')
     assert grab < loadout < release
-    assert "ACME_chestAccessProviderReady" in s
+    assert '"chestAccessVestProvider", [_medic, _patient, "start"' not in s
 
 def test_chest_prep_launches_native_action_once():
     s = read("addons/core/overrides/fnc_treatment.sqf")
@@ -64,15 +65,15 @@ def test_chest_seal_workspace_hold_and_flip_handoff():
     tick = read("addons/acm_extended/functions/fn_chestSealFlipTick.sqf")
     cfg = read("addons/acm_extended/functions/fn_initChestSealProcedureRuntime.sqf")
     assert "ACME_fnc_chestSealProviderHoldStart" in start
-    assert '["chestSealWorkspace", ACME_CS_workspaceHoldAt]' in cfg
+    assert '["chestSealWorkspace"' not in cfg
     assert '[_provider,"chestSealWorkspace",_holdEpoch,true] call ACME_fnc_treatmentPoseStop' in flip
     assert '[_provider,"roll",_epoch,_current] call ACME_fnc_treatmentPoseStop' in tick
     assert "ACME_fnc_chestSealProviderHoldStart" in tick
 
-def test_workspace_close_does_not_strand_provider_without_carrier():
+def test_workspace_close_uses_semifowler_provider_exit():
     s = read("addons/acm_extended/functions/fn_chestSealClose.sqf")
-    assert "private _hasCarrierRestore" in s
-    assert '[_flipMedic,"chestSealWorkspace",_holdEpoch,_hasCarrierRestore]' in s
+    assert '[_flipMedic,_poseMode,_poseEpoch,true] call ACME_fnc_treatmentPoseStop' in s
+    assert '[_flipMedic,"lower"] call ACME_fnc_headElevMedicSeq' in s
 
 def test_semi_fowler_waits_for_reverse_carrier_restore():
     s = read("addons/acm_extended/functions/fn_headElevTryResume.sqf")
