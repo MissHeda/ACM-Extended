@@ -10,5 +10,7 @@ _display setVariable ["ACME_stethPressed",false];
 } else {
     "\acm_extended\ui\body_background_back.paa"
 });
-(_display displayCtrl 81006) ctrlSetText (if (_view == "front") then {"View back"} else {"View front"});
+if !(_display getVariable ["ACME_stethFlipActive",false]) then {
+    (_display displayCtrl 81006) ctrlSetText "Flip Side";
+};
 (_display displayCtrl 81007) ctrlSetText (if (_view == "front") then {"Anterior (front)"} else {"Posterior (back)"});
