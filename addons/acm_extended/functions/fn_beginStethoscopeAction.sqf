@@ -5,20 +5,42 @@
  * before the bell was picked up. Normal exit is Escape, and every normal dialog close routes back to the
  * previous medical menu. H is consumed while the scope is open so it cannot silently replace the minigame.
  */
-params ["_args", "_onStart", "_onCancel", "_perFrame", ["_allowProne", false], ["_dialogID", -1]];
+params [
+    "_args",
+    "_onStart",
+    "_onCancel",
+    "_perFrame",
+    ["_allowProne", false],
+    ["_dialogID", -1],
+    ["_reservedEpoch", -1, [0]]
+];
 _args params ["_medic", "_patient", "_bodyPart", ["_extraArgs", []]];
 
-if (ACM_core_ContinuousAction_Active) exitWith {};
+// A prone/posterior patient can require an asynchronous physical roll BEFORE the scope exists. That entry roll
+// reserves the continuous-action generation up front so the native treatment-success/menu lifecycle cannot reopen
+// another dialog between callbackSuccess and the eventual stethoscope display. Adopt that exact reservation here.
+private _adoptingReservation = _reservedEpoch >= 0;
+if (_adoptingReservation) then {
+    if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) != _reservedEpoch
+        || {!ACM_core_ContinuousAction_Active}) exitWith {};
+} else {
+    if (ACM_core_ContinuousAction_Active) exitWith {};
+};
 
-// B127 shares the same generation as ACM_core_fnc_beginContinuousAction. The old stethoscope PFH used only the
-// global Active flag, so an interrupted scope could survive long enough to see a later maneuver set Active=true and
-// then close/cancel that newer maneuver. Each scope now owns one immutable generation.
-private _epoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
-missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _epoch];
+// B127 shares the same generation as ACM_core_fnc_beginContinuousAction. Each scope owns one immutable generation.
+private _epoch = if (_adoptingReservation) then {
+    _reservedEpoch
+} else {
+    private _newEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
+    missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _newEpoch];
+    _newEpoch
+};
 private _isDialog = (_dialogID != -1);
 ACM_core_ContinuousAction_IsDialog = _isDialog;
 ACM_core_ContinuousAction_Active = true;
 ACM_core_ContinuousAction_ShouldReopen = false;
+_medic setVariable ["ACM_core_ContinuousAction_Session", [_patient, _epoch], true];
+_medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
 ace_medical_gui_pendingReopen = false;
 
 // Remove generic continuous-action key handlers left by an interrupted older generation. The stethoscope dialog
