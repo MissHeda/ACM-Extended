@@ -17,6 +17,22 @@
 
 params ["_medic", "_patient", ["_bodyPart", "Body"], ["_entryReady", false, [false]]];
 
+// A chest-prepared auscultation launch has already completed its patient-side lay-flat transaction. Trust that exact
+// lease instead of reclassifying one transitional visual frame and starting a second roll. This is especially
+// important for Semi-Fowler, where the Release > ACM_LyingState handoff happens immediately before this callback.
+private _chestEntry = _medic getVariable ["ACME_chestAccess_treatment", []];
+private _chestLease = _chestEntry param [2, ""];
+if (!_entryReady
+    && {(_chestEntry param [0, objNull]) isEqualTo _patient}
+    && {(_chestEntry param [1, ""]) == "usestethoscope"}
+    && {_chestLease != ""}
+    && {(_patient getVariable ["ACME_chestAccess_readyLease", ""]) == _chestLease}
+    && {(_patient getVariable ["ACME_chestAccess_readyServer", -1]) >= 0}
+    && {serverTime >= (_patient getVariable ["ACME_chestAccess_readyServer", -1])}) then {
+    _entryReady = true;
+    _patient setVariable ["ACME_CS_facing", "front", true];
+};
+
 // you cannot auscultate in an airframe.
 // this is not a balance decision, it is simply true, and every flight medic knows it. a running helicopter puts 500
 // to 2000 hz of transmission and gear-mesh noise straight through the structure, right on top of the frequencies
