@@ -41,7 +41,7 @@ if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] cal
 // the side they had before the minigame, gives the carrier back, then resumes an existing Semi-Fowler placement.
 private _sessionToken = uiNamespace getVariable ["ACME_CS_SessionToken", ""];
 if (!isNull _patient && {_sessionToken != ""}) then {
-    [_patient, "chestSealPatientEnd", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientEnd", [_patient, _sessionToken, _flipMedic]] call ACME_fnc_ownerDispatch;
 };
 uiNamespace setVariable ["ACME_CS_SessionToken", ""];
 
