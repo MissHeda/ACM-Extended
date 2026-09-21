@@ -154,34 +154,69 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 _m setVariable ["ACME_chestAccessPreflightBypass", [], false];
                 _m setVariable ["ACME_chestAccessPreflightToken", "", false];
                 ace_medical_gui_pendingReopen = false;
+
+                // Reserve a NEW scope generation before the dialog is created. beginStethoscopeAction deliberately
+                // refuses an unreserved start when ACM_core_ContinuousAction_Active is already true. The old direct
+                // call passed no epoch, so a stale/native continuous-action flag silently caused the auscultation
+                // function to exit before its onStart block and createDialog were ever reached.
+                private _entryEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
+                missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _entryEpoch];
+                missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog", true];
+                missionNamespace setVariable ["ACM_core_ContinuousAction_Active", true];
+                missionNamespace setVariable ["ACM_core_ContinuousAction_ShouldReopen", false];
+                _m setVariable ["ACM_core_ContinuousAction_Session", [_p, _entryEpoch], true];
+                _m setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
+                _m setVariable ["ACME_stethEntryEpoch", _entryEpoch, false];
+
+                // The medical menu is the only dialog which should still be present here. Close it first and let
+                // its teardown complete for one frame, then open the stethoscope using the reserved generation.
                 if (dialog) then {closeDialog 0;};
                 [{
-                    params ["_m","_p","_bodyPart","_leaseId"];
-                    if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
+                    params ["_m","_p","_bodyPart","_leaseId","_entryEpoch"];
+                    private _reservationCurrent =
+                        (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch",-2]) == _entryEpoch
+                        && {missionNamespace getVariable ["ACM_core_ContinuousAction_Active",false]};
+
+                    if (!_reservationCurrent
+                        || {isNull _m} || {isNull _p} || {!local _m} || {!alive _m}
                         || {_m getVariable ["ACE_isUnconscious",false]}
                         || {(_m distance2D _p) > ace_medical_gui_maxDistance}) exitWith {
-                        private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
-                        if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
-                        [_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+                        if (_reservationCurrent) then {
+                            missionNamespace setVariable ["ACM_core_ContinuousAction_Active",false];
+                            missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog",false];
+                        };
+                        if (!isNull _m && {(_m getVariable ["ACM_core_ContinuousAction_Session",[]]) isEqualTo [_p,_entryEpoch]}) then {
+                            _m setVariable ["ACM_core_ContinuousAction_Session",[],true];
+                            _m setVariable ["ACME_stethEntryEpoch",-1,false];
+                        };
+                        private _cur = if (isNull _m) then {[]} else {_m getVariable ["ACME_chestAccess_treatment",[]]};
+                        if (!isNull _m && {(_cur param [2,""]) == _leaseId}) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                        if (!isNull _p) then {[_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;};
                     };
 
-                    // Carrier prep guarantees the anterior/supine workspace. Skip the old entry-roll decision and
-                    // open the auscultation minigame exactly as the pre-regression path did.
-                    [_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;
+                    // This is the actual open. Carrier prep has already put the casualty face-up, so entryReady=true
+                    // skips another roll. The reserved epoch makes beginStethoscopeAction adopt this session instead
+                    // of rejecting it.
+                    _m setVariable ["ACME_stethEntryEpoch",-1,false];
+                    [_m,_p,_bodyPart,true,_entryEpoch] call ACM_breathing_fnc_useStethoscope;
 
-                    // If dialog creation genuinely failed, release only this exact carrier lease on the following frame.
+                    // Dialog creation is synchronous inside useStethoscope. If it is not present on the next frame,
+                    // fail this exact reservation and return the carrier rather than leaving a phantom chest lease.
                     [{
-                        params ["_m","_p","_leaseId"];
-                        private _open = !isNull (findDisplay 81000);
-                        private _entry = (_m getVariable ["ACME_stethEntryEpoch",-1]) >= 0;
-                        private _active = missionNamespace getVariable ["ACM_core_ContinuousAction_Active",false];
-                        if (!_open && {!_entry} && {!_active}) then {
-                            private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
-                            if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
-                            [_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+                        params ["_m","_p","_leaseId","_entryEpoch"];
+                        if (!isNull (findDisplay 81000)) exitWith {};
+                        if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch",-2]) == _entryEpoch) then {
+                            missionNamespace setVariable ["ACM_core_ContinuousAction_Active",false];
+                            missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog",false];
                         };
-                    }, [_m,_p,_leaseId]] call CBA_fnc_execNextFrame;
-                }, [_m,_p,_args select 2,_leaseId]] call CBA_fnc_execNextFrame;
+                        if (!isNull _m && {(_m getVariable ["ACM_core_ContinuousAction_Session",[]]) isEqualTo [_p,_entryEpoch]}) then {
+                            _m setVariable ["ACM_core_ContinuousAction_Session",[],true];
+                        };
+                        private _cur = if (isNull _m) then {[]} else {_m getVariable ["ACME_chestAccess_treatment",[]]};
+                        if (!isNull _m && {(_cur param [2,""]) == _leaseId}) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                        if (!isNull _p) then {[_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;};
+                    }, [_m,_p,_leaseId,_entryEpoch]] call CBA_fnc_execNextFrame;
+                }, [_m,_p,_args select 2,_leaseId,_entryEpoch]] call CBA_fnc_execNextFrame;
                 _started = true;
             } else {
                 if (_classKey == "cpr") then {
