@@ -10,10 +10,16 @@ if (!isGameFocused) then {_display setVariable ["ACME_stethPressed",false];};
 private _pressed = _display getVariable ["ACME_stethPressed",false];
 private _mouse = getMousePosition;
 private _center = _display getVariable ["ACME_stethCursor",_mouse];
-private _follow = if (_pressed) then {1 - exp (-_dt / 0.11)} else {1};
+private _dx = (_mouse select 0) - (_center select 0);
+private _dy = (_mouse select 1) - (_center select 1);
+private _dragDistance = sqrt ((_dx * _dx) + (_dy * _dy));
+// Small corrections stay responsive enough for accurate point placement, while large sweeps feel like dragging
+// a resistant bell across skin. Resistance rises with cursor separation instead of simply slowing everything.
+private _dragTau = linearConversion [0.006, 0.18, _dragDistance, 0.15, 0.85, true];
+private _follow = if (_pressed) then {1 - exp (-_dt / _dragTau)} else {1};
 _center = [
-    (_center select 0) + ((_mouse select 0) - (_center select 0)) * _follow,
-    (_center select 1) + ((_mouse select 1) - (_center select 1)) * _follow
+    (_center select 0) + (_dx * _follow),
+    (_center select 1) + (_dy * _follow)
 ];
 _display setVariable ["ACME_stethCursor",_center];
 private _size = _display getVariable ["ACME_stethBellSize",[0.05,0.08]];
@@ -39,7 +45,7 @@ private _rr = _patient getVariable ["ACM_breathing_RespirationRate",18];
 if (_hr <= 0 || {_patient getVariable ["ace_medical_inCardiacArrest",false]}) then {_gains set [2,0];};
 if (_rr < 1) then {_gains set [0,0]; _gains set [1,0];};
 private _channels = _display getVariable ["ACME_stethChannels",[]];
-if (count _channels != 5) exitWith {};
+if (count _channels != 8) exitWith {};
 // Refresh dynamic findings on the patient owner, including fluid gained/drained while this display is open.
 if (_now >= (_display getVariable ["ACME_stethNextLungUpdate",-1])) then {
     _display setVariable ["ACME_stethNextLungUpdate",_now + 1];
@@ -70,11 +76,21 @@ for "_i" from 0 to 1 do {
     _gains set [3 + _i,_gain * _blend];
 };
 
-// Keep the currently playing sounds running while moving. Native distance attenuation mixes
-// these five local sources continuously; no global fadeSound or per-frame stop/restart is used.
+// Four alternating cardiac emitters let each heartbeat sample finish naturally before that emitter is reused.
+// They all follow the same live bell attenuation, so overlapping tails do not change the listening position.
+private _targets = [
+    _gains select 0,
+    _gains select 1,
+    _gains select 2,
+    _gains select 3,
+    _gains select 4,
+    _gains select 2,
+    _gains select 2,
+    _gains select 2
+];
 {
     _x params ["_emitter","_sound","_gain"];
-    private _target = _gains select _forEachIndex;
+    private _target = _targets select _forEachIndex;
     _gain = _gain + (_target - _gain) * (1 - exp (-_dt / 0.08));
     // Zero means actual silence, including the lower lateral chest and a lifted bell.
     if (_target <= 0.0001) then {_gain = 0;};
@@ -97,7 +113,11 @@ if (alive _patient && {_hr > 0} && {!(_patient getVariable ["ace_medical_inCardi
     private _delay = 60 / (_hr max 1);
     _display setVariable ["ACME_stethNextBeat",_now + _delay];
     private _rate = if (_delay < 0.5) then {"Fast"} else {if (_delay > 1.2) then {"Slow"} else {"Normal"}};
-    [2,format ["ACM_Stethoscope_HeartBeat_%1_%2",_rate,1 + floor random 3],1 + random 0.1] call _play;
+    private _heartVoices = [2,5,6,7];
+    private _voice = _display getVariable ["ACME_stethHeartVoice",0];
+    private _heartChannel = _heartVoices select (_voice mod (count _heartVoices));
+    _display setVariable ["ACME_stethHeartVoice",(_voice + 1) mod (count _heartVoices)];
+    [_heartChannel,format ["ACM_Stethoscope_HeartBeat_%1_%2",_rate,1 + floor random 3],1 + random 0.1] call _play;
 };
 if (alive _patient && {_rr >= 1} && {_now >= (_display getVariable ["ACME_stethNextBreath",-1])}) then {
     private _delay = 60 / _rr;
