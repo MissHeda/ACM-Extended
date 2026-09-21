@@ -216,7 +216,7 @@ if (isNull _medic || {_medic isEqualTo _patient} || {!alive _medic}) then {
     }, {
         params ["_args","_begin"];
         _args call _begin;
-    }, [_args,_beginRestore], 3.25, {
+    }, [_args,_beginRestore], 4.75, {
         params ["_args","_begin"];
         _args call _begin;
     }] call CBA_fnc_waitUntilAndExecute;
