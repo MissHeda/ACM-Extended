@@ -22,9 +22,23 @@ private _pfhVar = ["ACME_chestAccess_vestPFH","ACME_CS_vestPFH"] select (_contex
 if (!_force) then {
     if (_context == "access") then {
         private _leases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
-        if ((count _leases) > 0
-            || {_patient getVariable ["ACME_CS_ProcedureActive", false]}
-            || {_patient getVariable ["ACME_Thora_ChestAccessActive", false]}) exitWith {false};
+        if ((count _leases) > 0) exitWith {false};
+
+        private _workspaceBusy = (_patient getVariable ["ACME_CS_ProcedureActive", false])
+            || {_patient getVariable ["ACME_Thora_ChestAccessActive", false]};
+        if (_workspaceBusy) exitWith {
+            // A final ordinary chest lease may end while a chest-seal/thoracostomy workspace still owns the open
+            // chest. Retry after that workspace closes so the carrier can never be stranded indefinitely.
+            [{
+                params ["_p"];
+                !(_p getVariable ["ACME_CS_ProcedureActive", false])
+                    && {!(_p getVariable ["ACME_Thora_ChestAccessActive", false])}
+                    && {(count (_p getVariable ["ACME_chestAccess_leases", createHashMap])) == 0}
+            }, {
+                _this call ACME_fnc_chestAccessVestRestore;
+            }, [_patient,false,_medic,"access"], 900] call CBA_fnc_waitUntilAndExecute;
+            false
+        };
     } else {
         if !((_patient getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo []) exitWith {false};
     };
