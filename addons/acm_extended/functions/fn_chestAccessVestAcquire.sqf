@@ -160,7 +160,7 @@ _patient setVariable [_readyVar, serverTime + _total, true];
     params ["_p","_medic","_busyVar","_token","_total","_liftWindow"];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
-    if (!isNull _medic) then {
+    if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
         [_medic, "chestAccessVestProvider", [_medic, _p]] call ACME_fnc_ownerDispatch;
     };
 
