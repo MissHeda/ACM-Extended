@@ -5,6 +5,7 @@
 // chest image position is on screen, the same as the iv-pose and syringe-dialog coordinate passes.
 // the chest-seal mini-game is drag-to-find holes. it is wound-driven, flips front to back, and is 32:9 safe.
 ACME_CS_rollTime = 1.85;
+ACME_chestAccessCarrierGap = 0.62; // m beyond the animated head axis; shared by auscultation, CPR and chest-seal carrier parking.
 ACME_rollProviderDuration = 2.2;
 ACME_CS_workspaceHoldAt = 0.85;  // medic3 sample where both hands are down on the casualty's chest.  // exact provider Flip/roll theatre requested; also locks repeat Flip presses.  // seconds the front and back roll motion plays before the orientation locks, in the held uncon state.
 // B54 provider pose freeze rules. Seconds on the native RTM timeline, measured on the owner's clock from the frame
