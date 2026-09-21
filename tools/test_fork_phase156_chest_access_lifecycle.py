@@ -20,8 +20,9 @@ pose_stop = read("addons/acm_extended/functions/fn_treatmentPoseStop.sqf")
 junction = read("addons/acm_extended/functions/fn_updateJunctionalImage.sqf")
 startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 
-# Carrier prep cannot hand back to an action while the provider's chest animation still owns the pose.
-assert 'private _providerReady = _pose isEqualTo [];' in treatment
+# Carrier prep cannot hand back while either the pose controller or outer roll-provider token still owns the medic.
+assert 'private _providerReady = (_pose isEqualTo [])' in treatment
+assert 'ACME_rollProviderActive' in treatment
 
 # Auscultation reserves a real continuous-action generation, then opens the scope directly after chest prep.
 steth = treatment.split('if (_classKey == "usestethoscope") then {', 1)[1].split('} else {\n                if (_classKey == "cpr")', 1)[0]
