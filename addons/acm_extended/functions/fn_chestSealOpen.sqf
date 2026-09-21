@@ -29,7 +29,7 @@ private _serial = (uiNamespace getVariable ["ACME_CS_SessionSerial", 0]) + 1;
 uiNamespace setVariable ["ACME_CS_SessionSerial", _serial];
 private _sessionToken = format ["%1:%2:%3", clientOwner, CBA_missionTime, _serial];
 uiNamespace setVariable ["ACME_CS_SessionToken", _sessionToken];
-[_patient, "chestSealPatientBegin", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
+[_patient, "chestSealPatientBegin", [_patient, _sessionToken, _medic]] call ACME_fnc_ownerDispatch;
 
 // Register pending viewers too, so disconnect/death before onLoad cannot strand a workspace token.
 ["ACME_CS_session", [_patient, _medic, "join", _sessionToken]] call CBA_fnc_serverEvent;
