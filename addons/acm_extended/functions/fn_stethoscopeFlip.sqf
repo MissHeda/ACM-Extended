@@ -52,4 +52,5 @@ private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
 if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
 _rollTime = (_rollTime max 0.1) min 5;
 private _args = [_patient,_provider,_display,_token,_epoch,_rollToken,_target,_rollTime,-1,diag_tickTime + 5.5,false];
-[{_this call ACME_fnc_stethoscopeFlipTick;},0,_args] call CBA_fnc_addPerFrameHandler;
+private _flipPFH = [{_this call ACME_fnc_stethoscopeFlipTick;},0,_args] call CBA_fnc_addPerFrameHandler;
+_display setVariable ["ACME_stethFlipPFH", _flipPFH];
