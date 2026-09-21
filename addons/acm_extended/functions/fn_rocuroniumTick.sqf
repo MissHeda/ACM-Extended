@@ -45,8 +45,8 @@ if (_dose >= _blockThresh) then {
     if (_established && {!_wasParalyzed}) then {
         [_patient, true, true, true] call ACME_fnc_rocParalysisCommit;
         // lock the patient incapacitated, meaning immobile. this is the closest engine state to flaccid paralysis.
-        if (!isNil "ace_medical_status_fnc_setUnconsciousState") then {
-            [_patient, true] call ace_medical_status_fnc_setUnconsciousState;
+        if (!isNil "ace_medical_fnc_setUnconscious") then {
+            [_patient, true] call ace_medical_fnc_setUnconscious;
         };
         [_patient, true, true, true, false] call ACME_fnc_rocApneaCommit;  // the respiratory muscles are out, so they must be ventilated.
     };
@@ -66,8 +66,8 @@ if (_dose >= _blockThresh) then {
             || {_patient getVariable ["ace_medical_inCardiacArrest", false]}
             || {_patient getVariable ["ACME_tbi_HasTBI", false]};
         if (!_otherReason) then {
-            if (!isNil "ace_medical_status_fnc_setUnconsciousState") then {
-                [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
+            if (!isNil "ace_medical_fnc_setUnconscious") then {
+                [_patient, false] call ace_medical_fnc_setUnconscious;
             };
         };
     };
