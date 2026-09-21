@@ -2580,6 +2580,8 @@ class CfgFunctions {
             class beginStethoscopeAction {};
             class stethoscopeInit {};
             class stethoscopeSetView {};
+            class stethoscopeEntryFlip {};
+            class stethoscopeEntryFlipTick {};
             class stethoscopeFlip {};
             class stethoscopeFlipTick {};
             class stethoscopeTick {};
@@ -7619,7 +7621,9 @@ class ace_medical_treatment_actions {
         animationMedicProne = "";
         animationMedicSelf = "";
         animationMedicSelfProne = "";
-        callbackStart = "if (toLower (_this param [3, '']) == 'usestethoscope') then {[(_this param [0, objNull])] call ACME_fnc_medicAnimationPrep}";
+        // Generic treatment preflight already owns the single empty-hands transition. A second stethoscope-specific
+        // put-away request could queue another sidearm/primary/launcher holster chain.
+        callbackStart = "";
         callbackSuccess = "private _a = +_this; private _p = _a param [1,objNull]; private _ready = if (isNull _p) then {-1} else {_p getVariable ['ACME_headElev_suspendReadyAt',-1]}; if (!isNull _p && {_p getVariable ['ACME_headElev_Suspended',false]} && {_ready > CBA_missionTime}) then {[{_this call ACM_breathing_fnc_useStethoscope},_a,((_ready - CBA_missionTime) max 0.05) + 0.05] call CBA_fnc_waitAndExecute} else {_a call ACM_breathing_fnc_useStethoscope}";
     };
     // CheckPulse is deliberately not touched. it is the base class for more than fifty actions in this addon
