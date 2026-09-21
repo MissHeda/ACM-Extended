@@ -25,10 +25,11 @@ preflight = treatment.split('// Chest-access preflight.', 1)[1].split('// BVM us
 assert '(_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}' in preflight
 assert 'private _providerReady' not in preflight
 
-# Auscultation reserves a real continuous-action generation, then opens the scope directly after chest prep.
+# Auscultation restores the normal unreserved launch after explicitly clearing stale continuous-action state.
 steth = treatment.split('if (_classKey == "usestethoscope") then {', 1)[1].split('} else {\n                if (_classKey == "cpr")', 1)[0]
-assert 'private _entryEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;' in steth
-assert '[_m,_p,_bodyPart,true,_entryEpoch] call ACM_breathing_fnc_useStethoscope;' in steth
+assert 'missionNamespace setVariable ["ACM_core_ContinuousAction_Active",false];' in steth
+assert '[_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;' in steth
+assert '_entryEpoch' not in steth
 assert 'CBA_fnc_execNextFrame' in steth
 assert 'ace_medical_treatment_fnc_treatment' not in steth
 
@@ -53,7 +54,7 @@ assert 'ACME_CS_vestPFH' in acquire
 assert '0.10' in acquire
 assert 'ACME_chestAccessCarrierGap' in park
 assert 'ACME_chestAccessCarrierGap' in cs_park
-assert '0.62' in park and '0.62' in cs_park
+assert '0.85' in park and '0.85' in cs_park
 
 # Provider work uses the known-good exact priority-1 entry so finite chest RTMs reliably reach their freeze stage.
 main = pose_start.split('private _fnStartMain = {', 1)[1].split('// Crouch first.', 1)[0]
@@ -66,7 +67,7 @@ assert '_medic setAnimSpeedCoef 0;' in freeze
 assert 'if (_state == "xstat") then {_xstatTex} else {_openTex}' in junction
 assert '_packedC ctrlShow (_state == "packed");' in junction
 
-assert 'ACME_buildBatch = "B129";' in startup
-assert 'ACME_debugRevision = "rc13";' in startup
+assert 'ACME_buildBatch = "B130";' in startup
+assert 'ACME_debugRevision = "rc14";' in startup
 
-print("PASS rc13: direct chest launch + fixed carrier park + reverse restore + XStat image")
+print("PASS rc14: UI-first auscultation + fixed carrier park + reverse restore + XStat image")
