@@ -79,8 +79,12 @@ if (_hadVest) then {
 // sequence has settled. This prevents the Semi-Fowler Grab/Release and a front/back roll from fighting over the
 // casualty skeleton.
 private _canNormalize = alive _patient && {isNull objectParent _patient} && {_preGrounded};
+// An animated carrier-removal sequence now owns the full lay-flat handoff and guarantees a face-up endpoint.
+// Do not decide from the PRE-removal animation and then queue a second roll several seconds later. If carrier
+// removal could not animate, fall back to the ordinary live side check below.
+private _vestOwnsSupine = _hadVest && {(_patient getVariable ["ACME_CS_vestBusy", ""]) != ""};
 private _actualNow = [_patient, _preSide] call ACME_fnc_chestSealActualSide;
-if (_canNormalize && {_actualNow != "front"}) then {
+if (_canNormalize && {!_vestOwnsSupine} && {_actualNow != "front"}) then {
     private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
     if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
     private _rollDelay = _readyDelay;
