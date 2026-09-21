@@ -1788,6 +1788,7 @@ class CfgFunctions {
             class registerChestAccessVestRuntime {};
             class chestAccessVestEvent {};
             class chestAccessVestAcquire {};
+            class chestAccessVestProvider {};
             class chestAccessVestPark {};
             class chestAccessVestRestore {};
             class registerMegacodeInteractionRuntime {};
