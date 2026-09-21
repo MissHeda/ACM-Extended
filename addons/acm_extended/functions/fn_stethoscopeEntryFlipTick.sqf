@@ -35,7 +35,12 @@ if (isNull _provider || {isNull _patient} || {!local _provider}
     || {!alive _provider} || {!alive _patient}) exitWith {[false] call _finish;};
 
 if (_rollStarted >= 0) exitWith {
-    if (diag_tickTime >= (_rollStarted + _rollTime + 0.08)) then {
+    private _poseNow = _provider getVariable ["ACME_treatmentPoseState",[]];
+    private _providerAtHold = (_poseNow param [0,-2]) == _epoch
+        && {(_poseNow param [1,""]) == "roll"}
+        && {(_poseNow param [3,-2]) >= 3};
+    private _patientDone = diag_tickTime >= (_rollStarted + _rollTime + 0.08);
+    if (_patientDone && {_providerAtHold || {diag_tickTime >= _deadline}}) then {
         [true] call _finish;
     };
 };
