@@ -89,6 +89,8 @@ if ((_pose param [3,-2]) >= 1
     _args set [8,diag_tickTime];
     _args set [10,true];
     [_display,_side] call ACME_fnc_stethoscopeSetView;
-    // Fifth argument preserves a head-elevation state which UseStethoscope already suspended before the scope opened.
-    [_patient,_side,false,_provider,true] call ACME_fnc_chestSealRoll;
+    // Preserve head elevation only when auscultation already has it explicitly suspended. If that invariant is
+    // absent, chestSealRoll performs its normal head-elevation teardown before rolling.
+    private _preserveHead = _patient getVariable ["ACME_headElev_Suspended",false];
+    [_patient,_side,false,_provider,_preserveHead] call ACME_fnc_chestSealRoll;
 };
