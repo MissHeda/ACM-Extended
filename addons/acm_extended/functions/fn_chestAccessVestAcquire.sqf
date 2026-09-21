@@ -84,7 +84,23 @@ private _lowerTime = missionNamespace getVariable ["ACME_headElev_lowerAnimTime"
 if (!(_lowerTime isEqualType 0) || {_lowerTime <= 0}) then {_lowerTime = 1.4;};
 private _holdTime = missionNamespace getVariable ["ACME_chestAccess_vestLiftHold", 0.18];
 if (!(_holdTime isEqualType 0) || {_holdTime < 0}) then {_holdTime = 0.18;};
-private _total = _liftTime + _holdTime + _lowerTime + 0.08;
+
+// If Semi-Fowler is active, laying the casualty flat remains the first operation. Do not start the temporary
+// vest-removal lift until the existing authored Release has reached its ready time.
+private _preDelay = 0;
+if (_patient getVariable ["ACME_headElevated", false]) then {
+    if !(_patient getVariable ["ACME_headElev_Suspended", false]) then {
+        _patient setVariable ["ACME_headElev_ResumePending", false, true];
+        [_patient, true] call ACME_fnc_headElevSuspend;
+    };
+    private _suspendReady = _patient getVariable ["ACME_headElev_suspendReadyAt", -1];
+    if (_suspendReady > CBA_missionTime) then {
+        _preDelay = (_suspendReady - CBA_missionTime) + 0.05;
+    };
+};
+
+private _sequenceTime = _liftTime + _holdTime + _lowerTime + 0.08;
+private _total = _preDelay + _sequenceTime;
 
 private _serial = (_patient getVariable ["ACME_chestAccess_vestSerial", 0]) + 1;
 _patient setVariable ["ACME_chestAccess_vestSerial", _serial, false];
@@ -92,34 +108,36 @@ private _token = format ["vest:%1:%2:%3:%4", _context, netId _patient, _serial, 
 _patient setVariable [_busyVar, _token, false];
 _patient setVariable [_readyVar, serverTime + _total, true];
 
-// Provider starts the same medic4 body-handling theatre used by Flip. It is owner-routed and does not control the
-// casualty animation; this function owns the patient Grab/Release sequence independently.
-if (!isNull _medic) then {
-    [_medic, "chestAccessVestProvider", [_medic, _patient]] call ACME_fnc_ownerDispatch;
-};
+// Start the lift only after any preceding lay-flat operation is finished. Provider and casualty begin together.
+[{
+    params ["_p","_medic","_busyVar","_token","_total"];
+    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
-// Lift the casualty into the exact same patient Grab/Hold state used for Semi-Fowler.
-[_patient, false] call ACME_fnc_headElevCollision;
-private _patientToken = [_patient, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _total + 0.5, 4, _token] call ACME_fnc_patientAnimRequest;
-[_patient, _liftTime + _holdTime + 0.25] call ACME_fnc_headElevPinPose;
+    if (!isNull _medic) then {
+        [_medic, "chestAccessVestProvider", [_medic, _p]] call ACME_fnc_ownerDispatch;
+    };
+
+    [_p, false] call ACME_fnc_headElevCollision;
+    [_p, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _total + 0.5, 4, _token] call ACME_fnc_patientAnimRequest;
+}, [_patient,_medic,_busyVar,_token,_sequenceTime], _preDelay] call CBA_fnc_waitAndExecute;
 
 // Remove the carrier only once the casualty has actually been lifted, then immediately begin the authored lay-flat
 // Release. The same token owns both requests, so no unrelated treatment can splice into the middle of the sequence.
 [{
-    params ["_p","_medic","_ctx","_savedVar","_propVar","_busyVar","_token","_patientToken","_commit","_lowerTime"];
+    params ["_p","_medic","_ctx","_savedVar","_propVar","_busyVar","_token","_commit","_lowerTime"];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
     [_p,_ctx,_savedVar,_propVar] call _commit;
 
     if (alive _p && {isNull objectParent _p}) then {
-        [_p, "ACME_HeadElevPatientRelease", 2, "chest-access-vest", _medic, _lowerTime + 0.4, 4, _patientToken] call ACME_fnc_patientAnimRequest;
+        [_p, "ACME_HeadElevPatientRelease", 2, "chest-access-vest", _medic, _lowerTime + 0.4, 4, _token] call ACME_fnc_patientAnimRequest;
         [_p, _lowerTime + 0.2] call ACME_fnc_headElevPinPose;
     };
-}, [_patient,_medic,_context,_savedVar,_propVar,_busyVar,_token,_patientToken,_commitRemoval,_lowerTime], _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
+}, [_patient,_medic,_context,_savedVar,_propVar,_busyVar,_token,_commitRemoval,_lowerTime], _preDelay + _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
 
 // Settle flat and release collision/ownership. Do not invent a roll or change the casualty's logical lying state.
 [{
-    params ["_p","_medic","_ctx","_busyVar","_readyVar","_token","_patientToken"];
+    params ["_p","_medic","_ctx","_busyVar","_readyVar","_token"];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
     _p setVariable [_busyVar, "", false];
 
@@ -131,10 +149,10 @@ private _patientToken = [_patient, "ACME_HeadElevPatientGrab", 2, "chest-access-
         } else {
             if (_uncon) then {missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]} else {"ACM_LyingState"}
         };
-        [_p, _rest, 2, "chest-access-vest", _medic, 0.8, 3, _patientToken] call ACME_fnc_patientAnimRequest;
+        [_p, _rest, 2, "chest-access-vest", _medic, 0.8, 3, _token] call ACME_fnc_patientAnimRequest;
     };
     [_p, true] call ACME_fnc_headElevCollision;
     _p setVariable [_readyVar, serverTime, true];
-}, [_patient,_medic,_context,_busyVar,_readyVar,_token,_patientToken], _total] call CBA_fnc_waitAndExecute;
+}, [_patient,_medic,_context,_busyVar,_readyVar,_token], _total] call CBA_fnc_waitAndExecute;
 
 true
