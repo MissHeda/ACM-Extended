@@ -60,9 +60,19 @@ private _open = {
     params ["_p", "_tok", "_m"];
     if (isNull _p || {!alive _m} || {(uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok}) exitWith {true};
     private _readyAt = _p getVariable ["ACME_CS_ProcedureReadyAt", -1];
+
+    // Normal path: carrier medic4 is still owned and has reached its 2.2 s frozen stage. Open at that exact
+    // boundary and chestSealProviderHoldStart hands directly into the workspace pose. If provider presentation
+    // failed/retired, clinical UI remains fail-open instead of being blocked forever by theatre.
+    private _pose = _m getVariable ["ACME_treatmentPoseState", []];
+    private _mode = _pose param [1,""];
+    private _stage = _pose param [3,-2];
+    private _providerReady = (_mode == "chestAccess" && {_stage >= 3}) || {_mode != "chestAccess"};
+
     (_tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]))
         && {_readyAt >= 0}
         && {serverTime >= _readyAt}
+        && {_providerReady}
 }, _open, [_patient, _sessionToken, _medic], 12, {
     params ["_p","_tok","_m"];
     if ((uiNamespace getVariable ["ACME_CS_SessionToken",""]) != _tok) exitWith {};
