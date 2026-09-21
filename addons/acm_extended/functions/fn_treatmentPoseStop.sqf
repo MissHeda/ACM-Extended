@@ -1,6 +1,6 @@
 // Release only the matching episode; stale callbacks cannot end a newer action.
 // Every ACME-owned treatment pose exits to a movable, unarmed crouch. Weapons are never automatically reselected.
-params [["_medic", objNull, [objNull]], ["_mode", "", [""]], ["_epoch", -1, [0]]];
+params [["_medic", objNull, [objNull]], ["_mode", "", [""]], ["_epoch", -1, [0]], ["_handoff", false, [false]]];
 if (isNull _medic) exitWith {};
 private _state = _medic getVariable ["ACME_treatmentPoseState", []];
 if (_state isEqualTo []) exitWith {};
@@ -56,7 +56,10 @@ private _ownsEntry = _stage <= 1 && {
 
 // Use playMoveNow through the move graph, never switchMove, so the work state blends back into the normal
 // unarmed crouch. Weapon selection is not touched here; the start preflight already cleared it exactly once.
-if (local _medic && {alive _medic} && {!(_medic getVariable ["ACE_isUnconscious", false])}
+if (!_handoff
+    && {local _medic}
+    && {alive _medic}
+    && {!(_medic getVariable ["ACE_isUnconscious", false])}
     && {!([_medic] call ACME_fnc_animBlocked)}
     && {_current == toLower _main || {_ownsEntry} || {_stage >= 2} || {_currentMode in ["stethoscope","pulse"]}}) then {
     // B56: a standing medicUp episode exits to the unarmed standing idle; every kneeling episode exits to
