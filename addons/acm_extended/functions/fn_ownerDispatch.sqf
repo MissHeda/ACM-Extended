@@ -63,6 +63,7 @@ switch (_operation) do {
     case "headElevTreatment": {_args call ACME_fnc_headElevTreatmentEvent;};
     case "chestAccessVestEvent": {_args call ACME_fnc_chestAccessVestEvent;};
     case "chestAccessVestProvider": {_args call ACME_fnc_chestAccessVestProvider;};
+    case "chestSealProviderHold": {_args call ACME_fnc_chestSealProviderHoldStart;};
     case "headElevTilt": {_args call ACME_fnc_headElevApplyTilt;};
     case "headElevCollision": {_args call ACME_fnc_headElevCollision;};
     case "headElevSuspend": {_args call ACME_fnc_headElevSuspend;};
