@@ -29,7 +29,7 @@ private _serial = (uiNamespace getVariable ["ACME_CS_SessionSerial", 0]) + 1;
 uiNamespace setVariable ["ACME_CS_SessionSerial", _serial];
 private _sessionToken = format ["%1:%2:%3", clientOwner, CBA_missionTime, _serial];
 uiNamespace setVariable ["ACME_CS_SessionToken", _sessionToken];
-[_patient, "chestSealPatientBegin", [_patient, _sessionToken, _medic]] call ACME_fnc_ownerDispatch;
+[_patient, "chestSealPatientBegin", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
 
 // Register pending viewers too, so disconnect/death before onLoad cannot strand a workspace token.
 ["ACME_CS_session", [_patient, _medic, "join", _sessionToken]] call CBA_fnc_serverEvent;
@@ -40,8 +40,6 @@ private _open = {
         || {_m isNotEqualTo ACE_player} || {_m getVariable ["ACE_isUnconscious", false]}) exitWith {
         [] call ACME_fnc_chestSealClose;
     };
-    private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
-    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
     ["ACME_ChestSeal_Dialog"] call ACME_fnc_minigameOpen;
     [{
         params ["_p", "_tok"];
@@ -51,14 +49,6 @@ private _open = {
         };
     }, [_p, _tok], 0.2] call CBA_fnc_waitAndExecute;
 };
-private _abortPrepare = {
-    params ["_p", "_tok", "_m"];
-    if ((uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok) exitWith {};
-    if (!isNull _m && {local _m}) then {
-        ["Unable to prepare the patient for chest access.", 2, _m] call ace_common_fnc_displayTextStructured;
-    };
-    [] call ACME_fnc_chestSealClose;
-};
 [{
     params ["_p", "_tok", "_m"];
     if (isNull _p || {!alive _m} || {(uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok}) exitWith {true};
@@ -66,6 +56,4 @@ private _abortPrepare = {
     (_tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]))
         && {_readyAt >= 0}
         && {serverTime >= _readyAt}
-// Animated carrier removal plus a real posterior-to-supine roll can legitimately exceed four seconds.
-// A timeout is an abort, never permission to open on top of an unfinished patient/provider animation.
-}, _open, [_patient, _sessionToken, _medic], 12, _abortPrepare] call CBA_fnc_waitUntilAndExecute;
+}, _open, [_patient, _sessionToken, _medic], 4, _open] call CBA_fnc_waitUntilAndExecute;
