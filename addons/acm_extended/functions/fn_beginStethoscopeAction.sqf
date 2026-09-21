@@ -148,6 +148,9 @@ private _pfh = [{
             && {!_patientCondition} && {!_medicCondition};
 
         ACM_core_ContinuousAction_Active = false;
+        if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
+            _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+        };
         [_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop;
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
 
