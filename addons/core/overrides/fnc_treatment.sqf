@@ -135,31 +135,89 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
             private _ready = _p getVariable ["ACME_chestAccess_readyServer", -1];
-            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}
+            private _pose = _m getVariable ["ACME_treatmentPoseState", []];
+            private _providerReady = _pose isEqualTo [];
+            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready} && {_providerReady}
         }, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
             if (isNull _m || {!local _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {};
 
             _m setVariable ["ACME_chestAccessPreflightActive", false, false];
-            _m setVariable ["ACME_chestAccessPreflightBypass", [_args select 1, _args select 2, _args select 3], false];
-            private _started = _args call ace_medical_treatment_fnc_treatment;
-            _m setVariable ["ACME_chestAccessPreflightBypass", [], false];
-            _m setVariable ["ACME_chestAccessPreflightToken", "", false];
+            private _started = false;
 
-            // A stale/invalid action can fail its final native canTreat check after the physical chest-access
-            // preflight has already completed. Do not strand the removed carrier for the 900 s watchdog window:
-            // release the exact lease immediately when no treatment actually started.
-            if (!_started) then {
-                private _cur = _m getVariable ["ACME_chestAccess_treatment", []];
-                if ((_cur param [2, ""]) == _leaseId) then {
-                    _m setVariable ["ACME_chestAccess_treatment", []];
+            if (_classKey == "usestethoscope") then {
+                // Do not recursively re-enter the generic treatment bridge after the carrier animation. That second
+                // pass is the regression: if any provider/menu state changes during prep it returns false, which
+                // immediately restores the carrier and the scope never exists. Chest prep already validated the click.
+                // Close the medical menu completely, then create the known-good stethoscope dialog on the next frame.
+                _m setVariable ["ACME_chestAccessPreflightBypass", [], false];
+                _m setVariable ["ACME_chestAccessPreflightToken", "", false];
+                ace_medical_gui_pendingReopen = false;
+                if (dialog) then {closeDialog 0;};
+                [{
+                    params ["_m","_p","_bodyPart","_leaseId"];
+                    if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
+                        || {_m getVariable ["ACE_isUnconscious",false]}
+                        || {(_m distance2D _p) > ace_medical_gui_maxDistance}) exitWith {
+                        private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
+                        if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                        [_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+                    };
+
+                    // Carrier prep guarantees the anterior/supine workspace. Skip the old entry-roll decision and
+                    // open the auscultation minigame exactly as the pre-regression path did.
+                    [_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;
+
+                    // If dialog creation genuinely failed, release only this exact carrier lease on the following frame.
+                    [{
+                        params ["_m","_p","_leaseId"];
+                        private _open = !isNull (findDisplay 81000);
+                        private _entry = (_m getVariable ["ACME_stethEntryEpoch",-1]) >= 0;
+                        private _active = missionNamespace getVariable ["ACM_core_ContinuousAction_Active",false];
+                        if (!_open && {!_entry} && {!_active}) then {
+                            private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
+                            if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                            [_p,_m,_leaseId,false,"usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+                        };
+                    }, [_m,_p,_leaseId]] call CBA_fnc_execNextFrame;
+                }, [_m,_p,_args select 2,_leaseId]] call CBA_fnc_execNextFrame;
+                _started = true;
+            } else {
+                if (_classKey == "cpr") then {
+                    // Native CPR owns its continuous session. Enter it directly after chest prep instead of
+                    // recursing through this wrapper and risking another preflight rejection.
+                    private _dpSame = (_m getVariable ["ACME_DP_Active",false])
+                        && {(_m getVariable ["ACME_DP_Patient",objNull]) isEqualTo _p};
+                    if (_dpSame) then {
+                        _m setVariable ["ACME_DP_Paused",true,false];
+                        _m setVariable ["ACME_DP_PauseTreatmentClass","cpr",false];
+                        _m setVariable ["ACME_dah_gen",(_m getVariable ["ACME_dah_gen",0]) + 1,false];
+                        _m setVariable ["ACME_DP_InPose",false,false];
+                    };
+                    _started = _args call ACM_core_fnc_treatmentNative;
+                    if (!_started && {_dpSame}) then {
+                        _m setVariable ["ACME_DP_Paused",false,false];
+                        _m setVariable ["ACME_DP_PauseTreatmentClass","",false];
+                    };
+                } else {
+                    _m setVariable ["ACME_chestAccessPreflightBypass", [_args select 1, _args select 2, _args select 3], false];
+                    _started = _args call ace_medical_treatment_fnc_treatment;
+                    _m setVariable ["ACME_chestAccessPreflightBypass", [], false];
                 };
-                if (!isNull _p) then {
-                    [_p,_m,_leaseId,false,_classKey] call ACME_fnc_chestAccessVestEvent;
+                _m setVariable ["ACME_chestAccessPreflightToken", "", false];
+
+                if (!_started) then {
+                    private _cur = _m getVariable ["ACME_chestAccess_treatment", []];
+                    if ((_cur param [2, ""]) == _leaseId) then {
+                        _m setVariable ["ACME_chestAccess_treatment", []];
+                    };
+                    if (!isNull _p) then {
+                        [_p,_m,_leaseId,false,_classKey] call ACME_fnc_chestAccessVestEvent;
+                    };
                 };
             };
-        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass], 6.5, {
+        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass], 8, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
             if (isNull _m || {!local _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {};
