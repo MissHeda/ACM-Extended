@@ -74,6 +74,10 @@ if (!isNull _medic) then {
 if (_continuousEpoch >= 0
     && {(missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch",-2]) == _continuousEpoch}) then {
     ACM_core_ContinuousAction_Active = false;
+    if (!isNull _medic
+        && {(_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _continuousEpoch]}) then {
+        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+    };
 };
 
 // Release only the exact stethoscope treatment-pose generation. treatmentPoseStop restores animSpeedCoef,
