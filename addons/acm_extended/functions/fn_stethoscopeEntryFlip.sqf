@@ -30,5 +30,5 @@ private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
 if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
 _rollTime = (_rollTime max 0.1) min 5;
 
-private _args = [_medic, _patient, _bodyPart, _epoch, _rollToken, _rollTime, -1, diag_tickTime + 4];
+private _args = [_medic, _patient, _bodyPart, _epoch, _rollToken, _rollTime, -1, diag_tickTime + 5.5];
 [{_this call ACME_fnc_stethoscopeEntryFlipTick;}, 0, _args] call CBA_fnc_addPerFrameHandler;
