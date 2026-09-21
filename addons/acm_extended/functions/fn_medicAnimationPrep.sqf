@@ -10,7 +10,12 @@ if (isNull _medic || {!local _medic} || {!alive _medic} || {[_medic] call ACME_f
 // This matters most for sidearms: selectWeapon "" can clear currentWeapon before the pistol model/hand pose has
 // actually finished holstering, which lets a medical RTM play underneath a still-visible handgun.
 private _state = toLowerANSI animationState _medic;
-private _visuallyEmpty = ((_state find "wnon") >= 0) && {((_state find "snon") >= 0)};
+private _ownedEmptyState = _state in [
+    "acme_chestsealworkspace",
+    "acme_stethoscopework",
+    "acme_directpressurehold"
+];
+private _visuallyEmpty = (((_state find "wnon") >= 0) && {((_state find "snon") >= 0)}) || {_ownedEmptyState};
 private _weapon = currentWeapon _medic;
 if (_weapon == "" && {_visuallyEmpty}) exitWith {
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
