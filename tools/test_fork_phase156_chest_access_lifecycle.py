@@ -20,9 +20,10 @@ pose_stop = read("addons/acm_extended/functions/fn_treatmentPoseStop.sqf")
 junction = read("addons/acm_extended/functions/fn_updateJunctionalImage.sqf")
 startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 
-# Carrier prep cannot hand back while either the pose controller or outer roll-provider token still owns the medic.
-assert 'private _providerReady = (_pose isEqualTo [])' in treatment
-assert 'ACME_rollProviderActive' in treatment
+# Patient/carrier readiness alone launches the clinical action. Provider animation bookkeeping is presentation only.
+preflight = treatment.split('// Chest-access preflight.', 1)[1].split('// BVM uses ACM', 1)[0]
+assert '(_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}' in preflight
+assert 'private _providerReady' not in preflight
 
 # Auscultation reserves a real continuous-action generation, then opens the scope directly after chest prep.
 steth = treatment.split('if (_classKey == "usestethoscope") then {', 1)[1].split('} else {\n                if (_classKey == "cpr")', 1)[0]
@@ -65,7 +66,7 @@ assert '_medic setAnimSpeedCoef 0;' in freeze
 assert 'if (_state == "xstat") then {_xstatTex} else {_openTex}' in junction
 assert '_packedC ctrlShow (_state == "packed");' in junction
 
-assert 'ACME_buildBatch = "B128";' in startup
-assert 'ACME_debugRevision = "rc12";' in startup
+assert 'ACME_buildBatch = "B129";' in startup
+assert 'ACME_debugRevision = "rc13";' in startup
 
-print("PASS rc12: chest lifecycle + reverse carrier restore + head clearance + XStat image")
+print("PASS rc13: direct chest launch + fixed carrier park + reverse restore + XStat image")
