@@ -15,7 +15,7 @@
  * Public: No
  */
 
-params ["_medic", "_patient", ["_bodyPart", "Body"]];
+params ["_medic", "_patient", ["_bodyPart", "Body"], ["_entryReady", false, [false]]];
 
 // you cannot auscultate in an airframe.
 // this is not a balance decision, it is simply true, and every flight medic knows it. a running helicopter puts 500
@@ -36,6 +36,17 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
     ["Cannot auscultate: airframe noise. Use EtCO2, SpO2 and chest rise.", 3, _medic] call ace_common_fnc_displayTextStructured;
 };
 
+// Re-entering auscultation must respect the casualty's actual side. If a legitimately rollable patient is prone,
+// use the same provider medic4 + patient roll sequence as chest-seal Flip and do not create the scope until the
+// roll-to-supine animation has finished. This prevents the old direct ACM_LyingState request from teleporting a
+// previously flipped casualty onto their back.
+if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
+    private _actualSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
+    if (_actualSide == "back") exitWith {
+        [_medic, _patient, _bodyPart] call ACME_fnc_stethoscopeEntryFlip;
+    };
+};
+
 [_patient, "activity", "STR_ACM_breathing_Stethoscope_ActionLog", [[_medic, false, true] call ace_common_fnc_getName]] call ace_medical_treatment_fnc_addToLog;
 
 [[_medic, _patient, _bodyPart], {  // on start.
@@ -50,21 +61,28 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
     // A conscious upright casualty who was not already positioned is not forced to the ground.
     private _lyingRaw = _patient getVariable ["ACM_core_Lying_State", false];
     private _lying = if (_lyingRaw isEqualType true) then {_lyingRaw} else {_lyingRaw > 0};
-    private _needsSupine = (_patient getVariable ["ACE_isUnconscious", false])
+    private _needsHeldRest = (_patient getVariable ["ACE_isUnconscious", false])
         || {_patient getVariable ["ace_medical_unconscious", false]}
         || {_lying}
         || {_patient getVariable ["ACME_headElevated", false]}
         || {_patient getVariable ["ACME_headElev_Suspended", false]}
         || {(stance _patient) == "PRONE"};
-    if (_needsSupine && {isNull objectParent _patient}) then {
+    private _actualSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
+    private _canHoldPatient = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
+    if (_needsHeldRest && {_canHoldPatient} && {isNull objectParent _patient}) then {
         private _serial = (missionNamespace getVariable ["ACME_stethPatientAnimSerial", 0]) + 1;
         missionNamespace setVariable ["ACME_stethPatientAnimSerial", _serial];
         private _token = format ["steth:%1:%2:%3:%4", clientOwner, netId _medic, netId _patient, _serial];
-        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
-        private _anim = ["", _faceUp] select ((toLowerANSI animationState _patient) != (toLowerANSI _faceUp));
+        private _hold = if (_actualSide == "back") then {
+            missionNamespace getVariable ["ACME_uncon_faceDown", "ace_medical_engine_uncon_anim_1"]
+        } else {
+            missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]
+        };
+        private _anim = ["", _hold] select ((toLowerANSI animationState _patient) != (toLowerANSI _hold));
         [_patient, _anim, 2, "stethoscope", _medic, 1.6, 4, _token] call ACME_fnc_patientAnimRequest;
         _medic setVariable ["ACME_stethPatientAnimLease", [_patient, _token, CBA_missionTime + 0.65], false];
     } else {
+        // Awake/mobile prone patients can be viewed posteriorly, but auscultation must not seize their animation.
         _medic setVariable ["ACME_stethPatientAnimLease", [], false];
     };
 
@@ -78,6 +96,8 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
 
     private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
     [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
+    private _initialSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
+    [_display, _initialSide] call ACME_fnc_stethoscopeSetView;
     private _ctrlText = _display displayCtrl 81001;
     _ctrlText ctrlSetText format ["%1 (%2)", [_patient, false, true] call ace_common_fnc_getName, (localize "STR_ACE_medical_gui_Torso")];
 }, {  // on cancel.
