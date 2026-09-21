@@ -9,6 +9,14 @@ missionNamespace setVariable ["ACME_chestAccess_classes", _classes];
     if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {};
     private _class = toLowerANSI _classname;
     if !(_class in (missionNamespace getVariable ["ACME_chestAccess_classes", []])) exitWith {};
+
+    // The animation preflight reserves custody BEFORE native treatment starts. If this exact provider/patient/class
+    // already owns a lease, keep it; treatmentStarted must not remove the carrier twice or create a second owner.
+    private _existing = _medic getVariable ["ACME_chestAccess_treatment", []];
+    if ((_existing param [0,objNull]) isEqualTo _patient
+        && {(_existing param [1,""]) == _class}
+        && {(_existing param [2,""]) != ""}) exitWith {};
+
     private _serial = (missionNamespace getVariable ["ACME_chestAccess_serial", 0]) + 1;
     missionNamespace setVariable ["ACME_chestAccess_serial", _serial];
     private _id = format ["%1:%2:%3", clientOwner, netId _medic, _serial];
