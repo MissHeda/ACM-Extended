@@ -18,8 +18,7 @@ if (_start) then {
     _leases deleteAt _id;
 };
 _patient setVariable ["ACME_chestAccess_leases", _leases, true];
-if (!_start && {(count _leases) == 0}
-    && {(_patient getVariable ["ACME_chestAccess_readyLease",""]) == _id}) then {
+if (!_start && {(count _leases) == 0}) then {
     _patient setVariable ["ACME_chestAccess_readyLease", "", true];
 };
 
