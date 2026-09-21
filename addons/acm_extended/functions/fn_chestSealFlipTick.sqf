@@ -6,6 +6,9 @@ _args params ["_patient","_provider","_display","_session","_token","_epoch","_r
 private _current = (uiNamespace getVariable ["ACME_CS_FlipPendingToken",""]) == _token;
 private _finish = {
     [_handle] call CBA_fnc_removePerFrameHandler;
+    if ((uiNamespace getVariable ["ACME_CS_FlipPFH",-1]) == _handle) then {
+        uiNamespace setVariable ["ACME_CS_FlipPFH",-1];
+    };
     // Retire only our provider animation and DP handoff; a later action owns its own state.
     if (!isNull _provider && {local _provider}
         && {(_provider getVariable ["ACME_rollProviderToken",""]) == _rollToken}
