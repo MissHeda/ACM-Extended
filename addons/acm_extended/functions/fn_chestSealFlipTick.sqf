@@ -18,9 +18,15 @@ private _finish = {
         _provider setVariable ["ACME_rollProviderPFH",-1];
         _provider setVariable ["ACME_rollProviderToken",""];
         _provider setVariable ["ACME_rollProviderActive",false];
-        [_provider,"roll",_epoch] call ACME_fnc_treatmentPoseStop;
+        // Same live workspace: suppress the neutral crouch and hand directly back to hands-on-chest.
+        [_provider,"roll",_epoch,_current] call ACME_fnc_treatmentPoseStop;
     };
     if (!_current) exitWith {};
+
+    private _holdEpoch = [_provider,_patient] call ACME_fnc_chestSealProviderHoldStart;
+    _provider setVariable ["ACME_CS_providerHoldEpoch",_holdEpoch,false];
+    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",_holdEpoch];
+
     uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
     uiNamespace setVariable ["ACME_CS_FlipLockedUntil",0];
     uiNamespace setVariable ["ACME_CS_FlipTarget",""];
