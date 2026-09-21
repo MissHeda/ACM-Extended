@@ -7,6 +7,10 @@ if (!local _patient) exitWith {
     [_patient, "chestSealRoll", [_patient, _target, _force, _provider]] call ACME_fnc_ownerDispatch;
 };
 
+// Owner-authoritative final gate. A provider cannot force a physical patient animation merely because
+// the casualty is prone, obtunded, or carries stale chest-procedure state.
+if !([_patient] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};
+
 // Outside this minigame a body roll must tear down head elevation normally. Inside it, Semi-Fowler is only
 // suspended, so the front/back roll theatre must not destroy the logical posture we will restore on exit.
 if !(_patient getVariable ["ACME_CS_ProcedureActive", false]) then {
@@ -19,13 +23,6 @@ if (!_force && {_actual isEqualTo _target}) exitWith {};
 
 // Never invent a different diagram side when the body itself cannot be animated.
 if ((!alive _patient) || {(lifeState _patient) isEqualTo "DEAD"} || {!isNull objectParent _patient}) exitWith {};
-
-private _isUncon = (_patient getVariable ["ACE_isUnconscious", false]) || {_patient getVariable ["ace_medical_unconscious", false]};
-private _isObtunded = _patient getVariable ["ACME_obtunded", false];
-private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"}
-    || {_patient getVariable ["ACM_core_Lying_State", false]}
-    || {_patient getVariable ["ACME_CS_ProcedureGrounded", false]};
-if (!_isGrounded) exitWith {};
 
 private _trans = if (_target isEqualTo "back") then {
     // posterior up -> patient rolls onto the front
@@ -54,6 +51,7 @@ _patient setVariable ["ACME_CS_rollUntil", CBA_missionTime + _rollTime, false];
     params ["_p", "_tok", "_trans"];
     if (isNull _p || {!local _p} || {!alive _p} || {!isNull objectParent _p}) exitWith {};
     if ((_p getVariable ["ACME_CS_rollToken", ""]) != _tok) exitWith {};
+    if !([_p] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};
     if ((toLower animationState _p) != (toLower _trans)) then {
         [_p, _trans, 2] call ACME_fnc_doAnim;
     };
@@ -66,16 +64,12 @@ _patient setVariable ["ACME_CS_rollUntil", CBA_missionTime + _rollTime, false];
     _p setVariable ["ACME_CS_rollToken", "", false];
     _p setVariable ["ACME_CS_rollUntil", -1, false];
     if (!alive _p || {!isNull objectParent _p}) exitWith {};
-    private _stillGrounded = (_p getVariable ["ACE_isUnconscious", false])
-        || {_p getVariable ["ace_medical_unconscious", false]}
-        || {_p getVariable ["ACME_obtunded", false]}
-        || {(stance _p) == "PRONE"}
-        || {_p getVariable ["ACM_core_Lying_State", false]}
-        || {_p getVariable ["ACME_CS_ProcedureGrounded", false]};
-    if (_needsHold && {_stillGrounded}) then {["ace_common_switchMove", [_p, _hold]] call CBA_fnc_globalEvent;};
-    // Update the cache only after the physical endpoint is reached. UI classification still uses actual body
-    // geometry/ACE animation first, so an external roll can immediately supersede this value.
-    _p setVariable ["ACME_CS_facing", _target, true];
+    private _stillRollable = [_p] call ACME_fnc_chestSealCanPhysicalRoll;
+    if (_needsHold && {_stillRollable}) then {
+        ["ace_common_switchMove", [_p, _hold]] call CBA_fnc_globalEvent;
+        // Cache only while the patient is still legitimately under the authored lying/unconscious pose.
+        _p setVariable ["ACME_CS_facing", _target, true];
+    };
     // The carrier is parked once when chest access begins.  Keep that world-space placement through
     // front/back flips instead of shuttling the vest around the casualty on every roll.
-}, [_patient, _token, _hold, _isGrounded, _target], _rollTime] call CBA_fnc_waitAndExecute;
+}, [_patient, _token, _hold, true, _target], _rollTime] call CBA_fnc_waitAndExecute;

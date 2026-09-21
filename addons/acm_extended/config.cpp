@@ -1925,6 +1925,7 @@ class CfgFunctions {
             class nrbOxygenAck {};
             class chestSealKey {};
             class chestSealActualSide {};
+            class chestSealCanPhysicalRoll {};
             class chestSealReset {};
             class chestSealSession {};
             class chestSealRequest {};

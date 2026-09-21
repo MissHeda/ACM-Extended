@@ -18,15 +18,12 @@ uiNamespace setVariable ["ACME_CS_FingerGlow", []];
 
 private _dead = (!alive _patient) || {(lifeState _patient) isEqualTo "DEAD"};
 private _self = _patient isEqualTo (uiNamespace getVariable ["ACME_CS_Medic", objNull]);
-private _isUncon = (_patient getVariable ["ACE_isUnconscious", false]) || {_patient getVariable ["ace_medical_unconscious", false]};
-private _isObtunded = _patient getVariable ["ACME_obtunded", false];
-private _isGrounded = _isUncon || _isObtunded || {(stance _patient) == "PRONE"}
-    || {_patient getVariable ["ACM_core_Lying_State", false]}
-    || {_patient getVariable ["ACME_CS_ProcedureGrounded", false]};
-private _willAnimate = (!_dead) && {!_self} && {_isGrounded} && {isNull objectParent _patient};
+// Physical control belongs only to a genuinely unconscious casualty or an awake casualty that
+// is still inside ACM's authored Lying State. Ordinary prone/obtunded/mobile players are view-only.
+private _willAnimate = (!_dead) && {!_self} && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll};
 
-// When the body cannot be animated (awake/free-standing, dead, self, or in a vehicle), Flip remains a valid
-// procedural view change. It never forces the casualty into a new physical animation.
+// When the body cannot be physically controlled (including ANY ordinary conscious prone/mobile state),
+// Flip remains only a procedural view change. It never forces the casualty into a new animation.
 if (!_willAnimate) exitWith {
     uiNamespace setVariable ["ACME_CS_Side", _newSide];
     uiNamespace setVariable ["ACME_CS_FlipTarget", ""];

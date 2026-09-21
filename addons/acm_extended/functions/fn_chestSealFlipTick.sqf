@@ -41,6 +41,17 @@ if (!_current || {isNull _display} || {isNull _patient} || {isNull _provider}
 if (_rollStarted >= 0) exitWith {
     if (diag_tickTime >= (_rollStarted + _rollTime)) then {call _finish;};
 };
+
+// The click may have started while the casualty was unconscious and completed after they woke or got up.
+// Never dispatch a physical roll from a stale eligibility snapshot. Fall back to a virtual view change.
+if !([_patient] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {
+    uiNamespace setVariable ["ACME_CS_Side", _side];
+    uiNamespace setVariable ["ACME_CS_FlipTarget", ""];
+    uiNamespace setVariable ["ACME_CS_VirtualFlip", true];
+    [] call ACME_fnc_chestSealRender;
+    call _finish;
+};
+
 private _pose = _provider getVariable ["ACME_treatmentPoseState",[]];
 if (_epoch < 0 || {_rollToken == ""}
     || {!local _provider} || {_provider getVariable ["ACE_isUnconscious",false]}

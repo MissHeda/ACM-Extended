@@ -80,13 +80,9 @@ private _restoreSide = {
         || {!((_p getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo [])}) exitWith {};
     private _actual = [_p, _p getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
     private _dead = (!alive _p) || {(lifeState _p) isEqualTo "DEAD"};
-    private _grounded = (_p getVariable ["ACE_isUnconscious", false])
-        || {_p getVariable ["ace_medical_unconscious", false]}
-        || {_p getVariable ["ACME_obtunded", false]}
-        || {(stance _p) == "PRONE"}
-        || {_p getVariable ["ACM_core_Lying_State", false]}
-        || {_p getVariable ["ACME_CS_ProcedureGrounded", false]};
-    private _canRoll = !_dead && {isNull objectParent _p} && {_grounded};
+    // Closing the workspace cannot restore an old side by force after the casualty has woken,
+    // stood up, started crawling, or otherwise left ACM's authored lying/unconscious state.
+    private _canRoll = !_dead && {[_p] call ACME_fnc_chestSealCanPhysicalRoll};
 
     if (_canRoll && {_actual != _side}) then {
         [_p, _side, false, objNull] call ACME_fnc_chestSealRoll;

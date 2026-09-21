@@ -31,11 +31,9 @@ private _preSide = if (_preHeadElev) then {
 private _preRecovery = _patient getVariable ["ACM_airway_RecoveryPosition_State", false];
 private _preLying = _patient getVariable ["ACM_core_Lying_State", false];
 private _preAnim = animationState _patient;
-private _preGrounded = _preHeadElev || _preRecovery || _preLying
-    || {_patient getVariable ["ACE_isUnconscious", false]}
-    || {_patient getVariable ["ace_medical_unconscious", false]}
-    || {_patient getVariable ["ACME_obtunded", false]}
-    || {(stance _patient) == "PRONE"};
+// This flag records whether physical rolling was legitimately permitted when the workspace opened.
+// Manual prone, obtundation and ordinary conscious posture are not roll permission.
+private _preGrounded = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
 _patient setVariable ["ACME_CS_PreProcedureState", [_preSide, _preHeadElev, _preRecovery, _preLying, _preAnim], true];
 _patient setVariable ["ACME_CS_ProcedureGrounded", _preGrounded, true];
 _patient setVariable ["ACME_CS_facing", _preSide, true];
