@@ -68,34 +68,6 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
         };
 
-        // Chest-seal workspace hold. The runtime freezes this exact medic3 motion at the configured hands-on-chest
-        // sample for the lifetime of the minigame. A Flip may interpolate into medic4 and then return here directly.
-        class AinvPknlMstpSnonWnonDnon_medic3;
-        class ACME_ChestSealWorkspace: AinvPknlMstpSnonWnonDnon_medic3 {
-            looped = 0;
-            disableWeapons = 1;
-            disableWeaponsLong = 1;
-            disableWeaponsShort = 1;
-            disableReload = 1;
-            canPullTrigger = 0;
-            enableOptics = 0;
-            enableBinocular = 0;
-            connectFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
-            };
-            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
-            interpolateFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
-            };
-            interpolateTo[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10,
-                "Unconscious", 0.02
-            };
-        };
-
         // Semi-Fowler states.
         //
         // THE RULE THAT DRIVES ALL OF THIS, MEASURED IN GAME ON 2026-09-11.
@@ -133,10 +105,7 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         };
         class ACME_HeadElevPatientRelease: AinjPpneMrunSnonWnonDb_release {
             looped = 0;
-            // The BI release parent naturally hands off to the injured prone idle. That is correct for dragging,
-            // but wrong for our "lay patient flat" use: carrier removal and Semi-Fowler lowering must finish
-            // anterior-up/supine. ACM_LyingState is ACM's authored stable supine endpoint.
-            ConnectTo[] = {"ACM_LyingState", 0.1};
+            ConnectTo[] = {"AinjPpneMstpSnonWnonDnon", 0.1};
             InterpolateTo[] = {"Unconscious", 0.02};
         };
 
@@ -1819,7 +1788,6 @@ class CfgFunctions {
             class registerChestAccessVestRuntime {};
             class chestAccessVestEvent {};
             class chestAccessVestAcquire {};
-            class chestAccessVestProvider {};
             class chestAccessVestPark {};
             class chestAccessVestRestore {};
             class registerMegacodeInteractionRuntime {};
@@ -2609,7 +2577,6 @@ class CfgFunctions {
             class treatmentGesture {};
             class treatmentPoseStop {};
             class treatmentPoseSync {};
-            class chestSealProviderHoldStart {};
             class providerStanceOwned {};  // Batch 07
             class beginStethoscopeAction {};
             class stethoscopeInit {};
