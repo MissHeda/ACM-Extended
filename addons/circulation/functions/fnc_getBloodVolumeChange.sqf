@@ -184,10 +184,10 @@ private _freshBloodEffectiveness = 0;
 // unwarmed bag.
 private _warmedFlag = _unit getVariable ["ACME_warmedBlood", false];
 private _coldFlag = _unit getVariable ["ACME_coldBlood", false];
-// cold blood rewarms to ambient over ACME_bloodRewarmTime, which defaults to 20 min, once it is hung outside the
-// cold chain. both the flow penalty and the transfusion hypothermia fade with it. for _coldFrac, 1 is
-// just-pulled and ice-cold and 0 is fully rewarmed, at room temperature with no penalty and no hypothermia. the
-// raw _coldFlag still drives the self-clear below, and the fraction only scales the effects.
+// cold blood rewarms thermally toward ambient over ACME_bloodRewarmTime, which defaults to 20 min, once hung
+// outside the cold chain. _coldFrac now scales only the transfusion-hypothermia effect. Throughput is deliberately
+// origin-based while the cold unit remains hung: cold-stored blood stays on the 100/200/300 flow ladder instead of
+// gradually reverting to the room-temperature flow curve.
 private _coldFrac = 0;
 if (_coldFlag) then {
     private _hungAt = _unit getVariable ["ACME_coldBloodHungAt", CBA_missionTime];
