@@ -79,23 +79,22 @@ if (_continuousEpoch >= 0
     };
 };
 
-// Release only the exact stethoscope treatment-pose generation. treatmentPoseStop restores animSpeedCoef,
-// clears the remote/JIP hold and returns the provider through the move graph.
+// Release only this stethoscope pose as a handoff. The requested exit is not the generic treatment blend:
+// play the exact Semi-Fowler provider Putdown/inventory pair and finish in the normal unarmed crouch.
 if (!isNull _medic && {_poseEpoch >= 0}
     && {(_medic getVariable ["ACME_treatmentPoseEpoch",-2]) == _poseEpoch}) then {
-    [_medic,"stethoscope",_poseEpoch] call ACME_fnc_treatmentPoseStop;
+    [_medic,"stethoscope",_poseEpoch,true] call ACME_fnc_treatmentPoseStop;
 
-    // A malformed/partially-cleared pose record used to make treatmentPoseStop return before the speed reset.
-    // Because the exact pose epoch still belongs to this closed scope, it is safe to repair that one orphan here.
     if (local _medic && {getAnimSpeedCoef _medic == 0}) then {
         _medic setAnimSpeedCoef 1;
     };
-    if (local _medic
-        && {toLowerANSI animationState _medic == "acme_stethoscopework"}
-        && {!([_medic] call ACME_fnc_animBlocked)}) then {
-        _medic setUnitPos "MIDDLE";
-        [_medic,"AmovPknlMstpSnonWnonDnon",1] call ACME_fnc_doAnim;
-    };
+};
+
+if (!isNull _medic && {local _medic} && {alive _medic}
+    && {!(_medic getVariable ["ACE_isUnconscious",false])}
+    && {isNull objectParent _medic}
+    && {!(_medic getVariable ["ACME_headElev_seqActive",false])}) then {
+    [_medic,"lower"] call ACME_fnc_headElevMedicSeq;
 };
 
 if ((uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG",displayNull]) isEqualTo _display) then {
