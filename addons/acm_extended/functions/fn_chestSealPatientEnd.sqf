@@ -40,6 +40,9 @@ private _finalize = {
     _p setVariable ["ACME_CS_rollUntil", -1, false];
     _p setVariable ["ACME_CS_vestReadyServer", -1, true];
 
+    private _headProp = _p getVariable ["ACME_headElev_propObj", objNull];
+    if (!isNull _headProp) then {_headProp setVariable ["ACME_chestFixedPark", nil, false];};
+
     if (_wasHeadElev
         && {_p getVariable ["ACME_headElevated", false]}
         && {_p getVariable ["ACME_headElev_Suspended", false]}
