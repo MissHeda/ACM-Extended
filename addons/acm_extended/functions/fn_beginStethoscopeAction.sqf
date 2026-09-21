@@ -59,9 +59,20 @@ private _notInVehicle = isNull objectParent _medic;
 // The stethoscope is a long provider pose. Weapon state is owned by treatmentPoseStart/medicAnimationPrep; do not
 // use selectWeapon "" here, because a sidearm can remain visibly attached after its logical selection is cleared.
 
-// One animation owner is enough, but its lifetime is deliberately independent from the dialog lifetime.
-private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
+// The minigame is the clinical action; provider animation is presentation. Open/initialize the display FIRST.
 _args call _onStart;
+
+private _scopeOpened = !_isDialog || {!isNull (findDisplay _dialogID)};
+if (!_scopeOpened) exitWith {
+    ACM_core_ContinuousAction_Active = false;
+    ACM_core_ContinuousAction_IsDialog = false;
+    if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
+        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+    };
+};
+
+// Only after the panel exists may provider presentation take ownership.
+private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
 
 private _dialogKeyEH = -1;
 private _scopeDisplay = displayNull;
@@ -160,6 +171,10 @@ private _pfh = [{
             ["ACM_core_openMedicalMenu", _patient] call CBA_fnc_localEvent;
         };
     };
+
+    // Keep provider-state reconciliation from mistaking a live auscultation session for a stale controller.
+    // Local-only heartbeat: no per-frame network traffic.
+    _medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, false];
 
     _args call _perFrame;
 }, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _poseEpoch, _perFrame, _onCancel, _dialogID, _dialogKeyEH, _scopeDisplay, _keyID, _isDialog, _epoch]] call CBA_fnc_addPerFrameHandler;
