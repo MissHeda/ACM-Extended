@@ -34,12 +34,17 @@ assert 'ACME_menuNextPaint' in actions
 assert 'diag_tickTime + 0.10' in actions
 assert "_menu setVariable ['ACME_menuNextPaint', 0];" in actions
 
+# Context variables must be declared before the throttle key uses them.
+assert actions.index("private _target = missionNamespace getVariable ['ace_medical_gui_target', objNull];") < actions.index("private _paintKey = [_target, _bodyPart, _selectedCategory];")
+assert actions.index("private _bodyPart = missionNamespace getVariable ['ace_medical_gui_selectedBodyPart', -1];") < actions.index("private _paintKey = [_target, _bodyPart, _selectedCategory];")
+assert actions.index("private _selectedCategory = missionNamespace getVariable ['ace_medical_gui_selectedCategory', ''];") < actions.index("private _paintKey = [_target, _bodyPart, _selectedCategory];")
+
 # Injury list rebuild is ~6.7 Hz unless target/bodypart changes.
 assert 'ACME_injuryPaintKey' in injury
 assert 'ACME_injuryNextPaint' in injury
 assert 'diag_tickTime + 0.15' in injury
 
-assert 'ACME_buildBatch = "B132";' in startup
-assert 'ACME_debugRevision = "rc16";' in startup
+assert 'ACME_buildBatch = "B134";' in startup
+assert 'ACME_debugRevision = "rc18";' in startup
 
-print("PASS rc16: medical/transfusion UI repaint work is bounded")
+print("PASS rc18: medical/transfusion UI repaint work is bounded and declarations are ordered")
