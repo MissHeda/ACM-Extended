@@ -23,15 +23,18 @@ startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 # Carrier prep cannot hand back to an action while the provider's chest animation still owns the pose.
 assert 'private _providerReady = _pose isEqualTo [];' in treatment
 
-# Auscultation no longer recursively re-enters the generic treatment wrapper after carrier prep.
+# Auscultation reserves a real continuous-action generation, then opens the scope directly after chest prep.
 steth = treatment.split('if (_classKey == "usestethoscope") then {', 1)[1].split('} else {\n                if (_classKey == "cpr")', 1)[0]
-assert '[_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;' in steth
+assert 'private _entryEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;' in steth
+assert '[_m,_p,_bodyPart,true,_entryEpoch] call ACM_breathing_fnc_useStethoscope;' in steth
 assert 'CBA_fnc_execNextFrame' in steth
 assert 'ace_medical_treatment_fnc_treatment' not in steth
 
-# CPR goes directly to the preserved native CPR treatment after chest prep.
+# CPR revalidates canCPR and calls the configured beginCPR callback directly after chest prep.
 cpr = treatment.split('if (_classKey == "cpr") then {', 1)[1].split('} else {', 1)[0]
-assert '_started = _args call ACM_core_fnc_treatmentNative;' in cpr
+assert '[_m,_p] call ace_medical_treatment_fnc_canCPR' in cpr
+assert '[_m,_p] call ACM_circulation_fnc_beginCPR;' in cpr
+assert '_args call ACM_core_fnc_treatmentNative' not in cpr
 
 # Reverse restoration is literally lift -> vest on -> patient release in the animated path.
 animated = restore.split('// Provider mirrors the original removal theatre', 1)[1]
