@@ -65,24 +65,24 @@ private _commitRemoval = {
 
     _p setVariable [_savedVar, +_entry, true];
     _p setVariable [_propVar, _prop, true];
-    if (_ctx == "chestseal") then {
-        [_p] call ACME_fnc_chestSealParkCarrier;
-    } else {
-        [_p] call ACME_fnc_chestAccessVestPark;
+    // Keep every removed carrier parked clear of the head for the entire custody episode, including
+    // patient lift/release/roll animation. Chest-seal has no lease map, so it gets the same visual watchdog
+    // without the abandoned-provider cleanup used by ordinary chest access.
+    private _pfhVar = ["ACME_chestAccess_vestPFH", "ACME_CS_vestPFH"] select (_ctx == "chestseal");
+    private _oldPFH = _p getVariable [_pfhVar, -1];
+    if (_oldPFH isEqualType 0 && {_oldPFH >= 0}) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
+    private _pfh = [{
+        params ["_args","_handle"];
+        _args params ["_patient","_ctx","_savedVar","_pfhVar"];
+        if (isNull _patient || {!local _patient}
+            || {(count (_patient getVariable [_savedVar, []])) != 2}) exitWith {
+            [_handle] call CBA_fnc_removePerFrameHandler;
+            if (!isNull _patient) then {_patient setVariable [_pfhVar, -1, false];};
+        };
 
-        // Preserve the original long-action custody watchdog. It keeps the prop beyond the head and retires
-        // abandoned provider leases on disconnect/death so an interrupted chest treatment cannot strand gear.
-        private _oldPFH = _p getVariable ["ACME_chestAccess_vestPFH", -1];
-        if (_oldPFH isEqualType 0 && {_oldPFH >= 0}) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
-        private _pfh = [{
-            params ["_args","_handle"];
-            _args params ["_patient"];
-            if (isNull _patient || {!local _patient}
-                || {(count (_patient getVariable ["ACME_chestAccess_vestLoadout", []])) != 2}) exitWith {
-                [_handle] call CBA_fnc_removePerFrameHandler;
-                if (!isNull _patient) then {_patient setVariable ["ACME_chestAccess_vestPFH", -1, false];};
-            };
-
+        if (_ctx == "chestseal") then {
+            [_patient] call ACME_fnc_chestSealParkCarrier;
+        } else {
             private _leases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
             private _dirty = false;
             {
@@ -104,11 +104,13 @@ private _commitRemoval = {
                 _patient setVariable ["ACME_Thora_ChestAccessActive", _thora, true];
             };
 
-            if ((count _leases) == 0) exitWith {[_patient] call ACME_fnc_chestAccessVestRestore;};
             [_patient] call ACME_fnc_chestAccessVestPark;
-        }, 0.20, [_p]] call CBA_fnc_addPerFrameHandler;
-        _p setVariable ["ACME_chestAccess_vestPFH", _pfh, false];
-    };
+            if ((count _leases) == 0) then {
+                [_patient, false, objNull, "access"] call ACME_fnc_chestAccessVestRestore;
+            };
+        };
+    }, 0.10, [_p,_ctx,_savedVar,_pfhVar]] call CBA_fnc_addPerFrameHandler;
+    _p setVariable [_pfhVar, _pfh, false];
     true
 };
 
