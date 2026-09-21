@@ -63,9 +63,13 @@ if (!_current || {isNull _patient} || {isNull _provider}
     || {!alive _patient} || {!alive _provider}) exitWith {call _finish;};
 
 if (_rollStarted >= 0) exitWith {
-    // chestSealRoll installs the final held side at _rollTime. Give that owner callback one frame of margin before
-    // returning the provider to auscultation and reacquiring the stethoscope casualty lease.
-    if (diag_tickTime >= (_rollStarted + _rollTime + 0.08)) then {call _finish;};
+    private _poseNow = _provider getVariable ["ACME_treatmentPoseState",[]];
+    private _providerAtHold = (_poseNow param [0,-2]) == _epoch
+        && {(_poseNow param [1,""]) == "roll"}
+        && {(_poseNow param [3,-2]) >= 3};
+    private _patientDone = diag_tickTime >= (_rollStarted + _rollTime + 0.08);
+    // Return to the held stethoscope pose only after medic4 reaches its authored 2.2 s hold.
+    if (_patientDone && {_providerAtHold || {diag_tickTime >= _deadline}}) then {call _finish;};
 };
 
 // Match the chest-seal fallback exactly: if physical eligibility disappears before the roll starts, only switch
