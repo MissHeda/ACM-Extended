@@ -2,12 +2,11 @@
 // The first viewer owns preparation. Additional viewers share the same state and do not strip gear twice.
 params [
     ["_patient", objNull, [objNull]],
-    ["_token", "", [""]],
-    ["_medic", objNull, [objNull]]
+    ["_token", "", [""]]
 ];
 if (isNull _patient || {_token == ""}) exitWith {};
 if (!local _patient) exitWith {
-    [_patient, "chestSealPatientBegin", [_patient, _token, _medic]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientBegin", [_patient, _token]] call ACME_fnc_ownerDispatch;
 };
 
 private _tokens = +(_patient getVariable ["ACME_CS_ProcedureTokens", []]);
@@ -60,42 +59,37 @@ if (_preHeadElev) then {
     };
 };
 
-// If a carrier is still worn, chest access now uses the same patient lift/release theatre as Semi-Fowler.
-// The provider simultaneously performs the normal medic4 body-handling animation. Removal happens only while the
-// casualty is visibly lifted, then the casualty is laid flat again before any front/back normalization begins.
+// If the carrier is still worn, take exact custody of its loadout for the duration of the procedure. This also
+// covers Semi-Fowler patients supported by a backpack, where head elevation itself never removed the carrier.
+private _vestClass = vest _patient;
+private _vestEntry = (getUnitLoadout _patient) param [4, [], [[]]];
 _patient setVariable ["ACME_CS_vestLoadout", [], true];
 _patient setVariable ["ACME_CS_vestProp", objNull, true];
-_patient setVariable ["ACME_CS_vestReadyServer", serverTime, true];
-private _hadVest = (vest _patient) != "" && {count ((getUnitLoadout _patient) param [4, [], [[]]]) == 2};
-if (_hadVest) then {
-    [_patient, _medic, "chestseal"] call ACME_fnc_chestAccessVestAcquire;
-    private _vestReady = _patient getVariable ["ACME_CS_vestReadyServer", serverTime];
-    if (_vestReady > serverTime) then {
-        _readyDelay = _readyDelay max ((_vestReady - serverTime) + 0.02);
+if (_vestClass != "" && {(count _vestEntry) == 2} && {isNull objectParent _patient}) then {
+    removeVest _patient;
+    if ((vest _patient) == "") then {
+        _patient setVariable ["ACME_CS_vestLoadout", +_vestEntry, true];
+        private _model = getText (configFile >> "CfgWeapons" >> _vestClass >> "model");
+        if (_model != "") then {
+            // Use the carrier model as a static prop. fn_chestSealParkCarrier disables patient collision explicitly.
+            private _prop = createSimpleObject [_model, [0,0,0], false];
+            if (!isNull _prop) then {
+                _patient setVariable ["ACME_CS_vestProp", _prop, true];
+            };
+        };
     };
 };
 
-// Normalize a live, grounded casualty to the anterior/supine workspace only AFTER the temporary lift/removal
-// sequence has settled. This prevents the Semi-Fowler Grab/Release and a front/back roll from fighting over the
-// casualty skeleton.
+[_patient] call ACME_fnc_chestSealParkCarrier;
+
+// Normalize a live, grounded casualty to the anterior/supine workspace ONCE before the dialog is considered ready.
+// The UI itself always starts front; dead/vehicle/free-standing patients are left physically untouched.
 private _canNormalize = alive _patient && {isNull objectParent _patient} && {_preGrounded};
-// An animated carrier-removal sequence now owns the full lay-flat handoff and guarantees a face-up endpoint.
-// Do not decide from the PRE-removal animation and then queue a second roll several seconds later. If carrier
-// removal could not animate, fall back to the ordinary live side check below.
-private _vestOwnsSupine = _hadVest && {(_patient getVariable ["ACME_CS_vestBusy", ""]) != ""};
 private _actualNow = [_patient, _preSide] call ACME_fnc_chestSealActualSide;
-if (_canNormalize && {!_vestOwnsSupine} && {_actualNow != "front"}) then {
+if (_canNormalize && {_actualNow != "front"}) then {
+    [_patient, "front", false, objNull] call ACME_fnc_chestSealRoll;
     private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
     if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
-    private _rollDelay = _readyDelay;
-    [{
-        params ["_p","_m"];
-        if (isNull _p || {!local _p} || {!alive _p}) exitWith {};
-        if (!isNull _m) then {[_m, "chestAccessVestProvider", [_m, _p]] call ACME_fnc_ownerDispatch;};
-        [_p, "front", false, _m] call ACME_fnc_chestSealRoll;
-    }, [_patient,_medic], _rollDelay] call CBA_fnc_waitAndExecute;
-    private _providerRollTime = (missionNamespace getVariable ["ACME_rollProviderDuration", 2.2]) + 0.35;
-    _readyDelay = _readyDelay + ((_rollTime + 0.08) max _providerRollTime);
+    _readyDelay = _readyDelay max (_rollTime + 0.08);
 };
-
 _patient setVariable ["ACME_CS_ProcedureReadyAt", serverTime + _readyDelay, true];
