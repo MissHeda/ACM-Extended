@@ -45,12 +45,7 @@ if (isNull _medic || {!local _medic} || {!alive _medic}
     || {_medic getVariable ["ACE_isUnconscious", false]}
     || {[_medic] call ACME_fnc_animBlocked}) exitWith {-1};
 
-private _existingPose = _medic getVariable ["ACME_treatmentPoseState", []];
-private _existingMode = _existingPose param [1, ""];
-private _directChestHandoff =
-    (_mode == "roll" && {_existingMode == "chestSealWorkspace"})
-    || {_mode == "chestSealWorkspace" && {_existingMode == "roll"}};
-[_medic, "", -1, _directChestHandoff] call ACME_fnc_treatmentPoseStop;
+[_medic] call ACME_fnc_treatmentPoseStop;
 // B56: a treatment pose replaces the medical-menu pose without an intermediate exit motion.
 [_medic, true] call ACME_fnc_menuPoseStop;
 
@@ -64,7 +59,6 @@ private _main = switch (_mode) do {
     case "inspect": {"ACME_ChestInspectWork"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
-    case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
     case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
     case "pulse": {"ACME_StethoscopeWork"};
@@ -100,19 +94,12 @@ private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
 // A physical Flip is still a real medical animation and must wait for a sidearm to finish holstering. The former
 // roll fast-path used selectWeapon "" and could start medic4 under a pistol that was still visibly in the hands.
 // Direct Pressure remains the one exception because its existing authored hold already owns empty-hand theatre.
-private _prepDelay = if (_directChestHandoff) then {
-    // Both chestSealWorkspace and roll are ACME-authored weapon-disabled states. A direct handoff must not wait
-    // for their class names to contain the literal Wnon/Snon substrings before entering the next state.
+private _prepDelay = if (_dpPoseHandoff) then {
+    if (currentWeapon _medic != "") then {_medic selectWeapon "";};
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
     0
 } else {
-    if (_dpPoseHandoff) then {
-        if (currentWeapon _medic != "") then {_medic selectWeapon "";};
-        _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
-        0
-    } else {
-        [_medic] call ACME_fnc_medicAnimationPrep
-    }
+    [_medic] call ACME_fnc_medicAnimationPrep
 };
 if !(_prepDelay isEqualType 0) then {_prepDelay = 0;};
 private _prepUntil = _actionStarted + (_prepDelay max 0);
@@ -139,10 +126,8 @@ if (!isNil "ace_advanced_fatigue_setAnimExclusions") then {
 private _fnStartMain = {
     params ["_medic", "_main", "_state"];
     _medic setUnitPos (["MIDDLE", "UP"] select (_state param [16, false]));
-    // Use the known-good priority-1 entry for provider work. The pose controller's freeze logic depends on
-    // animationState reaching the exact authored work state; ordinary playMove can remain in an interpolation
-    // state long enough for a finite medic RTM to run through before the freeze stage ever owns it.
-    // The visible hold snap is prevented separately by freezing the naturally reached frame without switchMove.
+    // B73: priority 1 is playMoveNow only. It walks the move graph and can never fall through to switchMove,
+    // so provider work always interpolates into the authored state instead of teleporting into frame zero.
     [_medic, _main, 1] call ACME_fnc_doAnim;
     _state set [3, 1];
     _state set [4, CBA_missionTime];
@@ -278,9 +263,10 @@ private _pfh = [{
             private _phase = (_holdAt / _duration) min 1;
             if (!_knownDuration) then {_phase = -1;};
 
-            // Freeze the owner on the frame it naturally reached. A hard switchMove seek here was the remaining
-            // visible chest-animation snap: entry interpolated correctly, then the provider jumped to the calculated
-            // hold phase. Peers still receive the normalized phase for multiplayer synchronization.
+            // B57: freeze the owning client directly first. The old path depended on the global CBA event
+            // round-tripping back to the owner; that allowed the local animation to keep running/restart instead of
+            // stopping at the requested sample. Peers still receive the synchronized held frame below.
+            if (_phase >= 0) then {_medic switchMove [_main, _phase, 1, false];};
             _medic setAnimSpeedCoef 0;
             private _jip = format ["ACME_treatmentPose_%1_%2", netId _medic, _epoch];
             ["ACME_treatmentPoseSync", [_medic, _epoch, "hold", _main, _phase, clientOwner], _jip] call CBA_fnc_globalEventJIP;
