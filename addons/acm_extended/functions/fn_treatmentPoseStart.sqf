@@ -91,13 +91,12 @@ private _actionStarted = CBA_missionTime;
 // plays a pointless weapon-away transition between DP and the incoming treatment pose.
 private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
     && {(_medic getVariable ["ACME_DP_TreatmentBusy", false])};
-// B128: the physical Flip is a direct theatre action.  If the provider is already in DP's Wnon hold, or for any
-// ordinary roll request, select empty hands immediately and begin the crouch/medic4 move graph in this frame.
-// Do not play ACE's 0.70 s weapon-away preflight before the Flip animation.
-private _rollImmediate = _mode == "roll";
-private _prepDelay = if (_dpPoseHandoff || {_rollImmediate}) then {
+// A physical Flip is still a real medical animation and must wait for a sidearm to finish holstering. The former
+// roll fast-path used selectWeapon "" and could start medic4 under a pistol that was still visibly in the hands.
+// Direct Pressure remains the one exception because its existing authored hold already owns empty-hand theatre.
+private _prepDelay = if (_dpPoseHandoff) then {
     if (currentWeapon _medic != "") then {_medic selectWeapon "";};
-    _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime], false];
+    _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
     0
 } else {
     [_medic] call ACME_fnc_medicAnimationPrep
@@ -187,6 +186,7 @@ private _pfh = [{
     private _stage = _state param [3, 0];
     private _stageStarted = _state param [4, CBA_missionTime];
     private _waitUntil = _state param [8, CBA_missionTime];
+    private _actionStarted = _state param [10, CBA_missionTime];
     private _holdAt = _state param [11, -1];
     private _stopAfterHold = _state param [15, -1];
     private _current = toLower animationState _medic;
@@ -194,9 +194,18 @@ private _pfh = [{
 
     switch (_stage) do {
         case -1: {
-            // Empty hands were selected once during preflight. Continue after that one request; never run a second holster.
-            if (currentWeapon _medic == "" || {_now >= _waitUntil}) then {
+            // Do not enter the medical RTM until both the logical selection and the visible skeleton are truly
+            // empty-handed. In particular, currentWeapon can clear before a sidearm has visually left the hand.
+            private _visuallyEmpty = ((_current find "wnon") >= 0) && {((_current find "snon") >= 0)};
+            private _weaponReady = (currentWeapon _medic == "") && {_visuallyEmpty};
+            if (_weaponReady && {_now >= _waitUntil}) then {
                 [_medic, _main, _state, _fnStartMain] call _fnEnter;
+            } else {
+                // Never fall through into a malformed pistol-over-medical pose. A failed engine holster retires
+                // this provider theatre cleanly rather than queuing another family of put-away animations.
+                if (_now - _actionStarted >= 3.0) then {
+                    [_medic, _mode, _epoch] call ACME_fnc_treatmentPoseStop;
+                };
             };
         };
 
