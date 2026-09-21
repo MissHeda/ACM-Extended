@@ -7499,6 +7499,11 @@ ACME_LBTN(ACME_Ventilator);
 #undef ACME_LBTN
 
 class ace_medical_treatment_actions {
+    // PARALLEL PROVIDER RULE:
+    // Active BVM, CPR and other continuous roles reserve only that same role. They do not globally
+    // disable unrelated treatment actions for another provider. The provider actually performing a
+    // continuous action remains occupied locally, while BVM canUseBVM, CPR canCPR and procedure-specific
+    // in-progress state preserve one-provider-per-role / one-procedure-at-a-time behavior.
     // only CheckPulse is forward declared, because it is the only one of these we do not go on to define.
     // declaring a class and then defining it in the same scope gives "Member already defined". the definition
     // below is the reference, and other classes inherit from it perfectly well with no separate declaration.
@@ -7540,7 +7545,7 @@ class ace_medical_treatment_actions {
         // Dead engine corpses retain intervention/inspection access where explicitly supported, but a live airway
         // assessment is not one of those actions. Keep this gate local to Check Airway rather than globally hiding
         // dead-patient medical actions.
-        condition = "alive _patient && {ACM_airway_enable} && {!(_patient call ace_common_fnc_isAwake)} && {!(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull]))}";
+        condition = "alive _patient && {ACM_airway_enable} && {!(_patient call ace_common_fnc_isAwake)}";
         callbackStart = "_this call ACME_fnc_airwayMedicPose";
         callbackSuccess = "_this call ACM_airway_fnc_checkAirway; [_medic, 'airway'] call ACME_fnc_treatmentPoseStop";
         callbackFailure = "[_medic, 'airway'] call ACME_fnc_treatmentPoseStop";
@@ -7552,7 +7557,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 3;
         allowedSelections[] = {"Body"};
-        condition = "alive _patient && {ACM_airway_enable} && {!([_patient] call ACM_core_fnc_cprActive)} && {!(_patient call ace_common_fnc_isAwake)} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral','']) != 'SGA'} && {!(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull]))} && {!(_patient getVariable ['ACME_ETT_Inserted',false])} && {!(_patient getVariable ['ACME_vent_driving',false])} && {!(_patient getVariable ['ACM_airway_RecoveryPosition_State',false])} && {isNull objectParent _patient}";
+        condition = "alive _patient && {ACM_airway_enable} && {!(_patient call ace_common_fnc_isAwake)} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral','']) != 'SGA'} && {!(_patient getVariable ['ACME_ETT_Inserted',false])} && {!(_patient getVariable ['ACME_vent_driving',false])} && {!(_patient getVariable ['ACM_airway_RecoveryPosition_State',false])} && {isNull objectParent _patient}";
         callbackSuccess = "[_medic,_patient,true] call ACM_airway_fnc_setRecoveryPosition";
         ACM_rollToBack = 0;
     };
@@ -7586,7 +7591,7 @@ class ace_medical_treatment_actions {
         displayNameProgress = "$STR_ACM_Disability_SlapAwake_Progress";
         allowedSelections[] = {"Head"};
         treatmentTime = 2;
-        condition = "!([_patient] call ace_common_fnc_isAwake) && !(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull]))";
+        condition = "!([_patient] call ace_common_fnc_isAwake)";
         callbackSuccess = "ACM_disability_fnc_slapAwake";
         animationMedic = "AinvPknlMstpSnonWnonDr_medic3";
         ACM_rollToBack = 1;
@@ -7595,7 +7600,7 @@ class ace_medical_treatment_actions {
     class CheckBreathing {
         animationMedic = "AmovPknlMstpSrasWpstDnon_AmovPknlMstpSrasWpstDnon_gear";
         animationMedicProne = "AmovPknlMstpSrasWpstDnon_AmovPknlMstpSrasWpstDnon_gear";
-        condition = "alive _patient && {!(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull]))}";
+        condition = "alive _patient";
     };
     class UseStethoscope {
         // Auscultation owns a clean supine chest-access pose. Do not inherit CheckBreathing's generic roll-to-back:
@@ -7650,7 +7655,7 @@ class ace_medical_treatment_actions {
         treatmentTime = "ACM_airway_treatmentTimeOPA";
         items[] = {"ACM_OPA"};
         consumeItem = 1;
-        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull])) && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
+        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
         callbackSuccess = "[_medic, _patient, 'OPA'] call ACM_airway_fnc_insertAirwayItem";
         ACM_cancelRecovery = 1;
         ACM_menuIcon = "ACM_OPA";
@@ -7662,7 +7667,7 @@ class ace_medical_treatment_actions {
         medicRequired = "ACM_airway_allowNPA";
         treatmentTime = "ACM_airway_treatmentTimeNPA";
         items[] = {"ACM_NPA"};
-        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Nasal','']) == '' && !(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull])) && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
+        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Nasal','']) == '' && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
         callbackSuccess = "[_medic, _patient, 'NPA'] call ACM_airway_fnc_insertAirwayItem";
         ACM_menuIcon = "ACM_NPA";
     };
@@ -7673,7 +7678,7 @@ class ace_medical_treatment_actions {
         medicRequired = "ACM_airway_allowSGA";
         treatmentTime = "ACM_airway_treatmentTimeSGA";
         items[] = {"ACM_IGel"};
-        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(alive (_patient getVariable ['ACM_breathing_BVM_Medic',objNull])) && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
+        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
         callbackSuccess = "[_medic, _patient, 'SGA'] call ACM_airway_fnc_insertAirwayItem";
         ACM_menuIcon = "ACM_IGel";
     };
@@ -7805,7 +7810,7 @@ class ace_medical_treatment_actions {
         items[] = {"ACME_Spray_Esketamine"};
         treatmentTime = 4;
         medicRequired = 0;
-        condition = "!(alive (_patient getVariable ['ACM_breathing_BVM_Medic', objNull]))";
+        condition = "true";
         callbackSuccess = "['ace_medical_treatment_medicationLocal', [_patient, _bodyPart, 'Esketamine', 1, false], _patient] call CBA_fnc_targetEvent";
         ACM_rollToBack = "false";  // a conscious pain patient. do not force them supine.
         sounds[] = {};
