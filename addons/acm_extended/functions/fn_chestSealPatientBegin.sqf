@@ -90,7 +90,8 @@ if (_canNormalize && {_actualNow != "front"}) then {
         if (!isNull _m) then {[_m, "chestAccessVestProvider", [_m, _p]] call ACME_fnc_ownerDispatch;};
         [_p, "front", false, _m] call ACME_fnc_chestSealRoll;
     }, [_patient,_medic], _rollDelay] call CBA_fnc_waitAndExecute;
-    _readyDelay = _readyDelay + _rollTime + 0.08;
+    private _providerRollTime = (missionNamespace getVariable ["ACME_rollProviderDuration", 2.2]) + 0.35;
+    _readyDelay = _readyDelay + ((_rollTime + 0.08) max _providerRollTime);
 };
 
 _patient setVariable ["ACME_CS_ProcedureReadyAt", serverTime + _readyDelay, true];
