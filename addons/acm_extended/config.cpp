@@ -2587,6 +2587,8 @@ class CfgFunctions {
             class stethoscopeTick {};
             class stethoscopeWeights {};
             class stethoscopeClose {};
+            class rollProviderCancel {};
+            class patientRollCancel {};
             class ivLineCreate {};
             class ivLineDestroy {};
             // megacode kelly, the zeus training manikin and its control panel.
