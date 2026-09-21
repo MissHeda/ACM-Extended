@@ -11,6 +11,10 @@ disableSerialization;
 params [['_display', displayNull]];
 if (isNull _display) exitWith {};
 
+private _target = missionNamespace getVariable ['ace_medical_gui_target', objNull];
+private _bodyPart = missionNamespace getVariable ['ace_medical_gui_selectedBodyPart', -1];
+private _selectedCategory = missionNamespace getVariable ['ace_medical_gui_selectedCategory', ''];
+
 // ACE calls the menu painter from a 0-delay PFH. Re-evaluating every grouped action, inventory count, tooltip,
 // handler and control on every rendered frame is unnecessary and disproportionately hurts lower-FPS clients.
 // Patient/body-part/category changes bypass the throttle and repaint immediately.
@@ -41,14 +45,11 @@ if (!isNil 'CBA_settings_fnc_get') then {
 private _leftAlign = [_leftRaw] call _asBool;
 private _clinicalDescriptors = ((missionNamespace getVariable ['ACME_hc_descriptors', false]) isEqualTo true);
 
-private _selectedCategory = missionNamespace getVariable ['ace_medical_gui_selectedCategory', ''];
 private _group = _display displayCtrl 1599;  // idc_action_button_group.
 if (isNull _group) exitWith {};
 
 // ACE opens a fresh display after treatments and minigames. Restore this patient's
 // last explicit section decisions, including keys whose actions are temporarily absent.
-private _target = missionNamespace getVariable ['ace_medical_gui_target', objNull];
-private _bodyPart = missionNamespace getVariable ['ace_medical_gui_selectedBodyPart', -1];
 if (isNil {_display getVariable 'ACME_menuTarget'} || {
     _target isNotEqualTo (_display getVariable ['ACME_menuTarget', objNull])
 }) then {
