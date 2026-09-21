@@ -9,6 +9,10 @@ if (isNull _display) exitWith {};
 private _tickPFH = _display getVariable ["ACME_stethTickPFH", -1];
 if (_tickPFH isEqualType 0 && {_tickPFH >= 0}) then {[_tickPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethTickPFH", -1];
+
+private _flipPFH = _display getVariable ["ACME_stethFlipPFH", -1];
+if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_removePerFrameHandler;};
+_display setVariable ["ACME_stethFlipPFH", -1];
 _display setVariable ["ACME_stethFlipToken", ""];
 _display setVariable ["ACME_stethFlipActive", false];
 
@@ -22,6 +26,15 @@ _display setVariable ["ACME_stethPressed",false];
 
 private _medic = _display getVariable ["ACME_stethMedic",objNull];
 private _patient = _display getVariable ["ACME_stethPatient",objNull];
+
+// An Unload during Flip is an immediate abort. Stop both sides of the roll now: provider returns to Arma's neutral
+// base state, while the patient owner invalidates the roll callbacks and settles on the last stable side.
+if (!isNull _medic && {local _medic}) then {
+    [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
+};
+if (!isNull _patient) then {
+    [_patient] call ACME_fnc_patientRollCancel;
+};
 private _poseEpoch = _display getVariable ["ACME_stethPoseEpoch",-1];
 private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
 
