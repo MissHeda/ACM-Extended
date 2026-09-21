@@ -262,7 +262,7 @@ private _beginPatient = {
     }, {
         params ["_args","_begin"];
         _args call _begin;
-    }, [_args,_beginPatient], 3.25, {
+    }, [_args,_beginPatient], 4.75, {
         params ["_args","_begin"];
         // Presentation failed to report ready. Continue the patient transaction rather than losing the clinical click.
         _args call _begin;
