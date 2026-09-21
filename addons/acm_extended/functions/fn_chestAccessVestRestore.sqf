@@ -42,6 +42,10 @@ private _finishBookkeeping = {
     _p setVariable [_savedVar,[],true];
     _p setVariable [_busyVar,"",false];
     _p setVariable [_readyVar,serverTime,true];
+
+    // The Semi-Fowler support prop can now leave its chest-workspace park point and resume its normal placement.
+    private _headProp = _p getVariable ["ACME_headElev_propObj", objNull];
+    if (!isNull _headProp) then {_headProp setVariable ["ACME_chestFixedPark", nil, false];};
 };
 
 private _restoreNow = {
