@@ -9,6 +9,8 @@ if (isNull _display) exitWith {};
 private _tickPFH = _display getVariable ["ACME_stethTickPFH", -1];
 if (_tickPFH isEqualType 0 && {_tickPFH >= 0}) then {[_tickPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethTickPFH", -1];
+_display setVariable ["ACME_stethFlipToken", ""];
+_display setVariable ["ACME_stethFlipActive", false];
 
 {
     _x params ["_emitter","_sound"];
