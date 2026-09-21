@@ -62,5 +62,5 @@ private _rollToken = if (_started) then {_provider getVariable ["ACME_rollProvid
 private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
 if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
 _rollTime = (_rollTime max 0.1) min 5;
-private _args = [_patient,_provider,_display,_session,_token,_epoch,_rollToken,_newSide,_rollTime,-1,_now + 4];
+private _args = [_patient,_provider,_display,_session,_token,_epoch,_rollToken,_newSide,_rollTime,-1,_now + 5.5];
 [{_this call ACME_fnc_chestSealFlipTick;},0,_args] call CBA_fnc_addPerFrameHandler;
