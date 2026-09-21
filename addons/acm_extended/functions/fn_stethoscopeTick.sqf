@@ -6,7 +6,9 @@ if (isNull _display || {isNull _patient}) exitWith {};
 private _now = diag_tickTime;
 private _dt = ((_now - (_display getVariable ["ACME_stethLastFrame",_now])) max 0) min 0.1;
 _display setVariable ["ACME_stethLastFrame",_now];
-if (!isGameFocused) then {_display setVariable ["ACME_stethPressed",false];};
+if (!isGameFocused || {_display getVariable ["ACME_stethFlipActive",false]}) then {
+    _display setVariable ["ACME_stethPressed",false];
+};
 private _pressed = _display getVariable ["ACME_stethPressed",false];
 private _mouse = getMousePosition;
 private _center = _display getVariable ["ACME_stethCursor",_mouse];
