@@ -33,12 +33,11 @@ assert '["roll", 2.2]' in runtime
 assert '["stethoscope", 0.421]' in runtime
 assert '["chestSealWorkspace", ACME_CS_workspaceHoldAt]' in runtime
 
-# Carrier-prepped auscultation reserves a new continuous-action epoch and passes it into useStethoscope.
+# Carrier-prepped auscultation clears stale generic continuous state and uses the original unreserved launch.
 steth = treatment.split('if (_classKey == "usestethoscope") then {', 1)[1].split('} else {\n                if (_classKey == "cpr")', 1)[0]
-assert 'private _entryEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;' in steth
-assert 'missionNamespace setVariable ["ACM_core_ContinuousAction_Active", true];' in steth
-assert '[_m,_p,_bodyPart,true,_entryEpoch] call ACM_breathing_fnc_useStethoscope;' in steth
-assert '[_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;' not in steth
+assert 'missionNamespace setVariable ["ACM_core_ContinuousAction_Active",false];' in steth
+assert '[_m,_p,_bodyPart,true] call ACM_breathing_fnc_useStethoscope;' in steth
+assert '_entryEpoch' not in steth
 
 # CPR uses its actual configured callback after revalidating canCPR, not a delayed generic treatment launcher.
 cpr = treatment.split('if (_classKey == "cpr") then {', 1)[1].split('} else {', 1)[0]
@@ -46,7 +45,7 @@ assert '[_m,_p] call ace_medical_treatment_fnc_canCPR' in cpr
 assert '[_m,_p] call ACM_circulation_fnc_beginCPR;' in cpr
 assert '_args call ACM_core_fnc_treatmentNative' not in cpr
 
-assert 'ACME_buildBatch = "B129";' in startup
-assert 'ACME_debugRevision = "rc13";' in startup
+assert 'ACME_buildBatch = "B130";' in startup
+assert 'ACME_debugRevision = "rc14";' in startup
 
-print("PASS rc13: frozen chest poses + guaranteed auscultation reservation + direct CPR callback")
+print("PASS rc14: frozen chest poses + direct auscultation launch + direct CPR callback")
