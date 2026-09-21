@@ -2,13 +2,14 @@
 // The user asked for the same medic4 body-handling animation used by front/back Flip while the casualty is lifted.
 params [
     ["_medic", objNull, [objNull]],
-    ["_patient", objNull, [objNull]]
+    ["_patient", objNull, [objNull]],
+    ["_source", "chestAccessVest", [""]]
 ];
 if (isNull _medic || {!alive _medic}) exitWith {false};
 if (!local _medic) exitWith {
-    [_medic, "chestAccessVestProvider", [_medic, _patient]] call ACME_fnc_ownerDispatch;
+    [_medic, "chestAccessVestProvider", [_medic, _patient, _source]] call ACME_fnc_ownerDispatch;
     true
 };
 if ([_medic] call ACME_fnc_animBlocked) exitWith {false};
 
-[_medic, "chestAccessVest", _patient] call ACME_fnc_rollProviderStart
+[_medic, _source, _patient] call ACME_fnc_rollProviderStart
