@@ -74,6 +74,59 @@ if (GVAR(ignoreIncompatibleAddonWarning)) then {
     };
 }] call CBA_fnc_addEventHandler;
 
+// Wake interventions all converge on ace_medical_WakeUp. Normally ACE's medical state machine consumes
+// that event and its Unconscious -> Injured transition calls setUnconsciousState(false). ACME has systems which
+// historically called the internal setUnconsciousState function directly; that can leave ACE_isUnconscious and
+// the state machine out of sync. In that state ammonia/slap/shake can report success and play the wake sound while
+// the WakeUp event is ignored because the state machine is no longer in its Unconscious state.
+//
+// Preserve the native transition first. One frame later, repair ONLY a patient who is still medically unconscious,
+// has stable vitals, is not in cardiac arrest and is not legitimately forced unconscious.
+[QACEGVAR(medical,WakeUp), {
+    params [["_unit", objNull, [objNull]]];
+    if (isNull _unit || {!local _unit} || {!alive _unit}) exitWith {};
+
+    [{
+        params ["_unit"];
+        if (isNull _unit || {!local _unit} || {!alive _unit}) exitWith {};
+
+        // Native ACE succeeded. Give ACME's obtundation evaluator a short grace period so it cannot immediately
+        // consume a successful wake stimulus on the next physiology tick.
+        if !(_unit getVariable [QACEGVAR(medical,isUnconscious), false]) exitWith {
+            _unit setVariable ["ACME_obtunded_wakeStimGraceUntil", CBA_missionTime + 20, true];
+        };
+
+        if (_unit getVariable [QACEGVAR(medical,inCardiacArrest), false]) exitWith {};
+        if !([_unit] call ACEFUNC(medical_status,hasStableVitals)) exitWith {};
+        if ([_unit] call FUNC(isForcedUnconscious)) exitWith {};
+
+        private _state = "";
+        if !(isNil QACEGVAR(medical,STATE_MACHINE)) then {
+            _state = [_unit, ACEGVAR(medical,STATE_MACHINE)] call CBA_statemachine_fnc_getCurrentState;
+        };
+
+        // A correctly synchronized unconscious state should already have consumed WakeUp above. If it did not,
+        // perform the same Unconscious -> Injured transition manually and run the exact ACE state mutation that
+        // the normal transition owns.
+        if (_state == "Unconscious") then {
+            [_unit, ACEGVAR(medical,STATE_MACHINE), "Unconscious", "Injured", {
+                [_this, false] call ACEFUNC(medical_status,setUnconsciousState);
+            }, "ACMEWakeRepair"] call CBA_statemachine_fnc_manualTransition;
+        } else {
+            // If the machine already says Default/Injured while ACE_isUnconscious is still true, the machine is
+            // already on the awake side and only the medical flag/engine state is stale.
+            if !(_state in ["CardiacArrest", "FatalInjury", "Dead"]) then {
+                [_unit, false] call ACEFUNC(medical_status,setUnconsciousState);
+            };
+        };
+
+        if !(_unit getVariable [QACEGVAR(medical,isUnconscious), false]) then {
+            _unit setVariable ["ACME_obtunded_wakeStimGraceUntil", CBA_missionTime + 20, true];
+            _unit setVariable ["ACME_wakeRepairLast", [CBA_missionTime, _state], false];
+        };
+    }, [_unit]] call CBA_fnc_execNextFrame;
+}] call CBA_fnc_addEventHandler;
+
 [QGVAR(playWakeUpSound), {
     params ["_patient"];
 
