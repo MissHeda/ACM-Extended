@@ -183,15 +183,27 @@ _patient setVariable [_readyVar, serverTime + _total, true];
     };
 }, [_patient,_medic,_context,_savedVar,_propVar,_busyVar,_token,_commitRemoval,_lowerTime], _preDelay + _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
 
-// Settle flat and release collision/ownership. Do not invent a roll or change the casualty's logical lying state.
+// Settle flat and release collision/ownership. Ordinary chest-access preflight (auscultation, inspect,
+// breathing checks, CPR and similar anterior chest work) must hand the next action a stable supine casualty.
+// The chest-seal workspace is different: it owns its own explicit front/back normalization after carrier removal,
+// so preserve that context's current side until fn_chestSealPatientBegin performs the authored roll.
 [{
     params ["_p","_medic","_ctx","_busyVar","_readyVar","_token"];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
     _p setVariable [_busyVar, "", false];
 
+    private _readyAt = serverTime;
     if (alive _p && {isNull objectParent _p}) then {
         private _uncon = (_p getVariable ["ACE_isUnconscious", false]) || {_p getVariable ["ace_medical_unconscious", false]};
-        private _side = [_p, _p getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+        private _side = if (_ctx == "access") then {
+            // Grab/Release already physically repositioned the casualty, so finish that same maneuver face-up instead
+            // of handing auscultation a prone classification and immediately starting a second roll.
+            _p setVariable ["ACME_CS_facing", "front", true];
+            _readyAt = serverTime + 0.20;
+            "front"
+        } else {
+            [_p, _p getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide
+        };
         private _rest = if (_side == "back") then {
             missionNamespace getVariable ["ACME_uncon_faceDown", "ace_medical_engine_uncon_anim_1"]
         } else {
@@ -200,7 +212,9 @@ _patient setVariable [_readyVar, serverTime + _total, true];
         [_p, _rest, 2, "chest-access-vest", _medic, 0.8, 3, _token] call ACME_fnc_patientAnimRequest;
     };
     [_p, true] call ACME_fnc_headElevCollision;
-    _p setVariable [_readyVar, serverTime, true];
+    // Let the face-up request visibly land before the treatment wrapper re-enters. This also gives the replicated
+    // orientation cache one network beat to reach the provider, avoiding a false prone classification on MP.
+    _p setVariable [_readyVar, _readyAt, true];
 }, [_patient,_medic,_context,_busyVar,_readyVar,_token], _total] call CBA_fnc_waitAndExecute;
 
 true
