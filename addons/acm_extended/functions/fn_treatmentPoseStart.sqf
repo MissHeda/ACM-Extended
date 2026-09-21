@@ -56,7 +56,11 @@ private _main = switch (_mode) do {
     // entry and lost the characteristic flip theatre.  Crouch-first entry/empty-hands handling still comes from
     // this controller; only the actual work state is restored to the known-good literal animation.
     case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};
+    // Carrier removal/restoration uses the exact same body-handling medic4 theatre as Flip,
+    // but remains held until the patient lift/lower transaction explicitly hands off.
+    case "chestAccess": {"AinvPknlMstpSnonWnonDnon_medic4"};
     case "inspect": {"ACME_ChestInspectWork"};
+    case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
     case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
