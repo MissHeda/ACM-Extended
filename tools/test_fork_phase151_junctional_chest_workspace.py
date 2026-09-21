@@ -54,8 +54,8 @@ assert "ace_medical_treatment_fnc_treatment;" not in chest
 assert 'class ACME_ChestSealWorkspace' in cfg
 assert 'class chestSealProviderHoldStart {};' in cfg
 assert 'case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};' in pose_start
-assert 'ACME_CS_workspaceHoldAt' in runtime
-assert '["chestSealWorkspace", ACME_CS_workspaceHoldAt]' in runtime
+assert 'class ACME_ChestSealWorkspace: ACM_CPR_Stop' in cfg
+assert '["chestSealWorkspace"' not in runtime
 assert '["_handoff", false' in pose_stop
 assert 'ACME_fnc_chestSealProviderHoldStart' in open_fn
 assert 'ACME_fnc_chestSealProviderHoldStart' in flip_tick
