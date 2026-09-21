@@ -52,6 +52,18 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 [[_medic, _patient, _bodyPart], {  // on start.
     params ["_medic", "_patient", "_bodyPart"];
 
+    // Clinical UI first. The scope is the treatment; provider/patient animation is presentation.
+    // Base ACM creates the stethoscope dialog directly from this callback. Keep that invariant so an
+    // animation or locality problem can never consume the click before the minigame exists.
+    createDialog "ACM_breathing_Stethoscope_Dialog";
+    private _display = findDisplay 81000;
+    if (isNull _display) exitWith {
+        ACM_core_ContinuousAction_Active = false;
+        ["Unable to open auscultation display.", 2, _medic] call ace_common_fnc_displayTextStructured;
+    };
+    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG", _display];
+    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
+
     [_patient,"stethoscopeLungs",[[_patient] call ACME_fnc_clinicalEpoch]] call ACME_fnc_ownerDispatch;
 
     // Auscultation gets one owner-authoritative patient pose lease for the whole scope session. Elevated and
@@ -90,12 +102,6 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
     ace_hearing_volumeAttenuation = 0.1;
     [(localize "STR_ACE_Volume_Lowered"), 1.5, _medic] call ace_common_fnc_displayTextStructured;
 
-    createDialog "ACM_breathing_Stethoscope_Dialog";
-
-    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG",(findDisplay 81000)];
-
-    private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
-    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
     private _initialSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
     [_display, _initialSide] call ACME_fnc_stethoscopeSetView;
     private _ctrlText = _display displayCtrl 81001;
