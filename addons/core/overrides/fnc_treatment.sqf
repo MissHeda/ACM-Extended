@@ -136,7 +136,8 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
             private _ready = _p getVariable ["ACME_chestAccess_readyServer", -1];
             private _pose = _m getVariable ["ACME_treatmentPoseState", []];
-            private _providerReady = _pose isEqualTo [];
+            private _providerReady = (_pose isEqualTo [])
+                && {!(_m getVariable ["ACME_rollProviderActive", false])};
             (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready} && {_providerReady}
         }, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
