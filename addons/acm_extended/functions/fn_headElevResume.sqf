@@ -20,7 +20,9 @@ _patient setVariable ["ACME_headElev_Suspended", false, true];
 _patient setVariable ["ACME_headElev_basePosASL", getPosASL _patient, true];
 _patient setVariable ["ACME_headElev_baseDir", getDir _patient, true];
 
-// No-backpack Semi-Fowler: move the same support carrier from its parked position back behind the upper back.
-// Backpack Semi-Fowler: there is no head-elevation carrier prop and this is intentionally a no-op.
+// No-backpack Semi-Fowler: release the fixed chest-workspace park, then move the same support carrier
+// back behind the upper back. Backpack Semi-Fowler has no head-elevation carrier prop.
+private _headProp = _patient getVariable ["ACME_headElev_propObj", objNull];
+if (!isNull _headProp) then {_headProp setVariable ["ACME_chestFixedPark", nil, false];};
 [_patient] call ACME_fnc_headElevPropApply;
 [_patient] call ACME_fnc_headElevApplyTilt;
