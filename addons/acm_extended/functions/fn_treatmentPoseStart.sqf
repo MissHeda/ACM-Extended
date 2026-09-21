@@ -45,7 +45,12 @@ if (isNull _medic || {!local _medic} || {!alive _medic}
     || {_medic getVariable ["ACE_isUnconscious", false]}
     || {[_medic] call ACME_fnc_animBlocked}) exitWith {-1};
 
-[_medic] call ACME_fnc_treatmentPoseStop;
+private _existingPose = _medic getVariable ["ACME_treatmentPoseState", []];
+private _existingMode = _existingPose param [1, ""];
+private _directChestHandoff =
+    (_mode == "roll" && {_existingMode == "chestSealWorkspace"})
+    || {_mode == "chestSealWorkspace" && {_existingMode == "roll"}};
+[_medic, "", -1, _directChestHandoff] call ACME_fnc_treatmentPoseStop;
 // B56: a treatment pose replaces the medical-menu pose without an intermediate exit motion.
 [_medic, true] call ACME_fnc_menuPoseStop;
 
@@ -59,6 +64,7 @@ private _main = switch (_mode) do {
     case "inspect": {"ACME_ChestInspectWork"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
+    case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
     case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
     case "pulse": {"ACME_StethoscopeWork"};
