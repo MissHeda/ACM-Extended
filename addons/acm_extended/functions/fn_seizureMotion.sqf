@@ -3,6 +3,18 @@
 params ["_patient", ["_on",true]];
 if (isNull _patient || {!local _patient}) exitWith {};
 
+// Seizure PHYSIOLOGY continues in vehicles, but body-spasm animation must not. If the casualty enters a seat during
+// an active episode, tear down only the visual driver. The active seizure state remains, and the next owner tick
+// starts a fresh visual session automatically after they leave the vehicle.
+if (_on && {!isNull objectParent _patient}) exitWith {
+    if (_patient getVariable ["ACME_seizure_motionActive",false]) then {
+        [_patient,false] call ACME_fnc_seizureMotion;
+    } else {
+        ["ACME_seizureGestureSync", [_patient, [], "", false]] call CBA_fnc_globalEvent;
+    };
+    true
+};
+
 private _legacyPFH = _patient getVariable ["ACME_seizure_motionPFH",-1];
 if (_legacyPFH isEqualType 0 && {_legacyPFH >= 0}) then {
     [_legacyPFH] call CBA_fnc_removePerFrameHandler;
@@ -13,6 +25,7 @@ private _enabled = _on && {alive _patient}
     && {missionNamespace getVariable ["ACME_seizure_animEnabled",true]}
     && {(missionNamespace getVariable ["ACME_seizure_motionEnabled",1]) != 0};
 if (!_enabled) exitWith {
+    private _endingSession = +(_patient getVariable ["ACME_seizure_motionSession",[]]);
     _patient setVariable ["ACME_seizure_motionActive",false];
     // Invalidate delayed onset, ragdoll handoff, retry and GestureDone callbacks together.
     _patient setVariable ["ACME_seizure_motionSession",[]];
@@ -25,6 +38,7 @@ if (!_enabled) exitWith {
         // GestureNo is a head shake. GestureEmpty actually clears the masked animation layer.
         _patient switchGesture "GestureEmpty";
     };
+    ["ACME_seizureGestureSync", [_patient, _endingSession, "", false]] call CBA_fnc_globalEvent;
     _patient setVariable ["ACME_seizure_motionCurrentGesture",""];
 };
 
