@@ -27,7 +27,12 @@ private _down = {
     if (_mx >= _bx && {_mx <= _bx + _bw} && {_my >= _by} && {_my <= _by + _bh}) exitWith {false};
 
     _d setVariable ["ACME_stethPressed",true];
-    false
+
+    // Restore the pre-regression input contract from the last stable held-bell implementation. Consuming only
+    // the press prevents an underlying RscButton/RscPicture from capturing LMB and freezing Arma's GUI cursor
+    // while the bell is held. This does NOT restore click-to-pick-up: the bell still follows the cursor at all
+    // times and MouseButtonUp still releases contact normally.
+    true
 };
 private _up = {
     params ["_source","_button"];

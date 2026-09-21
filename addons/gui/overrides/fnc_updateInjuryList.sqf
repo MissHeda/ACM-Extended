@@ -146,6 +146,22 @@ if (_target call ACEFUNC(common,isAwake)) then {
     };
 };
 
+// Non-rebreather mask. Keep this compact in the status list but distinguish a connected oxygen source from a
+// mask that was placed without oxygen. The overall overview exits below, so add its row before that return.
+private _nrbOn = _target getVariable ["ACME_nrb_on", false];
+private _nrbText = "";
+if (_nrbOn) then {
+    _nrbText = if (_target getVariable ["ACME_nrb_hasO2", false]) then {
+        format ["NRB [%1 L/min O2]", round (missionNamespace getVariable ["ACME_nrb_flowLPM", 15])]
+    } else {
+        "NRB [No O2]"
+    };
+
+    if (_selectionN == -1) then {
+        _entries pushBack [_nrbText, _breathingColor];
+    };
+};
+
 // Skip the rest as they're body part specific
 if (_selectionN == -1) exitWith {
     // Add all entries to injury list
@@ -297,6 +313,11 @@ if (_selectionN == 0 && (_target getVariable [QEGVAR(breathing,BVM_Medic), objNu
         _string = LELSTRING(core,Common_Active);
     };
     _entries pushBack [format ["%1 %2 (%3)", LELSTRING(breathing,BVM_Short), _string, ([(_target getVariable [QEGVAR(breathing,BVM_Medic), objNull]), false, true] call ACEFUNC(common,getName))], _breathingColor];
+};
+
+// Match the device-style BVM presentation on the airway/head view as well as the overall overview.
+if (_selectionN == 0 && {_nrbOn}) then {
+    _entries pushBack [_nrbText, _breathingColor];
 };
 
 private _selectionBodyPart = ALL_BODY_PARTS select _selectionN;

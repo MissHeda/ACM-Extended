@@ -7,11 +7,12 @@ CONFIG = ROOT / "config.cpp"
 def read(path):
     return path.read_text(encoding="utf-8", errors="replace")
 
-def test_lmb_does_not_consume_stethoscope_drag():
+def test_lmb_press_blocks_underlying_ui_capture_without_manual_pickup():
     s = read(FN / "fn_stethoscopeInit.sqf")
     assert 'setVariable ["ACME_stethPressed",true]' in s
     tail = s.split('setVariable ["ACME_stethPressed",true]', 1)[1]
-    assert "false" in tail[:40]
+    assert "true" in tail[:500]
+    assert 'setVariable ["ACME_stethPressed",false]' in s
     assert 'displayAddEventHandler ["MouseMoving"' not in s
     assert "ACME_stethMouse" not in s
 
