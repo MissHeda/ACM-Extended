@@ -2,12 +2,11 @@
 // The last viewer restores the side the casualty started on, returns the carrier, then resumes Semi-Fowler if needed.
 params [
     ["_patient", objNull, [objNull]],
-    ["_token", "", [""]],
-    ["_medic", objNull, [objNull]]
+    ["_token", "", [""]]
 ];
 if (isNull _patient) exitWith {};
 if (!local _patient) exitWith {
-    [_patient, "chestSealPatientEnd", [_patient, _token, _medic]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientEnd", [_patient, _token]] call ACME_fnc_ownerDispatch;
 };
 
 private _tokens = +(_patient getVariable ["ACME_CS_ProcedureTokens", []]);
@@ -28,69 +27,54 @@ if !(_preSide in ["front", "back"]) then {_preSide = "front";};
 // A head-elevated casualty always returns to anterior-up before the elevation resumes.
 if (_preHeadElev) then {_preSide = "front";};
 
-// Finalize non-roll pieces only after the body is back on its original side.
-// Carrier restoration is asynchronous and uses the same Grab > put carrier on > Release sequence as every other
-// chest-access owner. Posture/recovery cleanup waits until that visible restore has actually completed.
+// Finalize the non-roll pieces only after the body is back on its original side.
 private _finish = {
-    params ["_p", "_wasHeadElev", "_wasRecovery", "_oldAnim", "_generation", "_medic"];
+    params ["_p", "_wasHeadElev", "_wasRecovery", "_oldAnim", "_generation"];
     if (isNull _p || {!local _p}
         || {(_p getVariable ["ACME_CS_ProcedureGeneration", -1]) != _generation}
         || {!((_p getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo [])}) exitWith {};
 
-    private _finalize = {
-        params ["_p","_wasHeadElev","_wasRecovery","_oldAnim","_generation"];
-        if (isNull _p || {!local _p}
-            || {(_p getVariable ["ACME_CS_ProcedureGeneration", -1]) != _generation}
-            || {!((_p getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo [])}) exitWith {};
+    private _vestEntry = +(_p getVariable ["ACME_CS_vestLoadout", []]);
+    if ((count _vestEntry) == 2 && {(vest _p) == ""}) then {
+        private _loadout = getUnitLoadout _p;
+        if ((count _loadout) > 4) then {
+            _loadout set [4, _vestEntry];
+            _p setUnitLoadout [_loadout, false];
+        };
+    };
+    private _prop = _p getVariable ["ACME_CS_vestProp", objNull];
+    if (!isNull _prop) then {detach _prop; deleteVehicle _prop;};
+    _p setVariable ["ACME_CS_vestProp", objNull, true];
+    _p setVariable ["ACME_CS_vestLoadout", [], true];
+    _p setVariable ["ACME_CS_ProcedureActive", false, true];
+    _p setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
+    _p setVariable ["ACME_CS_ProcedureGrounded", false, true];
+    _p setVariable ["ACME_CS_PreProcedureState", [], true];
+    _p setVariable ["ACME_CS_rollUntil", -1, false];
 
-        _p setVariable ["ACME_CS_ProcedureActive", false, true];
-        _p setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
-        _p setVariable ["ACME_CS_ProcedureGrounded", false, true];
-        _p setVariable ["ACME_CS_PreProcedureState", [], true];
-        _p setVariable ["ACME_CS_rollUntil", -1, false];
-
-        if (_wasHeadElev && {_p getVariable ["ACME_headElevated", false]}
-            && {_p getVariable ["ACME_headElev_Suspended", false]}
-            && {((_p getVariable ["ACME_lido_seizureState", ""]) in ["", "postictal"])}
-        ) then {
-            _p setVariable ["ACME_headElev_ResumePending", true, true];
-            [{_this call ACME_fnc_headElevTryResume;}, [_p], missionNamespace getVariable ["ACME_headElev_resumeDelay", 0.75]] call CBA_fnc_waitAndExecute;
+    // Semi-Fowler is a suspended logical state, not a new placement. Resume the exact existing elevation only after
+    // the roll and carrier cleanup are finished.
+    if (_wasHeadElev && {_p getVariable ["ACME_headElevated", false]}
+        && {_p getVariable ["ACME_headElev_Suspended", false]}
+        && {((_p getVariable ["ACME_lido_seizureState", ""]) in ["", "postictal"])}
+    ) then {
+        _p setVariable ["ACME_headElev_ResumePending", true, true];
+        [{_this call ACME_fnc_headElevTryResume;}, [_p], missionNamespace getVariable ["ACME_headElev_resumeDelay", 0.75]] call CBA_fnc_waitAndExecute;
+    } else {
+        // Restore the native recovery-position state/worker only after chest access is completely finished.
+        if (_wasRecovery && {alive _p}
+            && {_p getVariable ["ACE_isUnconscious", false]} && {isNull objectParent _p}) then {
+            [_p, _p, true, true] call ACM_airway_fnc_setRecoveryPosition;
         } else {
-            if (_wasRecovery && {alive _p}
-                && {_p getVariable ["ACE_isUnconscious", false]} && {isNull objectParent _p}) then {
-                [_p, _p, true, true] call ACM_airway_fnc_setRecoveryPosition;
-            } else {
-                if (_wasRecovery && {_oldAnim != ""} && {alive _p} && {isNull objectParent _p}) then {
-                    [_p, _oldAnim, 2, "chest-seal-restore", objNull, 1.0, 2] call ACME_fnc_patientAnimRequest;
-                };
+            if (_wasRecovery && {_oldAnim != ""} && {alive _p} && {isNull objectParent _p}) then {
+                [_p, _oldAnim, 2, "chest-seal-restore", objNull, 1.0, 2] call ACME_fnc_patientAnimRequest;
             };
         };
     };
-
-    private _hadCarrier = (count (_p getVariable ["ACME_CS_vestLoadout", []])) == 2;
-    if (!_hadCarrier) exitWith {
-        [_p,_wasHeadElev,_wasRecovery,_oldAnim,_generation] call _finalize;
-    };
-
-    [_p,false,_medic,"chestseal"] call ACME_fnc_chestAccessVestRestore;
-    [{
-        params ["_p","_generation"];
-        isNull _p
-            || {(_p getVariable ["ACME_CS_ProcedureGeneration",-1]) != _generation}
-            || {((count (_p getVariable ["ACME_CS_vestLoadout", []])) != 2)
-                && {(_p getVariable ["ACME_CS_vestBusy",""]) == ""}}
-    }, {
-        params ["_p","_head","_recovery","_anim","_generation","_fn","_medic"];
-        [_p,_head,_recovery,_anim,_generation] call _fn;
-    }, [_p,_wasHeadElev,_wasRecovery,_oldAnim,_generation,_finalize,_medic], 6, {
-        params ["_p","_head","_recovery","_anim","_generation","_fn","_medic"];
-        if (!isNull _p && {local _p}) then {[_p,true,_medic,"chestseal"] call ACME_fnc_chestAccessVestRestore;};
-        [_p,_head,_recovery,_anim,_generation] call _fn;
-    }] call CBA_fnc_waitUntilAndExecute;
 };
 
 private _restoreSide = {
-    params ["_p", "_side", "_wasHeadElev", "_wasRecovery", "_oldAnim", "_finishCode", "_generation", "_medic"];
+    params ["_p", "_side", "_wasHeadElev", "_wasRecovery", "_oldAnim", "_finishCode", "_generation"];
     if (isNull _p || {!local _p}
         || {(_p getVariable ["ACME_CS_ProcedureGeneration", -1]) != _generation}
         || {!((_p getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo [])}) exitWith {};
@@ -105,11 +89,11 @@ private _restoreSide = {
         private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
         if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
         [{
-            params ["_unit", "_head", "_recovery", "_anim", "_fn", "_generation", "_medic"];
-            [_unit, _head, _recovery, _anim, _generation, _medic] call _fn;
-        }, [_p, _wasHeadElev, _wasRecovery, _oldAnim, _finishCode, _generation, _medic], _rollTime + 0.08] call CBA_fnc_waitAndExecute;
+            params ["_unit", "_head", "_recovery", "_anim", "_fn", "_generation"];
+            [_unit, _head, _recovery, _anim, _generation] call _fn;
+        }, [_p, _wasHeadElev, _wasRecovery, _oldAnim, _finishCode, _generation], _rollTime + 0.08] call CBA_fnc_waitAndExecute;
     } else {
-        [_p, _wasHeadElev, _wasRecovery, _oldAnim, _generation, _medic] call _finishCode;
+        [_p, _wasHeadElev, _wasRecovery, _oldAnim, _generation] call _finishCode;
     };
 };
 
@@ -121,9 +105,9 @@ private _rollUntil = _patient getVariable ["ACME_CS_rollUntil", -1];
 private _rollActive = (_rollToken != "") || {(_rollUntil isEqualType 0) && {_rollUntil > CBA_missionTime}};
 if (_rollActive) exitWith {
     [_patient, _preSide] call ACME_fnc_patientRollCancel;
-    [_patient, _preHeadElev, _preRecovery, _preAnim, _generation, _medic] call _finish;
+    [_patient, _preHeadElev, _preRecovery, _preAnim, _generation] call _finish;
 };
 
 // A completed flip is different from a cancelled one: normal workspace close may still use the authored roll to
 // restore the casualty's original side.
-[_patient, _preSide, _preHeadElev, _preRecovery, _preAnim, _finish, _generation, _medic] call _restoreSide;
+[_patient, _preSide, _preHeadElev, _preRecovery, _preAnim, _finish, _generation] call _restoreSide;
