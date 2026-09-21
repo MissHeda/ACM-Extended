@@ -46,6 +46,8 @@ private _finish = {
     if (!isNull _prop) then {detach _prop; deleteVehicle _prop;};
     _p setVariable ["ACME_CS_vestProp", objNull, true];
     _p setVariable ["ACME_CS_vestLoadout", [], true];
+    _p setVariable ["ACME_CS_vestBusy", "", false];
+    _p setVariable ["ACME_CS_vestReadyServer", serverTime, true];
     _p setVariable ["ACME_CS_ProcedureActive", false, true];
     _p setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
     _p setVariable ["ACME_CS_ProcedureGrounded", false, true];
