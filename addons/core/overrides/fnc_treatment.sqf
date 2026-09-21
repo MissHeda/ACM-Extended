@@ -135,10 +135,10 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
             private _ready = _p getVariable ["ACME_chestAccess_readyServer", -1];
-            private _pose = _m getVariable ["ACME_treatmentPoseState", []];
-            private _providerReady = (_pose isEqualTo [])
-                && {!(_m getVariable ["ACME_rollProviderActive", false])};
-            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready} && {_providerReady}
+            // The casualty/carrier transaction is the only gate for the clinical action. Provider animation
+            // bookkeeping is presentation only and must never veto auscultation or CPR after the carrier is off.
+            // Starting the next action will retire/replace any still-finishing provider pose through its normal owner.
+            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}
         }, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
             if (isNull _m || {!local _m}
@@ -267,7 +267,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                     };
                 };
             };
-        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass], 8, {
+        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass], 12, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
             if (isNull _m || {!local _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {};
