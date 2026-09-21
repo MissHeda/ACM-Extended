@@ -34,13 +34,10 @@ private _finish = {
     if ((_unit getVariable ["ACME_rollProviderToken", ""]) != _tok) exitWith {};
     private _id = _unit getVariable ["ACME_rollProviderPFH", -1];
     if (_id >= 0) then {[_id] call CBA_fnc_removePerFrameHandler;};
-    private _source = _unit getVariable ["ACME_rollProviderSource", ""];
-    private _handoff = (_source == "chestSealFlip" && {!isNull (uiNamespace getVariable ["ACME_CS_DLG",displayNull])})
-        || {_source == "stethoscopeFlip" && {!isNull (findDisplay 81000)}};
     _unit setVariable ["ACME_rollProviderActive", false];
     _unit setVariable ["ACME_rollProviderToken", ""];
     _unit setVariable ["ACME_rollProviderPFH", -1];
-    [_unit, "roll", _epoch, _handoff] call ACME_fnc_treatmentPoseStop;
+    [_unit, "roll", _epoch] call ACME_fnc_treatmentPoseStop;
 };
 
 // B54: the pose controller ends the roll theatre itself from the frozen 2.2 s frame (ACME_poseHoldAt and
@@ -56,16 +53,6 @@ private _pfh = [{
     if (isNull _unit || {!local _unit} || {!alive _unit} || {(_unit getVariable ["ACME_rollProviderToken", ""]) != _tok}) exitWith {
         [_id] call CBA_fnc_removePerFrameHandler;
     };
-    // treatmentPoseStart owns the actual medic4 freeze/exit. When that exact roll episode has ended,
-    // retire the outer roll-provider token immediately instead of leaving it alive until the +2.5 s fail-safe.
-    // A stale outer token was making chest prep look active after the visible animation had already finished.
-    private _pose = _unit getVariable ["ACME_treatmentPoseState", []];
-    private _poseStillOwnsRoll = (_pose param [0,-2]) == _epoch && {(_pose param [1,""]) == "roll"};
-    if (!_poseStillOwnsRoll) exitWith {
-        [_unit, _tok, _epoch, false] call _fnFinish;
-        [_id] call CBA_fnc_removePerFrameHandler;
-    };
-
     private _move =
         (inputAction "MoveForward" > 0.05) || (inputAction "MoveBack" > 0.05) ||
         (inputAction "TurnLeft" > 0.05) || (inputAction "TurnRight" > 0.05) ||
