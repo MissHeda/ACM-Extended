@@ -109,6 +109,12 @@ if (_handoff && {local _medic} && {alive _medic}) then {
         if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
         _u setUnitPos "AUTO";
     };
-    [{_this call (_this select 2);}, [_medic,_currentEpoch,_releaseIfFree], 0.35] call CBA_fnc_waitAndExecute;
-    [{_this call (_this select 2);}, [_medic,_currentEpoch,_releaseIfFree], 4.25] call CBA_fnc_waitAndExecute;
+    [{
+        params ["_u","_endedEpoch","_fn"];
+        [_u,_endedEpoch] call _fn;
+    }, [_medic,_currentEpoch,_releaseIfFree], 0.35] call CBA_fnc_waitAndExecute;
+    [{
+        params ["_u","_endedEpoch","_fn"];
+        [_u,_endedEpoch] call _fn;
+    }, [_medic,_currentEpoch,_releaseIfFree], 4.25] call CBA_fnc_waitAndExecute;
 };
