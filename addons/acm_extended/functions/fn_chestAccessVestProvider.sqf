@@ -96,6 +96,16 @@ if ((_existingPatient isEqualTo _patient)
     _existingEpoch
 };
 
+// A finished chest action may still own a frozen provider pose. Retire only known chest presentation owners
+// as a handoff, so reverse carrier handling starts from the current work frame instead of inserting a neutral crouch.
+private _prior = _medic getVariable ["ACME_treatmentPoseState", []];
+private _priorMode = _prior param [1, ""];
+private _priorEpoch = _prior param [0, -1];
+if (_priorMode in ["stethoscope","inspect","chestSealWorkspace","roll"]
+    && {_priorEpoch >= 0}) then {
+    [_medic, _priorMode, _priorEpoch, true] call ACME_fnc_treatmentPoseStop;
+};
+
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
     _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken], false];
