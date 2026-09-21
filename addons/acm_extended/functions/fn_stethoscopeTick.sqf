@@ -8,7 +8,7 @@ private _dt = ((_now - (_display getVariable ["ACME_stethLastFrame",_now])) max 
 _display setVariable ["ACME_stethLastFrame",_now];
 if (!isGameFocused) then {_display setVariable ["ACME_stethPressed",false];};
 private _pressed = _display getVariable ["ACME_stethPressed",false];
-private _mouse = getMousePosition;
+private _mouse = _display getVariable ["ACME_stethMouse",getMousePosition];
 private _center = _display getVariable ["ACME_stethCursor",_mouse];
 private _follow = if (_pressed) then {1 - exp (-_dt / 0.11)} else {1};
 _center = [

@@ -177,7 +177,9 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             canPullTrigger = 0;
             enableOptics = 0;
             enableBinocular = 0;
-            connectTo[] = {};
+            // The frozen frame is controlled by treatmentPoseStart, not by trapping the state in the move graph.
+            // Give treatmentPoseStop an authored route back to the normal unarmed crouch.
+            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.2};
             interpolateFrom[] = {"AmovPknlMstpSnonWnonDnon", 0.2};
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.2, "Unconscious", 0.02};
         };

@@ -48,7 +48,12 @@ private _keyID = -1;
 if (_isDialog) then {
     _scopeDisplay = findDisplay _dialogID;
     if (!isNull _scopeDisplay) then {
+        // The display owns the exact continuous-action and treatment-pose generations that created it.
+        // Its Unload EH can therefore release only this scope, even if the normal controller PFH is interrupted.
         _scopeDisplay setVariable ["ACME_continuousEpoch", _epoch];
+        _scopeDisplay setVariable ["ACME_stethMedic", _medic];
+        _scopeDisplay setVariable ["ACME_stethPoseEpoch", _poseEpoch];
+
         _dialogKeyEH = _scopeDisplay displayAddEventHandler ["KeyDown", {
             params ["_display", "_key"];
             private _epoch = _display getVariable ["ACME_continuousEpoch", -1];
