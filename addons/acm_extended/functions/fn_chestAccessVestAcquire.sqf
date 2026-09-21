@@ -65,8 +65,50 @@ private _commitRemoval = {
 
     _p setVariable [_savedVar, +_entry, true];
     _p setVariable [_propVar, _prop, true];
-    if (_ctx == "chestseal") then {[_p] call ACME_fnc_chestSealParkCarrier}
-    else {[_p] call ACME_fnc_chestAccessVestPark};
+    if (_ctx == "chestseal") then {
+        [_p] call ACME_fnc_chestSealParkCarrier;
+    } else {
+        [_p] call ACME_fnc_chestAccessVestPark;
+
+        // Preserve the original long-action custody watchdog. It keeps the prop beyond the head and retires
+        // abandoned provider leases on disconnect/death so an interrupted chest treatment cannot strand gear.
+        private _oldPFH = _p getVariable ["ACME_chestAccess_vestPFH", -1];
+        if (_oldPFH isEqualType 0 && {_oldPFH >= 0}) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
+        private _pfh = [{
+            params ["_args","_handle"];
+            _args params ["_patient"];
+            if (isNull _patient || {!local _patient}
+                || {(count (_patient getVariable ["ACME_chestAccess_vestLoadout", []])) != 2}) exitWith {
+                [_handle] call CBA_fnc_removePerFrameHandler;
+                if (!isNull _patient) then {_patient setVariable ["ACME_chestAccess_vestPFH", -1, false];};
+            };
+
+            private _leases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
+            private _dirty = false;
+            {
+                private _lease = _leases get _x;
+                private _provider = _lease param [0,objNull,[objNull]];
+                private _at = _lease param [1,CBA_missionTime,[0]];
+                if (isNull _provider || {!alive _provider} || {CBA_missionTime - _at > 900}) then {
+                    _leases deleteAt _x;
+                    _dirty = true;
+                };
+            } forEach keys _leases;
+
+            if (_dirty) then {
+                _patient setVariable ["ACME_chestAccess_leases", _leases, true];
+                private _thora = false;
+                {
+                    if (((_leases get _x) param [2,"",[""]]) == "thoracostomy") exitWith {_thora = true;};
+                } forEach keys _leases;
+                _patient setVariable ["ACME_Thora_ChestAccessActive", _thora, true];
+            };
+
+            if ((count _leases) == 0) exitWith {[_patient] call ACME_fnc_chestAccessVestRestore;};
+            [_patient] call ACME_fnc_chestAccessVestPark;
+        }, 0.20, [_p]] call CBA_fnc_addPerFrameHandler;
+        _p setVariable ["ACME_chestAccess_vestPFH", _pfh, false];
+    };
     true
 };
 
