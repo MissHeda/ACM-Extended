@@ -1,17 +1,18 @@
 // Provider-side owner for temporary chest-access carrier handling.
-// Uses the exact medic4 body-handling state used by physical Flip, freezes at 2.2 s, and remains there
-// until the casualty-side lift/remove/lower transaction explicitly releases it.
+// The provider fully holsters/crouches through treatmentPoseStart, enters literal medic4, then publishes a
+// presentation-ready token. Patient lift waits for that exact state when possible, with a bounded fail-open.
 params [
     ["_medic", objNull, [objNull]],
     ["_patient", objNull, [objNull]],
     ["_op", "start", [""]],
-    ["_handoff", false, [false]]
+    ["_handoff", false, [false]],
+    ["_episodeToken", "", [""]]
 ];
 if (isNull _medic) exitWith {-1};
 _op = toLowerANSI _op;
 
 if (!local _medic) exitWith {
-    [_medic, "chestAccessVestProvider", [_medic, _patient, _op, _handoff]] call ACME_fnc_ownerDispatch;
+    [_medic, "chestAccessVestProvider", [_medic, _patient, _op, _handoff, _episodeToken]] call ACME_fnc_ownerDispatch;
     -1
 };
 
@@ -19,6 +20,7 @@ if (_op == "stop") exitWith {
     private _entry = _medic getVariable ["ACME_chestAccessProvider", []];
     private _entryPatient = _entry param [0, objNull];
     private _epoch = _entry param [1, -1];
+    private _token = _entry param [2, ""];
     private _pose = _medic getVariable ["ACME_treatmentPoseState", []];
 
     if ((_entryPatient isEqualTo _patient)
@@ -31,6 +33,10 @@ if (_op == "stop") exitWith {
     if (_entryPatient isEqualTo _patient) then {
         _medic setVariable ["ACME_chestAccessProvider", [], false];
     };
+    private _ready = _medic getVariable ["ACME_chestAccessProviderReady", []];
+    if ((_ready param [0,""]) == _token) then {
+        _medic setVariable ["ACME_chestAccessProviderReady", [], true];
+    };
     _epoch
 };
 
@@ -42,6 +48,7 @@ if (!alive _medic
 private _entry = _medic getVariable ["ACME_chestAccessProvider", []];
 private _existingPatient = _entry param [0, objNull];
 private _existingEpoch = _entry param [1, -1];
+private _existingToken = _entry param [2, ""];
 private _pose = _medic getVariable ["ACME_treatmentPoseState", []];
 if ((_existingPatient isEqualTo _patient)
     && {_existingEpoch >= 0}
@@ -50,6 +57,35 @@ if ((_existingPatient isEqualTo _patient)
 
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
-    _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch], false];
+    _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken], false];
+
+    if (_episodeToken != "") then {
+        _medic setVariable ["ACME_chestAccessProviderReady", [_episodeToken, -1], true];
+
+        [{
+            params ["_m","_epoch","_token"];
+            if (isNull _m || {!local _m} || {!alive _m}) exitWith {true};
+            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+            if ((_entry param [2,""]) != _token) exitWith {true};
+            private _state = _m getVariable ["ACME_treatmentPoseState", []];
+            (_state param [0,-2]) == _epoch
+                && {(_state param [1,""]) == "chestAccess"}
+                && {(_state param [3,-2]) >= 1}
+                && {(toLowerANSI animationState _m) == "ainvpknlmstpsnonwnondnon_medic4"}
+        }, {
+            params ["_m","_epoch","_token"];
+            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+            if ((_entry param [2,""]) == _token) then {
+                _m setVariable ["ACME_chestAccessProviderReady", [_token, serverTime], true];
+            };
+        }, [_medic,_epoch,_episodeToken], 3.0, {
+            params ["_m","_epoch","_token"];
+            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+            if ((_entry param [2,""]) == _token) then {
+                // -2 means provider presentation timed out. Patient choreography may proceed fail-open.
+                _m setVariable ["ACME_chestAccessProviderReady", [_token, -2], true];
+            };
+        }] call CBA_fnc_waitUntilAndExecute;
+    };
 };
 _epoch
