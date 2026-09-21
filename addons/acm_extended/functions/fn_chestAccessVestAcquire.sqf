@@ -25,7 +25,9 @@ private _frontBusyVar = ["ACME_chestAccess_frontBusy","ACME_CS_frontBusy"] selec
 
 // Every chest procedure starts anterior-up. If the casualty is legitimately rollable and actually posterior-up,
 // perform the authored front/supine roll BEFORE any carrier-removal or auscultation/chest-seal start animation.
-// This removes the old "start the medical theatre, then discover the body is backwards" race.
+// Do not use a nested exitWith here: nested SQF scopes would continue the outer function and start carrier theatre
+// on the same frame as the roll.
+private _frontRollPending = false;
 if (!_frontNormalized) then {
     private _actualBefore = [_patient, _patient getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
     private _canFrontRoll = alive _patient
@@ -33,40 +35,42 @@ if (!_frontNormalized) then {
         && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}
         && {_actualBefore == "back"};
 
-    if (_canFrontRoll) exitWith {
-        if ((_patient getVariable [_frontBusyVar,""]) != "") exitWith {true};
+    if (_canFrontRoll) then {
+        _frontRollPending = true;
 
-        private _frontToken = format ["front:%1:%2:%3",_context,netId _patient,round(serverTime * 1000)];
-        _patient setVariable [_frontBusyVar,_frontToken,false];
-        _patient setVariable [_readyVar,-1,true];
+        if ((_patient getVariable [_frontBusyVar,""]) == "") then {
+            private _frontToken = format ["front:%1:%2:%3",_context,netId _patient,round(serverTime * 1000)];
+            _patient setVariable [_frontBusyVar,_frontToken,false];
+            _patient setVariable [_readyVar,-1,true];
 
-        // Provider uses the same literal medic4 roll theatre, but this episode completes fully back to crouch
-        // before carrier access begins.
-        if (!isNull _medic && {!(_medic isEqualTo _patient)} && {alive _medic}) then {
-            [_medic,"chestAccessFrontRoll",[_medic,_patient]] call ACME_fnc_ownerDispatch;
+            // Provider uses the same literal medic4 roll theatre, but this episode completes fully back to crouch
+            // before carrier access begins.
+            if (!isNull _medic && {!(_medic isEqualTo _patient)} && {alive _medic}) then {
+                [_medic,"chestAccessFrontRoll",[_medic,_patient]] call ACME_fnc_ownerDispatch;
+            };
+
+            private _preserveHead = (_patient getVariable ["ACME_headElevated",false])
+                || {_patient getVariable ["ACME_headElev_Suspended",false]}
+                || {_context == "chestseal"};
+            [_patient,"front",false,_medic,_preserveHead] call ACME_fnc_chestSealRoll;
+
+            private _patientRoll = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+            if !(_patientRoll isEqualType 0 && {finite _patientRoll}) then {_patientRoll = 1.85;};
+            private _providerRoll = missionNamespace getVariable ["ACME_rollProviderDuration",2.2];
+            if !(_providerRoll isEqualType 0 && {finite _providerRoll}) then {_providerRoll = 2.2;};
+            private _wait = (_patientRoll + 0.15) max (_providerRoll + 0.40);
+
+            [{
+                params ["_p","_m","_ctx","_busyVar","_token"];
+                if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+                _p setVariable [_busyVar,"",false];
+                _p setVariable ["ACME_CS_facing","front",true];
+                [_p,_m,_ctx,true] call ACME_fnc_chestAccessVestAcquire;
+            }, [_patient,_medic,_context,_frontBusyVar,_frontToken], _wait] call CBA_fnc_waitAndExecute;
         };
-
-        private _preserveHead = (_patient getVariable ["ACME_headElevated",false])
-            || {_patient getVariable ["ACME_headElev_Suspended",false]}
-            || {_context == "chestseal"};
-        [_patient,"front",false,_medic,_preserveHead] call ACME_fnc_chestSealRoll;
-
-        private _patientRoll = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
-        if !(_patientRoll isEqualType 0 && {finite _patientRoll}) then {_patientRoll = 1.85;};
-        private _providerRoll = missionNamespace getVariable ["ACME_rollProviderDuration",2.2];
-        if !(_providerRoll isEqualType 0 && {finite _providerRoll}) then {_providerRoll = 2.2;};
-        private _wait = (_patientRoll + 0.15) max (_providerRoll + 0.40);
-
-        [{
-            params ["_p","_m","_ctx","_busyVar","_token"];
-            if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
-            _p setVariable [_busyVar,"",false];
-            _p setVariable ["ACME_CS_facing","front",true];
-            [_p,_m,_ctx,true] call ACME_fnc_chestAccessVestAcquire;
-        }, [_patient,_medic,_context,_frontBusyVar,_frontToken], _wait] call CBA_fnc_waitAndExecute;
-        true
     };
 };
+if (_frontRollPending) exitWith {true};
 
 // Existing custody belongs to an already-open chest episode. Never replay the lift or move the parked carrier.
 private _saved = +(_patient getVariable [_savedVar, []]);
