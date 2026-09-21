@@ -21,6 +21,16 @@ def test_tick_uses_original_absolute_mouse_position():
     assert "private _mouse = getMousePosition;" in s
     assert "ACME_stethMouse" not in s
 
+def test_scope_display_owns_cursor_audio_tick():
+    init = read(FN / "fn_stethoscopeInit.sqf")
+    use = read(ROOT.parent / "breathing" / "functions" / "fnc_useStethoscope.sqf")
+    close = read(FN / "fn_stethoscopeClose.sqf")
+    assert 'ACME_stethTickPFH' in init
+    assert '[_patient] call ACME_fnc_stethoscopeTick;' in init
+    assert '[_display, _patient, _medic] call ACME_fnc_stethoscopeInit;' in use
+    assert '\n    [_patient] call ACME_fnc_stethoscopeTick;\n' not in use
+    assert 'ACME_fnc_chestAccessVestEvent' in close
+
 def test_scope_display_owns_exact_pose_and_action_generations():
     s = read(FN / "fn_beginStethoscopeAction.sqf")
     assert 'setVariable ["ACME_continuousEpoch", _epoch]' in s
