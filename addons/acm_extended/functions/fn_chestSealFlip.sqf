@@ -5,6 +5,7 @@ private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
 private _now = diag_tickTime;
 private _lockedUntil = uiNamespace getVariable ["ACME_CS_FlipLockedUntil", 0];
 if ((_lockedUntil isEqualType 0) && {_lockedUntil > _now}) exitWith {};
+if ((uiNamespace getVariable ["ACME_CS_ApplyGestureUntil",0]) > _now) exitWith {};
 if (isNull _patient) exitWith {};
 
 private _uiCurrent = uiNamespace getVariable ["ACME_CS_Side", "front"];
@@ -71,6 +72,36 @@ private _rollToken = if (_started) then {_provider getVariable ["ACME_rollProvid
 private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
 if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
 _rollTime = (_rollTime max 0.1) min 5;
+
+// Provider theatre is presentation. If it cannot acquire, do not turn Flip into a no-op: physically roll the
+// eligible casualty anyway, keep the UI locked for the authored patient roll, then return to hands-on-chest.
+if (!_started) exitWith {
+    uiNamespace setVariable ["ACME_CS_Side",_newSide];
+    uiNamespace setVariable ["ACME_CS_FlipTarget",_newSide];
+    uiNamespace setVariable ["ACME_CS_FlipLockedUntil",diag_tickTime + _rollTime];
+    [_patient,_newSide,false,_provider] call ACME_fnc_chestSealRoll;
+    [] call ACME_fnc_chestSealRender;
+
+    [{
+        params ["_p","_m","_d","_session","_token"];
+        if ((uiNamespace getVariable ["ACME_CS_SessionToken",""]) != _session
+            || {(uiNamespace getVariable ["ACME_CS_FlipPendingToken",""]) != _token}) exitWith {};
+        uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
+        uiNamespace setVariable ["ACME_CS_FlipLockedUntil",0];
+        uiNamespace setVariable ["ACME_CS_FlipTarget",""];
+        if (!isNull _d) then {
+            private _b = _d displayCtrl 86426;
+            _b ctrlEnable true;
+            _b ctrlSetText "Flip";
+        };
+        if (!isNull _m && {local _m}) then {
+            private _holdEpoch = [_m,_p] call ACME_fnc_chestSealProviderHoldStart;
+            _m setVariable ["ACME_CS_providerHoldEpoch",_holdEpoch,false];
+            uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",_holdEpoch];
+        };
+    }, [_patient,_provider,_display,_session,_token], _rollTime + 0.08] call CBA_fnc_waitAndExecute;
+};
+
 private _args = [_patient,_provider,_display,_session,_token,_epoch,_rollToken,_newSide,_rollTime,-1,_now + 5.5];
 private _flipPFH = [{_this call ACME_fnc_chestSealFlipTick;},0,_args] call CBA_fnc_addPerFrameHandler;
 uiNamespace setVariable ["ACME_CS_FlipPFH", _flipPFH];
