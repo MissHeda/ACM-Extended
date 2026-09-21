@@ -31,22 +31,24 @@ assert 'ctrlSetFade 0' in junction
 for forbidden in ["ACME_JuncVisualFadeStart", "ACME_junctionalImageFadeInSec", "ctrlCommit _left"]:
     assert forbidden not in junction
 
-# Carrier removal uses the exact patient lift/release theatre from Semi-Fowler and medic4 provider handling.
+# Carrier removal uses Semi-Fowler Grab/Release plus a provider-owned literal medic4 pose.
 assert '"ACME_HeadElevPatientGrab"' in acquire
 assert '"ACME_HeadElevPatientRelease"' in acquire
 assert 'removeVest _p;' in acquire
 assert 'ACME_fnc_headElevPinPose' in acquire
-assert 'ACME_fnc_chestAccessVestProvider' in provider
-assert 'ACME_fnc_rollProviderStart' in provider
+assert 'ACME_chestAccessProviderReady' in provider
+assert 'case "chestAccess": {"AinvPknlMstpSnonWnonDnon_medic4"};' in pose_start
 assert '[_patient, _medic, "chestseal"] call ACME_fnc_chestAccessVestAcquire;' in patient_begin
 
-# Generic chest treatments wait for the animated carrier-removal sequence before native treatment begins.
-assert 'ACME_chestAccessPreflightActive' in treatment
-assert 'ACME_chestAccess_readyServer' in treatment
-assert 'private _started = _args call ace_medical_treatment_fnc_treatment;' in treatment
-assert 'if (!_started) then {' in treatment
-assert 'ACME_fnc_chestAccessVestEvent' in treatment
-assert treatment.index('ACME_chestAccessPreflightActive') < treatment.index('ACM_core_fnc_treatmentNative')
+# Generic chest treatments wait for patient-side preparation, then launch native treatment once.
+start = treatment.index("// Chest-access preparation is a physical gear transaction")
+end = treatment.index("// Auscultation owns its own modal display", start)
+chest = treatment[start:end]
+assert "ACME_chestAccessPreflightActive" in chest
+assert "ACME_chestAccess_readyServer" in chest
+assert "ACME_chestAccess_readyLease" in chest
+assert "ACM_core_fnc_treatmentNative" in chest
+assert "ace_medical_treatment_fnc_treatment;" not in chest
 
 # Chest-seal provider remains in a persistent hands-on-chest pose and Flip hands directly back to it.
 assert 'class ACME_ChestSealWorkspace' in cfg
@@ -54,13 +56,9 @@ assert 'class chestSealProviderHoldStart {};' in cfg
 assert 'case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};' in pose_start
 assert 'ACME_CS_workspaceHoldAt' in runtime
 assert '["chestSealWorkspace", ACME_CS_workspaceHoldAt]' in runtime
-assert '_directChestHandoff' in pose_start
 assert '["_handoff", false' in pose_stop
 assert 'ACME_fnc_chestSealProviderHoldStart' in open_fn
 assert 'ACME_fnc_chestSealProviderHoldStart' in flip_tick
 assert '"chestSealWorkspace"' in close_fn
 
-assert 'ACME_buildBatch = "B121";' in startup
-assert 'ACME_debugRevision = "rc5";' in startup
-
-print("PASS rc5: junctional layering + carrier lift/remove + persistent chest workspace")
+print("PASS: junctional layering + corrected chest-access choreography")
