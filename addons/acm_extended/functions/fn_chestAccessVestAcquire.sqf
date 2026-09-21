@@ -1,69 +1,140 @@
-// Temporarily remove a worn plate carrier for a true chest-access action. If Semi-Fowler has no backpack the
-// support carrier is already owned by the head-elevation system, so there is nothing additional to remove. If a
-// backpack supports Semi-Fowler (or the casualty is simply flat), take exact custody of the worn carrier and park
-// its visual beyond the head until the final chest-access lease ends.
-params [["_patient", objNull, [objNull]]];
+// Temporarily remove a worn plate carrier for chest access.
+//
+// Presentation contract:
+//   1. Lift the casualty with the same patient Grab/Hold animation used by Semi-Fowler.
+//   2. While lifted, remove and park the carrier.
+//   3. Lay the casualty back down with the matching Release animation.
+//   4. The provider simultaneously uses the same medic4 body-handling animation as patient Flip.
+//
+// _context selects which existing custody fields own the removed carrier:
+//   "access"    -> ACME_chestAccess_* (auscultation/check-breathing/inspect/CPR/thoracostomy)
+//   "chestseal" -> ACME_CS_vest*       (chest-seal workspace)
+params [
+    ["_patient", objNull, [objNull]],
+    ["_medic", objNull, [objNull]],
+    ["_context", "access", [""]]
+];
 if (isNull _patient || {!local _patient}) exitWith {false};
+_context = toLowerANSI _context;
+if !(_context in ["access","chestseal"]) then {_context = "access";};
 
-private _saved = +(_patient getVariable ["ACME_chestAccess_vestLoadout", []]);
+private _savedVar = ["ACME_chestAccess_vestLoadout","ACME_CS_vestLoadout"] select (_context == "chestseal");
+private _propVar = ["ACME_chestAccess_vestProp","ACME_CS_vestProp"] select (_context == "chestseal");
+private _readyVar = ["ACME_chestAccess_readyServer","ACME_CS_vestReadyServer"] select (_context == "chestseal");
+private _busyVar = ["ACME_chestAccess_vestBusy","ACME_CS_vestBusy"] select (_context == "chestseal");
+
+// Existing custody means another chest-access action already removed the carrier. Keep it parked and report ready.
+private _saved = +(_patient getVariable [_savedVar, []]);
 if ((count _saved) == 2) exitWith {
-    [_patient] call ACME_fnc_chestAccessVestPark;
+    if (_context == "chestseal") then {[_patient] call ACME_fnc_chestSealParkCarrier}
+    else {[_patient] call ACME_fnc_chestAccessVestPark};
+    _patient setVariable [_readyVar, serverTime, true];
     true
 };
 
+// Never schedule a second lift/removal sequence over one already in progress.
+private _busy = _patient getVariable [_busyVar, ""];
+if (_busy != "") exitWith {true};
+
 private _vestClass = vest _patient;
-if (_vestClass == "") exitWith {false};
 private _vestEntry = (getUnitLoadout _patient) param [4, [], [[]]];
-if ((count _vestEntry) != 2) exitWith {false};
-
-removeVest _patient;
-if ((vest _patient) != "") exitWith {false};
-
-private _model = getText (configFile >> "CfgWeapons" >> _vestClass >> "model");
-private _prop = objNull;
-if (_model != "") then {_prop = createSimpleObject [_model, [0,0,0], false];};
-if (isNull _prop) then {
-    // Visual fallback only. The saved loadout remains authoritative and the holder is deleted on restore.
-    _prop = createVehicle ["GroundWeaponHolder", getPosATL _patient, [], 0, "CAN_COLLIDE"];
-    _prop addItemCargoGlobal [_vestClass, 1];
+if (_vestClass == "" || {(count _vestEntry) != 2}) exitWith {
+    _patient setVariable [_readyVar, serverTime, true];
+    false
 };
-_patient setVariable ["ACME_chestAccess_vestLoadout", +_vestEntry, true];
-_patient setVariable ["ACME_chestAccess_vestProp", _prop, true];
-[_patient] call ACME_fnc_chestAccessVestPark;
 
-// Keep the prop physically above the head throughout long actions such as CPR and thoracostomy. This is a visual
-// watchdog only; it never changes the clinical state or the treatment lease.
-private _old = _patient getVariable ["ACME_chestAccess_vestPFH", -1];
-if (_old isEqualType 0 && {_old >= 0}) then {[_old] call CBA_fnc_removePerFrameHandler;};
-private _pfh = [{
-    params ["_args", "_handle"];
-    _args params ["_p"];
-    if (isNull _p || {!local _p} || {(count (_p getVariable ["ACME_chestAccess_vestLoadout", []])) != 2}) exitWith {
-        [_handle] call CBA_fnc_removePerFrameHandler;
-        if (!isNull _p) then {_p setVariable ["ACME_chestAccess_vestPFH", -1, false];};
+private _commitRemoval = {
+    params ["_p","_ctx","_savedVar","_propVar"];
+    if (isNull _p || {!local _p}) exitWith {false};
+    if ((count (_p getVariable [_savedVar, []])) == 2) exitWith {true};
+
+    private _class = vest _p;
+    private _entry = (getUnitLoadout _p) param [4, [], [[]]];
+    if (_class == "" || {(count _entry) != 2}) exitWith {false};
+
+    removeVest _p;
+    if ((vest _p) != "") exitWith {false};
+
+    private _model = getText (configFile >> "CfgWeapons" >> _class >> "model");
+    private _prop = objNull;
+    if (_model != "") then {_prop = createSimpleObject [_model, [0,0,0], false];};
+    if (isNull _prop) then {
+        _prop = createVehicle ["GroundWeaponHolder", getPosATL _p, [], 0, "CAN_COLLIDE"];
+        _prop addItemCargoGlobal [_class, 1];
     };
 
-    // Dead/disconnected providers and impossible long-lived leases must not strand the carrier forever. Real CPR
-    // and thoracostomy scopes normally release explicitly; this only cleans abandoned ownership.
-    private _leases = _p getVariable ["ACME_chestAccess_leases", createHashMap];
-    private _dirty = false;
-    {
-        private _entry = _leases get _x;
-        private _m = _entry param [0,objNull,[objNull]];
-        private _at = _entry param [1,CBA_missionTime,[0]];
-        if (isNull _m || {!alive _m} || {CBA_missionTime - _at > 900}) then {
-            _leases deleteAt _x;
-            _dirty = true;
+    _p setVariable [_savedVar, +_entry, true];
+    _p setVariable [_propVar, _prop, true];
+    if (_ctx == "chestseal") then {[_p] call ACME_fnc_chestSealParkCarrier}
+    else {[_p] call ACME_fnc_chestAccessVestPark};
+    true
+};
+
+// Dead/vehicle/animation-blocked casualties still need functional chest access, but cannot safely play the lift.
+private _canAnimate = alive _patient && {isNull objectParent _patient} && {!([_patient] call ACME_fnc_animBlocked)};
+if (!_canAnimate) exitWith {
+    [_patient,_context,_savedVar,_propVar] call _commitRemoval;
+    _patient setVariable [_readyVar, serverTime, true];
+    true
+};
+
+private _liftTime = missionNamespace getVariable ["ACME_headElev_liftAnimTime", 1.2];
+if (!(_liftTime isEqualType 0) || {_liftTime <= 0}) then {_liftTime = 1.2;};
+private _lowerTime = missionNamespace getVariable ["ACME_headElev_lowerAnimTime", 1.4];
+if (!(_lowerTime isEqualType 0) || {_lowerTime <= 0}) then {_lowerTime = 1.4;};
+private _holdTime = missionNamespace getVariable ["ACME_chestAccess_vestLiftHold", 0.18];
+if (!(_holdTime isEqualType 0) || {_holdTime < 0}) then {_holdTime = 0.18;};
+private _total = _liftTime + _holdTime + _lowerTime + 0.08;
+
+private _serial = (_patient getVariable ["ACME_chestAccess_vestSerial", 0]) + 1;
+_patient setVariable ["ACME_chestAccess_vestSerial", _serial, false];
+private _token = format ["vest:%1:%2:%3:%4", _context, netId _patient, _serial, round (serverTime * 1000)];
+_patient setVariable [_busyVar, _token, false];
+_patient setVariable [_readyVar, serverTime + _total, true];
+
+// Provider starts the same medic4 body-handling theatre used by Flip. It is owner-routed and does not control the
+// casualty animation; this function owns the patient Grab/Release sequence independently.
+if (!isNull _medic) then {
+    [_medic, "chestAccessVestProvider", [_medic, _patient]] call ACME_fnc_ownerDispatch;
+};
+
+// Lift the casualty into the exact same patient Grab/Hold state used for Semi-Fowler.
+[_patient, false] call ACME_fnc_headElevCollision;
+private _patientToken = [_patient, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _total + 0.5, 4, _token] call ACME_fnc_patientAnimRequest;
+[_patient, _liftTime + _holdTime + 0.25] call ACME_fnc_headElevPinPose;
+
+// Remove the carrier only once the casualty has actually been lifted, then immediately begin the authored lay-flat
+// Release. The same token owns both requests, so no unrelated treatment can splice into the middle of the sequence.
+[{
+    params ["_p","_medic","_ctx","_savedVar","_propVar","_busyVar","_token","_patientToken","_commit","_lowerTime"];
+    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+
+    [_p,_ctx,_savedVar,_propVar] call _commit;
+
+    if (alive _p && {isNull objectParent _p}) then {
+        [_p, "ACME_HeadElevPatientRelease", 2, "chest-access-vest", _medic, _lowerTime + 0.4, 4, _patientToken] call ACME_fnc_patientAnimRequest;
+        [_p, _lowerTime + 0.2] call ACME_fnc_headElevPinPose;
+    };
+}, [_patient,_medic,_context,_savedVar,_propVar,_busyVar,_token,_patientToken,_commitRemoval,_lowerTime], _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
+
+// Settle flat and release collision/ownership. Do not invent a roll or change the casualty's logical lying state.
+[{
+    params ["_p","_medic","_ctx","_busyVar","_readyVar","_token","_patientToken"];
+    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+    _p setVariable [_busyVar, "", false];
+
+    if (alive _p && {isNull objectParent _p}) then {
+        private _uncon = (_p getVariable ["ACE_isUnconscious", false]) || {_p getVariable ["ace_medical_unconscious", false]};
+        private _side = [_p, _p getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+        private _rest = if (_side == "back") then {
+            missionNamespace getVariable ["ACME_uncon_faceDown", "ace_medical_engine_uncon_anim_1"]
+        } else {
+            if (_uncon) then {missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]} else {"ACM_LyingState"}
         };
-    } forEach keys _leases;
-    if (_dirty) then {
-        _p setVariable ["ACME_chestAccess_leases",_leases,true];
-        private _thora = false;
-        {if (((_leases get _x) param [2,"",[""]]) == "thoracostomy") exitWith {_thora = true;};} forEach keys _leases;
-        _p setVariable ["ACME_Thora_ChestAccessActive",_thora,true];
+        [_p, _rest, 2, "chest-access-vest", _medic, 0.8, 3, _patientToken] call ACME_fnc_patientAnimRequest;
     };
-    if ((count _leases) == 0) exitWith {[_p] call ACME_fnc_chestAccessVestRestore;};
-    [_p] call ACME_fnc_chestAccessVestPark;
-}, 0.20, [_patient]] call CBA_fnc_addPerFrameHandler;
-_patient setVariable ["ACME_chestAccess_vestPFH", _pfh, false];
+    [_p, true] call ACME_fnc_headElevCollision;
+    _p setVariable [_readyVar, serverTime, true];
+}, [_patient,_medic,_context,_busyVar,_readyVar,_token,_patientToken], _total] call CBA_fnc_waitAndExecute;
+
 true
