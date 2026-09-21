@@ -53,7 +53,13 @@ private _pose = _medic getVariable ["ACME_treatmentPoseState", []];
 if ((_existingPatient isEqualTo _patient)
     && {_existingEpoch >= 0}
     && {(_pose param [0, -2]) == _existingEpoch}
-    && {(_pose param [1, ""]) == "chestAccess"}) exitWith {_existingEpoch};
+    && {(_pose param [1, ""]) == "chestAccess"}) exitWith {
+    if (_episodeToken != "") then {
+        _medic setVariable ["ACME_chestAccessProvider", [_patient, _existingEpoch, _episodeToken], false];
+        _medic setVariable ["ACME_chestAccessProviderReady", [_episodeToken, serverTime], true];
+    };
+    _existingEpoch
+};
 
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
