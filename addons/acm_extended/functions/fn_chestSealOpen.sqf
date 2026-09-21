@@ -51,6 +51,14 @@ private _open = {
         };
     }, [_p, _tok], 0.2] call CBA_fnc_waitAndExecute;
 };
+private _abortPrepare = {
+    params ["_p", "_tok", "_m"];
+    if ((uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok) exitWith {};
+    if (!isNull _m && {local _m}) then {
+        ["Unable to prepare the patient for chest access.", 2, _m] call ace_common_fnc_displayTextStructured;
+    };
+    [] call ACME_fnc_chestSealClose;
+};
 [{
     params ["_p", "_tok", "_m"];
     if (isNull _p || {!alive _m} || {(uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok}) exitWith {true};
@@ -58,4 +66,6 @@ private _open = {
     (_tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]))
         && {_readyAt >= 0}
         && {serverTime >= _readyAt}
-}, _open, [_patient, _sessionToken, _medic], 4, _open] call CBA_fnc_waitUntilAndExecute;
+// Animated carrier removal plus a real posterior-to-supine roll can legitimately exceed four seconds.
+// A timeout is an abort, never permission to open on top of an unfinished patient/provider animation.
+}, _open, [_patient, _sessionToken, _medic], 12, _abortPrepare] call CBA_fnc_waitUntilAndExecute;
