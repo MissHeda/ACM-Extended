@@ -49,7 +49,7 @@ private _open = {
     private _readyLease = _p getVariable ["ACME_chestAccess_readyLease",""];
     private _ready = _p getVariable ["ACME_chestAccess_readyServer",-1];
     (_readyLease == _lease) && {_ready isEqualType 0} && {_ready >= 0} && {serverTime >= _ready}
-}, _open, [_patient,_medic,_vestLease], 10, {
+}, _open, [_patient,_medic,_vestLease], 12, {
     params ["_p","_m","_lease"];
     if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease) exitWith {};
     diag_log format ["[ACME THORACOSTOMY] Chest-access preparation timed out on %1.", netId _p];
