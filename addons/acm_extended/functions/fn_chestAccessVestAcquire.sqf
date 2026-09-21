@@ -166,69 +166,110 @@ private _holdTime = missionNamespace getVariable ["ACME_chestAccess_vestLiftHold
 if (!(_holdTime isEqualType 0) || {_holdTime < 0}) then {_holdTime = 0.18;};
 
 private _sequenceTime = _liftTime + _holdTime + _lowerTime + 0.08;
-private _total = (_preDelay max 0) + _sequenceTime;
 
 private _serial = (_patient getVariable ["ACME_chestAccess_vestSerial", 0]) + 1;
 _patient setVariable ["ACME_chestAccess_vestSerial", _serial, false];
 private _token = format ["vest:%1:%2:%3:%4", _context, netId _patient, _serial, round (serverTime * 1000)];
 _patient setVariable [_busyVar, _token, false];
-_patient setVariable [_readyVar, serverTime + _total, true];
+_patient setVariable [_readyVar, -1, true];
 
-// Start provider and casualty together after any preceding Semi-Fowler lowering finishes.
-[{
-    params ["_p","_medic","_busyVar","_token","_total","_liftWindow"];
+private _beginPatient = {
+    params [
+        "_p","_medic","_ctx","_savedVar","_propVar","_pfhVar","_busyVar","_readyVar","_token",
+        "_commit","_liftTime","_holdTime","_lowerTime","_sequenceTime"
+    ];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
-    if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
-        [_medic, "chestAccessVestProvider", [_medic, _p, "start", false]] call ACME_fnc_ownerDispatch;
-    };
+    // Readiness begins now, after the provider has actually entered medic4 or its bounded presentation timeout fired.
+    _p setVariable [_readyVar, serverTime + _sequenceTime, true];
 
     [_p, false] call ACME_fnc_headElevCollision;
-    [_p, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _total + 0.5, 4, _token] call ACME_fnc_patientAnimRequest;
-    [_p, _liftWindow] call ACME_fnc_headElevPinPose;
-}, [_patient,_medic,_busyVar,_token,_sequenceTime,_liftTime + _holdTime + 0.25], _preDelay max 0] call CBA_fnc_waitAndExecute;
+    [_p, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _sequenceTime + 0.5, 4, _token]
+        call ACME_fnc_patientAnimRequest;
+    [_p, _liftTime + _holdTime + 0.25] call ACME_fnc_headElevPinPose;
 
-// At the top of the lift remove the real carrier and park its visual once, then immediately lay the patient down.
-[{
-    params ["_p","_medic","_ctx","_savedVar","_propVar","_pfhVar","_busyVar","_token","_commit","_lowerTime"];
-    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+    // At the top of the lift remove the real carrier and park its visual once, then immediately lay the patient down.
+    [{
+        params ["_p","_medic","_ctx","_savedVar","_propVar","_pfhVar","_busyVar","_token","_commit","_lowerTime"];
+        if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
-    [_p,_ctx,_savedVar,_propVar,_pfhVar] call _commit;
+        [_p,_ctx,_savedVar,_propVar,_pfhVar] call _commit;
 
-    if (alive _p && {isNull objectParent _p}) then {
-        [_p, "ACME_HeadElevPatientRelease", 2, "chest-access-vest", _medic, _lowerTime + 0.4, 4, _token] call ACME_fnc_patientAnimRequest;
-        [_p, _lowerTime + 0.2] call ACME_fnc_headElevPinPose;
-    };
-}, [_patient,_medic,_context,_savedVar,_propVar,_pfhVar,_busyVar,_token,_commitRemoval,_lowerTime],
-   (_preDelay max 0) + _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
-
-// Patient-side readiness is authoritative. Provider presentation is handed off but never gates the action.
-[{
-    params ["_p","_medic","_busyVar","_readyVar","_token"];
-    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
-
-    [_p, true] call ACME_fnc_headElevCollision;
-
-    private _lock = _p getVariable ["ACME_patientAnimLock", []];
-    if ((_lock param [0,""]) == _token && {(_lock param [1,""]) == "chest-access-vest"}) then {
-        _p setVariable ["ACME_patientAnimLock", [], true];
-    };
-
-    if (alive _p && {isNull objectParent _p} && {[_p] call ACME_fnc_chestSealCanPhysicalRoll}) then {
-        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
-        if ((toLowerANSI animationState _p) != (toLowerANSI _faceUp)) then {
-            ["ace_common_switchMove", [_p, _faceUp]] call CBA_fnc_globalEvent;
+        if (alive _p && {isNull objectParent _p}) then {
+            [_p, "ACME_HeadElevPatientRelease", 2, "chest-access-vest", _medic, _lowerTime + 0.4, 4, _token]
+                call ACME_fnc_patientAnimRequest;
+            [_p, _lowerTime + 0.2] call ACME_fnc_headElevPinPose;
         };
-        _p setVariable ["ACME_CS_facing", "front", true];
+    }, [_p,_medic,_ctx,_savedVar,_propVar,_pfhVar,_busyVar,_token,_commit,_lowerTime],
+       _liftTime + _holdTime] call CBA_fnc_waitAndExecute;
+
+    // Patient-side completion is authoritative. The provider is handed off only after the casualty is back down.
+    [{
+        params ["_p","_medic","_busyVar","_readyVar","_token"];
+        if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+
+        [_p, true] call ACME_fnc_headElevCollision;
+
+        private _lock = _p getVariable ["ACME_patientAnimLock", []];
+        if ((_lock param [0,""]) == _token && {(_lock param [1,""]) == "chest-access-vest"}) then {
+            _p setVariable ["ACME_patientAnimLock", [], true];
+        };
+
+        if (alive _p && {isNull objectParent _p} && {[_p] call ACME_fnc_chestSealCanPhysicalRoll}) then {
+            private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
+            if ((toLowerANSI animationState _p) != (toLowerANSI _faceUp)) then {
+                ["ace_common_switchMove", [_p, _faceUp]] call CBA_fnc_globalEvent;
+            };
+            _p setVariable ["ACME_CS_facing", "front", true];
+        };
+
+        _p setVariable [_busyVar, "", false];
+        _p setVariable [_readyVar, serverTime, true];
+
+        if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
+            // The clinical intervention is about to take ownership; no neutral crouch is inserted.
+            [_medic, "chestAccessVestProvider", [_medic, _p, "stop", true, _token]]
+                call ACME_fnc_ownerDispatch;
+        };
+    }, [_p,_medic,_busyVar,_readyVar,_token], _sequenceTime] call CBA_fnc_waitAndExecute;
+};
+
+// After any Semi-Fowler lay-flat finishes, let the provider fully holster/crouch and reach literal medic4.
+// The patient lift starts only from that exact work state. A bounded timeout preserves clinical reliability.
+[{
+    params [
+        "_p","_medic","_ctx","_savedVar","_propVar","_pfhVar","_busyVar","_readyVar","_token",
+        "_commit","_liftTime","_holdTime","_lowerTime","_sequenceTime","_beginPatient"
+    ];
+    if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+
+    private _args = [
+        _p,_medic,_ctx,_savedVar,_propVar,_pfhVar,_busyVar,_readyVar,_token,
+        _commit,_liftTime,_holdTime,_lowerTime,_sequenceTime
+    ];
+
+    if (isNull _medic || {_medic isEqualTo _p} || {!alive _medic}) exitWith {
+        _args call _beginPatient;
     };
 
-    _p setVariable [_busyVar, "", false];
-    _p setVariable [_readyVar, serverTime, true];
+    [_medic, "chestAccessVestProvider", [_medic, _p, "start", false, _token]] call ACME_fnc_ownerDispatch;
 
-    if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
-        // No neutral crouch here: the actual chest action is about to take animation ownership.
-        [_medic, "chestAccessVestProvider", [_medic, _p, "stop", true]] call ACME_fnc_ownerDispatch;
-    };
-}, [_patient,_medic,_busyVar,_readyVar,_token], _total] call CBA_fnc_waitAndExecute;
+    [{
+        params ["_m","_token"];
+        if (isNull _m || {!alive _m}) exitWith {true};
+        private _ready = _m getVariable ["ACME_chestAccessProviderReady", []];
+        (_ready param [0,""]) == _token && {(_ready param [1,-1]) != -1}
+    }, {
+        params ["_args","_begin"];
+        _args call _begin;
+    }, [_args,_beginPatient], 3.25, {
+        params ["_args","_begin"];
+        // Presentation failed to report ready. Continue the patient transaction rather than losing the clinical click.
+        _args call _begin;
+    }] call CBA_fnc_waitUntilAndExecute;
+}, [
+    _patient,_medic,_context,_savedVar,_propVar,_pfhVar,_busyVar,_readyVar,_token,
+    _commitRemoval,_liftTime,_holdTime,_lowerTime,_sequenceTime,_beginPatient
+], _preDelay max 0] call CBA_fnc_waitAndExecute;
 
 true
