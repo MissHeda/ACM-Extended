@@ -9,8 +9,12 @@
 // the medic holds a hung iv bag up in the left hand, in the standing or kneeling iv pose. the raised column
 // boosts the iv flow, applied in the getIVFlowRate override. the bag model seats in the left hand and a physics
 // iv line rope runs to the patient.
-ACME_hang_flowMult  = 1.75;  // iv flow multiplier while the bag is held up
-ACME_pressureInfuser_boost = 2.5;  // flow-ceiling multiplier when a medic applies a pressure infuser bag, the rapid transfuser. it stacks with the hang boost.
+ACME_hang_flowMult  = 1.75;  // generic IV/fluid multiplier while the bag is held up
+ACME_pressureInfuser_boost = 2.5;  // generic fluid multiplier. Blood uses the explicit tier/cap policy below.
+ACME_warmedBlood_mlPerMin  = 200;  // LifeWarmer Quantum, non-cold blood
+ACME_coldBlood_mlPerMin    = 100;  // cold-stored blood baseline
+ACME_coldBloodHang_mlPerMin = 200; // cold-stored blood while Hang Bag is active
+ACME_bloodMax_mlPerMin     = 300;  // absolute cap for every blood/fresh-blood path, including pressure infusion
 ACME_hang_leash     = 3;  // m the medic can be from the patient before the bag lowers. this is the 3 m maximum line range.
 // walk-and-carry arm-raise gesture. it is an upper-body overlay, so the legs keep walking. see CfgGesturesMale
 // > ACME_IV_Gesture.
