@@ -71,7 +71,9 @@ if (_pool isEqualTo []) then {_pool = +_gestures;};
 private _next = selectRandom _pool;
 _patient setVariable ["ACME_seizure_motionAdvancePending",false];
 _patient setVariable ["ACME_seizure_motionCurrentGesture",_next];
-// playActionNow can be swallowed by ACM_LyingState's isolated action graph.
-// switchGesture (Arma 2.18+) starts the configured gesture without replacing the supine base pose.
-_patient switchGesture [_next,0,1,false];
+
+// Owner-local switchGesture was not a reliable multiplayer presentation contract, especially for debug-induced
+// seizures on hosted servers. Broadcast the exact gesture/session. The owner machine also receives the event, so
+// its GestureDone EH remains the sole authoritative sequencer while every connected client sees the same spasm.
+["ACME_seizureGestureSync", [_patient, _session, _next, true]] call CBA_fnc_globalEvent;
 true
