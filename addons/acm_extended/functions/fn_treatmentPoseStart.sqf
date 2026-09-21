@@ -139,9 +139,10 @@ if (!isNil "ace_advanced_fatigue_setAnimExclusions") then {
 private _fnStartMain = {
     params ["_medic", "_main", "_state"];
     _medic setUnitPos (["MIDDLE", "UP"] select (_state param [16, false]));
-    // B73: priority 1 is playMoveNow only. It walks the move graph and can never fall through to switchMove,
-    // so provider work always interpolates into the authored state instead of teleporting into frame zero.
-    [_medic, _main, 1] call ACME_fnc_doAnim;
+    // Chest work uses normal playMove interpolation. playMoveNow can visibly snap between chest states even
+    // when the move graph has authored interpolation edges.
+    private _smoothChest = (_state param [1, ""]) in ["roll","inspect","stethoscope","chestSealWorkspace","chestSeal","ncdSeat"];
+    [_medic, _main, [1,0] select _smoothChest] call ACME_fnc_doAnim;
     _state set [3, 1];
     _state set [4, CBA_missionTime];
 };
@@ -161,7 +162,8 @@ private _fnEnter = {
     };
     if (_transition == "") exitWith {[_medic, _main, _state] call _fnStartMain;};
     _medic setUnitPos "MIDDLE";
-    [_medic, _transition, 1] call ACME_fnc_doAnim;
+    private _smoothChest = (_state param [1, ""]) in ["roll","inspect","stethoscope","chestSealWorkspace","chestSeal","ncdSeat"];
+    [_medic, _transition, [1,0] select _smoothChest] call ACME_fnc_doAnim;
     _state set [3, -2];
     _state set [4, CBA_missionTime];
     _state set [8, CBA_missionTime + _length];
