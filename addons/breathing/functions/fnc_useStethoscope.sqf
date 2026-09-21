@@ -15,13 +15,7 @@
  * Public: No
  */
 
-params [
-    "_medic",
-    "_patient",
-    ["_bodyPart", "Body"],
-    ["_entryReady", false, [false]],
-    ["_entryEpoch", -1, [0]]
-];
+params ["_medic", "_patient", ["_bodyPart", "Body"], ["_entryReady", false, [false]]];
 
 // you cannot auscultate in an airframe.
 // this is not a balance decision, it is simply true, and every flight medic knows it. a running helicopter puts 500
@@ -57,28 +51,6 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
 [[_medic, _patient, _bodyPart], {  // on start.
     params ["_medic", "_patient", "_bodyPart"];
-
-    // UI FIRST. Auscultation is the clinical action; animations are presentation. Get the player into the
-    // minigame before lung-state, patient-pose or provider-pose work can fail or delay this click.
-    createDialog "ACM_breathing_Stethoscope_Dialog";
-    private _display = findDisplay 81000;
-    if (isNull _display) exitWith {
-        ACM_core_ContinuousAction_Active = false;
-        ["Unable to open auscultation display.", 2, _medic] call ace_common_fnc_displayTextStructured;
-    };
-    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG", _display];
-    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
-
-    // Stamp carrier custody immediately so this exact display owns restoration even if optional presentation
-    // work below is interrupted.
-    private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
-    private _chestLeaseId = "";
-    if ((_chestLease param [0,objNull]) isEqualTo _patient
-        && {toLowerANSI (_chestLease param [1,""]) == "usestethoscope"}) then {
-        _chestLeaseId = _chestLease param [2,""];
-    };
-    _display setVariable ["ACME_stethChestLeaseId", _chestLeaseId];
-    _display setVariable ["ACME_stethPatientLeaseToken", ""];
 
     [_patient,"stethoscopeLungs",[[_patient] call ACME_fnc_clinicalEpoch]] call ACME_fnc_ownerDispatch;
 
@@ -118,10 +90,12 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
     ace_hearing_volumeAttenuation = 0.1;
     [(localize "STR_ACE_Volume_Lowered"), 1.5, _medic] call ace_common_fnc_displayTextStructured;
 
-    // The display already exists. Update only the patient animation lease token after optional positioning.
-    private _patientLease = _medic getVariable ["ACME_stethPatientAnimLease", []];
-    _display setVariable ["ACME_stethPatientLeaseToken", _patientLease param [1, ""]];
+    createDialog "ACM_breathing_Stethoscope_Dialog";
 
+    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG",(findDisplay 81000)];
+
+    private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
+    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
     private _initialSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
     [_display, _initialSide] call ACME_fnc_stethoscopeSetView;
     private _ctrlText = _display displayCtrl 81001;
@@ -184,4 +158,4 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
     // The dialog owns its own cursor/audio PFH. This controller retains only treatment validity, CPR exclusion
     // and the casualty animation lease.
-}, false, 81000, _entryEpoch] call ACME_fnc_beginStethoscopeAction;
+}, false, 81000] call ACME_fnc_beginStethoscopeAction;
