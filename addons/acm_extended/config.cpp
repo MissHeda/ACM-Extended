@@ -2580,6 +2580,8 @@ class CfgFunctions {
             class beginStethoscopeAction {};
             class stethoscopeInit {};
             class stethoscopeSetView {};
+            class stethoscopeFlip {};
+            class stethoscopeFlipTick {};
             class stethoscopeTick {};
             class stethoscopeWeights {};
             class stethoscopeClose {};
