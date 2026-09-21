@@ -220,8 +220,10 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 _started = true;
             } else {
                 if (_classKey == "cpr") then {
-                    // Native CPR owns its continuous session. Enter it directly after chest prep instead of
-                    // recursing through this wrapper and risking another preflight rejection.
+                    // CPR's configured treatment is only a 0.01 s launcher whose callbackSuccess calls beginCPR.
+                    // Re-running the generic treatment pipeline after several seconds of carrier theatre can fail its
+                    // transient treatment/menu gates and never reach that callback. Revalidate the REAL CPR condition
+                    // and invoke the configured callback directly.
                     private _dpSame = (_m getVariable ["ACME_DP_Active",false])
                         && {(_m getVariable ["ACME_DP_Patient",objNull]) isEqualTo _p};
                     if (_dpSame) then {
@@ -230,7 +232,38 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                         _m setVariable ["ACME_dah_gen",(_m getVariable ["ACME_dah_gen",0]) + 1,false];
                         _m setVariable ["ACME_DP_InPose",false,false];
                     };
-                    _started = _args call ACM_core_fnc_treatmentNative;
+
+                    if ([_m,_p] call ace_medical_treatment_fnc_canCPR) then {
+                        [_m,_p] call ACM_circulation_fnc_beginCPR;
+                        _started = (_p getVariable ["ACM_circulation_CPR_Medic",objNull]) isEqualTo _m;
+
+                        // Because this path deliberately bypasses the 0.01 s ACE treatment launcher, install the
+                        // carrier-release watcher here instead of waiting for ace_treatmentSucceded.
+                        if (_started) then {
+                            [{
+                                params ["_p","_m","_leaseId"];
+                                isNull _p || {isNull _m} || {!alive _m}
+                                    || {!([_p] call ACM_core_fnc_cprActive)}
+                                    || {!((_p getVariable ["ACM_circulation_CPR_Medic",objNull]) isEqualTo _m)}
+                                    || {((_m getVariable ["ACME_chestAccess_treatment",[]]) param [2,""]) != _leaseId}
+                            }, {
+                                params ["_p","_m","_leaseId"];
+                                if (!isNull _m && {local _m}) then {
+                                    private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
+                                    if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                                };
+                                if (!isNull _p) then {[_p,_m,_leaseId,false,"cpr"] call ACME_fnc_chestAccessVestEvent;};
+                            }, [_p,_m,_leaseId], 600, {
+                                params ["_p","_m","_leaseId"];
+                                if (!isNull _m && {local _m}) then {
+                                    private _cur = _m getVariable ["ACME_chestAccess_treatment",[]];
+                                    if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment",[]];};
+                                };
+                                if (!isNull _p) then {[_p,_m,_leaseId,false,"cpr"] call ACME_fnc_chestAccessVestEvent;};
+                            }] call CBA_fnc_waitUntilAndExecute;
+                        };
+                    };
+
                     if (!_started && {_dpSame}) then {
                         _m setVariable ["ACME_DP_Paused",false,false];
                         _m setVariable ["ACME_DP_PauseTreatmentClass","",false];
