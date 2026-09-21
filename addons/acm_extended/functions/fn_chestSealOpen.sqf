@@ -40,6 +40,8 @@ private _open = {
         || {_m isNotEqualTo ACE_player} || {_m getVariable ["ACE_isUnconscious", false]}) exitWith {
         [] call ACME_fnc_chestSealClose;
     };
+    private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
+    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
     ["ACME_ChestSeal_Dialog"] call ACME_fnc_minigameOpen;
     [{
         params ["_p", "_tok"];
