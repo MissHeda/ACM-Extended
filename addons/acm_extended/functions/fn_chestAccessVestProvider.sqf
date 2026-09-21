@@ -70,7 +70,7 @@ private _armReadyProbe = {
         if ((_entry param [2,""]) == _token) then {
             _m setVariable ["ACME_chestAccessProviderReady", [_token, serverTime], true];
         };
-    }, [_m,_epoch,_token], 3.0, {
+    }, [_m,_epoch,_token], 4.5, {
         params ["_m","_epoch","_token"];
         private _entry = _m getVariable ["ACME_chestAccessProvider", []];
         if ((_entry param [2,""]) == _token) then {
