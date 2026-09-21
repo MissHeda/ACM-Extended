@@ -170,21 +170,24 @@ class GVAR(Stethoscope_Dialog) {
 
         class ViewLabel: TopText {
             idc = IDC_STETHOSCOPE_VIEW_LABEL;
-            x = QUOTE(safeZoneX + safeZoneW * 0.02);
-            y = QUOTE(safeZoneY + safeZoneH * 0.10);
-            w = QUOTE(safeZoneW * 0.23);
-            h = QUOTE(safeZoneH * 0.05);
+            x = 0;
+            y = 0;
+            w = 0;
+            h = 0;
             sizeEx = QUOTE(GUI_GRID_H * 0.8 * NORMALIZE_SIZEEX);
-            text = "Anterior (front)";
+            text = "";
         };
         class ChangeView: RscButton {
             idc = IDC_STETHOSCOPE_VIEW;
-            x = QUOTE(safeZoneX + safeZoneW * 0.02);
-            y = QUOTE(safeZoneY + safeZoneH * 0.16);
-            w = QUOTE(safeZoneW * 0.23);
-            h = QUOTE(safeZoneH * 0.05);
-            text = "View back";
-            onButtonClick = "private _d = ctrlParent (_this select 0); [_d, if ((_d getVariable ['ACME_stethView','front']) == 'front') then {'back'} else {'front'}] call ACME_fnc_stethoscopeSetView;";
+            x = QUOTE(safeZoneX + safeZoneW * 0.4625);
+            y = QUOTE(safeZoneY + safeZoneH * 0.92);
+            w = QUOTE(safeZoneW * 0.075);
+            h = QUOTE(safeZoneH * 0.045);
+            text = "Flip Side";
+            tooltip = "Turn the patient over (front / back)";
+            onButtonClick = "[] call ACME_fnc_stethoscopeFlip;";
+            colorBackground[] = {0.14, 0.20, 0.30, 0.90};
+            colorText[] = {0.93, 0.89, 0.80, 1};
         };
         class Bell: RscPicture {
             idc = IDC_STETHOSCOPE_BELL;
