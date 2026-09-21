@@ -45,10 +45,10 @@ assert 'ACME_stethFlipPFH' in steth_close
 assert '[_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;' in steth_close
 assert '[_patient] call ACME_fnc_patientRollCancel;' in steth_close
 
-# Chest-seal patient teardown must never wait out or finish a live roll after the user closes mid-flip.
+# Chest-seal patient teardown invalidates a live patient roll immediately before reverse restoration.
 assert 'private _rollActive' in patient_end
-assert '[_patient, _preSide] call ACME_fnc_patientRollCancel;' in patient_end
-assert 'if (_rollActive) exitWith' in patient_end
+assert 'ACME_fnc_patientRollCancel' in patient_end
+assert '[_patient, "front"] call ACME_fnc_patientRollCancel;' in patient_end
 assert '(_rollUntil - CBA_missionTime) + 0.08' not in patient_end
 
 # Owner routing and registration are explicit.
@@ -56,7 +56,4 @@ assert 'case "patientRollCancel": {_args call ACME_fnc_patientRollCancel;};' in 
 assert 'class rollProviderCancel {};' in cfg
 assert 'class patientRollCancel {};' in cfg
 
-assert 'ACME_buildBatch = "B120";' in startup
-assert 'ACME_debugRevision = "rc4";' in startup
-
-print("PASS rc4: immediate minigame flip cancellation")
+print("PASS: immediate minigame flip cancellation")
