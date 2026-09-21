@@ -45,7 +45,7 @@ private _finish = {
 [{
     params ["_unit", "_tok", "_epoch", "_fnFinish"];
     [_unit, _tok, _epoch, false] call _fnFinish;
-}, [_medic, _token, _poseEpoch, _finish], _duration + 1.5] call CBA_fnc_waitAndExecute;
+}, [_medic, _token, _poseEpoch, _finish], _duration + 2.5] call CBA_fnc_waitAndExecute;
 
 private _pfh = [{
     params ["_args", "_id"];
