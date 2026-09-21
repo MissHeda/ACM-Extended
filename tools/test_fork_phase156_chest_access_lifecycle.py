@@ -50,9 +50,9 @@ assert 'ACME_chestAccessCarrierGap' in park
 assert 'ACME_chestAccessCarrierGap' in cs_park
 assert '0.62' in park and '0.62' in cs_park
 
-# Chest provider states enter/exit through playMove priority 0 and the owner freezes naturally without switchMove.
-assert '[1,0] select _smoothChest' in pose_start
-assert '[1,0] select _smoothChest' in pose_stop
+# Provider work uses the known-good exact priority-1 entry so finite chest RTMs reliably reach their freeze stage.
+main = pose_start.split('private _fnStartMain = {', 1)[1].split('// Crouch first.', 1)[0]
+assert '[_medic, _main, 1] call ACME_fnc_doAnim;' in main
 freeze = pose_start.split('// Freeze the owner on the frame it naturally reached.', 1)[1].split('private _jip', 1)[0]
 assert '_medic switchMove [_main, _phase, 1, false];' not in freeze
 assert '_medic setAnimSpeedCoef 0;' in freeze
@@ -61,7 +61,7 @@ assert '_medic setAnimSpeedCoef 0;' in freeze
 assert 'if (_state == "xstat") then {_xstatTex} else {_openTex}' in junction
 assert '_packedC ctrlShow (_state == "packed");' in junction
 
-assert 'ACME_buildBatch = "B127";' in startup
-assert 'ACME_debugRevision = "rc11";' in startup
+assert 'ACME_buildBatch = "B128";' in startup
+assert 'ACME_debugRevision = "rc12";' in startup
 
-print("PASS rc11: chest access direct-open + reverse carrier restore + head clearance + XStat image")
+print("PASS rc12: chest lifecycle + reverse carrier restore + head clearance + XStat image")
