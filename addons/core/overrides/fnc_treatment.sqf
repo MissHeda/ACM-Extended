@@ -118,7 +118,6 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     if (_needsChestAccess && {_hasCarrierToRemove} && {!_isChestBypass}
         && {local _medic} && {!isNull _medic} && {alive _medic}) exitWith {
         if (_medic getVariable ["ACME_chestAccessPreflightActive", false]) exitWith {false};
-        if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
 
         private _serial = (missionNamespace getVariable ["ACME_chestAccess_serial", 0]) + 1;
         missionNamespace setVariable ["ACME_chestAccess_serial", _serial];
