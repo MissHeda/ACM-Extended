@@ -96,7 +96,7 @@ private _restoreCarrier = {
             (_p getVariable ["ACME_CS_vestBusy",""]) == ""
         }, {
             _this call (_this select 9);
-        }, [_p,_medic,_preSide,_head,_recovery,_oldAnim,_generation,_restoreSide,_finalize,_restoreCarrier], 8, {
+        }, [_p,_medic,_preSide,_head,_recovery,_oldAnim,_generation,_restoreSide,_finalize,_restoreCarrier], 12, {
             params ["_p","_medic","_preSide","_head","_recovery","_oldAnim","_generation","_restoreSide","_finalize"];
             [_p,_preSide,_head,_recovery,_oldAnim,_generation,_finalize] call _restoreSide;
         }] call CBA_fnc_waitUntilAndExecute;
@@ -119,7 +119,7 @@ private _restoreCarrier = {
     }, {
         params ["_p","_preSide","_head","_recovery","_oldAnim","_generation","_restoreSide","_finalize"];
         [_p,_preSide,_head,_recovery,_oldAnim,_generation,_finalize] call _restoreSide;
-    }, [_p,_preSide,_head,_recovery,_oldAnim,_generation,_restoreSide,_finalize], 8, {
+    }, [_p,_preSide,_head,_recovery,_oldAnim,_generation,_restoreSide,_finalize], 12, {
         params ["_p","_preSide","_head","_recovery","_oldAnim","_generation","_restoreSide","_finalize"];
         // Gear function has its own fail-safe paths. Never strand procedure state if presentation stalls.
         [_p,_preSide,_head,_recovery,_oldAnim,_generation,_finalize] call _restoreSide;
