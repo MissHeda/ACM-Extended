@@ -15,6 +15,13 @@ if (ACM_core_ContinuousAction_Active) exitWith {};
 // then close/cancel that newer maneuver. Each scope now owns one immutable generation.
 private _epoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
 missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _epoch];
+
+// Match the core continuous-action ownership contract. Provider reconciliation treats an active controller
+// without a matching session/heartbeat as stale; the stethoscope used to omit both and was therefore torn down
+// about a second after opening even though its dialog was healthy.
+_medic setVariable ["ACM_core_ContinuousAction_Session", [_patient, _epoch], true];
+_medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
+
 private _isDialog = (_dialogID != -1);
 ACM_core_ContinuousAction_IsDialog = _isDialog;
 ACM_core_ContinuousAction_Active = true;
@@ -37,15 +44,25 @@ private _notInVehicle = isNull objectParent _medic;
 // The stethoscope is a long provider pose. Weapon state is owned by treatmentPoseStart/medicAnimationPrep; do not
 // use selectWeapon "" here, because a sidearm can remain visibly attached after its logical selection is cleared.
 
-// One animation owner is enough, but its lifetime is deliberately independent from the dialog lifetime.
-private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
+// Open the clinical UI before presentation takes animation ownership. A provider animation failure must never
+// consume the auscultation click. fnc_useStethoscope creates/initializes the display synchronously in _onStart.
 _args call _onStart;
 
+private _scopeDisplay = if (_isDialog) then {findDisplay _dialogID} else {displayNull};
+if (_isDialog && {isNull _scopeDisplay}) exitWith {
+    ACM_core_ContinuousAction_Active = false;
+    ACM_core_ContinuousAction_IsDialog = false;
+    if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
+        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+    };
+};
+
+// The provider pose is presentation only and starts after the minigame exists.
+private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
+
 private _dialogKeyEH = -1;
-private _scopeDisplay = displayNull;
 private _keyID = -1;
 if (_isDialog) then {
-    _scopeDisplay = findDisplay _dialogID;
     if (!isNull _scopeDisplay) then {
         // The display owns the exact continuous-action and treatment-pose generations that created it.
         // Its Unload EH can therefore release only this scope, even if the normal controller PFH is interrupted.
@@ -94,7 +111,7 @@ private _pfh = [{
     };
 
     private _patientCondition = isNull _patient;
-    private _medicCondition = isNull _medic || {!local _medic} || {!(alive _medic)} || {_medic getVariable ["ACE_isUnconscious", false]} || {_medic isNotEqualTo ACE_player};
+    private _medicCondition = isNull _medic || {!local _medic} || {!(alive _medic)} || {_medic getVariable ["ACE_isUnconscious", false]};
     private _vehicleCondition = (objectParent _medic isNotEqualTo objectParent _patient);
     private _enteredVehicle = _notInVehicle && {!isNull objectParent _medic};
     private _distanceCondition = (!isNull _patient) && {(_patient distance2D _medic > ace_medical_gui_maxDistance)};
@@ -126,6 +143,10 @@ private _pfh = [{
             && {!_patientCondition} && {!_medicCondition};
 
         ACM_core_ContinuousAction_Active = false;
+        ACM_core_ContinuousAction_IsDialog = false;
+        if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
+            _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+        };
         [_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop;
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
 
@@ -134,6 +155,10 @@ private _pfh = [{
         if (_returnToMenu) then {
             ["ACM_core_openMedicalMenu", _patient] call CBA_fnc_localEvent;
         };
+    };
+
+    if (CBA_missionTime - (_medic getVariable ["ACM_core_ContinuousAction_LastSeen", -100]) >= 2) then {
+        _medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
     };
 
     _args call _perFrame;
