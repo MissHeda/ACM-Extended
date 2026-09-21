@@ -29,5 +29,5 @@ _patient setVariable ["ACME_Thora_ChestAccessActive", _thoraActive, true];
 if (_start) then {
     [_patient, _medic, "access"] call ACME_fnc_chestAccessVestAcquire;
 } else {
-    if ((count _leases) == 0) then {[_patient] call ACME_fnc_chestAccessVestRestore;};
+    if ((count _leases) == 0) then {[_patient, false, _medic, "access"] call ACME_fnc_chestAccessVestRestore;};
 };
