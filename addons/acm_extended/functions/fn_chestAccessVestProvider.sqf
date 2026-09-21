@@ -33,6 +33,7 @@ if (_op == "stop") exitWith {
     if (_entryPatient isEqualTo _patient) then {
         _medic setVariable ["ACME_chestAccessProvider", [], false];
     };
+
     private _ready = _medic getVariable ["ACME_chestAccessProviderReady", []];
     if ((_ready param [0,""]) == _token) then {
         _medic setVariable ["ACME_chestAccessProviderReady", [], true];
@@ -45,18 +46,52 @@ if (!alive _medic
     || {[_medic] call ACME_fnc_animBlocked}
     || {_medic isEqualTo _patient}) exitWith {-1};
 
+private _armReadyProbe = {
+    params ["_m","_epoch","_token"];
+    if (_token == "") exitWith {};
+
+    _m setVariable ["ACME_chestAccessProviderReady", [_token, -1], true];
+
+    [{
+        params ["_m","_epoch","_token"];
+        if (isNull _m || {!local _m} || {!alive _m}) exitWith {true};
+
+        private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+        if ((_entry param [2,""]) != _token) exitWith {true};
+
+        private _state = _m getVariable ["ACME_treatmentPoseState", []];
+        (_state param [0,-2]) == _epoch
+            && {(_state param [1,""]) == "chestAccess"}
+            && {(_state param [3,-2]) >= 1}
+            && {(toLowerANSI animationState _m) == "ainvpknlmstpsnonwnondnon_medic4"}
+    }, {
+        params ["_m","_epoch","_token"];
+        private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+        if ((_entry param [2,""]) == _token) then {
+            _m setVariable ["ACME_chestAccessProviderReady", [_token, serverTime], true];
+        };
+    }, [_m,_epoch,_token], 3.0, {
+        params ["_m","_epoch","_token"];
+        private _entry = _m getVariable ["ACME_chestAccessProvider", []];
+        if ((_entry param [2,""]) == _token) then {
+            // -2 means the provider presentation timed out. The patient transaction may proceed fail-open.
+            _m setVariable ["ACME_chestAccessProviderReady", [_token, -2], true];
+        };
+    }] call CBA_fnc_waitUntilAndExecute;
+};
+
 private _entry = _medic getVariable ["ACME_chestAccessProvider", []];
 private _existingPatient = _entry param [0, objNull];
 private _existingEpoch = _entry param [1, -1];
-private _existingToken = _entry param [2, ""];
 private _pose = _medic getVariable ["ACME_treatmentPoseState", []];
+
 if ((_existingPatient isEqualTo _patient)
     && {_existingEpoch >= 0}
     && {(_pose param [0, -2]) == _existingEpoch}
     && {(_pose param [1, ""]) == "chestAccess"}) exitWith {
     if (_episodeToken != "") then {
         _medic setVariable ["ACME_chestAccessProvider", [_patient, _existingEpoch, _episodeToken], false];
-        _medic setVariable ["ACME_chestAccessProviderReady", [_episodeToken, serverTime], true];
+        [_medic,_existingEpoch,_episodeToken] call _armReadyProbe;
     };
     _existingEpoch
 };
@@ -64,34 +99,6 @@ if ((_existingPatient isEqualTo _patient)
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
     _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken], false];
-
-    if (_episodeToken != "") then {
-        _medic setVariable ["ACME_chestAccessProviderReady", [_episodeToken, -1], true];
-
-        [{
-            params ["_m","_epoch","_token"];
-            if (isNull _m || {!local _m} || {!alive _m}) exitWith {true};
-            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
-            if ((_entry param [2,""]) != _token) exitWith {true};
-            private _state = _m getVariable ["ACME_treatmentPoseState", []];
-            (_state param [0,-2]) == _epoch
-                && {(_state param [1,""]) == "chestAccess"}
-                && {(_state param [3,-2]) >= 1}
-                && {(toLowerANSI animationState _m) == "ainvpknlmstpsnonwnondnon_medic4"}
-        }, {
-            params ["_m","_epoch","_token"];
-            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
-            if ((_entry param [2,""]) == _token) then {
-                _m setVariable ["ACME_chestAccessProviderReady", [_token, serverTime], true];
-            };
-        }, [_medic,_epoch,_episodeToken], 3.0, {
-            params ["_m","_epoch","_token"];
-            private _entry = _m getVariable ["ACME_chestAccessProvider", []];
-            if ((_entry param [2,""]) == _token) then {
-                // -2 means provider presentation timed out. Patient choreography may proceed fail-open.
-                _m setVariable ["ACME_chestAccessProviderReady", [_token, -2], true];
-            };
-        }] call CBA_fnc_waitUntilAndExecute;
-    };
+    [_medic,_epoch,_episodeToken] call _armReadyProbe;
 };
 _epoch
