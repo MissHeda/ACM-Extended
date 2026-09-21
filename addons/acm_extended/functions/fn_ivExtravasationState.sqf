@@ -50,7 +50,7 @@ private _records = _patient getVariable ["ACME_vesicant_records", []];
 private _partIndex = ALL_BODY_PARTS find _bp;
 if (_partIndex >= 0 && {missionNamespace getVariable ["ACM_circulation_IVComplications", false]}) then {
     {
-        private _nativeFlow = (GET_IV_COMPLICATIONS_FLOW_X(_patient, _partIndex, _x)) max 0 min 2;
+        private _nativeFlow = (GET_IV_COMPLICATIONS_FLOW_X(_patient,_partIndex,_x)) max 0 min 2;
         if (_nativeFlow >= 2) then {
             _bySite set [_x, 2 max (_bySite getOrDefault [_x, 0])];
         };
