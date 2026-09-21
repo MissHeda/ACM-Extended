@@ -96,6 +96,7 @@ def execute(scenario, runtime=False):
         private _bvmActive = false;
         private _reopens = 0;
         private _logs = [];
+        private _texts = [];
         private _duringSwitch = false;
         private _fireAnimOnSwitch = false;
         CBA_missionTime = 20;
@@ -106,7 +107,7 @@ def execute(scenario, runtime=False):
         ACM_core_ContinuousAction_Active = false;
         ace_common_fnc_isAwake = {_awake};
         ace_common_fnc_uniqueItems = {if (_hasBVM) then {["ACM_BVM"]} else {[]}};
-        ace_common_fnc_displayTextStructured = {};
+        ace_common_fnc_displayTextStructured = {_texts pushBack (_this select 0);};
         ace_common_fnc_getName = {"Provider"};
         ace_weaponselect_fnc_putWeaponAway = {};
         ace_common_fnc_doAnimation = {
@@ -275,6 +276,26 @@ def test_stop_keeps_another_providers_bvm_session():
         call _start; call _enter; call _cancel; call _freed;
         [(_patient getVariable "ACM_breathing_BVM_Medic") isEqualTo missionNamespace, "other BVM reservation released"] call _check;
         [(_patient getVariable "ACM_breathing_BVM_provider") isEqualTo missionNamespace, "other BVM ventilation stopped"] call _check;
+    ''')
+
+
+@pytest.mark.parametrize('airway', ['', 'SGA'])
+def test_vent_provider_flap_does_not_reannounce_or_restart_cpr(airway):
+    execute(f'''_patient setVariable ["ACM_airway_AirwayItem_Oral", "{airway}"];
+        call _start; call _enter;
+        private _continued0 = {{ _x == "CPR_Continued" }} count _texts;
+        private _moveCount0 = count _moves;
+
+        // ACME's ventilator deliberately registers/unregisters itself through ACM's BVM provider channel
+        // as useful minute ventilation appears or disappears. CPR itself remains continuously active.
+        _bvmActive = true; call _tick;
+        _bvmActive = false; call _tick;
+        _bvmActive = true; call _tick;
+        _bvmActive = false; call _tick;
+
+        [{{ _x == "CPR_Continued" }} count _texts == _continued0, "vent provider flap re-announced CPR"] call _check;
+        [count _moves == _moveCount0, "vent provider flap restarted CPR animation"] call _check;
+        call _cancel; call _freed;
     ''')
 
 

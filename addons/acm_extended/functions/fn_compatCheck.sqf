@@ -26,22 +26,23 @@ private _hasMarker = {
     _code isEqualType {} && {(toLowerANSI str _code find toLowerANSI _marker) >= 0}
 };
 
-// B127: ace_dragging prepares this function during ACE startup, and some multiplayer mod stacks prepare it again
+// B127/B129: ace_dragging prepares this function during ACE startup, and some multiplayer mod stacks prepare it again
 // after ACM_core's CfgFunctions override has been compiled. That leaves a client running ACE's native function even
 // though the ACME PBO contains the correct reconciled source. This is not upstream drift, so repair this one known
 // load-order race from the exact source shipped in the same build before classifying it as stale. If preprocessing,
 // compilation or assignment fails, the normal marker test below still reports the compatibility fault instead of
-// hiding it. JIP clients run this locally as part of their own postInit/compatibility pass.
-if !( ["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"] call _hasMarker ) then {
+// hiding it. JIP clients run this locally as part of their own postInit/compatibility pass. The carry-drop check
+// uses ACM_LyingState, an executed behavior token that survives compilation, instead of an unused marker assignment.
+if !( ["ace_dragging_fnc_dropObject_carry", "ACM_LyingState"] call _hasMarker ) then {
     private _repairPath = "\x\ACM\addons\core\overrides\fnc_dropObject_carry.sqf";
     private _repairSource = preprocessFileLineNumbers _repairPath;
     if (_repairSource != "") then {
         private _repairCode = compile _repairSource;
         private _repairValid = _repairCode isEqualType {}
-            && {(toLowerANSI str _repairCode find "b106:ace321carrydrop") >= 0};
+            && {(toLowerANSI str _repairCode find "acm_lyingstate") >= 0};
         if (_repairValid) then {
             missionNamespace setVariable ["ace_dragging_fnc_dropObject_carry", _repairCode];
-            if (["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"] call _hasMarker) then {
+            if (["ace_dragging_fnc_dropObject_carry", "ACM_LyingState"] call _hasMarker) then {
                 diag_log format ["[ACME COMPAT] Reconciled runtime ace_dragging_fnc_dropObject_carry from %1", _repairPath];
             };
         };
@@ -80,7 +81,7 @@ if !( ["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"] call _hasMar
     ["ACM_damage_fnc_wrapBodyPartLocal", "B106:wrappedWoundReopen"],
     ["ace_dragging_fnc_canCarry", "B106:ace321Carry"],
     ["ace_dragging_fnc_canDrag", "B106:ace321Drag"],
-    ["ace_dragging_fnc_dropObject_carry", "B106:ace321CarryDrop"],
+    ["ace_dragging_fnc_dropObject_carry", "ACM_LyingState"],
     ["ace_interact_menu_fnc_compileMenuSelfAction", "B106:ace321SelfMenu"],
     ["ace_zeus_fnc_moduleUnconscious", "B106:aiUnconsciousGuard"]
 ];

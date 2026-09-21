@@ -236,13 +236,18 @@ private _controller = [{
         if (_notInVehicle) then {[_medic, _epoch] call _fnc_doCPRAnimation;};
     };
 
-    private _updateMouseHint = false;
-    if ((([_patient] call EFUNC(core,cprActive)) isNotEqualTo GVAR(CPRActive))
-        || {([_patient] call EFUNC(core,bvmActive)) isNotEqualTo GVAR(BVMActive)}) then {
-        _updateMouseHint = true;
-    };
+    // The ventilator intentionally publishes through ACM's BVM provider channel so native gas-exchange code sees
+    // mechanical ventilation. That provider may appear/disappear as delivered minute ventilation crosses its
+    // validity threshold. A BVM/ventilation-state change is not a CPR pause/resume event: only a real change in
+    // cprActive may announce "Continued CPR"/"CPR paused" or restart/stop the compression animation.
+    private _cprNow = [_patient] call EFUNC(core,cprActive);
+    private _bvmNow = [_patient] call EFUNC(core,bvmActive);
+    private _cprWasActive = GVAR(CPRActive);
+    private _bvmWasActive = GVAR(BVMActive);
+    private _cprChanged = _cprNow isNotEqualTo _cprWasActive;
+    private _bvmChanged = _bvmNow isNotEqualTo _bvmWasActive;
 
-    if (_updateMouseHint) then {
+    if (_cprChanged || _bvmChanged) then {
         private _uniqueItems = [_medic, 0] call ACEFUNC(common,uniqueItems);
         private _itemIndex = _uniqueItems findIf {_x == "ACM_BVM"};
         if (_itemIndex < 0) then {
@@ -255,43 +260,51 @@ private _controller = [{
         if !(GVAR(MedicHasBVM)) then {GVAR(MedicHasBVMType) = "";};
 
         if ((_patient getVariable [QEGVAR(airway,AirwayItem_Oral), ""]) == "SGA") then {
-            GVAR(BVMActive) = [_patient] call EFUNC(core,bvmActive);
-            if ([_patient] call EFUNC(core,cprActive)) then {
-                [LLSTRING(CPR_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+            GVAR(BVMActive) = _bvmNow;
+            if (_cprNow) then {
+                if (_cprChanged) then {
+                    [LLSTRING(CPR_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                };
                 [LLSTRING(CPR_Stop), LLSTRING(CPR_Pause), ""] call ACEFUNC(interaction,showMouseHint);
                 GVAR(CPRActive) = true;
                 GVAR(loopCPR) = true;
                 _medic setVariable [QGVAR(CPR_Loop), true, false];
-                if (_notInVehicle) then {[_medic, _epoch] call _fnc_doCPRAnimation;};
+                if (_cprChanged && {_notInVehicle}) then {[_medic, _epoch] call _fnc_doCPRAnimation;};
             } else {
                 _medic setVariable [QGVAR(CPR_Loop), false, false];
-                if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
-                [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                if (_cprChanged) then {
+                    if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
+                    [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                };
                 [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
                 GVAR(CPRActive) = false;
                 GVAR(loopCPR) = false;
                 _medic setVariable [QGVAR(CPR_Loop), false, false];
             };
         } else {
-            if ([_patient] call EFUNC(core,bvmActive)) then {
+            if (_bvmNow) then {
                 [LLSTRING(CPR_Stop), "", ""] call ACEFUNC(interaction,showMouseHint);
                 GVAR(BVMActive) = true;
-                GVAR(CPRActive) = [_patient] call EFUNC(core,cprActive);
+                GVAR(CPRActive) = _cprNow;
                 GVAR(loopCPR) = GVAR(CPRActive);
                 _medic setVariable [QGVAR(CPR_Loop), GVAR(CPRActive), false];
             } else {
                 GVAR(BVMActive) = false;
-                if ([_patient] call EFUNC(core,cprActive)) then {
-                    [LLSTRING(CPR_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                if (_cprNow) then {
+                    if (_cprChanged) then {
+                        [LLSTRING(CPR_Continued), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                    };
                     [LLSTRING(CPR_Stop), LLSTRING(CPR_Pause), ""] call ACEFUNC(interaction,showMouseHint);
                     GVAR(CPRActive) = true;
                     GVAR(loopCPR) = true;
                     _medic setVariable [QGVAR(CPR_Loop), true, false];
-                    if (_notInVehicle) then {[_medic, _epoch] call _fnc_doCPRAnimation;};
+                    if (_cprChanged && {_notInVehicle}) then {[_medic, _epoch] call _fnc_doCPRAnimation;};
                 } else {
                     _medic setVariable [QGVAR(CPR_Loop), false, false];
-                    if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
-                    [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                    if (_cprChanged) then {
+                        if (_notInVehicle) then {[QACEGVAR(common,switchMove), [_medic, "ACM_CPR_Stop"]] call CBA_fnc_globalEvent;};
+                        [LLSTRING(CPR_Paused), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
+                    };
                     [LLSTRING(CPR_Stop), LLSTRING(CPR_Continue), (["", LLSTRING(CPR_SwapToBVM)] select (GVAR(MedicHasBVM) && isNull (_patient getVariable [QEGVAR(breathing,BVM_Medic), objNull])))] call ACEFUNC(interaction,showMouseHint);
                     GVAR(CPRActive) = false;
                     GVAR(loopCPR) = false;
