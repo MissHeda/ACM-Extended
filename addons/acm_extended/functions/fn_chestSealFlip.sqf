@@ -56,6 +56,10 @@ if ((_provider getVariable ["ACME_DP_Active",false])
     _provider setVariable ["ACME_DP_LastPoseAssert",0];
 };
 private _started = [_provider,"chestSealFlip",_patient] call ACME_fnc_rollProviderStart;
+if (_started) then {
+    _provider setVariable ["ACME_CS_providerHoldEpoch", -1, false];
+    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", -1];
+};
 private _pose = _provider getVariable ["ACME_treatmentPoseState",[]];
 private _epoch = if (_started) then {_pose param [0,-1]} else {-1};
 private _rollToken = if (_started) then {_provider getVariable ["ACME_rollProviderToken",""]} else {""};
