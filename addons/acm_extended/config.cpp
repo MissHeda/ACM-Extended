@@ -133,7 +133,10 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         };
         class ACME_HeadElevPatientRelease: AinjPpneMrunSnonWnonDb_release {
             looped = 0;
-            ConnectTo[] = {"AinjPpneMstpSnonWnonDnon", 0.1};
+            // The BI release parent naturally hands off to the injured prone idle. That is correct for dragging,
+            // but wrong for our "lay patient flat" use: carrier removal and Semi-Fowler lowering must finish
+            // anterior-up/supine. ACM_LyingState is ACM's authored stable supine endpoint.
+            ConnectTo[] = {"ACM_LyingState", 0.1};
             InterpolateTo[] = {"Unconscious", 0.02};
         };
 
