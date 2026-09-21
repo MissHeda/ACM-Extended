@@ -174,48 +174,42 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         || {(_patient getVariable ["ACM_airway_RecoveryPosition_State", false]) && {(getNumber (_cfg >> "ACM_cancelRecovery")) > 0}};
     if (_dpSamePatient && {_dpPatientManeuver}) then {[_medic, _classKey] call _fnc_dpPauseForManeuver;};
 
-    // Fast path: if the provider is already empty-handed and crouched, start the treatment immediately.
-    // The old wrapper always bounced through waitUntilAndExecute even when no transition was required, which
-    // added a perceptible one-frame click delay to every medical-menu action.
+    // Fast path: only a genuinely empty-handed crouch may bypass preflight. Both the logical weapon selection
+    // and the visible Wnon/Snon skeleton must agree; sidearms can clear one before the other.
     private _animNow = if (!isNull _medic) then {toLowerANSI animationState _medic} else {""};
-    private _visuallyEmptyNow = !isNull _medic && {
-        (currentWeapon _medic == "") || {((_animNow find "wnon") >= 0) && {((_animNow find "snon") >= 0)}}
-    };
-    // A visible Direct Pressure hold is already an authored empty-hands crouched provider theatre.  Do not ask
-    // medicAnimationPrep to holster again while that loop is active: the loop disables weapon transitions, so the
-    // old waitUntil preflight could never become ready and every medical-menu click appeared dead.
+    private _visuallyEmptyNow = !isNull _medic
+        && {((_animNow find "wnon") >= 0)}
+        && {((_animNow find "snon") >= 0)};
+    private _emptyHandsNow = !isNull _medic
+        && {(currentWeapon _medic == "")}
+        && {_visuallyEmptyNow};
+
+    // A visible Direct Pressure hold is already an authored empty-hands provider theatre. It remains the only
+    // special case because that hold itself disables ordinary weapon transitions.
     private _dpPoseReady = _dpSamePatient && {
         (_medic getVariable ["ACME_DP_InPose", false]) || {_animNow == "acme_directpressurehold"}
     };
-    private _preflightReady = _dpPoseReady || {_visuallyEmptyNow && {stance _medic == "CROUCH"}};
+    private _preflightReady = _dpPoseReady || {_emptyHandsNow && {stance _medic == "CROUCH"}};
 
     if (!_isBypass && {!_headOwned} && {!_preflightReady} && {local _medic} && {!isNull _medic} && {alive _medic} && {isNull objectParent _medic}) exitWith {
         if (_medic getVariable ["ACME_treatmentPreflightActive", false]) exitWith {false};
 
         _medic setVariable ["ACME_treatmentPreflightActive", true, false];
-        [_medic] call ACME_fnc_medicAnimationPrep;
-        _medic setUnitPos "MIDDLE";
-
-        private _transition = switch (stance _medic) do {
-            case "STAND": {"AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
-            case "PRONE": {"AmovPpneMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
-            default {""};
-        };
-        if (_transition != "") then {[_medic, _transition, 1] call ACME_fnc_doAnim;};
-
         private _args = +_this;
         private _token = format ["%1:%2:%3", clientOwner, netId _medic, diag_tickTime];
         _medic setVariable ["ACME_treatmentPreflightToken", _token, false];
 
+        // Phase 1: issue exactly one holster request and wait until the handgun/long gun is both logically gone
+        // and visually in Wnon/Snon. Do not start a stance transition while the weapon-away RTM still owns the arms.
+        [_medic] call ACME_fnc_medicAnimationPrep;
         [{
             params ["_m", "_args", "_tok"];
             if (isNull _m || {!alive _m} || {!local _m}
                 || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {true};
             private _anim = toLowerANSI animationState _m;
-            private _visuallyEmpty = (currentWeapon _m == "") || {
-                ((_anim find "wnon") >= 0) && {((_anim find "snon") >= 0)}
-            };
-            _visuallyEmpty && {stance _m == "CROUCH"}
+            (currentWeapon _m == "")
+                && {((_anim find "wnon") >= 0)}
+                && {((_anim find "snon") >= 0)}
         }, {
             params ["_m", "_args", "_tok"];
             if (isNull _m || {!alive _m} || {!local _m}
@@ -227,16 +221,53 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 };
             };
 
-            _m setVariable ["ACME_treatmentPreflightActive", false, false];
-            _m setVariable ["ACME_treatmentPreflightBypass", [_args select 1, _args select 2, _args select 3], false];
-            _args call ace_medical_treatment_fnc_treatment;
-            // This recursive call starts the progress dialog after the original ButtonClick event has already
-            // finished. Mirror ACE's native event order by arming reopen AFTER progressBar closes the medical menu.
-            if (hasInterface && {!isNil "ACE_player"} && {_m isEqualTo ACE_player}) then {
-                ace_medical_gui_pendingReopen = true;
+            // Phase 2: only after empty hands are visually settled do we move the provider into the treatment crouch.
+            _m setUnitPos "MIDDLE";
+            private _transition = switch (stance _m) do {
+                case "STAND": {"AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
+                case "PRONE": {"AmovPpneMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
+                default {""};
             };
-            _m setVariable ["ACME_treatmentPreflightBypass", [], false];
-            _m setVariable ["ACME_treatmentPreflightToken", "", false];
+            if (_transition != "") then {[_m, _transition, 1] call ACME_fnc_doAnim;};
+
+            [{
+                params ["_u", "_callArgs", "_token"];
+                if (isNull _u || {!alive _u} || {!local _u}
+                    || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {true};
+                private _anim2 = toLowerANSI animationState _u;
+                (currentWeapon _u == "")
+                    && {((_anim2 find "wnon") >= 0)}
+                    && {((_anim2 find "snon") >= 0)}
+                    && {stance _u == "CROUCH"}
+            }, {
+                params ["_u", "_callArgs", "_token"];
+                if (isNull _u || {!alive _u} || {!local _u}
+                    || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {
+                    if (!isNull _u && {local _u} && {(_u getVariable ["ACME_treatmentPreflightToken", ""]) == _token}) then {
+                        _u setVariable ["ACME_treatmentPreflightActive", false, false];
+                        _u setVariable ["ACME_treatmentPreflightToken", "", false];
+                        _u setUnitPos "AUTO";
+                    };
+                };
+
+                _u setVariable ["ACME_treatmentPreflightActive", false, false];
+                _u setVariable ["ACME_treatmentPreflightBypass", [_callArgs select 1, _callArgs select 2, _callArgs select 3], false];
+                _callArgs call ace_medical_treatment_fnc_treatment;
+                // This recursive call starts the progress dialog after the original ButtonClick event has already
+                // finished. Mirror ACE's native event order by arming reopen AFTER progressBar closes the medical menu.
+                if (hasInterface && {!isNil "ACE_player"} && {_u isEqualTo ACE_player}) then {
+                    ace_medical_gui_pendingReopen = true;
+                };
+                _u setVariable ["ACME_treatmentPreflightBypass", [], false];
+                _u setVariable ["ACME_treatmentPreflightToken", "", false];
+            }, [_m, _args, _tok], 1.8, {
+                params ["_u", "_callArgs", "_token"];
+                if (isNull _u || {!local _u} || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {};
+                _u setVariable ["ACME_treatmentPreflightActive", false, false];
+                _u setVariable ["ACME_treatmentPreflightBypass", [], false];
+                _u setVariable ["ACME_treatmentPreflightToken", "", false];
+                _u setUnitPos "AUTO";
+            }] call CBA_fnc_waitUntilAndExecute;
         }, [_medic, _args, _token], 3.0, {
             params ["_m", "_args", "_tok"];
             if (isNull _m || {!local _m} || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {};
