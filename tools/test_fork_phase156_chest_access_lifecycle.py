@@ -50,9 +50,12 @@ assert 'ACME_chestAccessCarrierGap' in park
 assert 'ACME_chestAccessCarrierGap' in cs_park
 assert '0.62' in park and '0.62' in cs_park
 
-# Chest provider states enter/exit through playMove priority 0 instead of snapping through playMoveNow.
+# Chest provider states enter/exit through playMove priority 0 and the owner freezes naturally without switchMove.
 assert '[1,0] select _smoothChest' in pose_start
 assert '[1,0] select _smoothChest' in pose_stop
+freeze = pose_start.split('// Freeze the owner on the frame it naturally reached.', 1)[1].split('private _jip', 1)[0]
+assert 'switchMove' not in freeze
+assert '_medic setAnimSpeedCoef 0;' in freeze
 
 # XStat returns to the proven original wound-control path; the extra packing control is combat gauze only.
 assert 'if (_state == "xstat") then {_xstatTex} else {_openTex}' in junction
