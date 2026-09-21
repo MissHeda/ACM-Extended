@@ -109,6 +109,9 @@ ACME_NA2_ownerInstalled = true;
 [{
     ACME_clinical_ownedUnits = allUnits select {local _x && {alive _x}};
     {[_x] call ACME_fnc_ownerRegister;} forEach ACME_clinical_ownedUnits;
+    if (hasInterface && {!isNil "ACE_player"} && {!isNull ACE_player}) then {
+        [] call ACME_fnc_providerStateReconcile;
+    };
     {
         missionNamespace setVariable [_x, (missionNamespace getVariable [_x, []]) select {!isNull _x && {local _x} && {alive _x}}];
     } forEach ["ACME_nrb_activePatients", "ACME_hpmk_activePatients", "ACME_tbi_activePatients", "ACME_cs_activePatients", "ACME_autoBP_patients", "ACME_clinical_activePatients", "ACME_infusion_activePatients", "ACME_circ_activePatients"];

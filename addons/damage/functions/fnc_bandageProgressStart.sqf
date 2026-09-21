@@ -55,7 +55,7 @@ if (_predictedReduction <= 0 && {!(_classname in ["ACME_PackJunctional", "ACME_W
 
 private _active = _patient getVariable [QGVAR(BandageProgress), createHashMap];
 if !(_active isEqualType createHashMap) then { _active = createHashMap; };
-_active set [_token, [_bodyPart, _predictedReduction, CBA_missionTime, _duration, _classname]];
+_active set [_token, [_bodyPart, _predictedReduction, serverTime, _duration, _classname]];
 _patient setVariable [QGVAR(BandageProgress), _active, true];
 
 // Recalculate immediately so the treatment owns bleeding control from the first circulation update onward.

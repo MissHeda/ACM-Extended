@@ -71,7 +71,7 @@ private _juncNativeFactor = {
             {
                 _y params ["_bp", "", "_started", "_duration", ["_bandageClass", ""]];
                 if (_bandageClass == "ACME_WrapJunctional" && {_bp == _part}) then {
-                    private _p = ((CBA_missionTime - _started) / (_duration max 0.01)) max 0 min 1;
+                    private _p = ((serverTime - _started) / (_duration max 0.01)) max 0 min 1;
                     _wrapProgress = _wrapProgress max (_p * _p);
                 };
             } forEach _activeBandages;
@@ -82,7 +82,7 @@ private _juncNativeFactor = {
             {
                 _y params ["_bp", "", "_started", "_duration", ["_bandageClass", ""]];
                 if (_bandageClass == "ACME_PackJunctional" && {_bp == _part}) then {
-                    private _p = ((CBA_missionTime - _started) / (_duration max 0.01)) max 0 min 1;
+                    private _p = ((serverTime - _started) / (_duration max 0.01)) max 0 min 1;
                     _packProgress = _packProgress max (_p * _p);
                 };
             } forEach _activeBandages;
@@ -115,7 +115,7 @@ if (_bandageProgress isEqualType createHashMap && {count _bandageProgress > 0}) 
     private _expiredBandages = [];
     {
         _y params ["_part", "_finalReduction", "_startedAt", "_duration", ["_bandageClass", ""]];
-        private _age = CBA_missionTime - _startedAt;
+        private _age = serverTime - _startedAt;
         if (_age > (_duration + 2)) then {
             _expiredBandages pushBack _x;
         } else {

@@ -13,7 +13,7 @@ if (missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]) ex
 
 _medic setVariable ["ACME_DP_Active", true, true];
 _medic setVariable ["ACME_DP_Patient", _patient, true];
-_medic setVariable ["ACME_DP_Part", _bodyPart];
+_medic setVariable ["ACME_DP_Part", _bodyPart, true];
 _medic setVariable ["ACME_DP_Mode", "torso"];
 _medic setVariable ["ACME_DP_Start", CBA_missionTime];
 _medic setVariable ["ACME_DP_NextClot", CBA_missionTime + 15];

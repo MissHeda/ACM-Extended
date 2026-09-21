@@ -39,7 +39,7 @@ _patient setVariable ["ACME_CS_ProcedureGrounded", _preGrounded, true];
 _patient setVariable ["ACME_CS_facing", _preSide, true];
 _patient setVariable ["ACME_CS_rollUntil", -1, false];
 
-private _readyAt = CBA_missionTime + 0.12;
+private _readyDelay = 0.12;
 
 // Recovery position is suspended for the procedure just like Semi-Fowler. The existing worker notices the false
 // state and retires; the exact pre-procedure state is restored only when the last viewer presses Done/closes.
@@ -54,7 +54,9 @@ if (_preHeadElev) then {
     _patient setVariable ["ACME_headElev_ResumePending", false, true];
     [_patient, true] call ACME_fnc_headElevSuspend;
     private _headReady = _patient getVariable ["ACME_headElev_suspendReadyAt", -1];
-    if (_headReady > _readyAt) then {_readyAt = _headReady + 0.08;};
+    if (_headReady > CBA_missionTime) then {
+        _readyDelay = _readyDelay max ((_headReady - CBA_missionTime) + 0.08);
+    };
 };
 
 // If the carrier is still worn, take exact custody of its loadout for the duration of the procedure. This also
@@ -88,6 +90,6 @@ if (_canNormalize && {_actualNow != "front"}) then {
     [_patient, "front", false, objNull] call ACME_fnc_chestSealRoll;
     private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
     if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
-    _readyAt = _readyAt max (CBA_missionTime + _rollTime + 0.08);
+    _readyDelay = _readyDelay max (_rollTime + 0.08);
 };
-_patient setVariable ["ACME_CS_ProcedureReadyAt", _readyAt, true];
+_patient setVariable ["ACME_CS_ProcedureReadyAt", serverTime + _readyDelay, true];

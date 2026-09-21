@@ -1918,6 +1918,8 @@ class CfgFunctions {
             class netNotice {};
             class ownerRegister {};
             class ownerInit {};
+            class transientStateReconcile {};
+            class providerStateReconcile {};
             class nrbStateLocal {};
             class nrbStateCommit {};
             class nrbSoundServer {};

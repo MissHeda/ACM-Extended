@@ -46,7 +46,7 @@ private _handle = [{
         if ((count _applyRaw) >= 2) then {
             private _stamp = _applyRaw param [0, -1];
             _applyPart = toLowerANSI (_applyRaw param [1, ""]);
-            if (_stamp >= 0 && {time - _stamp < 25}) then {_applyActive = true;} else {
+            if (_stamp >= 0 && {serverTime - _stamp < 25}) then {_applyActive = true;} else {
                 _unit setVariable ["ACME_Junc_AAJTApplying", [], true];
             };
         };
@@ -192,7 +192,7 @@ private _handle = [{
                     {
                         _y params ["_bp", "", "_started", "_duration", ["_bandageClass", ""]];
                         if (_bandageClass == "ACME_PackJunctional" && {_bp == _x}) then {
-                            private _p = ((CBA_missionTime - _started) / (_duration max 0.01)) max 0 min 1;
+                            private _p = ((serverTime - _started) / (_duration max 0.01)) max 0 min 1;
                             _packProgress = _packProgress max (_p * _p);
                         };
                     } forEach _activeBandages;
@@ -220,7 +220,7 @@ private _handle = [{
                         {
                             _y params ["_bp", "", "_started", "_duration", ["_bandageClass", ""]];
                             if (_bandageClass == "ACME_WrapJunctional" && {_bp == _juncPart}) then {
-                                private _p = ((CBA_missionTime - _started) / (_duration max 0.01)) max 0 min 1;
+                                private _p = ((serverTime - _started) / (_duration max 0.01)) max 0 min 1;
                                 _wrapProgress = _wrapProgress max (_p * _p);
                             };
                         } forEach _activeBandages;

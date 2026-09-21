@@ -274,6 +274,21 @@ private _inVehicle = !(isNull objectParent ACE_player);
         _siteFlowRate = [(GET_IO_FLOW_X(_patient,_partIndex)), (GET_IV_FLOW_X(_patient,_partIndex,_selectedSite))] select GVAR(TransfusionMenu_SelectIV);
     };
     private _typeString = [LLSTRING(Intraosseous_Short), LLSTRING(Intravenous_Short)] select GVAR(TransfusionMenu_SelectIV);
+    private _physicalBlock = "";
+    if (_hasSelectedAccess && {_partIndex >= 0}) then {
+        if (GVAR(TransfusionMenu_SelectIV)
+            && {_patient getVariable [format ["ACME_IV_BandOnPart_%1", _partIndex], false]}) then {
+            _physicalBlock = "IV placement band is still applied. Remove the band before this IV can flow.";
+        };
+        if (_physicalBlock == "" && {!isNil "ACME_fnc_aajtOccludes"}
+            && {[_patient, _partIndex] call ACME_fnc_aajtOccludes}) then {
+            _physicalBlock = "AAJT-S compression is physically occluding this vascular territory.";
+        };
+        if (_physicalBlock == "" && {_patient getVariable ["ace_medical_inCardiacArrest", false]}
+            && {!([_patient] call ACM_core_fnc_cprActive)}) then {
+            _physicalBlock = "No forward perfusion during cardiac arrest. Start CPR for IV/IO flow.";
+        };
+    };
 
     if (!_hasSelectedAccess) then {
         _ctrlStopTransfusionButton ctrlSetText "No IV / IO access";
@@ -281,14 +296,20 @@ private _inVehicle = !(isNull objectParent ACE_player);
         _ctrlStopTransfusionButton ctrlEnable false;
         if (!isNull _ctrlAddBagButton) then {_ctrlAddBagButton ctrlEnable false;};
     } else {
-        _ctrlStopTransfusionButton ctrlEnable true;
         if (!isNull _ctrlAddBagButton) then {_ctrlAddBagButton ctrlEnable true;};
-        if (_siteFlowRate > 0) then {
-            _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StopTransfusion_Display), _typeString]);
-            _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StopTransfusion_ToolTip), _typeString]);
+        if (_physicalBlock != "") then {
+            _ctrlStopTransfusionButton ctrlSetText "Flow physically blocked";
+            _ctrlStopTransfusionButton ctrlSetTooltip _physicalBlock;
+            _ctrlStopTransfusionButton ctrlEnable false;
         } else {
-            _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StartTransfusion_Display), _typeString]);
-            _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StartTransfusion_ToolTip), _typeString]);
+            _ctrlStopTransfusionButton ctrlEnable true;
+            if (_siteFlowRate > 0) then {
+                _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StopTransfusion_Display), _typeString]);
+                _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StopTransfusion_ToolTip), _typeString]);
+            } else {
+                _ctrlStopTransfusionButton ctrlSetText (format [LLSTRING(TransfusionMenu_StartTransfusion_Display), _typeString]);
+                _ctrlStopTransfusionButton ctrlSetTooltip (format [LLSTRING(TransfusionMenu_StartTransfusion_ToolTip), _typeString]);
+            };
         };
     };
 

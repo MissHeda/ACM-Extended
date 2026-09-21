@@ -189,7 +189,7 @@ switch (_operation) do {
     case "aajtApplying": {
         _args params [["_part", "", [""]], ["_active", false, [false]]];
         if (_active) then {
-            _patient setVariable ["ACME_Junc_AAJTApplying", [time, toLowerANSI _part], true];
+            _patient setVariable ["ACME_Junc_AAJTApplying", [serverTime, toLowerANSI _part], true];
         } else {
             _patient setVariable ["ACME_Junc_AAJTApplying", [], true];
         };

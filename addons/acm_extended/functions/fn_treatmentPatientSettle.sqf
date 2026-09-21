@@ -14,7 +14,7 @@ if ([_patient] call ACM_core_fnc_cprActive) exitWith {};
 if (alive (_patient getVariable ["ACM_breathing_BVM_Medic", objNull])) exitWith {};
 
 private _lock = _patient getVariable ["ACME_patientAnimLock", []];
-if ((count _lock) >= 5 && {(_lock param [4, -1]) > CBA_missionTime}) exitWith {};
+if ((count _lock) >= 5 && {(_lock param [4, -1]) > serverTime}) exitWith {};
 
 private _lyingRaw = _patient getVariable ["ACM_core_Lying_State", false];
 private _lying = if (_lyingRaw isEqualType true) then {_lyingRaw} else {_lyingRaw > 0};

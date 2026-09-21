@@ -52,6 +52,8 @@ private _open = {
 [{
     params ["_p", "_tok", "_m"];
     if (isNull _p || {!alive _m} || {(uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok}) exitWith {true};
+    private _readyAt = _p getVariable ["ACME_CS_ProcedureReadyAt", -1];
     (_tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]))
-        && {CBA_missionTime >= (_p getVariable ["ACME_CS_ProcedureReadyAt", CBA_missionTime + 99])}
+        && {_readyAt >= 0}
+        && {serverTime >= _readyAt}
 }, _open, [_patient, _sessionToken, _medic], 4, _open] call CBA_fnc_waitUntilAndExecute;

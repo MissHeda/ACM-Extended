@@ -199,7 +199,15 @@ private _warmthAdd = 0;
 private _coolDrop = 0;
 private _bloodBagsPresent = false;
 
-if (_unit getVariable [QEGVAR(circulation,IV_Bags_Active), false]) then {
+// The authoritative bag map decides whether the infusion worker runs. IV_Bags_Active is only a cache.
+private _fluidBags = _unit getVariable [QEGVAR(circulation,IV_Bags), createHashMap];
+private _hasFluidBags = (_fluidBags isEqualType createHashMap) && {count _fluidBags > 0};
+private _activeFlag = _unit getVariable [QEGVAR(circulation,IV_Bags_Active), false];
+if (_activeFlag isNotEqualTo _hasFluidBags) then {
+    _unit setVariable [QEGVAR(circulation,IV_Bags_Active), _hasFluidBags, true];
+};
+
+if (_hasFluidBags) then {
     private _IVFlowMultiplier = 1;
     private _IOFlowMultiplier = 1;
 

@@ -3,6 +3,8 @@
 params ["_patient"];
 if (isNull _patient || {!local _patient} || {_patient getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
 
+[_patient] call ACME_fnc_transientStateReconcile;
+
 // Migrate old bilateral inguinal AAJT saves exactly once. The physical AAJT-S has one wedge, so an old
 // ACME_AAJT_legs=[leftleg,rightleg] state must become one deterministic side instead of silently retaining
 // bilateral control. Prefer the only recorded leg, then the only leg with junctional evidence, otherwise left.
