@@ -5,42 +5,20 @@
  * before the bell was picked up. Normal exit is Escape, and every normal dialog close routes back to the
  * previous medical menu. H is consumed while the scope is open so it cannot silently replace the minigame.
  */
-params [
-    "_args",
-    "_onStart",
-    "_onCancel",
-    "_perFrame",
-    ["_allowProne", false],
-    ["_dialogID", -1],
-    ["_reservedEpoch", -1, [0]]
-];
+params ["_args", "_onStart", "_onCancel", "_perFrame", ["_allowProne", false], ["_dialogID", -1]];
 _args params ["_medic", "_patient", "_bodyPart", ["_extraArgs", []]];
 
-// A prone/posterior patient can require an asynchronous physical roll BEFORE the scope exists. That entry roll
-// reserves the continuous-action generation up front so the native treatment-success/menu lifecycle cannot reopen
-// another dialog between callbackSuccess and the eventual stethoscope display. Adopt that exact reservation here.
-private _adoptingReservation = _reservedEpoch >= 0;
-private _reservationValid = !_adoptingReservation || {
-    (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) == _reservedEpoch
-    && {ACM_core_ContinuousAction_Active}
-};
-if (!_reservationValid) exitWith {};
-if (!_adoptingReservation && {ACM_core_ContinuousAction_Active}) exitWith {};
+if (ACM_core_ContinuousAction_Active) exitWith {};
 
-// B127 shares the same generation as ACM_core_fnc_beginContinuousAction. Each scope owns one immutable generation.
-private _epoch = if (_adoptingReservation) then {
-    _reservedEpoch
-} else {
-    private _newEpoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
-    missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _newEpoch];
-    _newEpoch
-};
+// B127 shares the same generation as ACM_core_fnc_beginContinuousAction. The old stethoscope PFH used only the
+// global Active flag, so an interrupted scope could survive long enough to see a later maneuver set Active=true and
+// then close/cancel that newer maneuver. Each scope now owns one immutable generation.
+private _epoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
+missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _epoch];
 private _isDialog = (_dialogID != -1);
 ACM_core_ContinuousAction_IsDialog = _isDialog;
 ACM_core_ContinuousAction_Active = true;
 ACM_core_ContinuousAction_ShouldReopen = false;
-_medic setVariable ["ACM_core_ContinuousAction_Session", [_patient, _epoch], true];
-_medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
 ace_medical_gui_pendingReopen = false;
 
 // Remove generic continuous-action key handlers left by an interrupted older generation. The stethoscope dialog
@@ -59,20 +37,9 @@ private _notInVehicle = isNull objectParent _medic;
 // The stethoscope is a long provider pose. Weapon state is owned by treatmentPoseStart/medicAnimationPrep; do not
 // use selectWeapon "" here, because a sidearm can remain visibly attached after its logical selection is cleared.
 
-// The minigame is the clinical action; provider animation is presentation. Open/initialize the display FIRST.
-_args call _onStart;
-
-private _scopeOpened = !_isDialog || {!isNull (findDisplay _dialogID)};
-if (!_scopeOpened) exitWith {
-    ACM_core_ContinuousAction_Active = false;
-    ACM_core_ContinuousAction_IsDialog = false;
-    if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
-        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
-    };
-};
-
-// Only after the panel exists may provider presentation take ownership.
+// One animation owner is enough, but its lifetime is deliberately independent from the dialog lifetime.
 private _poseEpoch = [_medic, "stethoscope"] call ACME_fnc_treatmentPoseStart;
+_args call _onStart;
 
 private _dialogKeyEH = -1;
 private _scopeDisplay = displayNull;
@@ -159,9 +126,6 @@ private _pfh = [{
             && {!_patientCondition} && {!_medicCondition};
 
         ACM_core_ContinuousAction_Active = false;
-        if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
-            _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
-        };
         [_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop;
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
 
@@ -171,10 +135,6 @@ private _pfh = [{
             ["ACM_core_openMedicalMenu", _patient] call CBA_fnc_localEvent;
         };
     };
-
-    // Keep provider-state reconciliation from mistaking a live auscultation session for a stale controller.
-    // Local-only heartbeat: no per-frame network traffic.
-    _medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, false];
 
     _args call _perFrame;
 }, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _poseEpoch, _perFrame, _onCancel, _dialogID, _dialogKeyEH, _scopeDisplay, _keyID, _isDialog, _epoch]] call CBA_fnc_addPerFrameHandler;
