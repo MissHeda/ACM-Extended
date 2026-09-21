@@ -7,7 +7,7 @@
  *   inspect              AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s until the 6 s inspection ends
  *   stethoscope          ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
  *   pulse                ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
- *   chestSeal            AinvPknlMstpSnonWnonDnon_medic3
+ *   chestSeal            AinvPknlMstpSnonWrflDnon_medic3 (seal placement only)
  *   ncdSeat              AinvPknlMstpSnonWrflDnon_medic1
  *   torsoBandage         AinvPknlMstpSnonWrflDnon_medic4
  *   headBandageLeft      AinvPknlMstpSnonWrflDnon_medic0
@@ -63,7 +63,7 @@ private _main = switch (_mode) do {
     case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
-    case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
+    case "chestSeal": {"AinvPknlMstpSnonWrflDnon_medic3"};
     case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
     case "pulse": {"ACME_StethoscopeWork"};
     case "torsoBandage": {"AinvPknlMstpSnonWrflDnon_medic4"};
