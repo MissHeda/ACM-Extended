@@ -53,7 +53,11 @@ if ((count _saved) != 2) exitWith {
 
 // Never start two restore lifts for the same custody record.
 private _busy = _patient getVariable [_busyVar, ""];
-if ((_busy find "restore:") == 0) exitWith {true};
+if (_busy != "") exitWith {
+    // An existing reverse restore is already satisfying this request. A still-running removal must finish first;
+    // its parking watchdog will retry ordinary access cleanup once custody becomes idle.
+    (_busy find "restore:") == 0
+};
 
 private _restoreNow = {
     params ["_p","_saved","_prop","_savedVar","_propVar","_busyVar","_readyVar","_pfhVar"];
