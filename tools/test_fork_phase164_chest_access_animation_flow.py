@@ -18,8 +18,7 @@ def test_carrier_provider_is_literal_medic4_and_freezes_at_22():
     init = read("addons/acm_extended/functions/fn_initChestSealProcedureRuntime.sqf")
     assert 'case "chestAccess": {"AinvPknlMstpSnonWnonDnon_medic4"};' in pose
     assert '["chestAccess", 2.2]' in init
-    assert "ACME_CS_workspaceHoldAt = 0.85" in init
-    assert '["chestSealWorkspace", ACME_CS_workspaceHoldAt]' in init
+    assert '["chestSealWorkspace"' not in init
 
 def test_patient_lift_waits_for_real_provider_medic4():
     provider = read("addons/acm_extended/functions/fn_chestAccessVestProvider.sqf")
@@ -41,14 +40,14 @@ def test_removal_order_is_lift_remove_park_release():
     commit_fn = s.split("private _commitRemoval = {", 1)[1].split("// Animation is allowed", 1)[0]
     assert commit_fn.index("removeVest _p") < commit_fn.index("ACME_fnc_chestAccessVestPark")
 
-def test_restoration_is_lift_revest_release_then_provider_exit():
+def test_restoration_is_patient_lift_revest_release_without_extra_provider_medic4():
     s = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
     begin = s.split("private _beginRestore = {", 1)[1]
     grab = begin.index('"ACME_HeadElevPatientGrab"')
     revest = begin.index("_loadout set [4,+_saved]")
     release = begin.index('"ACME_HeadElevPatientRelease"')
-    stop = begin.index('"stop", false, _token')
-    assert grab < revest < release < stop
+    assert grab < revest < release
+    assert '"chestAccessVestProvider", [_medic, _patient, "start"' not in s
 
 def test_removed_carrier_has_one_fixed_world_target():
     a = read("addons/acm_extended/functions/fn_chestAccessVestPark.sqf")
@@ -77,8 +76,8 @@ def test_chest_seal_workspace_hands_directly_to_flip_and_back():
     assert "ACME_fnc_chestSealProviderHoldStart" in tick
     assert "_providerAtHold" in tick
     assert '(_poseNow param [3,-2]) >= 3' in tick
-    assert "private _hasCarrierRestore" in close
-    assert '["chestSealWorkspace",_holdEpoch,_hasCarrierRestore] call ACME_fnc_treatmentPoseStop;' in close
+    assert 'ACME_fnc_headElevMedicSeq' in close
+    assert '[_flipMedic,_poseMode,_poseEpoch,true] call ACME_fnc_treatmentPoseStop;' in close
 
 def test_stethoscope_rolls_wait_for_medic4_hold_without_touching_dialog_lifetime():
     entry = read("addons/acm_extended/functions/fn_stethoscopeEntryFlipTick.sqf")
