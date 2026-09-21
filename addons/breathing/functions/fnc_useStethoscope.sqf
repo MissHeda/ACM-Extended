@@ -102,6 +102,19 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
     private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
     [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
+
+    // Scope cleanup is display-generation scoped. Record the exact leases which belong to THIS dialog so a late
+    // Unload from an older scope can never release the patient hold or plate-carrier lease of a newer scope.
+    private _patientLease = _medic getVariable ["ACME_stethPatientAnimLease", []];
+    _display setVariable ["ACME_stethPatientLeaseToken", _patientLease param [1, ""]];
+    private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
+    private _chestLeaseId = "";
+    if ((_chestLease param [0,objNull]) isEqualTo _patient
+        && {toLowerANSI (_chestLease param [1,""]) == "usestethoscope"}) then {
+        _chestLeaseId = _chestLease param [2,""];
+    };
+    _display setVariable ["ACME_stethChestLeaseId", _chestLeaseId];
+
     private _initialSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
     [_display, _initialSide] call ACME_fnc_stethoscopeSetView;
     private _ctrlText = _display displayCtrl 81001;
