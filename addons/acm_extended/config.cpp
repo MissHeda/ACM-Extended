@@ -2564,6 +2564,7 @@ class CfgFunctions {
             class debugInduceSeizure {};
             class seizureMotion {};
             class seizureGestureAdvance {};
+            class seizureGestureSync {};
             class clearAllAilments {};
             class syncToggle {};
             class syncCardiovert {};
