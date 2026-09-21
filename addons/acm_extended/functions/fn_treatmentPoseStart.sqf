@@ -278,10 +278,9 @@ private _pfh = [{
             private _phase = (_holdAt / _duration) min 1;
             if (!_knownDuration) then {_phase = -1;};
 
-            // B57: freeze the owning client directly first. The old path depended on the global CBA event
-            // round-tripping back to the owner; that allowed the local animation to keep running/restart instead of
-            // stopping at the requested sample. Peers still receive the synchronized held frame below.
-            if (_phase >= 0) then {_medic switchMove [_main, _phase, 1, false];};
+            // Freeze the owner on the frame it naturally reached. A hard switchMove seek here was the remaining
+            // visible chest-animation snap: entry interpolated correctly, then the provider jumped to the calculated
+            // hold phase. Peers still receive the normalized phase for multiplayer synchronization.
             _medic setAnimSpeedCoef 0;
             private _jip = format ["ACME_treatmentPose_%1_%2", netId _medic, _epoch];
             ["ACME_treatmentPoseSync", [_medic, _epoch, "hold", _main, _phase, clientOwner], _jip] call CBA_fnc_globalEventJIP;
