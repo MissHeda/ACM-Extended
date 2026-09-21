@@ -1,12 +1,13 @@
-// Begin the temporary casualty state used by the chest-seal minigame.
-// The first viewer owns preparation. Additional viewers share the same state and do not strip gear twice.
+// Begin the temporary casualty workspace used by the chest-seal minigame.
+// The first viewer owns physical preparation; later viewers join the already prepared state.
 params [
     ["_patient", objNull, [objNull]],
-    ["_token", "", [""]]
+    ["_token", "", [""]],
+    ["_medic", objNull, [objNull]]
 ];
 if (isNull _patient || {_token == ""}) exitWith {};
 if (!local _patient) exitWith {
-    [_patient, "chestSealPatientBegin", [_patient, _token]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientBegin", [_patient, _token, _medic]] call ACME_fnc_ownerDispatch;
 };
 
 private _tokens = +(_patient getVariable ["ACME_CS_ProcedureTokens", []]);
@@ -17,12 +18,10 @@ _tokens pushBack _token;
 _patient setVariable ["ACME_CS_ProcedureTokens", _tokens, true];
 _patient setVariable ["ACME_CS_ProcedureActive", true, true];
 
-// A second medic joins the already prepared workspace. The existing ready time is authoritative.
+// Additional viewers share the existing preparation/ready timestamp.
 if (!_first) exitWith {};
 
 private _preHeadElev = _patient getVariable ["ACME_headElevated", false];
-// Semi-Fowler is an anterior-up/supine posture.  Do not infer a back-facing state from the tilted
-// model geometry or Done can perform a spurious roll before the elevation is resumed.
 private _preSide = if (_preHeadElev) then {
     "front"
 } else {
@@ -31,65 +30,59 @@ private _preSide = if (_preHeadElev) then {
 private _preRecovery = _patient getVariable ["ACM_airway_RecoveryPosition_State", false];
 private _preLying = _patient getVariable ["ACM_core_Lying_State", false];
 private _preAnim = animationState _patient;
-// This flag records whether physical rolling was legitimately permitted when the workspace opened.
-// Manual prone, obtundation and ordinary conscious posture are not roll permission.
 private _preGrounded = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
+
 _patient setVariable ["ACME_CS_PreProcedureState", [_preSide, _preHeadElev, _preRecovery, _preLying, _preAnim], true];
 _patient setVariable ["ACME_CS_ProcedureGrounded", _preGrounded, true];
 _patient setVariable ["ACME_CS_facing", _preSide, true];
 _patient setVariable ["ACME_CS_rollUntil", -1, false];
+_patient setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
 
-private _readyDelay = 0.12;
-
-// Recovery position is suspended for the procedure just like Semi-Fowler. The existing worker notices the false
-// state and retires; the exact pre-procedure state is restored only when the last viewer presses Done/closes.
+// Recovery position is suspended for the workspace; exact restoration happens after carrier restoration on close.
 if (_preRecovery) then {
     _patient setVariable ["ACM_airway_RecoveryPosition_State", false, true];
     _patient setVariable ["ACM_airway_HeadTilt_State", false, true];
 };
 
-// A Semi-Fowler casualty is laid flat once, before the minigame. Keep the support carrier out of the chest
-// workspace instead of putting it back on the patient while flat.
-if (_preHeadElev) then {
-    _patient setVariable ["ACME_headElev_ResumePending", false, true];
-    [_patient, true] call ACME_fnc_headElevSuspend;
-    private _headReady = _patient getVariable ["ACME_headElev_suspendReadyAt", -1];
-    if (_headReady > CBA_missionTime) then {
-        _readyDelay = _readyDelay max ((_headReady - CBA_missionTime) + 0.08);
+// New workspace custody starts with clean carrier bookkeeping.
+private _staleSaved = +(_patient getVariable ["ACME_CS_vestLoadout", []]);
+if ((count _staleSaved) == 2) then {
+    // A previous interrupted workspace left gear in custody. Restore correctness first, then begin this episode.
+    [_patient, true, _medic, "chestseal"] call ACME_fnc_chestAccessVestRestore;
+};
+_patient setVariable ["ACME_CS_vestReadyServer", -1, true];
+
+// Animated carrier preparation owns Semi-Fowler lowering, lift/remove/park/lower, and fixed world-space parking.
+[_patient, _medic, "chestseal"] call ACME_fnc_chestAccessVestAcquire;
+
+// Only after the carrier transaction is done may the workspace normalize a legitimately controllable casualty
+// to the anterior side. Carrier removal itself normally already leaves the casualty supine.
+[{
+    params ["_p"];
+    private _ready = _p getVariable ["ACME_CS_vestReadyServer", -1];
+    (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}
+}, {
+    params ["_p","_preSide","_preGrounded"];
+
+    if (isNull _p || {!local _p} || {!(_p getVariable ["ACME_CS_ProcedureActive", false])}) exitWith {};
+
+    private _canNormalize = alive _p && {isNull objectParent _p} && {_preGrounded};
+    private _actual = [_p, _p getVariable ["ACME_CS_facing", _preSide]] call ACME_fnc_chestSealActualSide;
+
+    if (_canNormalize && {_actual != "front"}) then {
+        [_p, "front", false, objNull] call ACME_fnc_chestSealRoll;
+        private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
+        if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
+        _p setVariable ["ACME_CS_ProcedureReadyAt", serverTime + _rollTime + 0.08, true];
+    } else {
+        _p setVariable ["ACME_CS_facing", "front", true];
+        _p setVariable ["ACME_CS_ProcedureReadyAt", serverTime, true];
     };
-};
-
-// If the carrier is still worn, take exact custody of its loadout for the duration of the procedure. This also
-// covers Semi-Fowler patients supported by a backpack, where head elevation itself never removed the carrier.
-private _vestClass = vest _patient;
-private _vestEntry = (getUnitLoadout _patient) param [4, [], [[]]];
-_patient setVariable ["ACME_CS_vestLoadout", [], true];
-_patient setVariable ["ACME_CS_vestProp", objNull, true];
-if (_vestClass != "" && {(count _vestEntry) == 2} && {isNull objectParent _patient}) then {
-    removeVest _patient;
-    if ((vest _patient) == "") then {
-        _patient setVariable ["ACME_CS_vestLoadout", +_vestEntry, true];
-        private _model = getText (configFile >> "CfgWeapons" >> _vestClass >> "model");
-        if (_model != "") then {
-            // Use the carrier model as a static prop. fn_chestSealParkCarrier disables patient collision explicitly.
-            private _prop = createSimpleObject [_model, [0,0,0], false];
-            if (!isNull _prop) then {
-                _patient setVariable ["ACME_CS_vestProp", _prop, true];
-            };
-        };
+}, [_patient,_preSide,_preGrounded], 10, {
+    params ["_p"];
+    if (!isNull _p && {local _p}) then {
+        // Fail closed for the workspace. The caller's 12 s timeout will close cleanly rather than opening over
+        // an unfinished patient animation.
+        _p setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
     };
-};
-
-[_patient] call ACME_fnc_chestSealParkCarrier;
-
-// Normalize a live, grounded casualty to the anterior/supine workspace ONCE before the dialog is considered ready.
-// The UI itself always starts front; dead/vehicle/free-standing patients are left physically untouched.
-private _canNormalize = alive _patient && {isNull objectParent _patient} && {_preGrounded};
-private _actualNow = [_patient, _preSide] call ACME_fnc_chestSealActualSide;
-if (_canNormalize && {_actualNow != "front"}) then {
-    [_patient, "front", false, objNull] call ACME_fnc_chestSealRoll;
-    private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85];
-    if (!(_rollTime isEqualType 0) || {_rollTime < 0}) then {_rollTime = 1.85;};
-    _readyDelay = _readyDelay max (_rollTime + 0.08);
-};
-_patient setVariable ["ACME_CS_ProcedureReadyAt", serverTime + _readyDelay, true];
+}] call CBA_fnc_waitUntilAndExecute;
