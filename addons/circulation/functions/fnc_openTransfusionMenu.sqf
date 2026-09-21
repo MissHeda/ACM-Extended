@@ -28,12 +28,21 @@ if (dialog) then { // If another dialog is open (medical menu) close it
     closeDialog 0;
 };
 
+private _menuGeneration = (missionNamespace getVariable [QGVAR(TransfusionMenu_Generation), 0]) + 1;
+GVAR(TransfusionMenu_Generation) = _menuGeneration;
+
+private _previousCloseID = missionNamespace getVariable [QGVAR(TransfusionMenu_CloseID), -1];
+if (!(_previousCloseID isEqualTo -1) && {!(_previousCloseID isEqualTo "")}) then {
+    [_previousCloseID, "keydown"] call CBA_fnc_removeKeyHandler;
+};
+
 private _medicalMenuKeybind = (["ACE3 Common", QACEGVAR(medical_gui,openMedicalMenuKey)] call CBA_FUNC(getKeybind) select 5) select 0;
 
-GVAR(TransfusionMenu_CloseID) = [_medicalMenuKeybind, [false, false, false], { // H to close and open medical menu
+private _closeID = [_medicalMenuKeybind, [false, false, false], { // H to close and open medical menu
     closeDialog 0;
     [ACEFUNC(medical_gui,openMenu), GVAR(TransfusionMenu_Target)] call CBA_fnc_execNextFrame;
 }, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
+GVAR(TransfusionMenu_CloseID) = _closeID;
 
 GVAR(TransfusionMenu_Target) = _patient;
 
@@ -97,6 +106,41 @@ createDialog QGVAR(TransfusionMenu_Dialog);
 uiNamespace setVariable [QGVAR(TransfusionMenu_DLG),(findDisplay IDC_TRANSFUSIONMENU)];
 
 private _display = uiNamespace getVariable [QGVAR(TransfusionMenu_DLG), displayNull];
+if (isNull _display) exitWith {
+    if (!(_closeID isEqualTo -1) && {!(_closeID isEqualTo "")}) then {
+        [_closeID, "keydown"] call CBA_fnc_removeKeyHandler;
+    };
+};
+
+_display setVariable ["ACM_TX_Generation", _menuGeneration];
+_display setVariable ["ACM_TX_CloseID", _closeID];
+
+{
+    private _ctrl = _display displayCtrl _x;
+    if (!isNull _ctrl) then {_ctrl ctrlShow false;};
+} forEach [
+    IDC_TRANSFUSIONMENU_BG_IO_TORSO,
+    IDC_TRANSFUSIONMENU_BG_IO_RIGHTARM,
+    IDC_TRANSFUSIONMENU_BG_IO_LEFTARM,
+    IDC_TRANSFUSIONMENU_BG_IO_RIGHTLEG,
+    IDC_TRANSFUSIONMENU_BG_IO_LEFTLEG,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTARM_UPPER,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTARM_MIDDLE,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTARM_LOWER,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTARM_UPPER,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTARM_MIDDLE,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTARM_LOWER,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTLEG_UPPER,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTLEG_MIDDLE,
+    IDC_TRANSFUSIONMENU_BG_IV_RIGHTLEG_LOWER,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTLEG_UPPER,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTLEG_MIDDLE,
+    IDC_TRANSFUSIONMENU_BG_IV_LEFTLEG_LOWER,
+    IDC_TRANSFUSIONMENU_BG_TOURNIQUET_RIGHTARM,
+    IDC_TRANSFUSIONMENU_BG_TOURNIQUET_LEFTARM,
+    IDC_TRANSFUSIONMENU_BG_TOURNIQUET_RIGHTLEG,
+    IDC_TRANSFUSIONMENU_BG_TOURNIQUET_LEFTLEG
+];
 
 // ACME three-page navigation. Transfuse sits between Body Map (left) and Narc Box (right).
 if (!isNull _display && {!isNil "ACME_fnc_skPageNavigate"}) then {
@@ -143,26 +187,52 @@ private _ctrlPatientName = _display displayCtrl IDC_TRANSFUSIONMENU_PATIENTNAME;
 
 _ctrlPatientName ctrlSetText ([_patient, false, true] call ACEFUNC(common,getName));
 
-private _inVehicle = !(isNull objectParent ACE_player);
+private _inVehicle = !(isNull objectParent _medic);
 
-[{
+private _pfh = [{
     params ["_args", "_idPFH"];
-    _args params ["_display", "_medic", "_patient", "_inVehicle"];
+    _args params ["_display", "_medic", "_patient", "_inVehicle", "_generation", "_closeID"];
 
-    private _dialogCondition = isNull findDisplay IDC_TRANSFUSIONMENU;
-    private _patientCondition = (_patient isEqualTo objNull);
-    private _medicCondition = (!(alive _medic) || IS_UNCONSCIOUS(_medic) || (_medic isEqualTo objNull));
-    private _vehicleCondition = (objectParent _medic isNotEqualTo objectParent _patient);
-    private _distanceCondition = (_patient distance2D _medic > ACEGVAR(medical_gui,maxDistance));
+    // Superseded display. Retire only this PFH; never clean globals owned by the newer menu.
+    if ((missionNamespace getVariable [QGVAR(TransfusionMenu_Generation), -1]) != _generation
+        || {_display isNotEqualTo (findDisplay IDC_TRANSFUSIONMENU)}) exitWith {
+        [_idPFH] call CBA_fnc_removePerFrameHandler;
+    };
 
-    if (_medicCondition || _patientCondition || _dialogCondition || (_inVehicle && _vehicleCondition) || (!_inVehicle && _distanceCondition)) exitWith {
-        [GVAR(TransfusionMenu_CloseID), "keydown"] call CBA_fnc_removeKeyHandler;
+    private _dialogCondition = isNull _display;
+    private _patientCondition = isNull _patient;
+    private _medicCondition = isNull _medic || {!alive _medic} || {IS_UNCONSCIOUS(_medic)};
+    private _vehicleCondition = false;
+    private _distanceCondition = false;
+    if (!_patientCondition && {!_medicCondition}) then {
+        _vehicleCondition = objectParent _medic isNotEqualTo objectParent _patient;
+        _distanceCondition = (_patient distance2D _medic) > ACEGVAR(medical_gui,maxDistance);
+    };
 
-        if (GVAR(TransfusionMenu_Move_Active) && !(GVAR(TransfusionMenu_Move_Active_Moving))) then { // Try to return moved fluid bag
+    if (_medicCondition || _patientCondition || _dialogCondition
+        || {_inVehicle && {_vehicleCondition}}
+        || {!_inVehicle && {_distanceCondition}}) exitWith {
+
+        if (GVAR(TransfusionMenu_Move_Active) && {!GVAR(TransfusionMenu_Move_Active_Moving)}
+            && {!_patientCondition}) then {
             [_patient] call FUNC(TransfusionMenu_MoveBag_Cancel);
         };
 
-        GVAR(TransfusionMenu_Target) = objNull;
+        // Closing this exact display runs its unload cleanup immediately. Never leave a live dialog whose
+        // render PFH has stopped, because all access pictures in the base config are visible by default.
+        if (!isNull _display) then {_display closeDisplay 2;};
+
+        if (!(_closeID isEqualTo -1) && {!(_closeID isEqualTo "")}) then {
+            [_closeID, "keydown"] call CBA_fnc_removeKeyHandler;
+        };
+        if ((missionNamespace getVariable [QGVAR(TransfusionMenu_Generation), -1]) == _generation) then {
+            if ((missionNamespace getVariable [QGVAR(TransfusionMenu_CloseID), -1]) isEqualTo _closeID) then {
+                GVAR(TransfusionMenu_CloseID) = -1;
+            };
+            if ((missionNamespace getVariable [QGVAR(TransfusionMenu_Target), objNull]) isEqualTo _patient) then {
+                GVAR(TransfusionMenu_Target) = objNull;
+            };
+        };
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
 
@@ -181,8 +251,14 @@ private _inVehicle = !(isNull objectParent ACE_player);
 
     private _ctrlTourniquetArray = [_ctrlTourniquetLeftArm, _ctrlTourniquetRightArm, _ctrlTourniquetLeftLeg, _ctrlTourniquetRightLeg];
 
+    private _tourniquets = GET_TOURNIQUETS(_patient);
+    if !(_tourniquets isEqualType [] && {count _tourniquets >= 6}) then {
+        _tourniquets = DEFAULT_TOURNIQUET_VALUES;
+    };
     {
-        _x ctrlShow (HAS_TOURNIQUET_APPLIED_ON(_patient,(_forEachIndex + 2)));
+        private _value = _tourniquets param [_forEachIndex + 2, 0];
+        if !(_value isEqualType 0 && {finite _value}) then {_value = 0;};
+        _x ctrlShow (_value > 0);
     } forEach _ctrlTourniquetArray;
 
     private _partIndex = ALL_BODY_PARTS find GVAR(TransfusionMenu_Selected_BodyPart);
@@ -204,13 +280,24 @@ private _inVehicle = !(isNull objectParent ACE_player);
     private _IVCtrlArray = [[_ctrlIVLeftArmUpper, _ctrlIVLeftArmMiddle, _ctrlIVLeftArmLower], [_ctrlIVRightArmUpper, _ctrlIVRightArmMiddle, _ctrlIVRightArmLower], [_ctrlIVLeftLegUpper, _ctrlIVLeftLegMiddle, _ctrlIVLeftLegLower], [_ctrlIVRightLegUpper, _ctrlIVRightLegMiddle, _ctrlIVRightLegLower]];
 
     private _IVArray = GET_IV(_patient);
+    if !(_IVArray isEqualType [] && {count _IVArray >= 6}) then {
+        _IVArray = ACM_IV_PLACEMENT_DEFAULT_0;
+    };
 
     {
         _x params ["_xUpper", "_xMiddle", "_xLower"];
 
-        private _accessSiteArray = (_IVArray select (_forEachIndex + 2));
+        private _accessSiteArray = _IVArray param [_forEachIndex + 2, [0,0,0]];
+        if !(_accessSiteArray isEqualType [] && {count _accessSiteArray >= 3}) then {
+            _accessSiteArray = [0,0,0];
+        };
 
-        _accessSiteArray params ["_IVUpper", "_IVMiddle", "_IVLower"];
+        private _IVUpper = _accessSiteArray param [0, 0];
+        private _IVMiddle = _accessSiteArray param [1, 0];
+        private _IVLower = _accessSiteArray param [2, 0];
+        if !(_IVUpper isEqualType 0 && {finite _IVUpper}) then {_IVUpper = 0;};
+        if !(_IVMiddle isEqualType 0 && {finite _IVMiddle}) then {_IVMiddle = 0;};
+        if !(_IVLower isEqualType 0 && {finite _IVLower}) then {_IVLower = 0;};
 
         _xUpper ctrlShow (_IVUpper > 0);
         _xMiddle ctrlShow (_IVMiddle > 0);
@@ -249,9 +336,14 @@ private _inVehicle = !(isNull objectParent ACE_player);
 
     private _IOCtrlArray = [_ctrlIOTorso, _ctrlIOLeftArm, _ctrlIORightArm, _ctrlIOLeftLeg, _ctrlIORightLeg];
     private _IOArray = GET_IO(_patient);
+    if !(_IOArray isEqualType [] && {count _IOArray >= 6}) then {
+        _IOArray = ACM_IO_PLACEMENT_DEFAULT_0;
+    };
 
     {
-        _x ctrlShow ((_IOArray select (_forEachIndex + 1)) > 0);
+        private _value = _IOArray param [_forEachIndex + 1, 0];
+        if !(_value isEqualType 0 && {finite _value}) then {_value = 0;};
+        _x ctrlShow (_value > 0);
 
         if (!(GVAR(TransfusionMenu_SelectIV)) && (_forEachIndex + 1) == _partIndex) then {
             _x ctrlSetTextColor [0.20,0.65,0.20,1];
@@ -317,4 +409,26 @@ private _inVehicle = !(isNull objectParent ACE_player);
         GVAR(TransfusionMenu_Selection_IVBags_LastUpdate) = CBA_missionTime;
         [true] call FUNC(TransfusionMenu_UpdateBagList);
     };
-}, 0, [_display, ACE_player, GVAR(TransfusionMenu_Target), _inVehicle]] call CBA_fnc_addPerFrameHandler;
+}, 0, [_display, _medic, _patient, _inVehicle, _menuGeneration, _closeID]] call CBA_fnc_addPerFrameHandler;
+
+_display setVariable ["ACM_TX_PFH", _pfh];
+_display displayAddEventHandler ["Unload", {
+    params ["_display"];
+    private _pfh = _display getVariable ["ACM_TX_PFH", -1];
+    if (_pfh isEqualType 0 && {_pfh >= 0}) then {
+        [_pfh] call CBA_fnc_removePerFrameHandler;
+    };
+
+    private _closeID = _display getVariable ["ACM_TX_CloseID", -1];
+    if (!(_closeID isEqualTo -1) && {!(_closeID isEqualTo "")}) then {
+        [_closeID, "keydown"] call CBA_fnc_removeKeyHandler;
+    };
+
+    private _generation = _display getVariable ["ACM_TX_Generation", -1];
+    if ((missionNamespace getVariable [QGVAR(TransfusionMenu_Generation), -2]) == _generation) then {
+        if ((missionNamespace getVariable [QGVAR(TransfusionMenu_CloseID), -1]) isEqualTo _closeID) then {
+            GVAR(TransfusionMenu_CloseID) = -1;
+        };
+        GVAR(TransfusionMenu_Target) = objNull;
+    };
+}];
