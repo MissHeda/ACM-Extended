@@ -135,6 +135,8 @@ if (isNull _patient) then {
 
 private _ver = getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version");
 if (_ver == "") then {_ver = missionNamespace getVariable ["ACME_infusion_version", "?"];};
+private _rc = missionNamespace getVariable ["ACME_debugRevision", ""];
+if (_rc isEqualType "" && {_rc != ""}) then {_ver = format ["%1-%2", _ver, _rc];};
 private _batch = missionNamespace getVariable ["ACME_buildBatch", "?"];
 private _left = [];
 private _right = [];
