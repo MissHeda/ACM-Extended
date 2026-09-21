@@ -15,7 +15,16 @@
  * Public: No
  */
 
-params ["_medic", "_patient", ["_bodyPart", "Body"], ["_entryReady", false, [false]]];
+params ["_medic", "_patient", ["_bodyPart", "Body"]];
+
+// ACE treatment callbacks pass the treatment classname in slot 3. ACME's internal prone-entry path historically
+// used slot 3 as a boolean. Accept both shapes explicitly instead of typing slot 3 as BOOL, which made every native
+// UseStethoscope success throw "Params: Type String, expected Bool" before the dialog could be created.
+private _entryReady = false;
+private _slot3 = _this param [3, false];
+if (_slot3 isEqualType true) then {_entryReady = _slot3;};
+private _slot4 = _this param [4, false];
+if (_slot4 isEqualType true) then {_entryReady = _entryReady || _slot4;};
 
 // A chest-prepared auscultation launch has already completed its patient-side lay-flat transaction. Trust that exact
 // lease instead of reclassifying one transitional visual frame and starting a second roll. This is especially
