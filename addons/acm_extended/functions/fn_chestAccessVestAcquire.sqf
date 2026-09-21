@@ -65,6 +65,8 @@ private _commitRemoval = {
 
     _p setVariable [_savedVar, +_entry, true];
     _p setVariable [_propVar, _prop, true];
+    if (_ctx == "chestseal") then {[_p] call ACME_fnc_chestSealParkCarrier}
+    else {[_p] call ACME_fnc_chestAccessVestPark};
     // Keep every removed carrier parked clear of the head for the entire custody episode, including
     // patient lift/release/roll animation. Chest-seal has no lease map, so it gets the same visual watchdog
     // without the abandoned-provider cleanup used by ordinary chest access.
