@@ -55,11 +55,16 @@ if ((_provider getVariable ["ACME_DP_Active",false])
     _provider setVariable ["ACME_DP_InPose",false];
     _provider setVariable ["ACME_DP_LastPoseAssert",0];
 };
-private _started = [_provider,"chestSealFlip",_patient] call ACME_fnc_rollProviderStart;
-if (_started) then {
-    _provider setVariable ["ACME_CS_providerHoldEpoch", -1, false];
-    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", -1];
+// Leave the persistent hands-on-chest pose as a direct animation handoff into medic4.
+private _holdEpoch = _provider getVariable ["ACME_CS_providerHoldEpoch",-1];
+private _holdPose = _provider getVariable ["ACME_treatmentPoseState",[]];
+if ((_holdPose param [1,""]) == "chestSealWorkspace") then {
+    [_provider,"chestSealWorkspace",_holdEpoch,true] call ACME_fnc_treatmentPoseStop;
 };
+_provider setVariable ["ACME_CS_providerHoldEpoch",-1,false];
+uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",-1];
+
+private _started = [_provider,"chestSealFlip",_patient] call ACME_fnc_rollProviderStart;
 private _pose = _provider getVariable ["ACME_treatmentPoseState",[]];
 private _epoch = if (_started) then {_pose param [0,-1]} else {-1};
 private _rollToken = if (_started) then {_provider getVariable ["ACME_rollProviderToken",""]} else {""};
