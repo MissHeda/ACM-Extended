@@ -100,12 +100,19 @@ private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
 // A physical Flip is still a real medical animation and must wait for a sidearm to finish holstering. The former
 // roll fast-path used selectWeapon "" and could start medic4 under a pistol that was still visibly in the hands.
 // Direct Pressure remains the one exception because its existing authored hold already owns empty-hand theatre.
-private _prepDelay = if (_dpPoseHandoff) then {
-    if (currentWeapon _medic != "") then {_medic selectWeapon "";};
+private _prepDelay = if (_directChestHandoff) then {
+    // Both chestSealWorkspace and roll are ACME-authored weapon-disabled states. A direct handoff must not wait
+    // for their class names to contain the literal Wnon/Snon substrings before entering the next state.
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
     0
 } else {
-    [_medic] call ACME_fnc_medicAnimationPrep
+    if (_dpPoseHandoff) then {
+        if (currentWeapon _medic != "") then {_medic selectWeapon "";};
+        _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
+        0
+    } else {
+        [_medic] call ACME_fnc_medicAnimationPrep
+    }
 };
 if !(_prepDelay isEqualType 0) then {_prepDelay = 0;};
 private _prepUntil = _actionStarted + (_prepDelay max 0);
