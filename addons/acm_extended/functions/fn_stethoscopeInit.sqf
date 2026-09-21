@@ -13,6 +13,7 @@ _display setVariable ["ACME_stethNextBreath",-1];
 _display setVariable ["ACME_stethHeartVoice",0];
 _display setVariable ["ACME_stethFlipActive",false];
 _display setVariable ["ACME_stethFlipToken",""];
+_display setVariable ["ACME_stethFlipPFH",-1];
 private _bell = _display displayCtrl 81002;
 private _size = (ctrlPosition _bell) select [2,2];
 _display setVariable ["ACME_stethBellSize",_size];
