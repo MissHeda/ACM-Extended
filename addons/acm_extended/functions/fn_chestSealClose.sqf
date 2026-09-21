@@ -9,14 +9,18 @@ if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_rem
 uiNamespace setVariable ["ACME_CS_FlipPFH",-1];
 uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
 private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
+private _closingPatient = uiNamespace getVariable ["ACME_CS_Patient",objNull];
+private _hasCarrierRestore = !isNull _closingPatient
+    && {(count (_closingPatient getVariable ["ACME_CS_vestLoadout", []])) == 2};
+
 if (!isNull _flipMedic && {local _flipMedic}) then {
     [_flipMedic,"chestSealFlip"] call ACME_fnc_rollProviderCancel;
 
     private _holdEpoch = _flipMedic getVariable ["ACME_CS_providerHoldEpoch",-1];
     private _pose = _flipMedic getVariable ["ACME_treatmentPoseState",[]];
     if ((_pose param [1,""]) == "chestSealWorkspace") then {
-        // Reverse carrier choreography will take provider ownership immediately; do not insert a neutral crouch.
-        [_flipMedic,"chestSealWorkspace",_holdEpoch,true] call ACME_fnc_treatmentPoseStop;
+        // Suppress the neutral exit only when the reverse carrier lift will immediately take ownership.
+        [_flipMedic,"chestSealWorkspace",_holdEpoch,_hasCarrierRestore] call ACME_fnc_treatmentPoseStop;
     };
     _flipMedic setVariable ["ACME_CS_providerHoldEpoch",-1,false];
 };
@@ -34,7 +38,7 @@ if (!isNull _flipMedic && {local _flipMedic}
 
 // onunload: persist the final hole state to the patient, so re-opening shows exactly what was left, then drop the
 // pfh and clear the runtime state. the ctrlcreate'd dots, holes, seals and cursor-seal die with the dialog.
-private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
+private _patient = _closingPatient;
 if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] call ACME_fnc_ecgJostleRequest;};
 // NA2: no clinical writes on unload. Pending actions resolve independently of this display.
 
