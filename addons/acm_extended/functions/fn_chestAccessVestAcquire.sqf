@@ -9,7 +9,8 @@
 params [
     ["_patient", objNull, [objNull]],
     ["_medic", objNull, [objNull]],
-    ["_context", "access", [""]]
+    ["_context", "access", [""]],
+    ["_frontNormalized", false, [false]]
 ];
 if (isNull _patient || {!local _patient}) exitWith {false};
 _context = toLowerANSI _context;
@@ -20,6 +21,52 @@ private _propVar = ["ACME_chestAccess_vestProp","ACME_CS_vestProp"] select (_con
 private _readyVar = ["ACME_chestAccess_readyServer","ACME_CS_vestReadyServer"] select (_context == "chestseal");
 private _busyVar = ["ACME_chestAccess_vestBusy","ACME_CS_vestBusy"] select (_context == "chestseal");
 private _pfhVar = ["ACME_chestAccess_vestPFH","ACME_CS_vestPFH"] select (_context == "chestseal");
+private _frontBusyVar = ["ACME_chestAccess_frontBusy","ACME_CS_frontBusy"] select (_context == "chestseal");
+
+// Every chest procedure starts anterior-up. If the casualty is legitimately rollable and actually posterior-up,
+// perform the authored front/supine roll BEFORE any carrier-removal or auscultation/chest-seal start animation.
+// This removes the old "start the medical theatre, then discover the body is backwards" race.
+if (!_frontNormalized) then {
+    private _actualBefore = [_patient, _patient getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+    private _canFrontRoll = alive _patient
+        && {isNull objectParent _patient}
+        && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}
+        && {_actualBefore == "back"};
+
+    if (_canFrontRoll) exitWith {
+        if ((_patient getVariable [_frontBusyVar,""]) != "") exitWith {true};
+
+        private _frontToken = format ["front:%1:%2:%3",_context,netId _patient,round(serverTime * 1000)];
+        _patient setVariable [_frontBusyVar,_frontToken,false];
+        _patient setVariable [_readyVar,-1,true];
+
+        // Provider uses the same literal medic4 roll theatre, but this episode completes fully back to crouch
+        // before carrier access begins.
+        if (!isNull _medic && {!(_medic isEqualTo _patient)} && {alive _medic}) then {
+            [_medic,"chestAccessFrontRoll",[_medic,_patient]] call ACME_fnc_ownerDispatch;
+        };
+
+        private _preserveHead = (_patient getVariable ["ACME_headElevated",false])
+            || {_patient getVariable ["ACME_headElev_Suspended",false]}
+            || {_context == "chestseal"};
+        [_patient,"front",false,_medic,_preserveHead] call ACME_fnc_chestSealRoll;
+
+        private _patientRoll = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+        if !(_patientRoll isEqualType 0 && {finite _patientRoll}) then {_patientRoll = 1.85;};
+        private _providerRoll = missionNamespace getVariable ["ACME_rollProviderDuration",2.2];
+        if !(_providerRoll isEqualType 0 && {finite _providerRoll}) then {_providerRoll = 2.2;};
+        private _wait = (_patientRoll + 0.15) max (_providerRoll + 0.40);
+
+        [{
+            params ["_p","_m","_ctx","_busyVar","_token"];
+            if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
+            _p setVariable [_busyVar,"",false];
+            _p setVariable ["ACME_CS_facing","front",true];
+            [_p,_m,_ctx,true] call ACME_fnc_chestAccessVestAcquire;
+        }, [_patient,_medic,_context,_frontBusyVar,_frontToken], _wait] call CBA_fnc_waitAndExecute;
+        true
+    };
+};
 
 // Existing custody belongs to an already-open chest episode. Never replay the lift or move the parked carrier.
 private _saved = +(_patient getVariable [_savedVar, []]);
@@ -231,7 +278,7 @@ private _beginPatient = {
 
     // Patient-side completion is authoritative. The provider is handed off only after the casualty is back down.
     [{
-        params ["_p","_medic","_busyVar","_readyVar","_token"];
+        params ["_p","_medic","_ctx","_busyVar","_readyVar","_token"];
         if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
         [_p, true] call ACME_fnc_headElevCollision;
@@ -252,12 +299,13 @@ private _beginPatient = {
         _p setVariable [_busyVar, "", false];
         _p setVariable [_readyVar, serverTime, true];
 
-        if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
-            // The clinical intervention is about to take ownership; no neutral crouch is inserted.
+        if (!isNull _medic && {!(_medic isEqualTo _p)} && {_ctx != "chestseal"}) then {
+            // Auscultation/ordinary chest actions take provider ownership next. Chest Seal is different: leave
+            // medic4 frozen here so chestSealOpen can hand that exact frame directly into hands-on-chest.
             [_medic, "chestAccessVestProvider", [_medic, _p, "stop", true, _token]]
                 call ACME_fnc_ownerDispatch;
         };
-    }, [_p,_medic,_busyVar,_readyVar,_token], _sequenceTime] call CBA_fnc_waitAndExecute;
+    }, [_p,_medic,_ctx,_busyVar,_readyVar,_token], _sequenceTime] call CBA_fnc_waitAndExecute;
 };
 
 // After any Semi-Fowler lay-flat finishes, let the provider fully holster/crouch and reach literal medic4.
