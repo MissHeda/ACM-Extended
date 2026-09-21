@@ -3,6 +3,7 @@ params ["_display"];
 private _oldPFH = uiNamespace getVariable ["ACME_CS_PFH", -1];
 if (_oldPFH >= 0) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
 uiNamespace setVariable ["ACME_CS_PFH", -1];
+uiNamespace setVariable ["ACME_CS_FlipPFH", -1];
 uiNamespace setVariable ["ACME_CS_DLG", _display];
 uiNamespace setVariable ["ACME_minigame_open", true];
 
