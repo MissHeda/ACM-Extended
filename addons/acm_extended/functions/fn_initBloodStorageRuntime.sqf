@@ -91,8 +91,8 @@ if (hasInterface) then {
 // operations of about 4 h, because a real chain runs 24 to 72 h.
 ACME_bloodScanInterval   = 60;  // s between cold-chain passes (also the age step)
 ACME_bloodLooseSpoilTime = 1800;  // 30 min in the warm before uncovered blood spoils
-ACME_bloodRewarmTime     = 1200;  // 20 min for a hung cold, [cooled], unit to rewarm to ambient, and with it the flow penalty.
-                                  // and transfusion hypothermia fades to zero across this time. 0 warms instantly.
+ACME_bloodRewarmTime     = 1200;  // 20 min for a hung cold, [cooled], unit to rewarm thermally toward ambient.
+                                  // transfusion hypothermia fades to zero across this time; the cold-unit flow tier does not.
 ACME_bloodFloatTTL       = 180;  // s that the clock of a handed-off or dropped bag persists in the float pool before a reset.
 ACME_coolerFillType      = "ON";  // the blood type a cooler auto-loads with. o-, on, is the universal donor. the options are o, on, a, an, b, bn, ab and abn.
 // true-container model, where a double-click on a cooler manages it. blood is kept cold only while it is
