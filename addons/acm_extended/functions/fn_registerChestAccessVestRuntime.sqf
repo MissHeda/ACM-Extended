@@ -9,14 +9,6 @@ missionNamespace setVariable ["ACME_chestAccess_classes", _classes];
     if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {};
     private _class = toLowerANSI _classname;
     if !(_class in (missionNamespace getVariable ["ACME_chestAccess_classes", []])) exitWith {};
-
-    // The treatment wrapper may already have completed the physical carrier-removal preflight and created this
-    // exact lease. In that case treatmentStarted only confirms ownership; never replay the lift/removal sequence.
-    private _existing = _medic getVariable ["ACME_chestAccess_treatment", []];
-    if ((_existing param [0,objNull]) isEqualTo _patient
-        && {(_existing param [1,""]) == _class}
-        && {(_existing param [2,""]) != ""}) exitWith {};
-
     private _serial = (missionNamespace getVariable ["ACME_chestAccess_serial", 0]) + 1;
     missionNamespace setVariable ["ACME_chestAccess_serial", _serial];
     private _id = format ["%1:%2:%3", clientOwner, netId _medic, _serial];
