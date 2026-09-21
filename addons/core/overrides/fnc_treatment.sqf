@@ -143,9 +143,22 @@ if (_classname != "ACME_ConnectETVent") exitWith {
 
             _m setVariable ["ACME_chestAccessPreflightActive", false, false];
             _m setVariable ["ACME_chestAccessPreflightBypass", [_args select 1, _args select 2, _args select 3], false];
-            _args call ace_medical_treatment_fnc_treatment;
+            private _started = _args call ace_medical_treatment_fnc_treatment;
             _m setVariable ["ACME_chestAccessPreflightBypass", [], false];
             _m setVariable ["ACME_chestAccessPreflightToken", "", false];
+
+            // A stale/invalid action can fail its final native canTreat check after the physical chest-access
+            // preflight has already completed. Do not strand the removed carrier for the 900 s watchdog window:
+            // release the exact lease immediately when no treatment actually started.
+            if (!_started) then {
+                private _cur = _m getVariable ["ACME_chestAccess_treatment", []];
+                if ((_cur param [2, ""]) == _leaseId) then {
+                    _m setVariable ["ACME_chestAccess_treatment", []];
+                };
+                if (!isNull _p) then {
+                    [_p,_m,_leaseId,false,_classKey] call ACME_fnc_chestAccessVestEvent;
+                };
+            };
         }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass], 6.5, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey"];
             if (isNull _m || {!local _m}
