@@ -76,6 +76,11 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
 }, { // On cancel
     params ["_medic", "_patient", "_bodyPart"];
 
+    // Release the exact continuous-action generation that created this hold. A newer action may already have
+    // incremented the shared epoch by the time this callback runs; using the current epoch would leave the old
+    // HeadTilt_State reservation stuck on the patient.
+    private _ownedEpoch = missionNamespace getVariable [QGVAR(HeadTiltEpoch), -1];
+
     private _id = missionNamespace getVariable [QGVAR(HeadTiltCancel_MouseID), -1];
     if (!(_id isEqualTo -1) && {!(_id isEqualTo "")}) then {[_id, "keydown"] call CBA_fnc_removeKeyHandler;};
     GVAR(HeadTiltCancel_MouseID) = -1;
@@ -92,7 +97,7 @@ if (_patient getVariable [QGVAR(HeadTilt_State), false]) exitWith {
 
     [LLSTRING(HeadTiltChinLift_ActionCancelled), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
 
-    [_medic, _patient, EGVAR(core,ContinuousAction_Epoch), "ACM_airway_HeadTilt_State"] call EFUNC(core,continuousHoldRelease);
+    [_medic, _patient, _ownedEpoch, "ACM_airway_HeadTilt_State"] call EFUNC(core,continuousHoldRelease);
 }, { // PerFrame
     params ["_medic", "_patient", "_bodyPart"];
 
