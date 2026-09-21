@@ -352,21 +352,59 @@ if (_hasFluidBags) then {
                     };
                 };
 
-                // temperature-dependent blood flow. warmed blood, through the LifeWarmer inline, is driven at a fixed rate,
-                // defaulting to 100 ml/min, which is the rated output of the warmer, and that replaces the gauge-derived flow
-                // for that unit. cold, cooler-stored blood is viscous and runs slower, easing back to normal as it rewarms over
-                // 20 min. normal room-temperature blood is unchanged. only blood is affected.
+                // Blood has an explicit device/temperature flow envelope at the FINAL owner-side drainer.
+                // This is intentionally after the normal gauge/Hang Bag/pressure calculation so non-blood fluids keep
+                // their existing physics, while every blood path shares one authoritative 300 mL/min hard ceiling.
+                //
+                // Cold-stored blood: 100 mL/min baseline, 200 with Hang Bag, 300 at a fully pumped pressure cuff.
+                // LifeWarmer + non-cold blood: 200 mL/min, rising toward 300 as the pressure cuff is pumped.
+                // Ordinary room-temperature blood without the warmer keeps the existing gauge/Hang/pressure behavior,
+                // but is capped at 300 mL/min. This preserves a real pressure-infuser benefit on room-temperature blood.
+                //
+                // The pressure cuff already has a bleed-off mechanic. Preserve it here: full pressure reaches the target
+                // ceiling, then the benefit smoothly falls back toward the no-cuff tier until the cuff is repumped.
                 if (_type in ["Blood", "FreshBlood"]) then {
-                    if (_warmedFlag) then {
-                        _bagChange = (_deltaT * ((missionNamespace getVariable ["ACME_warmedBlood_mlPerMin", 100]) / 60)) min _bagVolumeRemaining;
+                    private _bloodCap = (missionNamespace getVariable ["ACME_bloodMax_mlPerMin", 300]) max 1;
+                    private _coldBase = (missionNamespace getVariable ["ACME_coldBlood_mlPerMin", 100]) max 0;
+                    private _coldHang = (missionNamespace getVariable ["ACME_coldBloodHang_mlPerMin", 200]) max _coldBase;
+                    private _warmBase = (missionNamespace getVariable ["ACME_warmedBlood_mlPerMin", 200]) max 0;
+
+                    private _hangActive = (_unit getVariable ["ACME_hang_flowMult", 1]) > 1.001;
+
+                    private _pressureFrac = 0;
+                    private _cuff = (_unit getVariable ["ACME_piCuffs", createHashMap]) getOrDefault [_bagUid, []];
+                    if (_bagUid != "" && {!(_cuff isEqualTo [])}) then {
+                        _cuff params [["_at", 0], ["_p0", 1]];
+                        private _half = (missionNamespace getVariable ["ACME_pi_bleedHalfLifeSec", 150]) max 0.1;
+                        private _p = (_p0 * (2 ^ (-((CBA_missionTime - _at) max 0) / _half))) max 0 min 1;
+                        if (_p >= 0.08) then {_pressureFrac = _p;};
+                    };
+
+                    private _fixedRate = -1;
+                    if (_coldFlag) then {
+                        // Cold-chain origin wins over the warmer flag for FLOW. The LifeWarmer still supplies heat,
+                        // but a cold unit remains on the cold 100/200/300 throughput ladder.
+                        _fixedRate = [_coldBase, _coldHang] select _hangActive;
+                        if (_pressureFrac > 0) then {
+                            _fixedRate = _fixedRate + ((_bloodCap - _fixedRate) * _pressureFrac);
+                        };
                     } else {
-                        if (_coldFlag && {_coldFrac > 0}) then {
-                            // the cold viscosity penalty eases from full toward 1.0, which is normal, as the unit rewarms.
-                            private _cm = missionNamespace getVariable ["ACME_coldBlood_flowMult", 0.65];
-                            private _tempFlow = _cm + ((1 - _cm) * (1 - _coldFrac));
-                            _bagChange = (_bagChange * _tempFlow) min _bagVolumeRemaining;
+                        if (_warmedFlag) then {
+                            _fixedRate = _warmBase;
+                            if (_pressureFrac > 0) then {
+                                _fixedRate = _fixedRate + ((_bloodCap - _fixedRate) * _pressureFrac);
+                            };
                         };
                     };
+
+                    if (_fixedRate >= 0) then {
+                        _bagChange = _deltaT * ((_fixedRate min _bloodCap) / 60);
+                    };
+
+                    // Absolute blood-flow cap, including ordinary room-temperature blood whose gauge + Hang Bag +
+                    // pressure multiplier would otherwise exceed the rapid-transfusion ceiling.
+                    private _capChange = _deltaT * (_bloodCap / 60);
+                    _bagChange = ((_bagChange min _capChange) min _bagVolumeRemaining) max 0;
                 };
 
                 // Final perfusion gate after every fixed-rate override, including the blood warmer. No CPR means
