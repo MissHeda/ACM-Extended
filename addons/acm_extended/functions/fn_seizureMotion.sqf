@@ -10,9 +10,15 @@ if (_on && {!isNull objectParent _patient}) exitWith {
     if (_patient getVariable ["ACME_seizure_motionActive",false]) then {
         [_patient,false] call ACME_fnc_seizureMotion;
     } else {
-        ["ACME_seizureGestureSync", [_patient, [], "", false]] call CBA_fnc_globalEvent;
+        if !(_patient getVariable ["ACME_seizure_vehicleVisualSuppressed",false]) then {
+            _patient setVariable ["ACME_seizure_vehicleVisualSuppressed",true,false];
+            ["ACME_seizureGestureSync", [_patient, [], "", false]] call CBA_fnc_globalEvent;
+        };
     };
     true
+};
+if (_on && {_patient getVariable ["ACME_seizure_vehicleVisualSuppressed",false]}) then {
+    _patient setVariable ["ACME_seizure_vehicleVisualSuppressed",false,false];
 };
 
 private _legacyPFH = _patient getVariable ["ACME_seizure_motionPFH",-1];
