@@ -1,25 +1,18 @@
-// Park carriers removed for the chest-seal workspace at fixed world-space points.
-// Each prop captures its target once and stays there; patient rolls/lifts never make it chase the head.
+// Keep any plate carrier removed for the chest-seal procedure parked beyond the casualty's head.
+// The prop is detached and non-simulated, so front/back rolls never drag it across the chest.
 params [["_patient", objNull, [objNull]]];
 if (isNull _patient || {!local _patient}) exitWith {};
 
 private _props = [];
 private _chestProp = _patient getVariable ["ACME_CS_vestProp", objNull];
 if (!isNull _chestProp) then {_props pushBackUnique _chestProp;};
+
+// A Semi-Fowler casualty may already have a carrier prop owned by the head-elevation system.
 private _headProp = _patient getVariable ["ACME_headElev_propObj", objNull];
 if ((_patient getVariable ["ACME_CS_ProcedureActive", false]) && {!isNull _headProp}) then {
     _props pushBackUnique _headProp;
 };
 if (_props isEqualTo []) exitWith {};
-
-private _needsInitialPark = (_props findIf {(count (_x getVariable ["ACME_chestFixedPark", []])) != 3}) >= 0;
-if (!_needsInitialPark) exitWith {
-    {
-        detach _x;
-        _x disableCollisionWith _patient;
-        _patient disableCollisionWith _x;
-    } forEach _props;
-};
 
 private _pel = _patient modelToWorldVisual (_patient selectionPosition "pelvis");
 private _hed = _patient modelToWorldVisual (_patient selectionPosition "head");
@@ -33,26 +26,14 @@ if (_mag < 0.05) then {
     _mag = 1;
 };
 private _axis = [_dx / _mag, _dy / _mag, 0];
-private _side = [-(_axis select 1), _axis select 0, 0];
-private _baseGap = missionNamespace getVariable ["ACME_headElev_propGroundGap", 0.45];
-private _gap = (missionNamespace getVariable ["ACME_chestAccessCarrierGap", 0.85]) max _baseGap;
-private _ease = missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24];
+private _gap = missionNamespace getVariable ["ACME_headElev_propGroundGap", 0.45];
+private _px = (_hed select 0) + ((_axis select 0) * _gap);
+private _py = (_hed select 1) + ((_axis select 1) * _gap);
+private _up = surfaceNormal [_px, _py];
 
 {
-    private _prop = _x;
-    detach _prop;
-    _prop disableCollisionWith _patient;
-    _patient disableCollisionWith _prop;
-
-    private _park = _prop getVariable ["ACME_chestFixedPark", []];
-    if ((count _park) != 3) then {
-        private _lane = (_forEachIndex * 0.24) - (((count _props) - 1) * 0.12);
-        private _px = (_hed select 0) + ((_axis select 0) * _gap) + ((_side select 0) * _lane);
-        private _py = (_hed select 1) + ((_axis select 1) * _gap) + ((_side select 1) * _lane);
-        private _target = [_px, _py, 0.02];
-        private _up = surfaceNormal [_px, _py];
-        _park = [_target, +_axis, +_up];
-        _prop setVariable ["ACME_chestFixedPark", _park, false];
-        [_prop, _target, _axis, _up, _ease] call ACME_fnc_propEaseTo;
-    };
+    detach _x;
+    _x disableCollisionWith _patient;
+    _patient disableCollisionWith _x;
+    [_x, [_px, _py, 0.02], _axis, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
 } forEach _props;
