@@ -4,7 +4,7 @@ params [
     ["_medic", objNull, [objNull]],
     ["_patient", objNull, [objNull]]
 ];
-if (isNull _medic || {!alive _medic}) exitWith {-1};
+if (isNull _medic || {!alive _medic} || {_medic isEqualTo _patient}) exitWith {-1};
 if (!local _medic) exitWith {
     [_medic, "chestSealProviderHold", [_medic, _patient]] call ACME_fnc_ownerDispatch;
     -1
