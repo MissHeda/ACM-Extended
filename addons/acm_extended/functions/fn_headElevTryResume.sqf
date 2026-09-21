@@ -12,6 +12,15 @@ if !(_patient getVariable ["ACME_headElev_ResumePending", false]) exitWith {};
 if (_patient getVariable ["ACME_CS_ProcedureActive", false]) exitWith {
     [{_this call ACME_fnc_headElevTryResume;}, [_patient, _token], 0.5] call CBA_fnc_waitAndExecute;
 };
+
+// A backpack-supported chest action restores its worn carrier through a visible reverse lift.
+// Do not re-elevate the casualty underneath that animation or move the support/carrier props at the same time.
+private _chestLeases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
+private _chestBusy = _patient getVariable ["ACME_chestAccess_vestBusy", ""];
+if ((count _chestLeases) > 0 || {_chestBusy != ""}) exitWith {
+    [{_this call ACME_fnc_headElevTryResume;}, [_patient, _token], 0.5] call CBA_fnc_waitAndExecute;
+};
+
 private _readyAt = _patient getVariable ["ACME_headElev_suspendReadyAt", -1];
 if (_readyAt > CBA_missionTime) exitWith {
     [{_this call ACME_fnc_headElevTryResume;}, [_patient, _token], ((_readyAt - CBA_missionTime) max 0.05) + 0.05] call CBA_fnc_waitAndExecute;
