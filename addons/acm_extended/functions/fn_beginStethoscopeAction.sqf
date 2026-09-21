@@ -107,7 +107,7 @@ private _pfh = [{
         } else {
             if (!(_keyID isEqualTo -1) && {!(_keyID isEqualTo "")}) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
         };
-        [_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop;
+        [_medic, "stethoscope", _poseEpoch, true] call ACME_fnc_treatmentPoseStop;
     };
 
     private _patientCondition = isNull _patient;
@@ -147,7 +147,7 @@ private _pfh = [{
         if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
             _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
         };
-        [_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop;
+        [_medic, "stethoscope", _poseEpoch, true] call ACME_fnc_treatmentPoseStop;
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
 
         ["ace_treatmentFailed", [_medic, _patient, _bodyPart, "ACM_ContinuousAction", "", "", false]] call CBA_fnc_localEvent;
