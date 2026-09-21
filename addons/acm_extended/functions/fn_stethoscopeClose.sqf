@@ -10,6 +10,7 @@ private _tickPFH = _display getVariable ["ACME_stethTickPFH", -1];
 if (_tickPFH isEqualType 0 && {_tickPFH >= 0}) then {[_tickPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethTickPFH", -1];
 
+private _wasFlipActive = _display getVariable ["ACME_stethFlipActive", false];
 private _flipPFH = _display getVariable ["ACME_stethFlipPFH", -1];
 if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethFlipPFH", -1];
@@ -27,13 +28,15 @@ _display setVariable ["ACME_stethPressed",false];
 private _medic = _display getVariable ["ACME_stethMedic",objNull];
 private _patient = _display getVariable ["ACME_stethPatient",objNull];
 
-// An Unload during Flip is an immediate abort. Stop both sides of the roll now: provider returns to Arma's neutral
-// base state, while the patient owner invalidates the roll callbacks and settles on the last stable side.
-if (!isNull _medic && {local _medic}) then {
-    [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
-};
-if (!isNull _patient) then {
-    [_patient] call ACME_fnc_patientRollCancel;
+// Only THIS display's live Flip may abort a roll. A normal/late Unload must never cancel a newer scope's
+// pre-entry roll or Flip just because it happens to target the same patient.
+if (_wasFlipActive) then {
+    if (!isNull _medic && {local _medic}) then {
+        [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
+    };
+    if (!isNull _patient) then {
+        [_patient] call ACME_fnc_patientRollCancel;
+    };
 };
 private _poseEpoch = _display getVariable ["ACME_stethPoseEpoch",-1];
 private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
@@ -41,25 +44,27 @@ private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
 // Release this provider's casualty animation lease immediately. The normal onCancel path sees the cleared lease
 // and becomes a no-op, so a missed PFH frame can never leave the patient pinned by a dead stethoscope session.
 if (!isNull _medic) then {
+    private _ownedPatientToken = _display getVariable ["ACME_stethPatientLeaseToken", ""];
     private _lease = _medic getVariable ["ACME_stethPatientAnimLease",[]];
-    if ((count _lease) >= 2) then {
+    private _leaseToken = _lease param [1,""];
+    if (_ownedPatientToken != "" && {_leaseToken == _ownedPatientToken}) then {
         private _leasePatient = _lease param [0,objNull];
-        private _leaseToken = _lease param [1,""];
-        if (!isNull _leasePatient && {_leaseToken != ""}) then {
-            [_leasePatient,_leaseToken] call ACME_fnc_patientAnimRelease;
+        if (!isNull _leasePatient) then {
+            [_leasePatient,_ownedPatientToken] call ACME_fnc_patientAnimRelease;
         };
+        _medic setVariable ["ACME_stethPatientAnimLease",[],false];
     };
-    _medic setVariable ["ACME_stethPatientAnimLease",[],false];
 
-    // UseStethoscope removes the carrier before the modal scope opens. The scope display is the real lifetime
-    // boundary, so release that exact lease here even if the generic controller was superseded.
-    private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
-    if ((_chestLease param [0, objNull]) isEqualTo _patient
-        && {toLowerANSI (_chestLease param [1, ""]) == "usestethoscope"}) then {
-        private _leaseId = _chestLease param [2, ""];
-        _medic setVariable ["ACME_chestAccess_treatment", []];
-        if (!isNull _patient && {_leaseId != ""}) then {
-            [_patient, _medic, _leaseId, false, "usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+    // Release the exact carrier lease stamped onto this display. Clear the provider's current lease pointer only
+    // when it still points at the same ID; a late old Unload is otherwise harmless to the newer scope.
+    private _ownedChestLeaseId = _display getVariable ["ACME_stethChestLeaseId", ""];
+    if (_ownedChestLeaseId != "") then {
+        private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
+        if ((_chestLease param [2,""]) == _ownedChestLeaseId) then {
+            _medic setVariable ["ACME_chestAccess_treatment", []];
+        };
+        if (!isNull _patient) then {
+            [_patient, _medic, _ownedChestLeaseId, false, "usestethoscope"] call ACME_fnc_chestAccessVestEvent;
         };
     };
 };
