@@ -77,7 +77,7 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
     uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG",(findDisplay 81000)];
 
     private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
-    [_display] call ACME_fnc_stethoscopeInit;
+    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
     private _ctrlText = _display displayCtrl 81001;
     _ctrlText ctrlSetText format ["%1 (%2)", [_patient, false, true] call ace_common_fnc_getName, (localize "STR_ACE_medical_gui_Torso")];
 }, {  // on cancel.
@@ -127,5 +127,6 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
         };
     };
 
-    [_patient] call ACME_fnc_stethoscopeTick;
+    // The dialog owns its own cursor/audio PFH. This controller retains only treatment validity, CPR exclusion
+    // and the casualty animation lease.
 }, false, 81000] call ACME_fnc_beginStethoscopeAction;

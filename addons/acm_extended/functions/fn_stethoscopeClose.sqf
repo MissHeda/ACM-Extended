@@ -6,6 +6,10 @@ disableSerialization;
 params ["_display"];
 if (isNull _display) exitWith {};
 
+private _tickPFH = _display getVariable ["ACME_stethTickPFH", -1];
+if (_tickPFH isEqualType 0 && {_tickPFH >= 0}) then {[_tickPFH] call CBA_fnc_removePerFrameHandler;};
+_display setVariable ["ACME_stethTickPFH", -1];
+
 {
     _x params ["_emitter","_sound"];
     if (!isNull _sound) then {deleteVehicle _sound;};
@@ -15,6 +19,7 @@ _display setVariable ["ACME_stethChannels",[]];
 _display setVariable ["ACME_stethPressed",false];
 
 private _medic = _display getVariable ["ACME_stethMedic",objNull];
+private _patient = _display getVariable ["ACME_stethPatient",objNull];
 private _poseEpoch = _display getVariable ["ACME_stethPoseEpoch",-1];
 private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
 
@@ -30,6 +35,18 @@ if (!isNull _medic) then {
         };
     };
     _medic setVariable ["ACME_stethPatientAnimLease",[],false];
+
+    // UseStethoscope removes the carrier before the modal scope opens. The scope display is the real lifetime
+    // boundary, so release that exact lease here even if the generic controller was superseded.
+    private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
+    if ((_chestLease param [0, objNull]) isEqualTo _patient
+        && {toLowerANSI (_chestLease param [1, ""]) == "usestethoscope"}) then {
+        private _leaseId = _chestLease param [2, ""];
+        _medic setVariable ["ACME_chestAccess_treatment", []];
+        if (!isNull _patient && {_leaseId != ""}) then {
+            [_patient, _medic, _leaseId, false, "usestethoscope"] call ACME_fnc_chestAccessVestEvent;
+        };
+    };
 };
 
 // Retire only the continuous-action generation that created this display. This is the critical fallback for

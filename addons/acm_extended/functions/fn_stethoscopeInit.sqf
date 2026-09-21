@@ -1,7 +1,9 @@
 // All input, audio and cursor state belongs to this display instance.
 disableSerialization;
-params ["_display"];
+params ["_display", ["_patient", objNull, [objNull]], ["_medic", objNull, [objNull]]];
 if (isNull _display) exitWith {};
+_display setVariable ["ACME_stethPatient", _patient];
+_display setVariable ["ACME_stethMedic", _medic];
 [_display,"front"] call ACME_fnc_stethoscopeSetView;
 _display setVariable ["ACME_stethNextLungUpdate",-1];
 _display setVariable ["ACME_stethCursor",getMousePosition];
@@ -59,3 +61,19 @@ for "_i" from 0 to 4 do {
     _channels pushBack [_emitter,objNull,0];
 };
 _display setVariable ["ACME_stethChannels",_channels];
+
+// The scope display owns cursor/audio ticking. The generic continuous-action controller is allowed to be
+// superseded without stranding a frozen bell: as long as this exact dialog exists, its bell follows the GUI
+// cursor and its diagnostic audio cadence continues.
+private _oldTick = _display getVariable ["ACME_stethTickPFH", -1];
+if (_oldTick isEqualType 0 && {_oldTick >= 0}) then {[_oldTick] call CBA_fnc_removePerFrameHandler;};
+private _tickPFH = [{
+    params ["_args", "_handle"];
+    _args params ["_display", "_patient"];
+    if (isNull _display || {isNull _patient} || {!((findDisplay 81000) isEqualTo _display)}) exitWith {
+        [_handle] call CBA_fnc_removePerFrameHandler;
+        if (!isNull _display) then {_display setVariable ["ACME_stethTickPFH", -1];};
+    };
+    [_patient] call ACME_fnc_stethoscopeTick;
+}, 0, [_display, _patient]] call CBA_fnc_addPerFrameHandler;
+_display setVariable ["ACME_stethTickPFH", _tickPFH];
