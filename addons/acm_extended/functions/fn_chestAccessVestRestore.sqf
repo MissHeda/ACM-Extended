@@ -43,5 +43,7 @@ if (_restored || {_force}) then {
     if (!isNull _prop) then {detach _prop; deleteVehicle _prop;};
     _patient setVariable ["ACME_chestAccess_vestProp", objNull, true];
     _patient setVariable ["ACME_chestAccess_vestLoadout", [], true];
+    _patient setVariable ["ACME_chestAccess_vestBusy", "", false];
+    _patient setVariable ["ACME_chestAccess_readyServer", serverTime, true];
 };
 _restored
