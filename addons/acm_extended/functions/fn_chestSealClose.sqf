@@ -11,15 +11,7 @@ uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
 private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
 if (!isNull _flipMedic && {local _flipMedic}) then {
     [_flipMedic,"chestSealFlip"] call ACME_fnc_rollProviderCancel;
-
-    private _holdEpoch = _flipMedic getVariable ["ACME_CS_providerHoldEpoch",-1];
-    private _pose = _flipMedic getVariable ["ACME_treatmentPoseState",[]];
-    if ((_pose param [1,""]) == "chestSealWorkspace") then {
-        [_flipMedic,"chestSealWorkspace",_holdEpoch] call ACME_fnc_treatmentPoseStop;
-    };
-    _flipMedic setVariable ["ACME_CS_providerHoldEpoch",-1,false];
 };
-uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",-1];
 if (!isNull _flipMedic && {local _flipMedic}
     && {(_flipMedic getVariable ["ACME_DP_PauseTreatmentClass",""]) == "chestsealflip"}) then {
     _flipMedic setVariable ["ACME_DP_Paused",false];
@@ -41,7 +33,7 @@ if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] cal
 // the side they had before the minigame, gives the carrier back, then resumes an existing Semi-Fowler placement.
 private _sessionToken = uiNamespace getVariable ["ACME_CS_SessionToken", ""];
 if (!isNull _patient && {_sessionToken != ""}) then {
-    [_patient, "chestSealPatientEnd", [_patient, _sessionToken, _flipMedic]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientEnd", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
 };
 uiNamespace setVariable ["ACME_CS_SessionToken", ""];
 
