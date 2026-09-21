@@ -116,7 +116,13 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     private _alreadyPrepared = ((_existingChest param [0,objNull]) isEqualTo _patient)
         && {(_existingChest param [1,""]) == _nativeContinuousClass}
         && {(_existingChest param [2,""]) != ""};
-    private _needsPhysicalPrep = ((vest _patient) != "" && {(count _chestSaved) != 2})
+    private _actualChestSide = [_patient, _patient getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+    private _needsFrontNormalize = alive _patient
+        && {isNull objectParent _patient}
+        && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}
+        && {_actualChestSide == "back"};
+    private _needsPhysicalPrep = _needsFrontNormalize
+        || {((vest _patient) != "" && {(count _chestSaved) != 2})}
         || {_patient getVariable ["ACME_headElevated", false]
             && {!(_patient getVariable ["ACME_headElev_Suspended", false])}};
 
