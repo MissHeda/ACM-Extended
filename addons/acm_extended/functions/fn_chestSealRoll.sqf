@@ -1,6 +1,12 @@
 // Physical front/back roll used by the chest-seal Flip button.
 // This function owns ONLY the casualty. Provider theatre starts on the medic's client in fn_chestSealFlip.
-params [["_patient", objNull, [objNull]], ["_target", "front", [""]], ["_force", false, [false]], ["_provider", objNull, [objNull]]];
+params [
+    ["_patient", objNull, [objNull]],
+    ["_target", "front", [""]],
+    ["_force", false, [false]],
+    ["_provider", objNull, [objNull]],
+    ["_preserveSuspendedHeadElevation", false, [false]]
+];
 if (isNull _patient || {!(_target in ["front", "back"])}) exitWith {};
 
 if (!local _patient) exitWith {
@@ -14,7 +20,9 @@ if !([_patient] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};
 // Outside this minigame a body roll must tear down head elevation normally. Inside it, Semi-Fowler is only
 // suspended, so the front/back roll theatre must not destroy the logical posture we will restore on exit.
 if !(_patient getVariable ["ACME_CS_ProcedureActive", false]) then {
-    [_patient] call ACME_fnc_headElevYieldForRoll;
+    if (!_preserveSuspendedHeadElevation) then {
+        [_patient] call ACME_fnc_headElevYieldForRoll;
+    };
 };
 
 private _actual = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
