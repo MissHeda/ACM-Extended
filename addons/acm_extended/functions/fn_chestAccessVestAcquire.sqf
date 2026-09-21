@@ -281,7 +281,10 @@ private _beginPatient = {
     [_medic, "chestAccessVestProvider", [_medic, _p, "start", false, _token]] call ACME_fnc_ownerDispatch;
 
     [{
-        params ["_m","_token"];
+        // _this is [_args,_beginPatient], not [_medic,_token].
+        params ["_callArgs","_begin"];
+        private _m = _callArgs param [1,objNull,[objNull]];
+        private _token = _callArgs param [8,"",[""]];
         if (isNull _m || {!alive _m}) exitWith {true};
         private _ready = _m getVariable ["ACME_chestAccessProviderReady", []];
         (_ready param [0,""]) == _token && {(_ready param [1,-1]) != -1}
