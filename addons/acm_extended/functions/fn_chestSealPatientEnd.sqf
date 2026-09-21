@@ -97,18 +97,17 @@ private _restoreSide = {
     };
 };
 
-// If Escape lands during a flip, let that authored roll reach its endpoint first. Then perform at most one roll back
-// to the original side. Invalidating the roll halfway through would leave the casualty between states.
+// Closing while a Flip is physically in progress is an explicit abort. Do not let the current roll finish and
+// do not queue a second full roll back to the procedure's starting side. Cancel the live roll token, snap the
+// grounded casualty directly to the original stable side, then finish carrier/posture restoration immediately.
+private _rollToken = _patient getVariable ["ACME_CS_rollToken", ""];
 private _rollUntil = _patient getVariable ["ACME_CS_rollUntil", -1];
-private _wait = if (_rollUntil isEqualType 0 && {_rollUntil > CBA_missionTime}) then {
-    (_rollUntil - CBA_missionTime) + 0.08
-} else {0};
-
-if (_wait > 0) then {
-    [{
-        params ["_p", "_side", "_head", "_recovery", "_anim", "_restore", "_finishCode", "_generation"];
-        [_p, _side, _head, _recovery, _anim, _finishCode, _generation] call _restore;
-    }, [_patient, _preSide, _preHeadElev, _preRecovery, _preAnim, _restoreSide, _finish, _generation], _wait] call CBA_fnc_waitAndExecute;
-} else {
-    [_patient, _preSide, _preHeadElev, _preRecovery, _preAnim, _finish, _generation] call _restoreSide;
+private _rollActive = (_rollToken != "") || {(_rollUntil isEqualType 0) && {_rollUntil > CBA_missionTime}};
+if (_rollActive) exitWith {
+    [_patient, _preSide] call ACME_fnc_patientRollCancel;
+    [_patient, _preHeadElev, _preRecovery, _preAnim, _generation] call _finish;
 };
+
+// A completed flip is different from a cancelled one: normal workspace close may still use the authored roll to
+// restore the casualty's original side.
+[_patient, _preSide, _preHeadElev, _preRecovery, _preAnim, _finish, _generation] call _restoreSide;
