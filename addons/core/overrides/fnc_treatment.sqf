@@ -104,6 +104,14 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     // BVM uses ACM's treatment path. Its accepted start releases this provider's
     // Direct Pressure hold before taking over input and animation.
     private _nativeContinuousClass = toLowerANSI _classname;
+
+    // Auscultation owns its own modal display and provider pose. Base ACM launches the scope from the
+    // treatment callback; do not put another asynchronous stance/weapon preflight in front of that callback.
+    // The stethoscope controller performs its presentation work only after the display exists.
+    if (_nativeContinuousClass == "usestethoscope") exitWith {
+        _this call ACM_core_fnc_treatmentNative
+    };
+
     if (_nativeContinuousClass in ["usebvm", "usebvm_oxygen", "usebvm_vehicleoxygen", "usebvm_portableoxygen"]) exitWith {
         _this call ACM_core_fnc_treatmentNative
     };
