@@ -163,8 +163,12 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             params ["_m","_p","_tok"];
             if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
+            private _readyLease = _p getVariable ["ACME_chestAccess_readyLease", ""];
             private _ready = _p getVariable ["ACME_chestAccess_readyServer", -1];
-            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}
+            (_readyLease == (_m getVariable ["ACME_chestAccess_treatment", []] param [2,""]))
+                && {_ready isEqualType 0}
+                && {_ready >= 0}
+                && {serverTime >= _ready}
         }, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
             [_m,_p,_args,_tok,_leaseId,_classKey,false] call _launch;
