@@ -20,12 +20,12 @@ _args params ["_medic", "_patient", "_bodyPart", ["_extraArgs", []]];
 // reserves the continuous-action generation up front so the native treatment-success/menu lifecycle cannot reopen
 // another dialog between callbackSuccess and the eventual stethoscope display. Adopt that exact reservation here.
 private _adoptingReservation = _reservedEpoch >= 0;
-if (_adoptingReservation) then {
-    if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) != _reservedEpoch
-        || {!ACM_core_ContinuousAction_Active}) exitWith {};
-} else {
-    if (ACM_core_ContinuousAction_Active) exitWith {};
+private _reservationValid = !_adoptingReservation || {
+    (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) == _reservedEpoch
+    && {ACM_core_ContinuousAction_Active}
 };
+if (!_reservationValid) exitWith {};
+if (!_adoptingReservation && {ACM_core_ContinuousAction_Active}) exitWith {};
 
 // B127 shares the same generation as ACM_core_fnc_beginContinuousAction. Each scope owns one immutable generation.
 private _epoch = if (_adoptingReservation) then {
