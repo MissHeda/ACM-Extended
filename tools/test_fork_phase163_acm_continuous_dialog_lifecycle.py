@@ -47,6 +47,11 @@ def test_stethoscope_unload_only_aborts_an_active_flip_and_clears_its_session():
     assert "if (_flipWasActive) then" in s
     assert 'ACM_core_ContinuousAction_Session", []' in s
 
+def test_transient_reconcile_does_not_own_cric_dialog_lifetime():
+    s = read("addons/acm_extended/functions/fn_transientStateReconcile.sqf")
+    assert "ACME_reconcileInvalidSurgicalAirwayAt" not in s
+    assert "SurgicalAirway_InProgress_Session" not in s
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
