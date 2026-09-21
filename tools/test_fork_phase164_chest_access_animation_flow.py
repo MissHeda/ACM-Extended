@@ -77,7 +77,8 @@ def test_chest_seal_workspace_hands_directly_to_flip_and_back():
     assert "ACME_fnc_chestSealProviderHoldStart" in tick
     assert "_providerAtHold" in tick
     assert '(_poseNow param [3,-2]) >= 3' in tick
-    assert '["chestSealWorkspace",_holdEpoch,true] call ACME_fnc_treatmentPoseStop;' in close
+    assert "private _hasCarrierRestore" in close
+    assert '["chestSealWorkspace",_holdEpoch,_hasCarrierRestore] call ACME_fnc_treatmentPoseStop;' in close
 
 def test_stethoscope_rolls_wait_for_medic4_hold_without_touching_dialog_lifetime():
     entry = read("addons/acm_extended/functions/fn_stethoscopeEntryFlipTick.sqf")
