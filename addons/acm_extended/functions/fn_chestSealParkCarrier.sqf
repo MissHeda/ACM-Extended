@@ -26,7 +26,8 @@ if (_mag < 0.05) then {
     _mag = 1;
 };
 private _axis = [_dx / _mag, _dy / _mag, 0];
-private _gap = missionNamespace getVariable ["ACME_headElev_propGroundGap", 0.45];
+private _baseGap = missionNamespace getVariable ["ACME_headElev_propGroundGap", 0.45];
+private _gap = (missionNamespace getVariable ["ACME_chestAccessCarrierGap", 0.62]) max _baseGap;
 private _px = (_hed select 0) + ((_axis select 0) * _gap);
 private _py = (_hed select 1) + ((_axis select 1) * _gap);
 private _up = surfaceNormal [_px, _py];
@@ -35,5 +36,10 @@ private _up = surfaceNormal [_px, _py];
     detach _x;
     _x disableCollisionWith _patient;
     _patient disableCollisionWith _x;
-    [_x, [_px, _py, 0.02], _axis, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
+    private _target = [_px, _py, 0.02];
+    if ((getPosATL _x) distance _target > 0.06) then {
+        [_x, _target, _axis, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
+    } else {
+        _x setVectorDirAndUp [_axis, _up];
+    };
 } forEach _props;
