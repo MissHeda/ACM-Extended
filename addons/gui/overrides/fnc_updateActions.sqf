@@ -10,6 +10,16 @@
 disableSerialization;
 params [['_display', displayNull]];
 if (isNull _display) exitWith {};
+
+// ACE calls the menu painter from a 0-delay PFH. Re-evaluating every grouped action, inventory count, tooltip,
+// handler and control on every rendered frame is unnecessary and disproportionately hurts lower-FPS clients.
+// Patient/body-part/category changes bypass the throttle and repaint immediately.
+private _paintKey = [_target, _bodyPart, _selectedCategory];
+private _lastPaintKey = _display getVariable ['ACME_menuPaintKey', []];
+private _nextPaint = _display getVariable ['ACME_menuNextPaint', 0];
+if (_paintKey isEqualTo _lastPaintKey && {diag_tickTime < _nextPaint}) exitWith {};
+_display setVariable ['ACME_menuPaintKey', _paintKey];
+_display setVariable ['ACME_menuNextPaint', diag_tickTime + 0.10];
 // B44: this ACE category is airway plus breathing work, not airway alone.
 private _airwayTab = _display displayCtrl 1340;
 if (!isNull _airwayTab) then {_airwayTab ctrlSetTooltip "Airway / Breathing";};
@@ -185,6 +195,8 @@ if (_nestEnabled) then {
                         if (_key isEqualTo '') exitWith {};
                         private _open = ['toggle', _patient, _key] call ACME_fnc_menuDropdownState;
                         _menu setVariable ['ACME_menuOpen', _open];
+                        // Make dropdown clicks visible on the next ACE UI pass instead of waiting for the normal paint cadence.
+                        _menu setVariable ['ACME_menuNextPaint', 0];
                     }, [], '', _hdrCol, _key
                 ];
             if (_isOpen) then {
