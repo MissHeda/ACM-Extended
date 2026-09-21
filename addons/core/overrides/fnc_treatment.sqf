@@ -186,6 +186,13 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         _this call ACM_core_fnc_treatmentNative
     };
 
+    // Head tilt/chin lift is also only a launcher for a manual continuous hold. The generic preflight used to
+    // recursively start the 0.001 s treatment and then re-arm medical-menu reopen, which immediately killed the
+    // newly-created hold unless the provider happened to already be in a ready crouched state.
+    if (_nativeContinuousClass == "beginheadtiltchinlift") exitWith {
+        _this call ACM_core_fnc_treatmentNative
+    };
+
     if (_nativeContinuousClass in ["usebvm", "usebvm_oxygen", "usebvm_vehicleoxygen", "usebvm_portableoxygen"]) exitWith {
         _this call ACM_core_fnc_treatmentNative
     };
