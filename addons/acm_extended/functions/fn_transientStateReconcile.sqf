@@ -313,28 +313,9 @@ for "_i" from 2 to 5 do {
     };
 };
 
-// Surgical-airway "in progress" is transient; completed airway state is untouched.
-private _surgBusy = _patient getVariable ["ACM_airway_SurgicalAirway_InProgress", false];
-private _surgSession = _patient getVariable ["ACM_airway_SurgicalAirway_InProgress_Session", []];
-private _surgInvalid = false;
-if (_surgBusy) then {
-    if !(_surgSession isEqualType [] && {count _surgSession == 2}) then {
-        _surgInvalid = true;
-    } else {
-        private _medic = _surgSession select 0;
-        _surgInvalid = isNull _medic || {!alive _medic}
-            || {_medic getVariable ["ACE_isUnconscious", false]}
-            || {!((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo _surgSession)};
-    };
-};
-if (["ACME_reconcileInvalidSurgicalAirwayAt", _surgInvalid, 3] call _debouncedInvalid) then {
-    _patient setVariable ["ACM_airway_SurgicalAirway_InProgress", false, true];
-    _patient setVariable ["ACM_airway_SurgicalAirway_InProgress_Session", [], true];
-    "Surgical airway in-progress" call _mark;
-};
-if (!_surgBusy && {!(_surgSession isEqualTo [])}) then {
-    _patient setVariable ["ACM_airway_SurgicalAirway_InProgress_Session", [], true];
-};
+// Surgical-airway lifetime belongs to ACM's live continuous-action dialog.
+// Do not clear SurgicalAirway_InProgress from replicated session metadata: internal cric clicks and UI actions
+// are presentation/input, not a treatment-lifetime change. Base ACM keeps this state until the dialog/controller ends.
 
 // Expired patient animation lease.
 private _animLock = _patient getVariable ["ACME_patientAnimLock", []];
