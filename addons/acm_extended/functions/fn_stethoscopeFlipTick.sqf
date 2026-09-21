@@ -10,6 +10,9 @@ private _current = !isNull _display
 
 private _finish = {
     [_handle] call CBA_fnc_removePerFrameHandler;
+    if (!isNull _display && {(_display getVariable ["ACME_stethFlipPFH",-1]) == _handle}) then {
+        _display setVariable ["ACME_stethFlipPFH",-1];
+    };
 
     // Retire exactly the roll provider episode which this click created.
     if (!isNull _provider && {local _provider}
