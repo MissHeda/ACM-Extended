@@ -209,7 +209,10 @@ if (isNull _medic || {_medic isEqualTo _patient} || {!alive _medic}) then {
         call ACME_fnc_ownerDispatch;
 
     [{
-        params ["_m","_token"];
+        // _this is [_args,_beginRestore]. Extract the medic and restore token from the nested call payload.
+        params ["_callArgs","_begin"];
+        private _m = _callArgs param [1,objNull,[objNull]];
+        private _token = _callArgs param [9,"",[""]];
         if (isNull _m || {!alive _m}) exitWith {true};
         private _ready = _m getVariable ["ACME_chestAccessProviderReady", []];
         (_ready param [0,""]) == _token && {(_ready param [1,-1]) != -1}
