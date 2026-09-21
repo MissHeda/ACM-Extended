@@ -315,8 +315,8 @@ if (_selectionN == 0 && (_target getVariable [QEGVAR(breathing,BVM_Medic), objNu
     _entries pushBack [format ["%1 %2 (%3)", LELSTRING(breathing,BVM_Short), _string, ([(_target getVariable [QEGVAR(breathing,BVM_Medic), objNull]), false, true] call ACEFUNC(common,getName))], _breathingColor];
 };
 
-// Match the device-style BVM presentation on the airway/head view as well as the overall overview.
-if (_selectionN == 0 && {_nrbOn}) then {
+// Keep the NRB visible on the whole-patient overview and on the two breathing-relevant body views.
+if (_selectionN in [0,1] && {_nrbOn}) then {
     _entries pushBack [_nrbText, _breathingColor];
 };
 
