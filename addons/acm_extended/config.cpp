@@ -1272,7 +1272,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         scope = 2;
         author = "mavis";
         displayName = "LifeWarmer Quantum";
-        descriptionShort = "Inline blood/fluid warmer. Carry it when hanging blood: that unit infuses warm, countering transfusion-driven hypothermia.";
+        descriptionShort = "Inline blood/fluid warmer. Non-cold blood runs at 200 mL/min; cold-stored blood uses the cold-flow ladder. Warms transfused blood and counters hypothermia.";
         picture = "\acm_extended\ui\items\quantum_bloodwarmer_ca.paa";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
