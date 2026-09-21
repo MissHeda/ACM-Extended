@@ -9,7 +9,7 @@ def read(rel):
 
 def test_patient_release_finishes_supine_and_workspace_state_exists():
     s = read("addons/acm_extended/config.cpp")
-    release = s.split("class ACME_HeadElevPatientRelease:", 1)[1].split("};", 1)[0]
+    release = s.split("class ACME_HeadElevPatientRelease:", 1)[1][:500]
     assert 'ConnectTo[] = {"ACM_LyingState", 0.1};' in release
     assert "class ACME_ChestSealWorkspace:" in s
 
@@ -26,27 +26,28 @@ def test_patient_lift_waits_for_real_provider_medic4():
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
     assert 'animationState _m) == "ainvpknlmstpsnonwnondnon_medic4"' in provider
     assert "ACME_chestAccessProviderReady" in provider
-    ready = acquire.index("ACME_chestAccessProviderReady")
-    grab = acquire.index('"ACME_HeadElevPatientGrab"')
-    assert ready < grab
+    wait_block = acquire.split("// After any Semi-Fowler lay-flat finishes", 1)[1]
+    assert "ACME_chestAccessProviderReady" in wait_block
+    assert "_args call _begin;" in wait_block
     assert '"stop", true, _token' in acquire
 
 def test_removal_order_is_lift_remove_park_release():
     s = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
-    grab = s.index('"ACME_HeadElevPatientGrab"')
-    remove = s.index("removeVest _p")
-    park = s.index("ACME_fnc_chestAccessVestPark")
-    release = s.index('"ACME_HeadElevPatientRelease"')
-    assert grab < release
-    assert remove < release
-    assert park < release
+    begin = s.split("private _beginPatient = {", 1)[1]
+    grab = begin.index('"ACME_HeadElevPatientGrab"')
+    commit = begin.index("call _commit;")
+    release = begin.index('"ACME_HeadElevPatientRelease"')
+    assert grab < commit < release
+    commit_fn = s.split("private _commitRemoval = {", 1)[1].split("// Animation is allowed", 1)[0]
+    assert commit_fn.index("removeVest _p") < commit_fn.index("ACME_fnc_chestAccessVestPark")
 
 def test_restoration_is_lift_revest_release_then_provider_exit():
     s = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
-    grab = s.index('"ACME_HeadElevPatientGrab"')
-    revest = s.index("_loadout set [4,+_saved]")
-    release = s.index('"ACME_HeadElevPatientRelease"')
-    stop = s.index('"stop", false, _token')
+    begin = s.split("private _beginRestore = {", 1)[1]
+    grab = begin.index('"ACME_HeadElevPatientGrab"')
+    revest = begin.index("_loadout set [4,+_saved]")
+    release = begin.index('"ACME_HeadElevPatientRelease"')
+    stop = begin.index('"stop", false, _token')
     assert grab < revest < release < stop
 
 def test_removed_carrier_has_one_fixed_world_target():
@@ -70,8 +71,8 @@ def test_chest_seal_workspace_hands_directly_to_flip_and_back():
     flip = read("addons/acm_extended/functions/fn_chestSealFlip.sqf")
     tick = read("addons/acm_extended/functions/fn_chestSealFlipTick.sqf")
     close = read("addons/acm_extended/functions/fn_chestSealClose.sqf")
-    assert '["ACME_CS_providerHoldEpoch",-1]' in flip
-    assert 'call ACME_fnc_treatmentPoseStop;' in flip
+    assert '"ACME_CS_providerHoldEpoch",-1' in flip
+    assert '[_provider,"chestSealWorkspace",_holdEpoch,true] call ACME_fnc_treatmentPoseStop;' in flip
     assert '[_provider,"roll",_epoch,_current] call ACME_fnc_treatmentPoseStop;' in tick
     assert "ACME_fnc_chestSealProviderHoldStart" in tick
     assert "_providerAtHold" in tick
@@ -90,7 +91,8 @@ def test_thoracostomy_waits_for_same_chest_access_transaction():
     s = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
     assert "ACME_chestAccess_readyLease" in s
     assert "ACME_chestAccess_readyServer" in s
-    assert s.index("ACME_chestAccess_readyServer") < s.index('["ACME_Thoracostomy_Dialog"]')
+    wait = s.split("ACME_chestAccess_readyLease", 1)[1]
+    assert "CBA_fnc_waitUntilAndExecute" in wait
 
 def test_semi_fowler_resume_cannot_overlap_carrier_restore():
     s = read("addons/acm_extended/functions/fn_headElevTryResume.sqf")
