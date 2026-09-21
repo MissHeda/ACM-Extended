@@ -23,14 +23,10 @@ def test_removal_provider_wait_unwraps_nested_call_args():
     assert '_callArgs param [8,"",[""]]' in block
     assert 'params ["_m","_token"];' not in block
 
-def test_restore_provider_wait_unwraps_nested_call_args():
+def test_restore_no_longer_starts_a_second_provider_medic4():
     s = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
-    start = s.index("// _this is [_args,_beginRestore]")
-    block = s[start:start + 700]
-    assert 'params ["_callArgs","_begin"];' in block
-    assert '_callArgs param [1,objNull,[objNull]]' in block
-    assert '_callArgs param [9,"",[""]]' in block
-    assert 'params ["_m","_token"];' not in block
+    assert '"chestAccessVestProvider", [_medic, _patient, "start"' not in s
+    assert "Provider exit is owned by the minigame/action that is closing." in s
 
 def test_native_stethoscope_callback_accepts_classname_slot():
     s = read("addons/breathing/functions/fnc_useStethoscope.sqf")
