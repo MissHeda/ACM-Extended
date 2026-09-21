@@ -43,6 +43,9 @@ assert '[_patient, _medic, "chestseal"] call ACME_fnc_chestAccessVestAcquire;' i
 # Generic chest treatments wait for the animated carrier-removal sequence before native treatment begins.
 assert 'ACME_chestAccessPreflightActive' in treatment
 assert 'ACME_chestAccess_readyServer' in treatment
+assert 'private _started = _args call ace_medical_treatment_fnc_treatment;' in treatment
+assert 'if (!_started) then {' in treatment
+assert 'ACME_fnc_chestAccessVestEvent' in treatment
 assert treatment.index('ACME_chestAccessPreflightActive') < treatment.index('ACM_core_fnc_treatmentNative')
 
 # Chest-seal provider remains in a persistent hands-on-chest pose and Flip hands directly back to it.
