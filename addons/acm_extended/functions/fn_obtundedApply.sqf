@@ -26,7 +26,22 @@ if (_on) then {
     // physically down. Do not play any ACME collapse or posture animation on top of the wake-up.
     private _wasMedicalUncon = _patient getVariable ["ACE_isUnconscious", false];
     if (_wasMedicalUncon && {!isNil "ace_medical_status_fnc_setUnconsciousState"}) then {
-        [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
+        // setUnconsciousState is ACE's internal transition mutator. Calling it directly while the medical state
+        // machine still says "Unconscious" leaves later WakeUp events with no coherent transition to perform.
+        // Obtundation intentionally converts a medical KO into an awake impaired state, so move the state machine
+        // to Injured and perform the same state mutation in that transition.
+        if (!isNil "ace_medical_STATE_MACHINE" && {!isNil "CBA_statemachine_fnc_getCurrentState"}) then {
+            private _state = [_patient, ace_medical_STATE_MACHINE] call CBA_statemachine_fnc_getCurrentState;
+            if (_state == "Unconscious") then {
+                [_patient, ace_medical_STATE_MACHINE, "Unconscious", "Injured", {
+                    [_this, false] call ace_medical_status_fnc_setUnconsciousState;
+                }, "ACMEObtundedWake"] call CBA_statemachine_fnc_manualTransition;
+            } else {
+                [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
+            };
+        } else {
+            [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
+        };
     };
     if (_wasMedicalUncon) then {
         [_patient, true, true] call ACM_core_fnc_setWasTreated;
