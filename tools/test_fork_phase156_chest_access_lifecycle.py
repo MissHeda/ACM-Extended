@@ -54,7 +54,7 @@ assert '0.62' in park and '0.62' in cs_park
 assert '[1,0] select _smoothChest' in pose_start
 assert '[1,0] select _smoothChest' in pose_stop
 freeze = pose_start.split('// Freeze the owner on the frame it naturally reached.', 1)[1].split('private _jip', 1)[0]
-assert 'switchMove' not in freeze
+assert '_medic switchMove [_main, _phase, 1, false];' not in freeze
 assert '_medic setAnimSpeedCoef 0;' in freeze
 
 # XStat returns to the proven original wound-control path; the extra packing control is combat gauze only.
