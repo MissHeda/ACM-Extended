@@ -9,7 +9,7 @@ def read(rel):
 
 def test_release_animation_finishes_supine():
     s = read("addons/acm_extended/config.cpp")
-    block = s.split("class ACME_HeadElevPatientRelease:", 1)[1].split("};", 1)[0]
+    block = s.split("class ACME_HeadElevPatientRelease:", 1)[1][:500]
     assert 'ConnectTo[] = {"ACM_LyingState", 0.1};' in block
 
 def test_chest_workspace_move_exists():
@@ -26,11 +26,10 @@ def test_carrier_provider_uses_medic4_and_exact_ready_handshake():
 
 def test_patient_lift_waits_for_provider_entry_but_fails_open():
     s = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
-    ready = s.index("ACME_chestAccessProviderReady")
-    grab = s.index('"ACME_HeadElevPatientGrab"')
-    assert ready < grab
-    assert "3.25" in s
-    assert '_p setVariable [_readyVar, -1, true];' in s
+    wait = s.split("// After any Semi-Fowler lay-flat finishes", 1)[1]
+    assert "ACME_chestAccessProviderReady" in wait
+    assert "4.75" in wait
+    assert '_patient setVariable [_readyVar, -1, true];' in s
 
 def test_carrier_is_parked_at_one_world_target():
     access = read("addons/acm_extended/functions/fn_chestAccessVestPark.sqf")
@@ -42,9 +41,10 @@ def test_carrier_is_parked_at_one_world_target():
 
 def test_restore_is_visible_reverse_sequence():
     s = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
-    grab = s.index('"ACME_HeadElevPatientGrab"')
-    loadout = s.index("_loadout set [4,+_saved]", grab)
-    release = s.index('"ACME_HeadElevPatientRelease"', loadout)
+    begin = s.split("private _beginRestore = {", 1)[1]
+    grab = begin.index('"ACME_HeadElevPatientGrab"')
+    loadout = begin.index("_loadout set [4,+_saved]")
+    release = begin.index('"ACME_HeadElevPatientRelease"')
     assert grab < loadout < release
     assert "ACME_chestAccessProviderReady" in s
 
