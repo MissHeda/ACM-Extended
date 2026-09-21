@@ -15,7 +15,13 @@
  * Public: No
  */
 
-params ["_medic", "_patient", ["_bodyPart", "Body"], ["_entryReady", false, [false]]];
+params [
+    "_medic",
+    "_patient",
+    ["_bodyPart", "Body"],
+    ["_entryReady", false, [false]],
+    ["_entryEpoch", -1, [0]]
+];
 
 // you cannot auscultate in an airframe.
 // this is not a balance decision, it is simply true, and every flight medic knows it. a running helicopter puts 500
@@ -158,4 +164,4 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
     // The dialog owns its own cursor/audio PFH. This controller retains only treatment validity, CPR exclusion
     // and the casualty animation lease.
-}, false, 81000] call ACME_fnc_beginStethoscopeAction;
+}, false, 81000, _entryEpoch] call ACME_fnc_beginStethoscopeAction;
