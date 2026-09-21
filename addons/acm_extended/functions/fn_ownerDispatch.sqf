@@ -351,6 +351,7 @@ switch (_operation) do {
     };
     case "burp": { _args call ACME_fnc_chestSealBurp; };
     case "chestSealRoll": {_args call ACME_fnc_chestSealRoll;};
+    case "patientRollCancel": {_args call ACME_fnc_patientRollCancel;};
     case "chestSealPatientBegin": {_args call ACME_fnc_chestSealPatientBegin;};
     case "chestSealPatientEnd": {_args call ACME_fnc_chestSealPatientEnd;};
     case "patientAnimRequest": {_args call ACME_fnc_patientAnimRequest;};
