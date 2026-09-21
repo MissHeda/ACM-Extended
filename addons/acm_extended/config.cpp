@@ -68,11 +68,12 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
         };
 
-        // Persistent hands-on-chest pose for the chest-seal workspace. Flip interpolates out to
-        // medic4 and hands directly back into this state without a neutral crouch in between.
-        class AinvPknlMstpSnonWnonDnon_medic3;
-        class ACME_ChestSealWorkspace: AinvPknlMstpSnonWnonDnon_medic3 {
-            looped = 0;
+        // Persistent hands-on-chest workspace pose. This deliberately does NOT inherit medic3:
+        // medic3 is reserved exclusively for the moment a chest seal is actually applied. The CPR stop pose is
+        // already a stable hands-planted-on-chest state, so the panel can remain open without replaying a treatment.
+        class ACM_CPR_Stop;
+        class ACME_ChestSealWorkspace: ACM_CPR_Stop {
+            looped = 1;
             disableWeapons = 1;
             disableWeaponsLong = 1;
             disableWeaponsShort = 1;
@@ -81,17 +82,20 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             enableOptics = 0;
             enableBinocular = 0;
             connectFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
             };
-            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
+            connectTo[] = {
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
+            };
             interpolateFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
             };
             interpolateTo[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10,
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08,
                 "Unconscious", 0.02
             };
         };
@@ -183,7 +187,6 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         // ACM_CPR_Stop. The RTM is inherited from ACM, but the graph is connected to the normal unarmed
         // crouch so playMoveNow can interpolate into and out of the hold. This keeps the same visual pose
         // without the one-frame snap that switchMove produces.
-        class ACM_CPR_Stop;
         class ACME_DirectPressureHold: ACM_CPR_Stop {
             looped = 1;
             disableWeapons = 1;
