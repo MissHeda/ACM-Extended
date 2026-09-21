@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RC15 guard: failed animated chest-access preflight/workspace experiment remains removed."""
+"""RC20 guard: corrected chest choreography must not resurrect the failed rc11-14 ownership model."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,38 +9,34 @@ def read(rel):
 
 treatment = read("addons/core/overrides/fnc_treatment.sqf")
 acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
-runtime = read("addons/acm_extended/functions/fn_registerChestAccessVestRuntime.sqf")
+provider = read("addons/acm_extended/functions/fn_chestAccessVestProvider.sqf")
 use_steth = read("addons/breathing/functions/fnc_useStethoscope.sqf")
+begin_steth = read("addons/acm_extended/functions/fn_beginStethoscopeAction.sqf")
 config = read("addons/acm_extended/config.cpp")
-owner = read("addons/acm_extended/functions/fn_ownerDispatch.sqf")
-startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 
-# No asynchronous carrier-preflight gate in the treatment bridge.
-assert "// Chest-access preflight." not in treatment
-assert "ACME_chestAccessPreflightActive" not in treatment
-assert "ACME_chestAccessPreflightToken" not in treatment
+# Corrected animation prep exists, but it wraps the clinical action and launches native treatment exactly once.
+start = treatment.index("// Chest-access preparation is a physical gear transaction")
+end = treatment.index("// Auscultation owns its own modal display", start)
+block = treatment[start:end]
+assert "ACME_chestAccessPreflightActive" in block
+assert "ACME_chestAccess_readyLease" in block
+assert "ACM_core_fnc_treatmentNative" in block
+assert "ace_medical_treatment_fnc_treatment;" not in block
+assert "ContinuousAction_" not in block
 
-# Carrier custody is back to the simple pre-animation implementation.
-assert 'params [["_patient", objNull, [objNull]]];' in acquire
-assert "ACME_HeadElevPatientGrab" not in acquire
-assert "chestAccessVestProvider" not in acquire
+# Patient animation readiness is casualty-side; provider presentation has a bounded fail-open handshake.
+assert '"ACME_HeadElevPatientGrab"' in acquire
+assert "ACME_chestAccessProviderReady" in acquire
+assert "ACME_chestAccessProviderReady" in provider
+assert "4.75" in acquire
 
-# Treatment events own simple removal/restoration as they did before the experiment.
-assert "ace_treatmentStarted" in runtime
-assert "ACME_fnc_chestAccessVestEvent" in runtime
-
-# Auscultation uses its pre-experiment lifecycle, with no reserved-entry epoch machinery.
+# The fixed auscultation lifecycle remains independent from chest preparation.
 assert "_entryEpoch" not in use_steth
 assert "ACME_fnc_beginStethoscopeAction" in use_steth
+assert 'ACM_core_ContinuousAction_Session", [_patient, _epoch]' in begin_steth
+assert begin_steth.index("_args call _onStart;") < begin_steth.index('call ACME_fnc_treatmentPoseStart;')
 
-# Experiment-only move state/functions/routes are gone.
-assert "class ACME_ChestSealWorkspace:" not in config
-assert "class chestAccessVestProvider {};" not in config
-assert "class chestSealProviderHoldStart {};" not in config
-assert 'case "chestAccessVestProvider"' not in owner
-assert 'case "chestSealProviderHold"' not in owner
+# Workspace pose may exist again, but it is presentation-only and cannot gate the panel.
+assert "class ACME_ChestSealWorkspace:" in config
 
-assert 'ACME_buildBatch = "B131";' in startup
-assert 'ACME_debugRevision = "rc15";' in startup
-
-print("PASS rc15: chest-access animation experiment rolled back to pre-animation architecture")
+print("PASS rc20: corrected chest choreography excludes failed rc11-14 ownership model")
