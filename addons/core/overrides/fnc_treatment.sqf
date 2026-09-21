@@ -173,7 +173,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         }, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
             [_m,_p,_args,_tok,_leaseId,_classKey,false] call _launch;
-        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass,_launch], 8, {
+        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass,_launch], 12, {
             params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
             [_m,_p,_args,_tok,_leaseId,_classKey,true] call _launch;
         }] call CBA_fnc_waitUntilAndExecute;
