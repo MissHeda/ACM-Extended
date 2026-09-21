@@ -160,7 +160,10 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         };
 
         [{
-            params ["_m","_p","_tok"];
+            // CBA passes the ENTIRE _args payload to the condition. Keep this signature identical to the
+            // success/timeout callbacks. The old three-param signature read the treatment-args ARRAY as _tok,
+            // producing "Type Array" on every frame and guaranteeing a 12 s timeout.
+            params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
             if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
                 || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
             private _readyLease = _p getVariable ["ACME_chestAccess_readyLease", ""];
