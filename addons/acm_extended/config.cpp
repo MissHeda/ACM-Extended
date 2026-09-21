@@ -68,6 +68,34 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
         };
 
+        // Persistent hands-on-chest pose for the chest-seal workspace. Flip interpolates out to
+        // medic4 and hands directly back into this state without a neutral crouch in between.
+        class AinvPknlMstpSnonWnonDnon_medic3;
+        class ACME_ChestSealWorkspace: AinvPknlMstpSnonWnonDnon_medic3 {
+            looped = 0;
+            disableWeapons = 1;
+            disableWeaponsLong = 1;
+            disableWeaponsShort = 1;
+            disableReload = 1;
+            canPullTrigger = 0;
+            enableOptics = 0;
+            enableBinocular = 0;
+            connectFrom[] = {
+                "AmovPknlMstpSnonWnonDnon", 0.15,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+            };
+            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
+            interpolateFrom[] = {
+                "AmovPknlMstpSnonWnonDnon", 0.15,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+            };
+            interpolateTo[] = {
+                "AmovPknlMstpSnonWnonDnon", 0.15,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.10,
+                "Unconscious", 0.02
+            };
+        };
+
         // Semi-Fowler states.
         //
         // THE RULE THAT DRIVES ALL OF THIS, MEASURED IN GAME ON 2026-09-11.
@@ -105,7 +133,8 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         };
         class ACME_HeadElevPatientRelease: AinjPpneMrunSnonWnonDb_release {
             looped = 0;
-            ConnectTo[] = {"AinjPpneMstpSnonWnonDnon", 0.1};
+            // Lay-flat and chest-access release must finish supine, never in BI's injured-prone idle.
+            ConnectTo[] = {"ACM_LyingState", 0.1};
             InterpolateTo[] = {"Unconscious", 0.02};
         };
 
@@ -1790,6 +1819,8 @@ class CfgFunctions {
             class chestAccessVestAcquire {};
             class chestAccessVestPark {};
             class chestAccessVestRestore {};
+            class chestAccessVestProvider {};
+            class chestSealProviderHoldStart {};
             class registerMegacodeInteractionRuntime {};
             class registerVentilatorKeybindRuntime {};
             class initMinigameInteractionRuntime {};
