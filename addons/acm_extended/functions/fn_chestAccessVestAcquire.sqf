@@ -71,7 +71,12 @@ private _commitRemoval = {
 };
 
 // Dead/vehicle/animation-blocked casualties still need functional chest access, but cannot safely play the lift.
-private _canAnimate = alive _patient && {isNull objectParent _patient} && {!([_patient] call ACME_fnc_animBlocked)};
+private _canAnimate = alive _patient
+    && {isNull objectParent _patient}
+    && {!([_patient] call ACME_fnc_animBlocked)}
+    && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll
+        || {_patient getVariable ["ACME_headElevated", false]}
+        || {_patient getVariable ["ACME_headElev_Suspended", false]}};
 if (!_canAnimate) exitWith {
     [_patient,_context,_savedVar,_propVar] call _commitRemoval;
     _patient setVariable [_readyVar, serverTime, true];
