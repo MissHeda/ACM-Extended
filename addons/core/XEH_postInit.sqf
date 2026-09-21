@@ -92,7 +92,7 @@ if (GVAR(ignoreIncompatibleAddonWarning)) then {
 
         // Native ACE succeeded. Give ACME's obtundation evaluator a short grace period so it cannot immediately
         // consume a successful wake stimulus on the next physiology tick.
-        if !(_unit getVariable [QACEGVAR(medical,isUnconscious), false]) exitWith {
+        if !(IS_UNCONSCIOUS(_unit)) exitWith {
             _unit setVariable ["ACME_obtunded_wakeStimGraceUntil", CBA_missionTime + 20, true];
         };
 
@@ -120,7 +120,7 @@ if (GVAR(ignoreIncompatibleAddonWarning)) then {
             };
         };
 
-        if !(_unit getVariable [QACEGVAR(medical,isUnconscious), false]) then {
+        if !(IS_UNCONSCIOUS(_unit)) then {
             _unit setVariable ["ACME_obtunded_wakeStimGraceUntil", CBA_missionTime + 20, true];
             _unit setVariable ["ACME_wakeRepairLast", [CBA_missionTime, _state], false];
         };
