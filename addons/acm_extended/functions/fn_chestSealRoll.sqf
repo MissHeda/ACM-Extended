@@ -10,7 +10,7 @@ params [
 if (isNull _patient || {!(_target in ["front", "back"])}) exitWith {};
 
 if (!local _patient) exitWith {
-    [_patient, "chestSealRoll", [_patient, _target, _force, _provider]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealRoll", [_patient, _target, _force, _provider, _preserveSuspendedHeadElevation]] call ACME_fnc_ownerDispatch;
 };
 
 // Owner-authoritative final gate. A provider cannot force a physical patient animation merely because
