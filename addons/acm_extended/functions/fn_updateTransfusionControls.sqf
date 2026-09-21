@@ -1149,7 +1149,14 @@ if (!isNull _ctrlActive) then {
 // lbdata is ACM's own "class|fluidData" plus a trailing "|COOLER" marker. ACM's params read the first two fields
 // only, so addbag still works, and our code keys on the marker. fresh-blood units carry per-unit ids that ACM
 // lists dynamically and are not surfaced here, so those still need a manual unload.
-if (!isNull _ctrlRightList && {missionNamespace getVariable ["ACME_coolerAutoUse", true]} && {!isNil "ACM_circulation_Fluids_Array"}) then {
+private _coolerScanDue = diag_tickTime >= (_display getVariable ["ACME_txCoolerNextScan", 0]);
+if (!isNull _ctrlRightList
+    && {_coolerScanDue}
+    && {missionNamespace getVariable ["ACME_coolerAutoUse", true]}
+    && {!isNil "ACM_circulation_Fluids_Array"}) then {
+    // Carried/nearby cooler contents are not a frame-time signal. nearestObjects plus inventory scans were being
+    // repeated by the UI refresher; cache that discovery cadence independently from button/list repaint cadence.
+    _display setVariable ["ACME_txCoolerNextScan", diag_tickTime + 0.75];
     private _store = ACE_player getVariable ["ACME_coolerStore", createHashMap];
     // only blood inside a cooler the medic is carrying is usable here. a cooler that has been dropped or handed off
     // keeps its blood in the store, preserved, and must not appear as spikeable until it is carried again.
