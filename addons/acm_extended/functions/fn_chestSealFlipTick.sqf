@@ -18,15 +18,9 @@ private _finish = {
         _provider setVariable ["ACME_rollProviderPFH",-1];
         _provider setVariable ["ACME_rollProviderToken",""];
         _provider setVariable ["ACME_rollProviderActive",false];
-        [_provider,"roll",_epoch,_current] call ACME_fnc_treatmentPoseStop;
+        [_provider,"roll",_epoch] call ACME_fnc_treatmentPoseStop;
     };
     if (!_current) exitWith {};
-
-    // A completed/aborted-in-panel Flip returns directly to the persistent hands-on-chest workspace pose rather
-    // than passing through a neutral crouch first.
-    private _holdEpoch = [_provider,_patient] call ACME_fnc_chestSealProviderHoldStart;
-    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
-
     uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
     uiNamespace setVariable ["ACME_CS_FlipLockedUntil",0];
     uiNamespace setVariable ["ACME_CS_FlipTarget",""];
