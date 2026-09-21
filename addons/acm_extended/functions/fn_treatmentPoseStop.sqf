@@ -96,3 +96,19 @@ if (!_handoff
         }, [_medic, _currentEpoch], 0.12] call CBA_fnc_waitAndExecute;
     };
 };
+
+// A handoff intentionally skips the neutral exit so the next authored action can take over without a visual pop.
+// If no newer provider controller actually acquires the medic, release the temporary MIDDLE stance after a short
+// grace and once more after ordinary short treatments have had time to finish. Token/owner checks prevent an old
+// handoff from breaking a newer pose.
+if (_handoff && {local _medic} && {alive _medic}) then {
+    private _releaseIfFree = {
+        params ["_u","_endedEpoch"];
+        if (isNull _u || {!local _u} || {!alive _u} || {!isNull objectParent _u}) exitWith {};
+        if ((_u getVariable ["ACME_treatmentPoseEpoch",0]) != _endedEpoch) exitWith {};
+        if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
+        _u setUnitPos "AUTO";
+    };
+    [{_this call (_this select 2);}, [_medic,_currentEpoch,_releaseIfFree], 0.35] call CBA_fnc_waitAndExecute;
+    [{_this call (_this select 2);}, [_medic,_currentEpoch,_releaseIfFree], 4.25] call CBA_fnc_waitAndExecute;
+};
