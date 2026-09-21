@@ -20,25 +20,39 @@ private _vestLease = format ["thora:%1:%2:%3",clientOwner,floor(CBA_missionTime*
 uiNamespace setVariable ["ACME_Thora_ChestAccessLease",_vestLease];
 [_patient,_medic,_vestLease,true,"thoracostomy"] call ACME_fnc_chestAccessVestEvent;
 
-private _wait = 0.1;
-if (_patient getVariable ["ACME_headElevated", false]) then {
-    _patient setVariable ["ACME_headElev_ResumePending", false, true];
-    [_patient] call ACME_fnc_headElevSuspend;
-    _wait = (missionNamespace getVariable ["ACME_headElev_lowerAnimTime", 0.6]) + 0.25;
-};
-// a spike. it is routed through fn_minigameopen, which opens this as a dialog by default and as a display when
-// ACME_minigame_displayMode is on.
-// display mode is what would let the real interaction menu of ACE open over the panel instead of closing it. the
-// thoracostomy comes first, because it is the simplest of the three: if the mouse does not survive, only one
-// minigame is affected and the switch turns it straight back.
-[{["ACME_Thoracostomy_Dialog"] call ACME_fnc_minigameOpen;}, [], _wait] call CBA_fnc_waitAndExecute;
-
-// If the dialog fails to materialize, never strand the plate carrier above the head indefinitely.
-[{
+// The chest-access lease now owns Semi-Fowler lowering plus any lift/remove/park/lower carrier choreography.
+// Open the thoracostomy UI only after that patient-side transaction is genuinely ready.
+private _open = {
     params ["_p","_m","_lease"];
     if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease) exitWith {};
-    if (isNull (findDisplay 86600)) then {
+    if (isNull _p || {isNull _m} || {!alive _m} || {!local _m}) exitWith {
         uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];
         if (!isNull _p) then {[_p,_m,_lease,false,"thoracostomy"] call ACME_fnc_chestAccessVestEvent;};
     };
-}, [_patient,_medic,_vestLease], _wait + 4] call CBA_fnc_waitAndExecute;
+
+    ["ACME_Thoracostomy_Dialog"] call ACME_fnc_minigameOpen;
+
+    [{
+        params ["_p","_m","_lease"];
+        if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease) exitWith {};
+        if (isNull (findDisplay 86600)) then {
+            uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];
+            if (!isNull _p) then {[_p,_m,_lease,false,"thoracostomy"] call ACME_fnc_chestAccessVestEvent;};
+        };
+    }, [_p,_m,_lease], 0.25] call CBA_fnc_waitAndExecute;
+};
+
+[{
+    params ["_p","_m","_lease"];
+    if (isNull _p || {isNull _m} || {!alive _m}
+        || {(uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease}) exitWith {true};
+    private _readyLease = _p getVariable ["ACME_chestAccess_readyLease",""];
+    private _ready = _p getVariable ["ACME_chestAccess_readyServer",-1];
+    (_readyLease == _lease) && {_ready isEqualType 0} && {_ready >= 0} && {serverTime >= _ready}
+}, _open, [_patient,_medic,_vestLease], 10, {
+    params ["_p","_m","_lease"];
+    if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease) exitWith {};
+    diag_log format ["[ACME THORACOSTOMY] Chest-access preparation timed out on %1.", netId _p];
+    uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];
+    if (!isNull _p) then {[_p,_m,_lease,false,"thoracostomy"] call ACME_fnc_chestAccessVestEvent;};
+}] call CBA_fnc_waitUntilAndExecute;
