@@ -1,7 +1,7 @@
 // Restore a temporarily removed chest plate carrier.
 //
 // Visible reverse choreography:
-//   provider medic4 body-handling > patient Grab/Hold > real carrier restored while lifted > patient Release supine.
+//   provider exit is owned by the closing action > patient Grab/Hold > real carrier restored while lifted > patient Release supine.
 // Forced cleanup, dead/vehicle patients, or unsafe body-control cases restore gear immediately.
 params [
     ["_patient", objNull, [objNull]],
@@ -187,42 +187,16 @@ private _beginRestore = {
         };
 
         [_p,_savedVar,_propVar,_busyVar,_readyVar,_pfhVar] call _finish;
-
-        if (!isNull _medic && {!(_medic isEqualTo _p)}) then {
-            [_medic, "chestAccessVestProvider", [_medic, _p, "stop", false, _token]]
-                call ACME_fnc_ownerDispatch;
-        };
     }, [_p,_medic,_savedVar,_propVar,_busyVar,_readyVar,_pfhVar,_token,_finish], _total]
         call CBA_fnc_waitAndExecute;
 };
 
-private _args = [
+// Provider exit is owned by the minigame/action that is closing. Chest Seal and Auscultation both use the
+// Semi-Fowler Putdown/inventory sequence and end in crouch. Carrier restoration therefore animates ONLY the patient;
+// starting another medic4 episode here was the unwanted extra animation seen after closing the panels.
+[
     _patient,_medic,_context,_saved,_savedVar,_propVar,_busyVar,_readyVar,_pfhVar,_token,
     _liftTime,_holdTime,_lowerTime,_total,_finishBookkeeping
-];
-
-if (isNull _medic || {_medic isEqualTo _patient} || {!alive _medic}) then {
-    _args call _beginRestore;
-} else {
-    // Reverse sequence also waits for the provider to be genuinely in medic4 before the patient is lifted.
-    [_medic, "chestAccessVestProvider", [_medic, _patient, "start", false, _token]]
-        call ACME_fnc_ownerDispatch;
-
-    [{
-        // _this is [_args,_beginRestore]. Extract the medic and restore token from the nested call payload.
-        params ["_callArgs","_begin"];
-        private _m = _callArgs param [1,objNull,[objNull]];
-        private _token = _callArgs param [9,"",[""]];
-        if (isNull _m || {!alive _m}) exitWith {true};
-        private _ready = _m getVariable ["ACME_chestAccessProviderReady", []];
-        (_ready param [0,""]) == _token && {(_ready param [1,-1]) != -1}
-    }, {
-        params ["_args","_begin"];
-        _args call _begin;
-    }, [_args,_beginRestore], 4.75, {
-        params ["_args","_begin"];
-        _args call _begin;
-    }] call CBA_fnc_waitUntilAndExecute;
-};
+] call _beginRestore;
 
 true
