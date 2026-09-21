@@ -12,11 +12,13 @@ def test_lmb_does_not_consume_stethoscope_drag():
     assert 'setVariable ["ACME_stethPressed",true]' in s
     tail = s.split('setVariable ["ACME_stethPressed",true]', 1)[1]
     assert "false" in tail[:40]
-    assert 'displayAddEventHandler ["MouseMoving"' in s
+    assert 'displayAddEventHandler ["MouseMoving"' not in s
+    assert "ACME_stethMouse" not in s
 
-def test_tick_uses_display_owned_mouse_position():
+def test_tick_uses_original_absolute_mouse_position():
     s = read(FN / "fn_stethoscopeTick.sqf")
-    assert 'getVariable ["ACME_stethMouse",getMousePosition]' in s
+    assert "private _mouse = getMousePosition;" in s
+    assert "ACME_stethMouse" not in s
 
 def test_scope_display_owns_exact_pose_and_action_generations():
     s = read(FN / "fn_beginStethoscopeAction.sqf")

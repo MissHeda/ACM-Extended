@@ -5,7 +5,6 @@ if (isNull _display) exitWith {};
 [_display,"front"] call ACME_fnc_stethoscopeSetView;
 _display setVariable ["ACME_stethNextLungUpdate",-1];
 _display setVariable ["ACME_stethCursor",getMousePosition];
-_display setVariable ["ACME_stethMouse",getMousePosition];
 _display setVariable ["ACME_stethLastFrame",diag_tickTime];
 _display setVariable ["ACME_stethNextBeat",-1];
 _display setVariable ["ACME_stethNextBreath",-1];
@@ -17,41 +16,28 @@ _bell ctrlSetPosition [_x - (_size select 0)/2,_y - (_size select 1)/2];
 _bell ctrlCommit 0;
 _bell ctrlEnable false;
 private _down = {
-    params ["_source","_button",["_mouseX",-1],["_mouseY",-1]];
+    params ["_source","_button"];
     if (_button != 0) exitWith {false};
     private _d = if (_source isEqualType controlNull) then {ctrlParent _source} else {_source};
 
-    // Keep the button event non-consuming. Returning true here captured LMB and could leave Arma's GUI cursor
-    // stationary while the stethoscope believed the bell was being dragged.
-    if (_mouseX >= 0 && {_mouseY >= 0}) then {
-        _d setVariable ["ACME_stethMouse",[_mouseX,_mouseY]];
-    };
-
-    // The view button must retain its normal click and button sound.
+    // Use the same absolute GUI cursor source as the original working bell implementation.
+    // Do not consume LMB: contact state is ours, cursor motion remains Arma's.
     (ctrlPosition (_d displayCtrl 81006)) params ["_bx","_by","_bw","_bh"];
-    private _mouse = _d getVariable ["ACME_stethMouse",getMousePosition];
-    _mouse params ["_mx","_my"];
+    getMousePosition params ["_mx","_my"];
     if (_mx >= _bx && {_mx <= _bx + _bw} && {_my >= _by} && {_my <= _by + _bh}) exitWith {false};
 
     _d setVariable ["ACME_stethPressed",true];
     false
 };
 private _up = {
-    params ["_source","_button",["_mouseX",-1],["_mouseY",-1]];
+    params ["_source","_button"];
     if (_button != 0) exitWith {false};
     private _d = if (_source isEqualType controlNull) then {ctrlParent _source} else {_source};
-    if (_mouseX >= 0 && {_mouseY >= 0}) then {
-        _d setVariable ["ACME_stethMouse",[_mouseX,_mouseY]];
-    };
     _d setVariable ["ACME_stethPressed",false];
     false
 };
 _display displayAddEventHandler ["MouseButtonDown",_down];
 _display displayAddEventHandler ["MouseButtonUp",_up];
-_display displayAddEventHandler ["MouseMoving", {
-    params ["_display","_mouseX","_mouseY"];
-    _display setVariable ["ACME_stethMouse",[_mouseX,_mouseY]];
-}];
 // Static picture/text controls cover the panel. Receive releases over any of them too.
 {
     _x ctrlAddEventHandler ["MouseButtonDown",_down];
