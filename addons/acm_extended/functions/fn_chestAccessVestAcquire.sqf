@@ -110,7 +110,7 @@ _patient setVariable [_readyVar, serverTime + _total, true];
 
 // Start the lift only after any preceding lay-flat operation is finished. Provider and casualty begin together.
 [{
-    params ["_p","_medic","_busyVar","_token","_total"];
+    params ["_p","_medic","_busyVar","_token","_total","_liftWindow"];
     if (isNull _p || {!local _p} || {(_p getVariable [_busyVar,""]) != _token}) exitWith {};
 
     if (!isNull _medic) then {
@@ -119,7 +119,8 @@ _patient setVariable [_readyVar, serverTime + _total, true];
 
     [_p, false] call ACME_fnc_headElevCollision;
     [_p, "ACME_HeadElevPatientGrab", 2, "chest-access-vest", _medic, _total + 0.5, 4, _token] call ACME_fnc_patientAnimRequest;
-}, [_patient,_medic,_busyVar,_token,_sequenceTime], _preDelay] call CBA_fnc_waitAndExecute;
+    [_p, _liftWindow] call ACME_fnc_headElevPinPose;
+}, [_patient,_medic,_busyVar,_token,_sequenceTime,_liftTime + _holdTime + 0.25], _preDelay] call CBA_fnc_waitAndExecute;
 
 // Remove the carrier only once the casualty has actually been lifted, then immediately begin the authored lay-flat
 // Release. The same token owns both requests, so no unrelated treatment can splice into the middle of the sequence.
