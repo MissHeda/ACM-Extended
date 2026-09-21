@@ -10,6 +10,9 @@ _display setVariable ["ACME_stethCursor",getMousePosition];
 _display setVariable ["ACME_stethLastFrame",diag_tickTime];
 _display setVariable ["ACME_stethNextBeat",-1];
 _display setVariable ["ACME_stethNextBreath",-1];
+_display setVariable ["ACME_stethHeartVoice",0];
+_display setVariable ["ACME_stethFlipActive",false];
+_display setVariable ["ACME_stethFlipToken",""];
 private _bell = _display displayCtrl 81002;
 private _size = (ctrlPosition _bell) select [2,2];
 _display setVariable ["ACME_stethBellSize",_size];
@@ -55,8 +58,8 @@ _display displayAddEventHandler ["MouseButtonUp",_up];
 // say3D follows its emitter. Moving each emitter along the camera's vertical axis changes
 // native distance attenuation continuously, without restarting samples or fading the world mixer.
 private _channels = [];
-// Right/left breath, heart, then right/left basal crackles.
-for "_i" from 0 to 4 do {
+// Right/left breath, heart A, right/left basal crackles, then heart B/C/D.
+for "_i" from 0 to 7 do {
     private _emitter = "#particlesource" createVehicleLocal (positionCameraToWorld [0,22,0]);
     _channels pushBack [_emitter,objNull,0];
 };
