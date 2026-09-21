@@ -1,6 +1,6 @@
 // Coordinate the pre-auscultation roll and open the scope only after the casualty reaches supine.
 params ["_args", "_handle"];
-_args params ["_provider", "_patient", "_bodyPart", "_epoch", "_rollToken", "_rollTime", "_rollStarted", "_deadline", "_entryEpoch"];
+_args params ["_provider", "_patient", "_bodyPart", "_epoch", "_rollToken", "_rollTime", "_rollStarted", "_deadline"];
 
 private _finish = {
     params [["_openScope", false, [false]]];
@@ -17,29 +17,11 @@ private _finish = {
         [_provider, "roll", _epoch] call ACME_fnc_treatmentPoseStop;
     };
 
-    private _reservationCurrent =
-        (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) == _entryEpoch
-        && {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]};
-
     if (_openScope
-        && {_reservationCurrent}
         && {!isNull _provider} && {!isNull _patient}
         && {alive _provider} && {alive _patient}
         && {local _provider}) exitWith {
-        _provider setVariable ["ACME_stethEntryEpoch", -1, false];
-        [_provider, _patient, _bodyPart, true, _entryEpoch] call ACM_breathing_fnc_useStethoscope;
-    };
-
-    // A newer maneuver may have superseded the reservation while this roll was running. In that case this stale
-    // callback retires silently and cannot cancel/reopen UI owned by the newer continuous action.
-    if (!_reservationCurrent) exitWith {};
-
-    missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
-    missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog", false];
-    if (!isNull _provider
-        && {(_provider getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _entryEpoch]}) then {
-        _provider setVariable ["ACM_core_ContinuousAction_Session", [], true];
-        _provider setVariable ["ACME_stethEntryEpoch", -1, false];
+        [_provider, _patient, _bodyPart, true] call ACM_breathing_fnc_useStethoscope;
     };
 
     if (!isNull _provider && {local _provider}) then {
@@ -51,11 +33,6 @@ private _finish = {
 
 if (isNull _provider || {isNull _patient} || {!local _provider}
     || {!alive _provider} || {!alive _patient}) exitWith {[false] call _finish;};
-
-if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) != _entryEpoch
-    || {!(missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false])}) exitWith {
-    [false] call _finish;
-};
 
 if (_rollStarted >= 0) exitWith {
     if (diag_tickTime >= (_rollStarted + _rollTime + 0.08)) then {
