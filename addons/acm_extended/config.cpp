@@ -2477,6 +2477,7 @@ class CfgFunctions {
             class consciousnessBudget {};
             class toggleHypothermia {};
             class readCoreTemp {};
+            class nrbAirwayCompatible {};
             class nrbApply {};
             class nrbRemove {};
             class hpmkWrap {};
@@ -7721,7 +7722,7 @@ class ace_medical_treatment_actions {
         medicRequired = "ACM_airway_allowSGA";
         treatmentTime = "ACM_airway_treatmentTimeSGA";
         items[] = {"ACM_IGel"};
-        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])";
+        condition = "ACM_airway_enable && !(_patient call ace_common_fnc_isAwake) && (_patient getVariable ['ACM_airway_AirwayItem_Oral','']) == '' && !(_patient getVariable ['ACME_ETT_Inserted', false]) && !(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false]) && !(_patient getVariable ['ACME_nrb_on', false])";
         callbackSuccess = "[_medic, _patient, 'SGA'] call ACM_airway_fnc_insertAirwayItem";
         ACM_menuIcon = "ACM_IGel";
     };
@@ -8426,7 +8427,7 @@ class ace_medical_treatment_actions {
         items[] = {};
         // B120: Orotracheal intubation may be attempted on a perfusing casualty. Airway reflex, sedation and
         // paralysis are handled inside the procedure rather than hiding the action from the menu.
-        condition = "([_medic, 'ACME_IntubateStart'] call ACME_fnc_procedureActionAllowed) && {([_medic, 'ACME_Laryngoscope'] call ace_common_fnc_getCountOfItem) > 0} && {([_medic, 'ACME_ETTube'] call ace_common_fnc_getCountOfItem) > 0} && {!(_patient getVariable ['ACME_ETT_Inserted', false])} && {!(_patient getVariable ['ACM_airway_RecoveryPosition_State', false])} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral', '']) isEqualTo ''} && {!(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])}";
+        condition = "([_medic, 'ACME_IntubateStart'] call ACME_fnc_procedureActionAllowed) && {([_medic, 'ACME_Laryngoscope'] call ace_common_fnc_getCountOfItem) > 0} && {([_medic, 'ACME_ETTube'] call ace_common_fnc_getCountOfItem) > 0} && {!(_patient getVariable ['ACME_ETT_Inserted', false])} && {!(_patient getVariable ['ACM_airway_RecoveryPosition_State', false])} && {(_patient getVariable ['ACM_airway_AirwayItem_Oral', '']) isEqualTo ''} && {!(_patient getVariable ['ACM_airway_SurgicalAirway_TubeInserted', false])} && {!(_patient getVariable ['ACME_nrb_on', false])}";
         callbackSuccess = "[_medic, _patient, toLower _bodyPart] call ACME_fnc_laryngoOpen";
         callbackFailure = "";
         callbackProgress = "";
@@ -8784,7 +8785,7 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 1;
         allowedSelections[] = {"Head"};
-        condition = "(missionNamespace getVariable ['ACME_sys_nrb', true]) && {!(_patient getVariable ['ACME_nrb_on', false]) && {([_medic, 'ACM_NRBMask'] call ace_common_fnc_getCountOfItem) > 0}}";
+        condition = "(missionNamespace getVariable ['ACME_sys_nrb', true]) && {[_patient] call ACME_fnc_nrbAirwayCompatible} && {!(_patient getVariable ['ACME_nrb_on', false]) && {([_medic, 'ACM_NRBMask'] call ace_common_fnc_getCountOfItem) > 0}}";
         callbackSuccess = "_this call ACME_fnc_nrbApply";
         callbackFailure = "";
         callbackProgress = "";
