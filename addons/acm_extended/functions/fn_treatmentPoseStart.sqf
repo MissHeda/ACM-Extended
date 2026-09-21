@@ -139,10 +139,11 @@ if (!isNil "ace_advanced_fatigue_setAnimExclusions") then {
 private _fnStartMain = {
     params ["_medic", "_main", "_state"];
     _medic setUnitPos (["MIDDLE", "UP"] select (_state param [16, false]));
-    // Chest work uses normal playMove interpolation. playMoveNow can visibly snap between chest states even
-    // when the move graph has authored interpolation edges.
-    private _smoothChest = (_state param [1, ""]) in ["roll","inspect","stethoscope","chestSealWorkspace","chestSeal","ncdSeat"];
-    [_medic, _main, [1,0] select _smoothChest] call ACME_fnc_doAnim;
+    // Use the known-good priority-1 entry for provider work. The pose controller's freeze logic depends on
+    // animationState reaching the exact authored work state; ordinary playMove can remain in an interpolation
+    // state long enough for a finite medic RTM to run through before the freeze stage ever owns it.
+    // The visible hold snap is prevented separately by freezing the naturally reached frame without switchMove.
+    [_medic, _main, 1] call ACME_fnc_doAnim;
     _state set [3, 1];
     _state set [4, CBA_missionTime];
 };
@@ -162,8 +163,7 @@ private _fnEnter = {
     };
     if (_transition == "") exitWith {[_medic, _main, _state] call _fnStartMain;};
     _medic setUnitPos "MIDDLE";
-    private _smoothChest = (_state param [1, ""]) in ["roll","inspect","stethoscope","chestSealWorkspace","chestSeal","ncdSeat"];
-    [_medic, _transition, [1,0] select _smoothChest] call ACME_fnc_doAnim;
+    [_medic, _transition, 1] call ACME_fnc_doAnim;
     _state set [3, -2];
     _state set [4, CBA_missionTime];
     _state set [8, CBA_missionTime + _length];
