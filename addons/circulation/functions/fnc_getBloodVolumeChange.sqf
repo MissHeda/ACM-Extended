@@ -356,13 +356,11 @@ if (_hasFluidBags) then {
                 // This is intentionally after the normal gauge/Hang Bag/pressure calculation so non-blood fluids keep
                 // their existing physics, while every blood path shares one authoritative 300 mL/min hard ceiling.
                 //
-                // Cold-stored blood: 100 mL/min baseline, 200 with Hang Bag, 300 at a fully pumped pressure cuff.
-                // LifeWarmer + non-cold blood: 200 mL/min, rising toward 300 as the pressure cuff is pumped.
-                // Ordinary room-temperature blood without the warmer keeps the existing gauge/Hang/pressure behavior,
-                // but is capped at 300 mL/min. This preserves a real pressure-infuser benefit on room-temperature blood.
-                //
-                // The pressure cuff already has a bleed-off mechanic. Preserve it here: full pressure reaches the target
-                // ceiling, then the benefit smoothly falls back toward the no-cuff tier until the cuff is repumped.
+                // Cold-stored blood: 100 mL/min baseline, 200 with Hang Bag.
+                // LifeWarmer + non-cold blood: 200 mL/min.
+                // An actively pressurized cuff is the universal top blood tier: 300 mL/min for cold, warmed or ordinary
+                // room-temperature blood. The cuff's existing bleed-off still determines when it stops being active and
+                // needs to be repumped; while it has usable pressure, its blood-flow target is exactly 300 mL/min.
                 if (_type in ["Blood", "FreshBlood"]) then {
                     private _bloodCap = (missionNamespace getVariable ["ACME_bloodMax_mlPerMin", 300]) max 1;
                     private _coldBase = (missionNamespace getVariable ["ACME_coldBlood_mlPerMin", 100]) max 0;
@@ -371,28 +369,27 @@ if (_hasFluidBags) then {
 
                     private _hangActive = (_unit getVariable ["ACME_hang_flowMult", 1]) > 1.001;
 
-                    private _pressureFrac = 0;
+                    private _pressureActive = false;
                     private _cuff = (_unit getVariable ["ACME_piCuffs", createHashMap]) getOrDefault [_bagUid, []];
                     if (_bagUid != "" && {!(_cuff isEqualTo [])}) then {
                         _cuff params [["_at", 0], ["_p0", 1]];
                         private _half = (missionNamespace getVariable ["ACME_pi_bleedHalfLifeSec", 150]) max 0.1;
                         private _p = (_p0 * (2 ^ (-((CBA_missionTime - _at) max 0) / _half))) max 0 min 1;
-                        if (_p >= 0.08) then {_pressureFrac = _p;};
+                        _pressureActive = _p >= 0.08;
                     };
 
                     private _fixedRate = -1;
-                    if (_coldFlag) then {
-                        // Cold-chain origin wins over the warmer flag for FLOW. The LifeWarmer still supplies heat,
-                        // but a cold unit remains on the cold 100/200/300 throughput ladder.
-                        _fixedRate = [_coldBase, _coldHang] select _hangActive;
-                        if (_pressureFrac > 0) then {
-                            _fixedRate = _fixedRate + ((_bloodCap - _fixedRate) * _pressureFrac);
-                        };
+                    if (_pressureActive) then {
+                        // Pressure infusion is the universal top blood tier, including ordinary room-temperature blood.
+                        _fixedRate = _bloodCap;
                     } else {
-                        if (_warmedFlag) then {
-                            _fixedRate = _warmBase;
-                            if (_pressureFrac > 0) then {
-                                _fixedRate = _fixedRate + ((_bloodCap - _fixedRate) * _pressureFrac);
+                        if (_coldFlag) then {
+                            // Cold-chain origin wins over the warmer flag for FLOW. The LifeWarmer still supplies heat,
+                            // but a cold unit remains at 100 mL/min unless Hang Bag raises it to 200.
+                            _fixedRate = [_coldBase, _coldHang] select _hangActive;
+                        } else {
+                            if (_warmedFlag) then {
+                                _fixedRate = _warmBase;
                             };
                         };
                     };
