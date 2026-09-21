@@ -6,7 +6,6 @@
 // the chest-seal mini-game is drag-to-find holes. it is wound-driven, flips front to back, and is 32:9 safe.
 ACME_CS_rollTime = 1.85;
 ACME_rollProviderDuration = 2.2;
-ACME_CS_workspaceHoldAt = 0.85;  // medic3 sample with both hands planted on the chest.  // exact provider Flip/roll theatre requested; also locks repeat Flip presses.  // seconds the front and back roll motion plays before the orientation locks, in the held uncon state.
 // B54 provider pose freeze rules. Seconds on the native RTM timeline, measured on the owner's clock from the frame
 // the requested state is first reported. A mode with no entry plays at native speed until its action ends it.
 // ACME_poseStopAfterHold is how long the frozen frame is held before the controller starts the exit blend itself;
@@ -16,8 +15,7 @@ ACME_poseHoldAt = createHashMapFromArray [
     ["chestAccess", 2.2],  // Carrier lift/removal/restoration: same medic4 frame, held until the casualty is back down.
     ["inspect", 2.2],      // Inspect Chest: the same medic4 motion, frozen at 2.2 s until the inspection ends.
     ["pulse", 0.421],      // Check Pulse: same ACME_StethoscopeWork hold as auscultation.
-    ["stethoscope", 0.421],// Auscultation: ACME_StethoscopeWork to the authored 0.421 s sample.
-    ["chestSealWorkspace", ACME_CS_workspaceHoldAt] // Persistent hands-on-chest hold while the workspace is open.
+    ["stethoscope", 0.421] // Auscultation: ACME_StethoscopeWork to the authored 0.421 s sample.
 ];
 ACME_poseStopAfterHold = createHashMapFromArray [
     ["roll", 0.25]         // Hold the 2.2 s frame briefly, then blend back to the unarmed crouch.
