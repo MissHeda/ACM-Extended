@@ -32,7 +32,7 @@ assert '_headProp setVariable ["ACME_chestFixedPark", nil, false];' in acquire
 assert '_prop setPosATL (getPosATL _p);' in acquire
 assert 'ACME_chestAccessCarrierGap = 0.85;' in runtime
 
-assert 'ACME_buildBatch = "B129";' in startup
-assert 'ACME_debugRevision = "rc13";' in startup
+assert 'ACME_buildBatch = "B130";' in startup
+assert 'ACME_debugRevision = "rc14";' in startup
 
-print("PASS rc13: chest actions launch on patient readiness and carrier park target is fixed")
+print("PASS rc14: chest actions launch on patient readiness and carrier park target is fixed")
