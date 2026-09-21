@@ -70,7 +70,8 @@ if (!_handoff
     // B56: a standing medicUp episode exits to the unarmed standing idle; every kneeling episode exits to
     // the unarmed crouch.
     _medic setUnitPos (["MIDDLE", "UP"] select _exitUpright);
-    [_medic, ["AmovPknlMstpSnonWnonDnon", "AmovPercMstpSnonWnonDnon"] select _exitUpright, 1] call ACME_fnc_doAnim;
+    private _smoothChest = _currentMode in ["roll","inspect","stethoscope","chestSealWorkspace","chestSeal","ncdSeat"];
+    [_medic, ["AmovPknlMstpSnonWnonDnon", "AmovPercMstpSnonWnonDnon"] select _exitUpright, [1,0] select _smoothChest] call ACME_fnc_doAnim;
 
     if (!_exitUpright) then {
         // ACE/ACM can apply its treatment-end move after callbackSuccess. Check once after that handoff; only if
