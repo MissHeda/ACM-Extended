@@ -7,7 +7,13 @@ params [["_patient", objNull, [objNull]], ["_keepVestOut", false, [false]]];
 if (isNull _patient) exitWith {};
 if (!local _patient) exitWith {[_patient, "headElevSuspend", [_patient, _keepVestOut]] call ACME_fnc_ownerDispatch;};
 if (!alive _patient) exitWith {[_patient] call ACME_fnc_headElevDeathRelease;};
-if !((_patient getVariable ["ACME_headElev_hold", []]) isEqualTo []) exitWith {[objNull, _patient] call ACME_fnc_headElevateStop;};
+// Manual Semi-Fowler uses a provider-owned support hold when no backpack/carrier can prop the casualty.
+// A temporary chest/airway maneuver must release that provider hold but preserve the logical Semi-Fowler episode,
+// then run the same authored lay-flat suspension as every other supported patient. Fully cancelling elevation here
+// made auscultation race the still-running Lower Head animation and prevented the posture from resuming afterward.
+if !((_patient getVariable ["ACME_headElev_hold", []]) isEqualTo []) then {
+    [_patient] call ACME_fnc_headElevHoldClear;
+};
 if !(_patient getVariable ["ACME_headElevated", false]) exitWith {};
 
 private _parkSupport = {
