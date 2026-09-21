@@ -105,9 +105,78 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     // Direct Pressure hold before taking over input and animation.
     private _nativeContinuousClass = toLowerANSI _classname;
 
+    // Chest-access preparation is a physical gear transaction around the real treatment:
+    // lay Semi-Fowler flat if needed, lift the casualty, remove/park the carrier, lower supine, then launch
+    // native ACM treatment ONCE. It never reserves or edits ContinuousAction state and never recursively calls
+    // the generic treatment wrapper, so presentation failure cannot consume the clinical click.
+    private _chestClasses = missionNamespace getVariable ["ACME_chestAccess_classes", []];
+    private _needsChestAccess = _nativeContinuousClass in _chestClasses;
+    private _chestSaved = +(_patient getVariable ["ACME_chestAccess_vestLoadout", []]);
+    private _existingChest = _medic getVariable ["ACME_chestAccess_treatment", []];
+    private _alreadyPrepared = ((_existingChest param [0,objNull]) isEqualTo _patient)
+        && {(_existingChest param [1,""]) == _nativeContinuousClass}
+        && {(_existingChest param [2,""]) != ""};
+    private _needsPhysicalPrep = ((vest _patient) != "" && {(count _chestSaved) != 2})
+        || {_patient getVariable ["ACME_headElevated", false]
+            && {!(_patient getVariable ["ACME_headElev_Suspended", false])}};
+
+    if (_needsChestAccess && {_needsPhysicalPrep} && {!_alreadyPrepared}
+        && {local _medic} && {!isNull _medic} && {alive _medic}) exitWith {
+        if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
+        if !([_medic, _patient, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith) exitWith {false};
+        if ((_medic distance _patient) > ace_medical_gui_maxDistance) exitWith {false};
+        if (_medic getVariable ["ACME_chestAccessPreflightActive", false]) exitWith {false};
+
+        private _serial = (missionNamespace getVariable ["ACME_chestAccess_serial", 0]) + 1;
+        missionNamespace setVariable ["ACME_chestAccess_serial", _serial];
+        private _leaseId = format ["%1:%2:%3", clientOwner, netId _medic, _serial];
+        private _token = format ["chestprep:%1:%2:%3", clientOwner, netId _medic, _serial];
+        private _args = +_this;
+
+        _medic setVariable ["ACME_chestAccessPreflightActive", true, false];
+        _medic setVariable ["ACME_chestAccessPreflightToken", _token, false];
+        _medic setVariable ["ACME_chestAccess_treatment", [_patient, _nativeContinuousClass, _leaseId]];
+        [_patient, _medic, _leaseId, true, _nativeContinuousClass] call ACME_fnc_chestAccessVestEvent;
+
+        private _launch = {
+            params ["_m","_p","_args","_tok","_leaseId","_classKey","_timedOut"];
+            if (isNull _m || {isNull _p} || {!local _m}
+                || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {};
+
+            _m setVariable ["ACME_chestAccessPreflightActive", false, false];
+            _m setVariable ["ACME_chestAccessPreflightToken", "", false];
+
+            if (_timedOut) then {
+                diag_log format ["[ACME CHEST ACCESS] Prep timeout for %1 on %2; launching clinical action fail-open.",
+                    _classKey, netId _p];
+            };
+
+            private _started = _args call ACM_core_fnc_treatmentNative;
+            if (!_started) then {
+                private _cur = _m getVariable ["ACME_chestAccess_treatment", []];
+                if ((_cur param [2,""]) == _leaseId) then {_m setVariable ["ACME_chestAccess_treatment", []];};
+                [_p,_m,_leaseId,false,_classKey] call ACME_fnc_chestAccessVestEvent;
+            };
+        };
+
+        [{
+            params ["_m","_p","_tok"];
+            if (isNull _m || {isNull _p} || {!local _m} || {!alive _m}
+                || {(_m getVariable ["ACME_chestAccessPreflightToken",""]) != _tok}) exitWith {true};
+            private _ready = _p getVariable ["ACME_chestAccess_readyServer", -1];
+            (_ready isEqualType 0) && {_ready >= 0} && {serverTime >= _ready}
+        }, {
+            params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
+            [_m,_p,_args,_tok,_leaseId,_classKey,false] call _launch;
+        }, [_medic,_patient,_args,_token,_leaseId,_nativeContinuousClass,_launch], 8, {
+            params ["_m","_p","_args","_tok","_leaseId","_classKey","_launch"];
+            [_m,_p,_args,_tok,_leaseId,_classKey,true] call _launch;
+        }] call CBA_fnc_waitUntilAndExecute;
+        true
+    };
+
     // Auscultation owns its own modal display and provider pose. Base ACM launches the scope from the
     // treatment callback; do not put another asynchronous stance/weapon preflight in front of that callback.
-    // The stethoscope controller performs its presentation work only after the display exists.
     if (_nativeContinuousClass == "usestethoscope") exitWith {
         _this call ACM_core_fnc_treatmentNative
     };
