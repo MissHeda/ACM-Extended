@@ -114,13 +114,22 @@ if ((missionNamespace getVariable ["ACME_flightNoise_enable", true])
     // Refresh the lease without replaying an animation when the casualty is already face-up. This is the critical
     // multiplayer guard: repeated providers may request the same posture, but only the current owner token can
     // refresh it, and no 0.6-second animation restart loop is created under the auscultation camera.
+    private _display = findDisplay 81000;
     private _lease = _medic getVariable ["ACME_stethPatientAnimLease", []];
-    if ((count _lease) >= 3 && {CBA_missionTime >= (_lease param [2, 0])}) then {
+    if (!isNull _display
+        && {!(_display getVariable ["ACME_stethFlipActive",false])}
+        && {(count _lease) >= 3}
+        && {CBA_missionTime >= (_lease param [2, 0])}) then {
         private _leasePatient = _lease param [0, objNull];
         private _leaseToken = _lease param [1, ""];
         if (!isNull _leasePatient && {_leasePatient isEqualTo _patient} && {_leaseToken != ""}) then {
-            private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
-            private _anim = ["", _faceUp] select ((toLowerANSI animationState _patient) != (toLowerANSI _faceUp));
+            private _view = _display getVariable ["ACME_stethView","front"];
+            private _hold = if (_view == "back") then {
+                missionNamespace getVariable ["ACME_uncon_faceDown", "ace_medical_engine_uncon_anim_1"]
+            } else {
+                missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]
+            };
+            private _anim = ["", _hold] select ((toLowerANSI animationState _patient) != (toLowerANSI _hold));
             [_patient, _anim, 2, "stethoscope", _medic, 1.6, 4, _leaseToken] call ACME_fnc_patientAnimRequest;
             _lease set [2, CBA_missionTime + 0.65];
             _medic setVariable ["ACME_stethPatientAnimLease", _lease, false];
