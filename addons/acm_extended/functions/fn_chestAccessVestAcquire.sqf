@@ -57,14 +57,25 @@ private _commitRemoval = {
 
     private _model = getText (configFile >> "CfgWeapons" >> _class >> "model");
     private _prop = objNull;
-    if (_model != "") then {_prop = createSimpleObject [_model, [0,0,0], false];};
+    if (_model != "") then {
+        _prop = createSimpleObject [_model, [0,0,0], false];
+        if (!isNull _prop) then {_prop setPosATL (getPosATL _p);};
+    };
     if (isNull _prop) then {
         _prop = createVehicle ["GroundWeaponHolder", getPosATL _p, [], 0, "CAN_COLLIDE"];
         _prop addItemCargoGlobal [_class, 1];
+        _prop enableSimulationGlobal false;
     };
 
     _p setVariable [_savedVar, +_entry, true];
     _p setVariable [_propVar, _prop, true];
+
+    // New custody episode: capture a new fixed park point exactly once. A Semi-Fowler support/carrier prop may
+    // survive between procedures, so clear only its old chest-access park stamp before the first park call.
+    _prop setVariable ["ACME_chestFixedPark", nil, false];
+    private _headProp = _p getVariable ["ACME_headElev_propObj", objNull];
+    if (!isNull _headProp) then {_headProp setVariable ["ACME_chestFixedPark", nil, false];};
+
     if (_ctx == "chestseal") then {[_p] call ACME_fnc_chestSealParkCarrier}
     else {[_p] call ACME_fnc_chestAccessVestPark};
     // Keep every removed carrier parked clear of the head for the entire custody episode, including
