@@ -52,10 +52,36 @@ if (_patient getVariable ["ACME_headElevated", false]) then {
 };
 
 // No worn carrier: the only preparation may be the Semi-Fowler lay-flat operation above.
+// A timestamp is not enough here. The Release callback can still be handing into ACM_LyingState on the frame the
+// nominal timer expires, which previously made auscultation classify the still-tilted body as posterior and enter
+// a second roll path. Publish readiness only after the actual body is face-up, with a bounded fail-open.
 private _vestClass = vest _patient;
 private _vestEntry = (getUnitLoadout _patient) param [4, [], [[]]];
 if (_vestClass == "" || {(count _vestEntry) != 2}) exitWith {
-    _patient setVariable [_readyVar, serverTime + (_preDelay max 0), true];
+    if ((_preDelay max 0) <= 0) then {
+        _patient setVariable ["ACME_CS_facing", "front", true];
+        _patient setVariable [_readyVar, serverTime, true];
+    } else {
+        _patient setVariable [_readyVar, -1, true];
+        [{
+            params ["_p"];
+            if (isNull _p || {!local _p}) exitWith {true};
+            private _readyAt = _p getVariable ["ACME_headElev_suspendReadyAt", -1];
+            private _actual = [_p, _p getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+            (_readyAt <= CBA_missionTime) && {_actual == "front"}
+        }, {
+            params ["_p","_readyVar"];
+            if (isNull _p || {!local _p}) exitWith {};
+            _p setVariable ["ACME_CS_facing", "front", true];
+            _p setVariable [_readyVar, serverTime, true];
+        }, [_patient,_readyVar], (_preDelay max 0) + 1.5, {
+            params ["_p","_readyVar"];
+            if (isNull _p || {!local _p}) exitWith {};
+            // Clinical reliability wins if a third-party animation masks the final classification.
+            _p setVariable ["ACME_CS_facing", "front", true];
+            _p setVariable [_readyVar, serverTime, true];
+        }] call CBA_fnc_waitUntilAndExecute;
+    };
     true
 };
 
