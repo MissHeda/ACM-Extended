@@ -80,13 +80,13 @@ private _finish = {
             || {((count (_p getVariable ["ACME_CS_vestLoadout", []])) != 2)
                 && {(_p getVariable ["ACME_CS_vestBusy",""]) == ""}}
     }, {
-        params ["_p","_head","_recovery","_anim","_generation","_fn"];
+        params ["_p","_head","_recovery","_anim","_generation","_fn","_medic"];
         [_p,_head,_recovery,_anim,_generation] call _fn;
-    }, [_p,_wasHeadElev,_wasRecovery,_oldAnim,_generation,_finalize], 6, {
+    }, [_p,_wasHeadElev,_wasRecovery,_oldAnim,_generation,_finalize,_medic], 6, {
         params ["_p","_head","_recovery","_anim","_generation","_fn","_medic"];
         if (!isNull _p && {local _p}) then {[_p,true,_medic,"chestseal"] call ACME_fnc_chestAccessVestRestore;};
         [_p,_head,_recovery,_anim,_generation] call _fn;
-    }, [_p,_wasHeadElev,_wasRecovery,_oldAnim,_generation,_finalize,_medic]] call CBA_fnc_waitUntilAndExecute;
+    }] call CBA_fnc_waitUntilAndExecute;
 };
 
 private _restoreSide = {
