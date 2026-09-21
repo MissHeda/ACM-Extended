@@ -34,10 +34,13 @@ private _finish = {
     if ((_unit getVariable ["ACME_rollProviderToken", ""]) != _tok) exitWith {};
     private _id = _unit getVariable ["ACME_rollProviderPFH", -1];
     if (_id >= 0) then {[_id] call CBA_fnc_removePerFrameHandler;};
+    private _source = _unit getVariable ["ACME_rollProviderSource", ""];
+    private _handoff = (_source == "chestSealFlip" && {!isNull (uiNamespace getVariable ["ACME_CS_DLG",displayNull])})
+        || {_source == "stethoscopeFlip" && {!isNull (findDisplay 81000)}};
     _unit setVariable ["ACME_rollProviderActive", false];
     _unit setVariable ["ACME_rollProviderToken", ""];
     _unit setVariable ["ACME_rollProviderPFH", -1];
-    [_unit, "roll", _epoch] call ACME_fnc_treatmentPoseStop;
+    [_unit, "roll", _epoch, _handoff] call ACME_fnc_treatmentPoseStop;
 };
 
 // B54: the pose controller ends the roll theatre itself from the frozen 2.2 s frame (ACME_poseHoldAt and
