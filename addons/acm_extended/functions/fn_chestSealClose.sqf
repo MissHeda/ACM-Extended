@@ -2,9 +2,16 @@ disableSerialization;
 params [["_closing", displayNull]];
 // A late unload from an older panel cannot release the current workspace or its input loop.
 if (_this isNotEqualTo [] && {_closing isNotEqualTo (uiNamespace getVariable ["ACME_CS_DLG", displayNull])}) exitWith {};
-// Cancel a pending provider-entry wait before any patient-session restoration.
+// Cancel a live Flip immediately. Closing the minigame is an explicit abort, not a request to let the provider
+// finish medic4. Remove the flip PFH now, invalidate its token, and hard-cancel only this chest-seal roll owner.
+private _flipPFH = uiNamespace getVariable ["ACME_CS_FlipPFH",-1];
+if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_removePerFrameHandler;};
+uiNamespace setVariable ["ACME_CS_FlipPFH",-1];
 uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
 private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
+if (!isNull _flipMedic && {local _flipMedic}) then {
+    [_flipMedic,"chestSealFlip"] call ACME_fnc_rollProviderCancel;
+};
 if (!isNull _flipMedic && {local _flipMedic}
     && {(_flipMedic getVariable ["ACME_DP_PauseTreatmentClass",""]) == "chestsealflip"}) then {
     _flipMedic setVariable ["ACME_DP_Paused",false];
