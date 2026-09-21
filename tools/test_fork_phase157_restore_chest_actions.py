@@ -9,6 +9,7 @@ def read(rel):
 
 treatment = read("addons/core/overrides/fnc_treatment.sqf")
 pose = read("addons/acm_extended/functions/fn_treatmentPoseStart.sqf")
+roll_provider = read("addons/acm_extended/functions/fn_rollProviderStart.sqf")
 runtime = read("addons/acm_extended/functions/fn_initChestSealProcedureRuntime.sqf")
 startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 
@@ -21,6 +22,11 @@ assert '[1,0] select _smoothChest' not in main
 freeze = pose.split("// Freeze the owner on the frame it naturally reached.", 1)[1].split("private _jip", 1)[0]
 assert '_medic setAnimSpeedCoef 0;' in freeze
 assert '_medic switchMove [_main, _phase, 1, false];' not in freeze
+
+# The outer provider token follows the actual frozen roll episode instead of lingering on a fail-safe timer.
+assert 'private _poseStillOwnsRoll' in roll_provider
+assert 'if (!_poseStillOwnsRoll) exitWith {' in roll_provider
+assert 'ACME_rollProviderActive' in treatment
 
 # The configured hold points remain the original values.
 assert '["roll", 2.2]' in runtime
