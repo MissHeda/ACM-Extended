@@ -17,12 +17,16 @@ if (isNull _ctrlGroup) exitWith {};
 
 private _ref = _ctrlGroup controlsGroupCtrl 70113;  // idc_body_torso_io, the full-image rect all the icons clone.
 
-// the part, the wrapidc, the woundidc, the wraptexture and the woundtexture.
+// Each junction now uses three independent layers:
+//   base wound (always visible for open/packed/xstat),
+//   treatment overlay (combat gauze or XStat, visible on top of the base wound),
+//   pressure wrap (wrapped state only).
+// Packing therefore never replaces or hides the underlying wound art.
 private _limbs = [
-    ["leftarm",  7290000, 7290004, "junctionalwrap_leftarm_ca.paa",  "junctionalwound_leftarm_ca.paa",  "junctionalwound_packed_leftarm_ca.paa",  "junctionalwound_xstat_leftarm_ca.paa"],
-    ["rightarm", 7290001, 7290005, "junctionalwrap_rightarm_ca.paa", "junctionalwound_rightarm_ca.paa", "junctionalwound_packed_rightarm_ca.paa", "junctionalwound_xstat_rightarm_ca.paa"],
-    ["leftleg",  7290002, 7290006, "junctionalwrap_leftleg_ca.paa",  "junctionalwound_leftleg_ca.paa",  "junctionalwound_packed_leftleg_ca.paa",  "junctionalwound_xstat_leftleg_ca.paa"],
-    ["rightleg", 7290003, 7290007, "junctionalwrap_rightleg_ca.paa", "junctionalwound_rightleg_ca.paa", "junctionalwound_packed_rightleg_ca.paa", "junctionalwound_xstat_rightleg_ca.paa"]
+    ["leftarm",  7290000, 7290004, 7290020, "junctionalwrap_leftarm_ca.paa",  "junctionalwound_leftarm_ca.paa",  "junctionalwound_packed_leftarm_ca.paa",  "junctionalwound_xstat_leftarm_ca.paa"],
+    ["rightarm", 7290001, 7290005, 7290021, "junctionalwrap_rightarm_ca.paa", "junctionalwound_rightarm_ca.paa", "junctionalwound_packed_rightarm_ca.paa", "junctionalwound_xstat_rightarm_ca.paa"],
+    ["leftleg",  7290002, 7290006, 7290022, "junctionalwrap_leftleg_ca.paa",  "junctionalwound_leftleg_ca.paa",  "junctionalwound_packed_leftleg_ca.paa",  "junctionalwound_xstat_leftleg_ca.paa"],
+    ["rightleg", 7290003, 7290007, 7290023, "junctionalwrap_rightleg_ca.paa", "junctionalwound_rightleg_ca.paa", "junctionalwound_packed_rightleg_ca.paa", "junctionalwound_xstat_rightleg_ca.paa"]
 ];
 
 // israeli pressure bandage olive green. the wrap depicts a physical bandage rather than a status, so it no longer
@@ -30,69 +34,51 @@ private _limbs = [
 private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [0.38, 0.42, 0.28, 1]];
 
 {
-    _x params ["_part", "_wrapIdc", "_woundIdc", "_wrapTex", "_openTex", "_packedTex", "_xstatTex"];
+    _x params ["_part", "_wrapIdc", "_woundIdc", "_packedIdc", "_wrapTex", "_openTex", "_packedTex", "_xstatTex"];
 
-    private _state = if (isNull _target) then { "" } else {toLowerANSI (_target getVariable [format ["ACME_Junc_%1", _part], ""])};
-    private _woundTex = switch (_state) do {
-        case "packed": {_packedTex};
-        case "xstat": {_xstatTex};
-        default {_openTex};
+    private _state = if (isNull _target) then {""} else {
+        toLowerANSI (_target getVariable [format ["ACME_Junc_%1", _part], ""])
     };
 
-    // the wrap control. it is created first so it sits below the open-wound control, and they never co-show anyway.
-    private _wrapC = _ctrlGroup controlsGroupCtrl _wrapIdc;
-    if (isNull _wrapC) then {
-        _wrapC = (ctrlParent _ctrlGroup) ctrlCreate ["RscPicture", _wrapIdc, _ctrlGroup];
-        if (!isNull _ref) then { _wrapC ctrlSetPosition (ctrlPosition _ref); };
-        _wrapC ctrlSetText ("\acm_extended\ui\items\" + _wrapTex);
-        _wrapC ctrlSetTextColor _wrapColor;  // tint the wrap to cream, because the art is ours to color.
-        _wrapC ctrlCommit 0;
-    };
-
-    // the open-wound control, rendered as the artist drew it, with no tint.
+    // Base wound first. This is the permanent underlying tissue injury for every non-wrapped active junction.
     private _woundC = _ctrlGroup controlsGroupCtrl _woundIdc;
     if (isNull _woundC) then {
         _woundC = (ctrlParent _ctrlGroup) ctrlCreate ["RscPicture", _woundIdc, _ctrlGroup];
-        if (!isNull _ref) then { _woundC ctrlSetPosition (ctrlPosition _ref); };
-        _woundC ctrlSetText ("\acm_extended\ui\items\" + _woundTex);
-        _woundC ctrlCommit 0;
     };
 
-    // Reapply position/texture on every body-image update. ACE can rebuild/reflow the body group during an active
-    // treatment; relying only on creation-time properties made the packed wound disappear until the menu reopened.
+    // Treatment overlay second, so gauze/XStat is composited over the unchanged wound texture.
+    private _packedC = _ctrlGroup controlsGroupCtrl _packedIdc;
+    if (isNull _packedC) then {
+        _packedC = (ctrlParent _ctrlGroup) ctrlCreate ["RscPicture", _packedIdc, _ctrlGroup];
+    };
+
+    // Pressure wrap is a separate terminal presentation and hides the open wound/treatment layers.
+    private _wrapC = _ctrlGroup controlsGroupCtrl _wrapIdc;
+    if (isNull _wrapC) then {
+        _wrapC = (ctrlParent _ctrlGroup) ctrlCreate ["RscPicture", _wrapIdc, _ctrlGroup];
+    };
+
     if (!isNull _ref) then {
-        _woundC ctrlSetPosition (ctrlPosition _ref);
-        _wrapC ctrlSetPosition (ctrlPosition _ref);
+        private _rect = ctrlPosition _ref;
+        _woundC ctrlSetPosition _rect;
+        _packedC ctrlSetPosition _rect;
+        _wrapC ctrlSetPosition _rect;
     };
-    _woundC ctrlSetText ("\acm_extended\ui\items\" + _woundTex);
-    _wrapC ctrlSetText ("\acm_extended\ui\items\" + _wrapTex);
-    _woundC ctrlCommit 0;
-    _wrapC ctrlCommit 0;
 
-    private _showWound = _state in ["open", "packed", "xstat"];
-    private _priorState = _woundC getVariable ["ACME_JuncVisualState", ""];
-    private _fadeStart = _woundC getVariable ["ACME_JuncVisualFadeStart", -1];
-    if !(_state isEqualTo _priorState) then {
-        _woundC setVariable ["ACME_JuncVisualState", _state];
-        if (_showWound) then {_fadeStart = diag_tickTime;} else {_fadeStart = -1;};
-        _woundC setVariable ["ACME_JuncVisualFadeStart", _fadeStart];
-    };
+    _woundC ctrlSetText ("\acm_extended\ui\items\" + _openTex);
+    _packedC ctrlSetText ("\acm_extended\ui\items\" + (if (_state == "xstat") then {_xstatTex} else {_packedTex}));
+    _wrapC ctrlSetText ("\acm_extended\ui\items\" + _wrapTex);
+    _wrapC ctrlSetTextColor _wrapColor;
+
+    // Junctional evidence is clinical state, not a UI transition. Never fade these controls in: the wound and
+    // newly packed device appear on the exact GUI refresh where the authoritative state changes.
+    {
+        _x ctrlSetFade 0;
+        _x ctrlCommit 0;
+    } forEach [_woundC, _packedC, _wrapC];
+
     _woundC ctrlShow (_state in ["open", "packed", "xstat"]);
-    if (_showWound) then {
-        private _fadeSec = (missionNamespace getVariable ["ACME_junctionalImageFadeInSec", 4.5]) max 0.1;
-        private _age = if (_fadeStart >= 0) then {(diag_tickTime - _fadeStart) max 0} else {_fadeSec};
-        if (_age < _fadeSec) then {
-            private _left = (_fadeSec - _age) max 0.01;
-            private _progress = (_age / _fadeSec) max 0 min 1;
-            _woundC ctrlSetFade (1 - _progress);
-            _woundC ctrlCommit 0;
-            _woundC ctrlSetFade 0;
-            _woundC ctrlCommit _left;
-        } else {
-            _woundC ctrlSetFade 0;
-            _woundC ctrlCommit 0;
-        };
-    };
+    _packedC ctrlShow (_state in ["packed", "xstat"]);
     _wrapC ctrlShow (_state == "wrapped");
 } forEach _limbs;
 
