@@ -27,13 +27,16 @@ _display setVariable ["ACME_stethPressed",false];
 private _medic = _display getVariable ["ACME_stethMedic",objNull];
 private _patient = _display getVariable ["ACME_stethPatient",objNull];
 
-// An Unload during Flip is an immediate abort. Stop both sides of the roll now: provider returns to Arma's neutral
-// base state, while the patient owner invalidates the roll callbacks and settles on the last stable side.
-if (!isNull _medic && {local _medic}) then {
-    [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
-};
-if (!isNull _patient) then {
-    [_patient] call ACME_fnc_patientRollCancel;
+// An Unload during an ACTIVE Flip is an immediate abort. Do not cancel unrelated patient/provider roll
+// controllers merely because the auscultation display is closing normally.
+private _flipWasActive = _display getVariable ["ACME_stethFlipActive", false];
+if (_flipWasActive) then {
+    if (!isNull _medic && {local _medic}) then {
+        [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
+    };
+    if (!isNull _patient) then {
+        [_patient] call ACME_fnc_patientRollCancel;
+    };
 };
 private _poseEpoch = _display getVariable ["ACME_stethPoseEpoch",-1];
 private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
@@ -69,6 +72,11 @@ if (!isNull _medic) then {
 if (_continuousEpoch >= 0
     && {(missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch",-2]) == _continuousEpoch}) then {
     ACM_core_ContinuousAction_Active = false;
+    ACM_core_ContinuousAction_IsDialog = false;
+    if (!isNull _medic
+        && {(_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _continuousEpoch]}) then {
+        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+    };
 };
 
 // Release only the exact stethoscope treatment-pose generation. treatmentPoseStop restores animSpeedCoef,
