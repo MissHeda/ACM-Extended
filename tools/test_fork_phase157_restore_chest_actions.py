@@ -46,7 +46,7 @@ assert '[_m,_p] call ace_medical_treatment_fnc_canCPR' in cpr
 assert '[_m,_p] call ACM_circulation_fnc_beginCPR;' in cpr
 assert '_args call ACM_core_fnc_treatmentNative' not in cpr
 
-assert 'ACME_buildBatch = "B128";' in startup
-assert 'ACME_debugRevision = "rc12";' in startup
+assert 'ACME_buildBatch = "B129";' in startup
+assert 'ACME_debugRevision = "rc13";' in startup
 
-print("PASS rc12: frozen chest poses + guaranteed auscultation reservation + direct CPR callback")
+print("PASS rc13: frozen chest poses + guaranteed auscultation reservation + direct CPR callback")
