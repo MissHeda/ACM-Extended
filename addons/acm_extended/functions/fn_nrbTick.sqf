@@ -55,6 +55,21 @@ private _fnc_stopSfx = {
         [_u] call _fnc_stopSfx;
         continue;
     };
+
+    // Advanced-airway invariant. If an i-gel, ETT or surgical airway appears through another provider, Zeus,
+    // restore, or any race after NRB placement, the mask is no longer a valid oxygen interface. Retire it here on
+    // the patient owner so an impossible NRB+advanced-airway state cannot persist even outside menu-driven paths.
+    if !([_u] call ACME_fnc_nrbAirwayCompatible) then {
+        private _maskMedic = _u getVariable ["ACME_nrb_medic", objNull];
+        [_u] call _fnc_stopSfx;
+        [_u, false, false, -1, true, true] call ACME_fnc_nrbStateCommit;
+        _u setVariable ["ACME_nrb_session", "", true];
+        _u setVariable ["ACME_nrb_drawPending", [], true];
+        _u setVariable ["ACME_nrb_o2Pending", 0, true];
+        ["NRB removed: advanced airway now requires BVM or ventilator support.", 2.5, _maskMedic] call ACME_fnc_netNotice;
+        continue;
+    };
+
     private _now = CBA_missionTime;
     private _dt = ((_now - (_u getVariable ["ACME_nrb_lastTickLocal", _now - 0.5])) max 0) min 2;
     _u setVariable ["ACME_nrb_lastTickLocal", _now, false];
