@@ -33,8 +33,9 @@ assert 'ace_medical_treatment_fnc_treatment' not in steth
 cpr = treatment.split('if (_classKey == "cpr") then {', 1)[1].split('} else {', 1)[0]
 assert '_started = _args call ACM_core_fnc_treatmentNative;' in cpr
 
-# Reverse restoration is literally lift -> vest on -> patient release.
-assert restore.index('"ACME_HeadElevPatientGrab"') < restore.index('setUnitLoadout') < restore.index('"ACME_HeadElevPatientRelease"')
+# Reverse restoration is literally lift -> vest on -> patient release in the animated path.
+animated = restore.split('// Provider mirrors the original removal theatre', 1)[1]
+assert animated.index('"ACME_HeadElevPatientGrab"') < animated.index('setUnitLoadout') < animated.index('"ACME_HeadElevPatientRelease"')
 assert '[_medic,"chestAccessVestProvider",[_medic,_patient,"chestAccessVestRestore"]]' in restore
 
 # Ordinary chest access and chest seal both use the shared animated restoration path with provider identity.
