@@ -7,6 +7,22 @@ if !(_medic getVariable ["ACME_hang_Active", false]) exitWith {};
 
 private _patient = _medic getVariable ["ACME_hang_Patient", objNull];
 private _episodeStart = _medic getVariable ["ACME_hang_Start", -1];
+// A pending claim owns no props or held pose. Cancel it without touching the prior
+// episode's captured visual teardown, and restore prep-held weapons even after death.
+if !(_medic getVariable ["ACME_hang_Claimed", false]) exitWith {
+    _medic setVariable ["ACME_hang_Active", false, true];
+    private _pendingPFH = _medic getVariable ["ACME_hang_PFH", -1];
+    if (_pendingPFH >= 0) then {[_pendingPFH] call CBA_fnc_removePerFrameHandler;};
+    _medic setVariable ["ACME_hang_PFH", -1];
+    {[_x, "keydown"] call CBA_fnc_removeKeyHandler;} forEach (_medic getVariable ["ACME_hang_KeyIDs", []]);
+    _medic setVariable ["ACME_hang_KeyIDs", []];
+    [_patient, "hangBagRelease", [_medic, _episodeStart]] call ACME_fnc_ownerDispatch;
+    if (local _medic) then {
+        [_medic] call ACME_fnc_hangBagPrepStop;
+    } else {
+        ["ACME_hangRestoreWeapons", [_medic, _episodeStart], _medic] call CBA_fnc_targetEvent;
+    };
+};
 private _visualEpoch = _medic getVariable ["ACME_hang_VisualEpoch", -1];
 private _visualJip = _medic getVariable ["ACME_hang_VisualJip", ""];
 

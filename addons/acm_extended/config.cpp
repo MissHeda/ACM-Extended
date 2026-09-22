@@ -2597,6 +2597,9 @@ class CfgFunctions {
             class hangBagPrepStop {};
             class hangBagFluidType {};
             class hangBagStart {};
+            class hangBagActivate {};
+            class hangBagClaimLocal {};
+            class hangBagClaimAck {};
             class hangBagVisualSync {};
             class hangBagTick {};
             class hangBagStop {};

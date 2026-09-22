@@ -23,10 +23,12 @@ if (_patient getVariable [QGVAR(SurgicalAirway_InProgress), false]) exitWith {
     [LLSTRING(SurgicalAirway_AlreadyInProgress), 1.5, _medic] call ACEFUNC(common,displayTextStructured);
 };
 
-_patient setVariable [QGVAR(SurgicalAirway_InProgress), true, true];
-
-[[_medic, _patient], { // On Start
+[[_medic, _patient, "head"], { // On Start
     params ["_medic", "_patient"];
+
+    // Acquire only after the continuous controller accepts this episode. A rejected
+    // startup has no cancellation callback and must not reserve the patient.
+    _patient setVariable [QGVAR(SurgicalAirway_InProgress), true, true];
 
     GVAR(SurgicalAirway_Target) = _patient;
 

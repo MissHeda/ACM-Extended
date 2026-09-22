@@ -83,6 +83,7 @@ ACME_hang_lineTipOffset = [0, 0.04, 0.06];  // oriented local tip. it gives the 
 
 // Register on every client; dedicated servers do not create presentation objects.
 ["ACME_hangBagVisualSync", {_this call ACME_fnc_hangBagVisualSync}] call CBA_fnc_addEventHandler;
+["ACME_hangClaimAck", {_this call ACME_fnc_hangBagClaimAck}] call CBA_fnc_addEventHandler;
 // One-shot owner-routed gear recovery. This is deliberately valid for dead units and non-player local owners.
 ["ACME_hangRestoreWeapons", {
     params [["_medic", objNull, [objNull]], ["_episodeStart", -1, [0]]];
@@ -108,11 +109,10 @@ if (isServer) then {
             ["ACME_hangBagVisualSync", [_unit, _epoch, "hide"]] call CBA_fnc_globalEvent;
         };
         private _patient = _unit getVariable ["ACME_hang_Patient", objNull];
-        if (!isNull _patient && {(_patient getVariable ["ACME_hang_Medic", objNull]) isEqualTo _unit}) then {
-            _patient setVariable ["ACME_hang_Medic", objNull, true];
-            _patient setVariable ["ACME_hang_flowMult", 1, true];
-        };
         private _episodeStart = _unit getVariable ["ACME_hang_Start", -1];
+        if (!isNull _patient) then {
+            [_patient, "hangBagRelease", [_unit, _episodeStart]] call ACME_fnc_ownerDispatch;
+        };
         _unit setVariable ["ACME_hang_Active", false, true];
 
         // The two weapon slots were published at prep time. Ownership normally transfers to the server immediately

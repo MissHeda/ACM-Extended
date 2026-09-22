@@ -19,11 +19,6 @@ if !(local _medic) exitWith {
     [true, _medic] call ACME_fnc_hangBagStop;
     [_pfhId] call CBA_fnc_removePerFrameHandler;
 };
-// Resolve the cross-client race that remains possible if two providers commit during the same replication window.
-// The patient's replicated holder is authoritative: whichever provider does not own it immediately tears down.
-if ((_patient getVariable ["ACME_hang_Medic", objNull]) isNotEqualTo _medic) exitWith {
-    [true, _medic] call ACME_fnc_hangBagStop;
-};
 // the system toggle. it is the same rule as direct pressure: disabling the system lowers the bag cleanly instead of
 // leaving the medic locked holding it.
 if !(missionNamespace getVariable ["ACME_sys_hang", true]) exitWith {
@@ -46,6 +41,31 @@ if (_stop) exitWith {
     if (_why != "") then { [_why, 2, _medic] call ace_common_fnc_displayTextStructured; };
     [true, _medic] call ACME_fnc_hangBagStop;
 };
+
+// The owner reply, not replicated holder writes from another client, determines acceptance.
+if ((_medic getVariable ["ACME_hang_ClaimOwner", -1]) != owner _medic
+    || {(_medic getVariable ["ACME_hang_ClaimEpoch", -1]) != ([_patient] call ACME_fnc_clinicalEpoch)}
+    || {(_medic getVariable ["ACME_hang_PlayerBound", false]) && {!(_medic isEqualTo ACE_player)}}) exitWith {
+    [true, _medic] call ACME_fnc_hangBagStop;
+};
+if !(_medic getVariable ["ACME_hang_Claimed", false]) exitWith {
+    if (serverTime - (_medic getVariable ["ACME_hang_ClaimRequestedAt", 0]) >= 5) then {
+        [true, _medic] call ACME_fnc_hangBagStop;
+    };
+};
+if (serverTime - (_medic getVariable ["ACME_hang_ClaimAckAt", 0]) >= 6) exitWith {
+    [true, _medic] call ACME_fnc_hangBagStop;
+};
+// Reuse the existing tick, but send at most one renewal every two seconds, never at 20 Hz.
+if (serverTime - (_medic getVariable ["ACME_hang_ClaimRequestedAt", 0]) >= 2) then {
+    _medic setVariable ["ACME_hang_ClaimRequestedAt", serverTime, false];
+    [_patient, "hangBagRenew", [_medic, _medic getVariable ["ACME_hang_Start", -1],
+        missionNamespace getVariable ["ACME_hang_flowMult", 1.75],
+        _medic getVariable ["ACME_hang_ClaimEpoch", -1], owner _medic]] call ACME_fnc_ownerDispatch;
+};
+
+// A local owner can reject the renewal synchronously and stop this episode.
+if !(_medic getVariable ["ACME_hang_Active", false]) exitWith {};
 
 // auto-lower when the hung bag has finished transfusing. once flow has been seen on this line and it is gone,
 // because the bag drained and was removed, or, on a y line, the blood became an [empty bag] marker and only the
@@ -72,15 +92,6 @@ if (_hPart != "") then {
 if (_doneTransfusing) exitWith {
     ["Transfusion complete. Bag lowered.", 2, _medic] call ace_common_fnc_displayTextStructured;
     [true, _medic] call ACME_fnc_hangBagStop;  // this hides the hint. the exitwith here means the tick will not re-assert it.
-};
-
-// The start path already publishes this scalar. Most held bags target another player's casualty, so the patient is
-// remote on the provider client and ACME_fnc_setVarNet intentionally cannot use its owner-only scalar cache here.
-// Do not turn this 20 Hz presentation/validity tick into a 20 Hz public-variable stream. Re-publish only if another
-// system actually changed the multiplier while this exact hold is still active.
-private _desiredFlowMult = missionNamespace getVariable ["ACME_hang_flowMult", 1.75];
-if ((_patient getVariable ["ACME_hang_flowMult", 1]) isNotEqualTo _desiredFlowMult) then {
-    [_patient, "ACME_hang_flowMult", _desiredFlowMult] call ACME_fnc_setVarNet;
 };
 
 // keep the cancel prompt up: recreate it if a HUD refresh cleared the control, and only while the hang is genuinely

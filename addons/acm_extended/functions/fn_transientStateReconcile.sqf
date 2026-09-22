@@ -92,17 +92,21 @@ if (!isNil "ACM_circulation_fnc_cprSessionValid" && {!isNil "ACM_circulation_fnc
 
 // Hang Bag claim.
 private _hangMedic = _patient getVariable ["ACME_hang_Medic", objNull];
+private _hangLease = _patient getVariable ["ACME_hang_LeaseUntil", -1];
 private _hangInvalid = !isNull _hangMedic && {
-    !alive _hangMedic
-    || {!(_hangMedic getVariable ["ACME_hang_Active", false])}
-    || {!((_hangMedic getVariable ["ACME_hang_Patient", objNull]) isEqualTo _patient)}
-    || {_hangMedic getVariable ["ACE_isUnconscious", false]}
+    if (_hangLease >= 0) then {
+        !alive _hangMedic || {_hangMedic getVariable ["ACE_isUnconscious", false]}
+        || {_netNow >= _hangLease}
+        || {(_patient getVariable ["ACME_hang_LeaseEpoch", -1]) != ([_patient] call ACME_fnc_clinicalEpoch)}
+    } else {
+        !alive _hangMedic || {!(_hangMedic getVariable ["ACME_hang_Active", false])}
+        || {!((_hangMedic getVariable ["ACME_hang_Patient", objNull]) isEqualTo _patient)}
+        || {_hangMedic getVariable ["ACE_isUnconscious", false]}
+    }
 };
 if (["ACME_reconcileInvalidHangAt", _hangInvalid, 2] call _debouncedInvalid) then {
     if ((_patient getVariable ["ACME_hang_Medic", objNull]) isEqualTo _hangMedic) then {
-        _patient setVariable ["ACME_hang_Medic", objNull, true];
-        _patient setVariable ["ACME_hang_Episode", -1, true];
-        _patient setVariable ["ACME_hang_flowMult", 1, true];
+        [_patient, "hangBagRelease", [_hangMedic, _patient getVariable ["ACME_hang_Episode", -1]]] call ACME_fnc_ownerDispatch;
         "Hang Bag claim" call _mark;
     };
 };

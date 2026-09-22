@@ -10,6 +10,8 @@ private _tickPFH = _display getVariable ["ACME_stethTickPFH", -1];
 if (_tickPFH isEqualType 0 && {_tickPFH >= 0}) then {[_tickPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethTickPFH", -1];
 
+// Capture before clearing: Unload must still abort the flip that was active.
+private _flipWasActive = _display getVariable ["ACME_stethFlipActive", false];
 private _flipPFH = _display getVariable ["ACME_stethFlipPFH", -1];
 if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_removePerFrameHandler;};
 _display setVariable ["ACME_stethFlipPFH", -1];
@@ -29,7 +31,6 @@ private _patient = _display getVariable ["ACME_stethPatient",objNull];
 
 // An Unload during an ACTIVE Flip is an immediate abort. Do not cancel unrelated patient/provider roll
 // controllers merely because the auscultation display is closing normally.
-private _flipWasActive = _display getVariable ["ACME_stethFlipActive", false];
 if (_flipWasActive) then {
     if (!isNull _medic && {local _medic}) then {
         [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;

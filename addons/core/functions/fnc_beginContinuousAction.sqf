@@ -29,6 +29,10 @@ _args params ["_medic", "_patient", "_bodyPart", ["_extraArgs", []]];
 if (isNull _medic || {isNull _patient} || {!local _medic} || {!alive _medic}
     || {IS_UNCONSCIOUS(_medic)} || {GVAR(ContinuousAction_Active)}) exitWith {};
 
+// Bind only a session started by the local controlled unit. AI/local scripted
+// providers retain their existing behavior when the player changes units.
+private _playerBound = hasInterface && {!isNil "ACE_player"} && {_medic isEqualTo ACE_player};
+
 // B127: every continuous action gets a generation. The old implementation used only the shared Active boolean, so
 // a delayed stance callback or PFH from action A could wake back up after action B set Active=true and then animate,
 // cancel, close or reopen the newer action. Generation checks make every delayed callback belong to one episode.
@@ -99,11 +103,12 @@ if (_notInVehicle) then {
             [_medic, "AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon", 2] call ACEFUNC(common,doAnimation); // 0.650
 
             [{
-                params ["_medic", "_epoch"];
-                if (GVAR(ContinuousAction_Active) && {GVAR(ContinuousAction_Epoch) == _epoch}) then {
+                params ["_medic", "_epoch", "_playerBound"];
+                if (GVAR(ContinuousAction_Active) && {GVAR(ContinuousAction_Epoch) == _epoch}
+                    && {!_playerBound || {_medic isEqualTo ACE_player}}) then {
                     [_medic, "ACM_GenericContinuous", 2] call ACEFUNC(common,doAnimation);
                 };
-            }, [_medic, _epoch], 0.65] call CBA_fnc_waitAndExecute;
+            }, [_medic, _epoch, _playerBound], 0.65] call CBA_fnc_waitAndExecute;
         };
         case "PRONE": {
             if (_allowProne) then {
@@ -112,11 +117,12 @@ if (_notInVehicle) then {
                 [_medic, "AmovPpneMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon", 2] call ACEFUNC(common,doAnimation); // 1.116
 
                 [{
-                    params ["_medic", "_epoch"];
-                    if (GVAR(ContinuousAction_Active) && {GVAR(ContinuousAction_Epoch) == _epoch}) then {
+                    params ["_medic", "_epoch", "_playerBound"];
+                    if (GVAR(ContinuousAction_Active) && {GVAR(ContinuousAction_Epoch) == _epoch}
+                    && {!_playerBound || {_medic isEqualTo ACE_player}}) then {
                         [_medic, "ACM_GenericContinuous", 2] call ACEFUNC(common,doAnimation);
                     };
-                }, [_medic, _epoch], 1.116] call CBA_fnc_waitAndExecute;
+                }, [_medic, _epoch, _playerBound], 1.116] call CBA_fnc_waitAndExecute;
             };
         };
         case "CROUCH": {
@@ -132,7 +138,7 @@ if (currentWeapon _medic != "") then {
 
 private _pfh = [{
     params ["_args", "_idPFH"];
-    _args params ["_medic", "_patient", "_bodyPart", "_extraArgs", "_notInVehicle", "_isProne", "_perFrame", "_onCancel", "_dialogID", "_epoch", "_keyID", "_isDialog", "_dialogStartupUntil"];
+    _args params ["_medic", "_patient", "_bodyPart", "_extraArgs", "_notInVehicle", "_isProne", "_perFrame", "_onCancel", "_dialogID", "_epoch", "_keyID", "_isDialog", "_dialogStartupUntil", "_playerBound"];
 
     // Superseded action. Retire only this PFH and its own key id. Never run the old cancellation/reopen path against
     // the newer generation.
@@ -142,6 +148,7 @@ private _pfh = [{
     };
 
     private _patientCondition = (isNull _patient);
+    private _identityChanged = _playerBound && {!(_medic isEqualTo ACE_player)};
     private _medicCondition = (isNull _medic || {!local _medic} || {!(alive _medic)} || {IS_UNCONSCIOUS(_medic)});
     private _vehicleCondition = (objectParent _medic isNotEqualTo objectParent _patient);
     private _enteredVehicle = _notInVehicle && {!isNull objectParent _medic};
@@ -163,7 +170,7 @@ private _pfh = [{
         };
     };
 
-    if (_patientCondition || _medicCondition || _enteredVehicle || !GVAR(ContinuousAction_Active) || _dialogCondition || {(!_notInVehicle && _vehicleCondition) || {(_notInVehicle && _distanceCondition)}}) exitWith {
+    if (_patientCondition || _medicCondition || _identityChanged || _enteredVehicle || !GVAR(ContinuousAction_Active) || _dialogCondition || {(!_notInVehicle && _vehicleCondition) || {(_notInVehicle && _distanceCondition)}}) exitWith {
         [_idPFH] call CBA_fnc_removePerFrameHandler;
 
         // Release the shared ownership state before touching CBA handler cleanup. CBA currently returns string key-handler
@@ -196,7 +203,7 @@ private _pfh = [{
 
         ["ace_treatmentFailed", [_medic, _patient, _bodyPart, "ACM_ContinuousAction", "", "", false]] call CBA_fnc_localEvent;
 
-        if (GVAR(ContinuousAction_ShouldReopen) && {!isNull _patient} && {!_medicCondition}) then {
+        if (GVAR(ContinuousAction_ShouldReopen) && {!isNull _patient} && {!_medicCondition} && {!_identityChanged}) then {
             [QGVAR(openMedicalMenu), _patient] call CBA_fnc_localEvent;
         };
     };
@@ -205,7 +212,7 @@ private _pfh = [{
         _medic setVariable [QGVAR(ContinuousAction_LastSeen), CBA_missionTime, true];
     };
     _args call _perFrame;
-}, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _isProne, _perFrame, _onCancel, _dialogID, _epoch, _keyID, _isDialog, _dialogStartupUntil]] call CBA_fnc_addPerFrameHandler;
+}, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _isProne, _perFrame, _onCancel, _dialogID, _epoch, _keyID, _isDialog, _dialogStartupUntil, _playerBound]] call CBA_fnc_addPerFrameHandler;
 
 GVAR(ContinuousAction_PFH) = _pfh;
 _args call _onStart;

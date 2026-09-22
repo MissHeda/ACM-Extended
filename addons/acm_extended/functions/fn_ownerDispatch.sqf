@@ -307,32 +307,9 @@ switch (_operation) do {
     case "discardYTubing": {_args call ACME_fnc_discardYTubingCommit;};
     case "yFlush": {_args call ACME_fnc_yFlushStart;};
     case "bagMove": {_args call ACME_fnc_clinicalBagMove;};
-    case "hangBagClaim": {
-        _args params [["_medic", objNull, [objNull]], ["_episodeStart", -1, [0]], ["_flowMult", 1.75, [0]]];
-        if (!isNull _medic && {_episodeStart >= 0}) then {
-            private _holder = _patient getVariable ["ACME_hang_Medic", objNull];
-            private _holderValid = !isNull _holder && {alive _holder}
-                && {_holder getVariable ["ACME_hang_Active", false]}
-                && {((_holder getVariable ["ACME_hang_Patient", objNull]) isEqualTo _patient)};
-            private _accepted = !_holderValid || {_holder isEqualTo _medic};
-            if (_accepted) then {
-                _flowMult = (_flowMult max 1) min 5;
-                _patient setVariable ["ACME_hang_Medic", _medic, true];
-                _patient setVariable ["ACME_hang_Episode", _episodeStart, true];
-                _patient setVariable ["ACME_hang_flowMult", _flowMult, true];
-            };
-            ["ACME_hangClaimAck", [_patient, _medic, _episodeStart, _accepted], _medic] call CBA_fnc_targetEvent;
-        };
-    };
-    case "hangBagRelease": {
-        _args params [["_medic", objNull, [objNull]], ["_episodeStart", -1, [0]]];
-        if ((_patient getVariable ["ACME_hang_Medic", objNull]) isEqualTo _medic
-            && {(_patient getVariable ["ACME_hang_Episode", -2]) == _episodeStart}) then {
-            _patient setVariable ["ACME_hang_flowMult", 1, true];
-            _patient setVariable ["ACME_hang_Medic", objNull, true];
-            _patient setVariable ["ACME_hang_Episode", -1, true];
-        };
-    };
+    case "hangBagClaim": {isNil {[_patient, "claim", _args] call ACME_fnc_hangBagClaimLocal;};};
+    case "hangBagRenew": {isNil {[_patient, "renew", _args] call ACME_fnc_hangBagClaimLocal;};};
+    case "hangBagRelease": {isNil {[_patient, "release", _args] call ACME_fnc_hangBagClaimLocal;};};
     case "register": { [_patient] call ACME_fnc_ownerRegister; };
     case "hpmkState": { _args call ACME_fnc_hpmkStateCommit; };
     case "hpmkPrep": { _args call ACME_fnc_hpmkPrep; };
