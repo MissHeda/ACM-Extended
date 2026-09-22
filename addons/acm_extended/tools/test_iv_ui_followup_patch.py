@@ -70,3 +70,21 @@ def test_tray_rotation_hover_splay_and_spear_sound():
     assert "['band','pad']" in h
     assert 'playSound "ACME_NARSPEAR_Open"' in g
     assert 'class ivTrayHover {};' in c
+
+
+def test_tray_catheter_canvas_is_square_in_physical_pixels():
+    i=read('functions/fn_ivMinigameInit.sqf')
+    assert 'private _iconW = _iconH * _af;' in i
+    assert 'private _iconW = _iconH / _af;' not in i
+    assert 'private _lIconW = _lIconH * _af;' in i
+    assert 'private _lIconW = _lIconH / _af;' not in i
+
+    # _af = pixelW / pixelH. Multiplication is the only mapping that gives
+    # equal pixel width/height on both ordinary and 32:9 displays.
+    for width,height in ((1920,1080),(2560,1440),(5120,1440)):
+        pixel_w=1/width
+        pixel_h=1/height
+        af=pixel_w/pixel_h
+        h_ui=.1
+        w_ui=h_ui*af
+        assert abs((w_ui/pixel_w)-(h_ui/pixel_h)) < 1e-9
