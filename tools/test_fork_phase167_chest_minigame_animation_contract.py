@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RC23: chest-seal/auscultation animation handoff contract."""
+"""RC24: chest-seal/auscultation animation handoff + supine-exit contract."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,8 +79,21 @@ def test_chestseal_and_stethoscope_use_semifowler_putdown_exit():
     assert '"AinvPknlMstpSnonWnonDnon_Putdown_AmovPknlMstpSnonWnonDnon"' in head
     assert 'private _rest = "AmovPknlMstpSnonWnonDnon";' in head
 
+
+def test_chest_minigame_exits_always_leave_patient_supine():
+    chest_end = read("addons/acm_extended/functions/fn_chestSealPatientEnd.sqf")
+    steth_close = read("addons/acm_extended/functions/fn_stethoscopeClose.sqf")
+    restore = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
+
+    assert "_preSide" not in chest_end
+    assert "ACM_airway_fnc_setRecoveryPosition" not in chest_end
+    assert '[_patient, "front"] call ACME_fnc_patientRollCancel;' in chest_end
+    assert '[_patient,"front"] call ACME_fnc_patientRollCancel;' in steth_close
+    assert "// Every chest-access exit normalizes anterior-up" in restore
+    assert restore.index("// Every chest-access exit normalizes anterior-up") < restore.index("// Nothing is in custody.")
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("PASS rc23: chest minigame animation handoff contract")
+    print("PASS rc24: chest minigame animation + supine-exit contract")
