@@ -35,7 +35,8 @@ if (_flipWasActive) then {
         [_medic,"stethoscopeFlip"] call ACME_fnc_rollProviderCancel;
     };
     if (!isNull _patient) then {
-        [_patient] call ACME_fnc_patientRollCancel;
+        // Closing auscultation always settles a live Flip anterior-up / lying on the back.
+        [_patient,"front"] call ACME_fnc_patientRollCancel;
     };
 };
 private _poseEpoch = _display getVariable ["ACME_stethPoseEpoch",-1];
@@ -43,6 +44,7 @@ private _continuousEpoch = _display getVariable ["ACME_continuousEpoch",-1];
 
 // Release this provider's casualty animation lease immediately. The normal onCancel path sees the cleared lease
 // and becomes a no-op, so a missed PFH frame can never leave the patient pinned by a dead stethoscope session.
+private _restoreDispatched = false;
 if (!isNull _medic) then {
     private _lease = _medic getVariable ["ACME_stethPatientAnimLease",[]];
     if ((count _lease) >= 2) then {
@@ -62,9 +64,17 @@ if (!isNull _medic) then {
         private _leaseId = _chestLease param [2, ""];
         _medic setVariable ["ACME_chestAccess_treatment", []];
         if (!isNull _patient && {_leaseId != ""}) then {
+            _restoreDispatched = true;
             [_patient, _medic, _leaseId, false, "usestethoscope"] call ACME_fnc_chestAccessVestEvent;
         };
     };
+};
+
+// Even a no-carrier/no-preflight stethoscope session may have physically flipped the patient posteriorly.
+// Route through the common chest restore path anyway: it now normalizes front/supine before doing anything else,
+// including the no-custody branch.
+if (!isNull _patient && {!_restoreDispatched}) then {
+    [_patient,false,_medic,"access",false] call ACME_fnc_chestAccessVestRestore;
 };
 
 // Retire only the continuous-action generation that created this display. This is the critical fallback for
