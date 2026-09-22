@@ -29,7 +29,7 @@ if (isNull _holder) then {
     _holder = _medic;
     if (_selection != 0) then {
         [ _medic ] call ACME_fnc_vialLeaseRelease;
-        [["syringeDrawInventorySelection", 0]] call ACM_circulation_fnc_setLocalUiState;
+        [[["syringeDrawInventorySelection", 0]]] call ACM_circulation_fnc_setLocalUiState;
     };
 };
 if (_selection in [1,2] && {_holder isNotEqualTo _medic}) exitWith {

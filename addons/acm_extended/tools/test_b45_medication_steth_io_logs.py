@@ -15,23 +15,18 @@ def test_b45_version_stamp():
 
 
 def test_medication_source_uses_real_acm_registry_and_inventory_first():
-    s = text('functions/fn_medicationSourceRows.sqf')
-    assert "ACM_MEDICATION_VIALS" in s
-    assert "ace_common_fnc_uniqueItems" in s
-    assert "getItemCargo _holder" in s
-    assert "ACME_fnc_vialItemCount" in s
-    assert "ACME_medicationVialRegistryFull" in s
-    assert "configClasses" in s
-    # Candidate expansion still cannot create ghost rows; physical/open stock gates every row.
-    assert "if (_sealed <= 0 && {_openMl <= 0.000001}) then {continue};" in s
+    # The native class catalog plus the selected inventory counter is current policy,
+    # not the retired independent uniqueItems enumeration or a literal macro-name variable.
+    from test_historical_medication_rows import test_rows_follow_selected_inventory_and_never_manufacture_stock, test_vehicle_rows_use_cargo_counts_not_the_provider_inventory
+    for holder in ['_medic','_patient','objNull']:
+        test_rows_follow_selected_inventory_and_never_manufacture_stock(holder)
+    test_vehicle_rows_use_cargo_counts_not_the_provider_inventory()
 
 
 def test_postinit_snapshots_actual_native_registry():
-    p = text('functions/fn_postInit.sqf')
-    assert 'getVariable ["ACM_MEDICATION_VIALS", []]' in p
-    assert 'setVariable ["ACM_MEDICATION_VIALS", +_acmVials]' in p
-    r = text('functions/fn_restoreMedicationList.sqf')
-    assert 'setVariable ["ACM_MEDICATION_VIALS", +_full]' in r
+    from test_historical_medication_rows import test_initializer_publishes_real_native_catalog_and_snapshot, test_restore_repairs_the_real_native_registry_without_mutating_snapshot
+    test_initializer_publishes_real_native_catalog_and_snapshot('[]')
+    test_restore_repairs_the_real_native_registry_without_mutating_snapshot('[]')
 
 
 def test_medication_column_visible_in_body_and_infusion_views():

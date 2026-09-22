@@ -52,13 +52,11 @@ def test_native_medication_list_is_the_only_renderer():
     assert '_nativeMedList ctrlShow true' in r
 
 def test_medication_membership_is_inventory_backed_and_nonblank():
-    s = txt('functions/fn_medicationSourceRows.sqf')
-    assert 'ace_common_fnc_uniqueItems' in s
-    assert "ACM_circulation_MedicationVialList" in s
-    assert "getNumber (_cfg >> 'ACM_isVial')" in s
-    assert 'if (_sealed <= 0 && {_openMl <= 0.000001}) then {continue};' in s
-    assert "if (_label == '') then {_label = _med;};" in s
-    assert '_rows pushBack [_label, _med, _picture, _displayClass];' in s
+    from test_historical_medication_rows import test_rows_follow_selected_inventory_and_never_manufacture_stock, test_blank_label_and_unknown_open_vial_use_medication_key_fallback, test_open_partial_survives_consumed_physical_item_without_zero_volume_ghosts
+    test_rows_follow_selected_inventory_and_never_manufacture_stock('_patient')
+    test_blank_label_and_unknown_open_vial_use_medication_key_fallback()
+    for amount,visible in [(0,False),(0.01,True),(2,True)]:
+        test_open_partial_survives_consumed_physical_item_without_zero_volume_ghosts(amount,visible)
 
 def test_prep_infusion_uses_same_medication_list():
     s = txt('functions/fn_infusionDrawStock.sqf')

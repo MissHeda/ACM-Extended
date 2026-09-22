@@ -40,21 +40,17 @@ def test_tick_updates_one_combined_stock_control():
 
 
 def test_medication_label_has_nonblank_config_and_key_fallback():
-    s = text('functions/fn_skListRefresh.sqf')
-    block = s.split('if (_kind == "medication") then {', 1)[1].split('    } else {', 1)[0]
-    # Populated medication presentation remains immutable and cannot be rebound from a mutable ACM list row.
-    assert 'forEach _medRows' in block
-    assert '_list lbText' not in block
-    assert '_list lbPicture' not in block
-    assert 'if (_labelSafe == "") then {_labelSafe = getText (_cfg >> "displayName");};' in block
-    assert 'if (_labelSafe == "") then {_labelSafe = _data;};' in block
+    # Current native-row labels are retained; blank native/config fields use metadata or the key.
+    from test_historical_medication_rows import test_blank_label_and_unknown_open_vial_use_medication_key_fallback, test_sync_normalizes_missing_or_wrongly_typed_fields_and_rejects_invalid_identities, test_visible_rows_keep_native_labels_but_recover_blank_labels_from_metadata
+    test_blank_label_and_unknown_open_vial_use_medication_key_fallback()
+    test_sync_normalizes_missing_or_wrongly_typed_fields_and_rejects_invalid_identities()
+    test_visible_rows_keep_native_labels_but_recover_blank_labels_from_metadata()
 
 
 def test_b45_backend_registry_fix_is_retained():
-    s = text('functions/fn_medicationSourceRows.sqf')
-    assert 'ACM_MEDICATION_VIALS' in s
-    assert 'ace_common_fnc_uniqueItems' in s
-    assert 'if (_sealed <= 0 && {_openMl <= 0.000001}) then {continue};' in s
+    from test_historical_medication_rows import test_catalog_fallbacks_and_duplicate_entries_do_not_change_medication_identity, test_rows_follow_selected_inventory_and_never_manufacture_stock
+    test_catalog_fallbacks_and_duplicate_entries_do_not_change_medication_identity('[]','[]')
+    test_rows_follow_selected_inventory_and_never_manufacture_stock('_medic')
 
 
 def test_medication_group_stays_visible_in_body_and_infusion_paths():

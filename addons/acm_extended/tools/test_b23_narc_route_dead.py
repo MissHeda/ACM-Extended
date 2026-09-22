@@ -32,14 +32,10 @@ class B23MedicationListContracts(unittest.TestCase):
             self.assertNotIn('forEach ACM_MEDICATION_VIALS', text)
 
     def test_normal_narc_box_rebuilds_empty_backing_list(self):
-        rows = read('functions/fn_skListRefresh.sqf')
-        sync = read('functions/fn_skMedicationSync.sqf')
-        # B41 repairs an empty OR stale native list by comparing the complete identity tuple, then
-        # rebuilding it from immutable records. The overlay consumes the exact same records.
-        self.assertIn('private _medRows = [_d] call ACME_fnc_skMedicationSync', rows)
-        self.assertIn('if !(_present isEqualTo _expected) then', sync)
-        self.assertIn('lbClear _list', sync)
-        self.assertIn('_display setVariable ["ACME_SK_MedicationRows", +_rows]', sync)
+        # The current UI synchronizes native backing rows before binding the overlay by medication key.
+        from test_historical_medication_rows import test_native_sync_rebuilds_empty_selector_once_and_preserves_each_medication, test_preview_builder_is_synced_before_visible_metadata_is_consumed
+        test_native_sync_rebuilds_empty_selector_once_and_preserves_each_medication()
+        test_preview_builder_is_synced_before_visible_metadata_is_consumed()
 
     def test_vertical_only_row_group(self):
         cfg = read('config.cpp')

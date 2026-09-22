@@ -2,6 +2,6 @@
    to ACM_circulation_MedicationVialList; there is no literal runtime registry named ACM_MEDICATION_VIALS. */
 private _full = missionNamespace getVariable ["ACME_medicationVialRegistryFull", []];
 if !(_full isEqualTo []) then {
-    [["medicationVialList", +_full]] call ACM_circulation_fnc_setLocalUiState;
+    [[["medicationVialList", +_full]]] call ACM_circulation_fnc_setLocalUiState;
 };
 ACME_infusion_savedMedicationVials = nil;

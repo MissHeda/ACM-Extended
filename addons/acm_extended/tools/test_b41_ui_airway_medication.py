@@ -48,14 +48,12 @@ def test_requested_alternating_pale_red_is_runtime_default():
 
 
 def test_full_medication_registry_is_config_derived_and_immutable():
-    p = text('functions/fn_postInit.sqf')
-    assert 'configClasses (configFile >> "CfgWeapons")' in p
-    assert 'ACM_isVial' in p
-    assert 'ACME_medicationVialRegistryFull' in p
-    assert 'missionNamespace setVariable ["ACM_circulation_MedicationVialList", +_acmVials]' in p
-    restore = text('functions/fn_restoreMedicationList.sqf')
-    assert 'ACME_medicationVialRegistryFull' in restore
-    assert 'missionNamespace setVariable ["ACM_circulation_MedicationVialList", +_full]' in restore
+    # Exercise the real native writer, including startup fallback and independent snapshot copies.
+    from test_historical_medication_rows import test_initializer_publishes_real_native_catalog_and_snapshot, test_restore_repairs_the_real_native_registry_without_mutating_snapshot
+    for initial in ['[]','["ACM_Vial_Ketamine","ACM_Vial_EpinephrineCardiac"]']:
+        test_initializer_publishes_real_native_catalog_and_snapshot(initial)
+    for damage in ['[]','["ForeignOnly"]']:
+        test_restore_repairs_the_real_native_registry_without_mutating_snapshot(damage)
 
 
 def test_infusion_draw_no_longer_swaps_global_vial_registry():
@@ -67,37 +65,19 @@ def test_infusion_draw_no_longer_swaps_global_vial_registry():
 
 
 def test_medication_rows_have_single_authoritative_identity_source():
-    sync = text('functions/fn_skMedicationSync.sqf')
-    source = text('functions/fn_medicationSourceRows.sqf')
-    count = text('functions/fn_vialItemCount.sqf')
-    assert 'ACME_fnc_medicationSourceRows' in sync
-    assert '_display setVariable ["ACME_SK_MedicationRows", +_rows];' in sync
-    # B43 uses ACM's finalized vial registry only as the class catalog, then tests actual holder stock
-    # through the same ACE item-count primitive used by native ACM. It must not maintain a second
-    # items/uniform/vest/backpack enumeration path.
-    assert 'ACM_circulation_MedicationVialList' in source
-    assert 'ACME_medicationVialRegistryFull' in source
-    assert 'ACME_fnc_vialItemCount' in source
-    assert 'ace_common_fnc_getCountOfItem' in count
-    assert 'items _holder' not in source
-    assert 'uniformContainer _holder' not in source
-    assert 'vestContainer _holder' not in source
-    assert 'backpackContainer _holder' not in source
-    assert "getText (_displayCfg >> 'displayName')" in source
-    assert "getText (_displayCfg >> 'picture')" in source
-    assert '_rows pushBack [_label, _med, _picture, _displayClass];' in source
+    # Native labels and physical-class metadata share medication keys, not transient row indices.
+    from test_historical_medication_rows import test_native_sync_rebuilds_empty_selector_once_and_preserves_each_medication, test_stock_preview_uses_reserved_volume_and_the_rows_exact_physical_class
+    test_native_sync_rebuilds_empty_selector_once_and_preserves_each_medication()
+    test_stock_preview_uses_reserved_volume_and_the_rows_exact_physical_class()
 
 
 def test_visible_medication_rows_do_not_read_identity_back_from_listbox():
-    s = text('functions/fn_skListRefresh.sqf')
-    start = s.index('if (_kind == "medication") then {')
-    block = s[start:s.index('    } else {', start)]
-    code = '\n'.join(line.split('//', 1)[0] for line in block.splitlines())
-    assert 'forEach _medRows' in code
-    assert 'lbText' not in code
-    assert 'lbPicture' not in code
-    assert 'lbData' not in code
-    assert 'ACME_fnc_vialClass' not in code
+    # Historical name retained for the ledger. The approved B51+ renderer uses native
+    # data keys/labels, with metadata joined by key; restoring B50's parallel renderer is not required.
+    from test_historical_medication_rows import test_visible_rows_bind_metadata_by_key_and_recover_missing_backing_entries, test_preview_builder_is_synced_before_visible_metadata_is_consumed
+    for native in ['[]','[["Fentanyl native","Fentanyl",""],["duplicate","Fentanyl","bad.paa"],["","Ketamine",""]]']:
+        test_visible_rows_bind_metadata_by_key_and_recover_missing_backing_entries(native)
+    test_preview_builder_is_synced_before_visible_metadata_is_consumed()
 
 
 def test_native_medication_bridge_delegates_to_same_builder():

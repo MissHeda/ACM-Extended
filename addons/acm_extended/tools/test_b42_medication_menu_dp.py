@@ -23,15 +23,9 @@ def test_medication_membership_uses_selected_holder_and_native_item_count_contra
 
 
 def test_medication_rows_are_independent_records_and_stock_uses_same_physical_class():
-    source = text('functions/fn_medicationSourceRows.sqf')
-    sync = text('functions/fn_skMedicationSync.sqf')
-    refresh = text('functions/fn_skListRefresh.sqf')
-    preview = text('functions/fn_vialPreview.sqf')
-    assert '_rows pushBack [_label, _med, _picture, _displayClass];' in source
-    assert '[_infusion] call ACME_fnc_medicationSourceRows' in sync
-    assert '[_data, _reserved, _item] call _fnStockInfo' in refresh
-    assert '[_holder, _med, 0, _physicalClass] call ACME_fnc_vialPreview' in refresh
-    assert '["_physicalClass", "", [""]]' in preview
+    from test_historical_medication_rows import test_ampule_and_foreign_keys_keep_their_full_identity_across_refreshes, test_stock_preview_uses_reserved_volume_and_the_rows_exact_physical_class
+    test_ampule_and_foreign_keys_keep_their_full_identity_across_refreshes()
+    test_stock_preview_uses_reserved_volume_and_the_rows_exact_physical_class()
 
 
 def test_vial_parser_keeps_full_suffix():
