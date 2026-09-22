@@ -18,7 +18,7 @@ HEMTT 1.22.0 and SQF-VM v2026.04.03-ed9f5f5 were available for both runs; Python
 | Unmodified 19d01b8b | 460 | 1,796 | 4 | 12 | 2,747 |
 | Batch 1 candidate | 299 | 2,505 | 4 | 0 | 5,518 |
 
-Before: seven collection errors and five shared SVT setup errors. After: zero collection or setup errors. The unchanged four skips include unavailable packaged-release fixtures and an existing retired check, not newly suppressed failures.
+Before: seven collection errors and five shared SVT setup errors. After: zero collection or setup errors. The unchanged four skips include unavailable packaged-release fixtures and an existing experimental-feature check, not newly suppressed failures.
 
 The baseline consistently excludes B77 because its module-level sys.exit prevents collection. The candidate refactors B77 to collect every retained check, without excluding it. Collection repairs also expose additional tests and subtests in other modules. Therefore the total test populations differ; a simple raw subtraction is not an adequate accounting of fixed defects.
 
@@ -78,6 +78,10 @@ The burp test follows the current trauma-versus-thoracostomy presentation split.
 ## Validation and remaining limits
 
 Local focused suite: **452 passed, 400 subtests passed**, no failures/errors/skips. This includes the previous 184-case preservation/lifecycle/consciousness/seizure/configuration suite, new helper tests, clinical cases and repaired execution fixtures. Full-project `hemtt check`: **exit 0**, with seven existing non-blocking style suggestions unchanged. The source-preservation hashes remain enforced.
+
+Independent GitHub Actions run **35771015212**, job **106892433471**, reproduced these results from complete checkouts. It verified the exact reviewed tree **28a46689ec00280c88576728338e6acc37b4a84d**, ran the 452-test focused suite with 400 passing subtests, passed full-project HEMTT checking, and reproduced both broad-suite rows above. Its outcome comparison recorded 183 previous failures passing, 22 newly exposed failures, no comparable passing-outcome regressions, zero collection/setup errors, and the same four skips before and after. The broad suite still returned exit code 1; the successful validation workflow does not mean that suite is clean.
+
+The independently validated candidate is **4d2b6c737088bb4bad72eeb423924229e586b56e**, with parent **19d01b8b27fd53bb9d3c381c7445add589336159**. Its 89 added/modified paths are restricted to Python test helpers/tests and the two audit documents. The final follow-up only records this independent verification in this report. The audit preparation workflows and intermediate patches are not part of the candidate's tree.
 
 The candidate's production/asset bytes are verified against the complete pinned manifest. No files were deleted. No failures were mass-marked xfail, no new skip filters were added and no retired gameplay behavior was restored for a test.
 
