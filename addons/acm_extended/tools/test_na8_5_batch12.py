@@ -107,10 +107,10 @@ class SharedSuctionSource(unittest.TestCase):
         for x in ('_id in _receipts','_stamp isEqualTo _expected','ACME_fnc_clinicalEpoch'):self.assertIn(x,t)
     def test_native_clear_on_owner(self):
         t=src('laryngoFluidDrainLocal')
-        self.assertIn('ACM_airway_AirwayObstructionVomit_State',t)
-        self.assertIn('ACM_airway_AirwayObstructionBlood_State',t)
-        self.assertIn('if (_kind == "v")',t)
+        self.assertIn('call ACM_airway_fnc_setAirwayState',t)
         self.assertNotIn('call ACM_airway_fnc_handleSuctionLocal',t)
+        from test_historical_airway_execution import test_suction_debits_once_and_clears_only_the_current_compartment
+        test_suction_debits_once_and_clears_only_the_current_compartment()
     def test_pool_fullheal_and_save_registered(self):self.assertIn('["ACME_laryngo_pool", "", true]',src('clinicalFields'))
     def test_no_perpetual_visual_only_bleed(self):self.assertNotIn('fluidMode',src('laryngoPersistBleed'))
     def test_streak_not_reset_by_suction(self):self.assertNotIn('setVariable ["ACME_laryngo_gagMisses"',code(src('laryngoFluidDrainLocal')))
@@ -155,8 +155,12 @@ class EpinephrineSource(unittest.TestCase):
         t=src('epinephrinePushStored');self.assertIn('_drugMl * 0.1 * _fraction',t)
         self.assertIn('_drugMl * (1 - _fraction)',t);self.assertIn('_nsMl * (1 - _fraction)',t)
     def test_inventory_consumed_before_medication_event(self):
-        t=src('epinephrinePushStored');self.assertLess(t.index('_medic setVariable'),t.index('ACME_fnc_medicationRequest'))
+        t=src('epinephrinePushStored')
+        self.assertLess(t.index('call ACME_fnc_narcStoreCommit'),t.index('call ACME_fnc_medicationRequest'))
         self.assertIn('ACME_fnc_ownerDispatch',src('medicationRequest'))
+        from test_historical_airway_execution import test_measured_epinephrine_debits_before_request_and_conserves_remainder_and_refund
+        for push in [1,2,10]:
+            test_measured_epinephrine_debits_before_request_and_conserves_remainder_and_refund(push,True)
     def test_actual_selected_vascular_site_required(self):
         t=src('epinephrinePushStored');self.assertIn('_bodyPart, 0, _siteIdx',t);self.assertIn('ACM_circulation_fnc_hasIO',t)
     def test_native_actual_mg_not_charge(self):

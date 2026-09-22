@@ -123,15 +123,17 @@ class PtxLifecycle(unittest.TestCase):
         self.assertNotIn("Pneumothorax_PFH", breathing)
 
     def test_instructor_clear_retires_model_without_touching_equipment(self):
-        mega = source("megacodeChestInjury")
-        clear = mega[mega.index('if (_t == "ncd")'):mega.index('switch (_t)')]
-        for field in ("ACME_ptx_state", "ACME_ptx_tensionSeverity", "ACME_ptx_tensionProgress"):
-            self.assertIn(field, clear)
-        self.assertIn("CBA_fnc_removePerFrameHandler", clear)
-        self.assertIn('["ACM_breathing_Pneumothorax_PFH", -1, false]', clear)
-        self.assertIn('["ACM_breathing_Hardcore_Pneumothorax", false, true]', clear)
-        for unrelated in ("ACME_CS_holeData", "ACME_thora_tube_left", "ACME_ncd_placed"):
-            self.assertNotIn(unrelated, clear)
+        mega=source('megacodeChestInjury')
+        clear=mega[mega.index('if (_t == "ncd")'):mega.index('switch (_t)')]
+        for field in ('ACME_ptx_state','ACME_ptx_tensionSeverity','ACME_ptx_tensionProgress'):
+            self.assertIn(field,clear)
+        self.assertIn('CBA_fnc_removePerFrameHandler',clear)
+        self.assertIn('["pneumothoraxPFH", -1]',clear)
+        self.assertIn('["hardcorePneumothorax", false]',clear)
+        for unrelated in ('ACME_CS_holeData','ACME_thora_tube_left','ACME_ncd_placed'):
+            self.assertNotIn(unrelated,clear)
+        from test_historical_airway_execution import test_instructor_chest_clear_removes_episode_and_worker_but_retains_equipment
+        test_instructor_chest_clear_removes_episode_and_worker_but_retains_equipment()
 
     def test_training_injury_seeds_model_before_native_projection(self):
         mega = source("megacodeChestInjury")

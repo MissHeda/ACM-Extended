@@ -24,9 +24,11 @@ class B17Release(unittest.TestCase):
         self.assertIn('(_elapsed + _sampleAhead) / (_entryWindow max 0.1)',s)
         self.assertNotIn('_entryLeadIn',s)
     def test_custom_rhythm_does_not_override_cpr_postshock(self):
-        s=read('overrides/fn_genEKG.sqf')
-        self.assertIn('!(_rhythm in [-1,1,2])',s)
-        self.assertIn('ACME_monitorRhythmSwitchMaxWait',s)
+        # Current monitor uses its native cache invalidation/beat clock, not the retired max-wait splice.
+        from test_historical_cardiac_execution import test_custom_ecg_proxy_respects_native_visual_precedence, test_rhythm_write_invalidates_both_monitor_caches
+        for visual in [-1,0,1,2,3,4,5]:
+            test_custom_ecg_proxy_respects_native_visual_precedence(visual)
+        test_rhythm_write_invalidates_both_monitor_caches()
     def test_procedure_no_forced_unconsciousness(self):
         io=read('functions/fn_ioPainResponse.sqf'); th=read('functions/fn_thoraMouseUp.sqf')
         self.assertNotIn('setUnconscious',io)

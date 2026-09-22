@@ -10,8 +10,14 @@ private _cprProvider = _patient getVariable ["ace_medical_CPR_provider", objNull
 private _compressionsActive = alive _cprProvider;
 
 if (_compressionsActive) then {
-    _heartRate = random [100,110,120];
-    _pulseCharacter = "bounding";
+    // Compression-generated pulses cannot pass an occluded artery either.
+    private _partIndex = ["head","body","leftarm","rightarm","leftleg","rightleg"] find toLowerANSI _bodyPart;
+    private _occluded = ([_patient, _bodyPart] call ace_medical_treatment_fnc_hasTourniquetAppliedTo)
+        || {[_patient, _partIndex] call ACME_fnc_aajtOccludes};
+    if (!_occluded) then {
+        _heartRate = random [100,110,120];
+        _pulseCharacter = "bounding";
+    };
 } else {
     private _profile = [_patient, _bodyPart] call ACME_fnc_pulsePerfusionProfile;
     _profile params ["_palpable","_electricalHR","_mechanicalHR","_strength","_character"];

@@ -95,15 +95,16 @@ def test_standard_calcium_values_survive_toggle_removal():
 
 
 def test_aftercare_is_owner_routed_and_epoch_guarded():
-    owner = read("functions/fn_ownerDispatch.sqf")
-    aftercare = read("functions/fn_thoraAftercareLocal.sqf")
+    owner=read('functions/fn_ownerDispatch.sqf')
+    aftercare=read('functions/fn_thoraAftercareLocal.sqf')
     assert 'case "thoraAftercare": {_args call ACME_fnc_thoraAftercareLocal;};' in owner
-    for gate in ["!local _patient", "!alive _patient", "ACME_fnc_clinicalEpoch",
-                 '["left", "right"]', "ACME_fnc_procedureAllowed",
-                 "ACME_thora_incision_%1", "ACME_thora_tube_%1"]:
+    for gate in ['!local _patient','!alive _medic','ACME_fnc_clinicalEpoch','["left", "right"]',
+                 'ACME_fnc_procedureAllowed','ACME_thora_incision_%1','ACME_thora_tube_%1']:
         assert gate in aftercare
-    assert '[_patient, "thora"] call ACME_fnc_ptxTreat;' in aftercare
-    assert "ACM_breathing_fnc_updateLungState" in aftercare
+    # Availability must not reveal death; the physiology call alone is live-only.
+    from test_historical_airway_execution import test_aftercare_remains_available_on_dead_patients_without_resuming_physiology
+    for operation in ['peel','burp','sweep']:
+        test_aftercare_remains_available_on_dead_patients_without_resuming_physiology(False,operation)
 
 
 def test_peel_reopens_only_the_selected_surgical_tract():

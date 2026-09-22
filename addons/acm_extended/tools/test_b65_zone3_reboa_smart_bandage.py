@@ -44,38 +44,27 @@ def test_zone3_action_and_all_aajt_applications_are_twenty_seconds():
 
 
 def test_aajt_occlusion_is_anatomically_scoped():
-    occ = acme("aajtOccludes")
-    assert 'case 2: {_patient getVariable ["ACME_AAJT_axillaleft", false]};' in occ
-    assert 'case 3: {_patient getVariable ["ACME_AAJT_axillaright", false]};' in occ
-    assert 'ACME_AAJT_inguinalSide' in occ
-    assert '== "leftleg"' in occ and '== "rightleg"' in occ
-    assert occ.count('ACME_AAJT_zone3') >= 2
-
-    apply = acme("aajtApply")
-    body = apply[apply.index('case "body"'):apply.index('case "leftleg"')]
-    assert '[true, _atStr]' in body and '"zone3"' in body
-    assert '[ _patient, "leftleg", true]' not in body  # formatting guard below uses exact source spelling
-    assert '[_patient, "leftleg", true] call ACME_fnc_aajtSetLegTQ;' in body
-    assert '[_patient, "rightleg", true] call ACME_fnc_aajtSetLegTQ;' in body
-    legs = apply[apply.index('case "leftleg"'):apply.index('case "leftarm"')]
-    assert '[_patient, "inguinal", [true, _atStr, _p]]' in legs
-    assert '[_patient, _p, true] call ACME_fnc_aajtSetLegTQ;' in legs
-    left_arm = apply[apply.index('case "leftarm"'):apply.index('case "rightarm"')]
-    assert '[_patient, "leftarm", true] call ACME_fnc_aajtSetLegTQ;' in left_arm
+    from test_historical_cardiac_execution import test_aajt_application_routes_only_the_selected_limbs
+    # The old first-substring slice read the duplicate-placement switch, not application.
+    for part,expected in [('Body',['leftleg','rightleg']),('LeftLeg',['leftleg']),
+                          ('RightLeg',['rightleg']),('LeftArm',['leftarm']),('RightArm',['rightarm'])]:
+        test_aajt_application_routes_only_the_selected_limbs(part,expected)
 
 
 def test_whole_limb_physiology_uses_single_occlusion_authority():
-    hooks = {
-        "addons/core/overrides/fnc_updateWoundBloodLoss.sqf",
-        "addons/circulation/functions/fnc_getIVFlowRate.sqf",
-        "addons/core/overrides/fnc_getBloodVolumeChange.sqf",
-        "addons/core/overrides/fnc_medicationLocal.sqf",
-        "addons/core/overrides/fnc_checkPulseLocal.sqf",
-        "addons/acm_extended/functions/fn_yFlushTick.sqf",
-    }
+    hooks={'addons/core/overrides/fnc_updateWoundBloodLoss.sqf',
+           'addons/circulation/functions/fnc_getIVFlowRate.sqf',
+           'addons/circulation/functions/fnc_getBloodVolumeChange.sqf',
+           'addons/core/overrides/fnc_medicationLocal.sqf',
+           'addons/acm_extended/functions/fn_yFlushTick.sqf'}
     for path in hooks:
-        src = text(path)
-        assert "ACME_fnc_aajtOccludes" in src, f"AAJT limb occlusion missing from {path}"
+        assert 'ACME_fnc_aajtOccludes' in text(path),path
+    assert '[_unit, _deltaT, _syncValues] call ACM_circulation_fnc_getBloodVolumeChange' in text('addons/core/overrides/fnc_getBloodVolumeChange.sqf')
+    assert 'ACME_fnc_pulsePerfusionProfile' in text('addons/core/overrides/fnc_checkPulseLocal.sqf')
+    from test_historical_cardiac_execution import test_aajt_pulse_occlusion_is_site_specific
+    for placement,side,limbs in [('zone3','',['leftleg','rightleg']),('inguinal','leftleg',['leftleg']),
+                                  ('inguinal','rightleg',['rightleg']),('axillaleft','',['leftarm']),('axillaright','',['rightarm'])]:
+        test_aajt_pulse_occlusion_is_site_specific(placement,side,limbs)
 
 
 def test_zone3_conscious_patient_is_collapsed_back_to_prone_without_network_loop():

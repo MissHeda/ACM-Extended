@@ -59,14 +59,17 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertNotRegex(effect, r'setVariable\s*\[\s*"ACM_breathing_TensionPneumothorax_State"')
 
     def test_seal_removal_cannot_become_a_new_injury(self):
-        effect = read_source(ROOT / 'functions/fn_chestSealEffectLocal.sqf')
-        peel = effect.split('case "peel":', 1)[1].split('case "miss":', 1)[0]
-        self.assertIn('[_patient, "peel"] call ACME_fnc_ptxTreat', peel)
-        self.assertNotIn('call ACME_fnc_ptxInjury', peel)
-        self.assertNotIn('call ACM_breathing_fnc_handlePneumothorax', effect)
-        self.assertIn('ACME_NA2_resetTime', effect)
-        self.assertIn('ACME_CS_blockedEffectEpoch', effect)
-        self.assertIn('ACME_CS_lastSealEffectRev', effect)
+        effect=read_source(ROOT/'functions/fn_chestSealEffectLocal.sqf')
+        peel=effect.split('case "peel":',1)[1].split('case "miss":',1)[0]
+        self.assertIn('[_patient, "peel"] call ACME_fnc_ptxTreat',peel)
+        self.assertNotIn('call ACME_fnc_ptxInjury',peel)
+        self.assertNotIn('call ACM_breathing_fnc_handlePneumothorax',effect)
+        self.assertIn('ACME_CS_blockedEffectEpoch',effect)
+        self.assertIn('ACME_CS_lastSealEffectRev',effect)
+        # The old cross-machine reset-time comparison was deliberately replaced by epoch/revision identity.
+        from test_historical_airway_execution import test_seal_peel_rejects_stale_effects_and_never_creates_a_new_injury
+        for blocked,rev,accepted in [(False,4,True),(False,3,False),(False,2,False),(True,4,False)]:
+            test_seal_peel_rejects_stale_effects_and_never_creates_a_new_injury(blocked,rev,accepted)
 
     def test_native_thoracostomy_keeps_observations_anesthesia_and_kit_semantics(self):
         text = override("Thoracostomy_startLocal")
@@ -83,21 +86,15 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertIn('"ACM_breathing_Thoracostomy_UsedKit", false, true', override('Thoracostomy_closeLocal'))
 
     def test_sealed_surgical_tract_cannot_cover_external_chest_wounds(self):
-        click = read_source(ROOT / 'functions/fn_thoraMouseDown.sqf')
-        seal = click.split('if (_held == "seal") exitWith {', 1)[1].split('private _tubeMedic', 1)[0]
-        self.assertNotIn('call ACM_breathing_fnc_applyChestSeal', seal)
-        self.assertIn('"chestEffect", [_patient, _medS, "thoraSeal"', seal)
-        self.assertIn('call ACME_fnc_clinicalEpoch', seal)
-        self.assertNotIn('They still need a tube', click)
-        effect = read_source(ROOT / 'functions/fn_chestSealEffectLocal.sqf')
-        branch = effect.split('case "thoraSeal":', 1)[1].split('case "peel":', 1)[0]
-        self.assertIn('_clinicalEpoch != ([_patient] call ACME_fnc_clinicalEpoch)', branch)
-        self.assertIn('ACME_thora_sealed_%1', branch)
-        self.assertIn('ACME_thora_open_%1', branch)
-        self.assertIn('ACME_thora_tube_%1', branch)
-        self.assertIn('[_patient, "thoraSeal"] call ACME_fnc_ptxTreat', branch)
-        self.assertNotIn('ACME_ptx_nativeSealCount', branch)
-        self.assertNotIn('call ACM_breathing_fnc_applyChestSeal', branch)
+        click=read_source(ROOT/'functions/fn_thoraMouseDown.sqf')
+        seal=click.split('if (_held == "seal") exitWith {',1)[1].split('private _tubeMedic',1)[0]
+        self.assertNotIn('call ACM_breathing_fnc_applyChestSeal',seal)
+        self.assertIn('"chestEffect", [_patient, _medS, "thoraSeal"',seal)
+        self.assertIn('call ACME_fnc_clinicalEpoch',seal)
+        self.assertNotIn('They still need a tube',click)
+        from test_historical_airway_execution import test_surgical_seal_is_side_scoped_and_cannot_cover_external_wounds
+        for epoch,tube,tract,accepted in [(1,False,'finger',True),(2,False,'finger',False),(1,True,'finger',False),(1,False,'sealed',False)]:
+            test_surgical_seal_is_side_scoped_and_cannot_cover_external_wounds(epoch,tube,tract,accepted)
 
     def test_closing_tract_removes_its_outlet_but_never_an_installed_tube(self):
         text = override("Thoracostomy_closeLocal")
@@ -114,12 +111,16 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertIn('_message = "NAR SPEAR placed.";', edit)
 
     def test_callbacks_are_registered_and_old_ncd_wrapper_cannot_override_them(self):
-        config = read_source(ROOT / 'config.cpp')
-        post = read_source(ROOT / 'functions/fn_postInit.sqf')
-        for name in LOCAL + ("handlePneumothorax",):
-            self.assertTrue(f'class {name} {{ file = "\\acm_extended\\overrides\\fn_{name}.sqf"; }};' in config, f"Missing override: {name}")
-        self.assertNotIn('ACM_breathing_fnc_performNCDLocal =', post)
-        self.assertNotIn('ACME_ncdReTensionState =', post)
+        prep=(ROOT.parent/'breathing/XEH_PREP.hpp').read_text()
+        events=(ROOT.parent/'breathing/XEH_postInit.sqf').read_text()
+        post=read_source(ROOT/'functions/fn_postInit.sqf')
+        for name in LOCAL+('handlePneumothorax',):
+            self.assertEqual(prep.count('PREP('+name+');'),1)
+            self.assertTrue((ROOT.parent/'breathing/functions'/('fnc_'+name+'.sqf')).is_file())
+            if name in LOCAL:
+                self.assertIn('LINKFUNC('+name+')',events)
+        self.assertNotIn('ACM_breathing_fnc_performNCDLocal =',post)
+        self.assertNotIn('ACME_ncdReTensionState =',post)
 
 
 if __name__ == '__main__':

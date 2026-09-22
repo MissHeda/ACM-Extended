@@ -41,7 +41,9 @@ private _torsadesMature = _rhythm == 102 && {
 private _tourniqueted = if (!isNil "ace_medical_treatment_fnc_hasTourniquetAppliedTo") then {
     [_patient, _bodyPart] call ace_medical_treatment_fnc_hasTourniquetAppliedTo
 } else {false};
-private _aajt = if (!isNil "ACME_fnc_aajtOccludes") then {[_patient,_bodyPart] call ACME_fnc_aajtOccludes} else {false};
+// Pulse assessment accepts names; the shared occlusion API accepts ACE body-part indices.
+private _partIndex = ["head","body","leftarm","rightarm","leftleg","rightleg"] find _part;
+private _aajt = if (!isNil "ACME_fnc_aajtOccludes") then {[_patient,_partIndex] call ACME_fnc_aajtOccludes} else {false};
 private _mechanicalPulse = alive _patient
     && {!(_patient getVariable ["ace_medical_inCardiacArrest", false])}
     && {!_torsadesMature}
