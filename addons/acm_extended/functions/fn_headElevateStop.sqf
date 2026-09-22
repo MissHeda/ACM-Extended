@@ -1,8 +1,15 @@
 // B71 lower Semi-Fowler to flat using the authored patient release in tandem with the provider sequence.
-params [["_medic", objNull, [objNull]], ["_patient", objNull, [objNull]], ["_quiet", false, [false]]];
+params [
+    ["_medic", objNull, [objNull]],
+    ["_patient", objNull, [objNull]],
+    ["_quiet", false, [false]],
+    ["_frontNormalized", false, [false]]
+];
 if (isNull _patient) exitWith {};
-if (!local _patient) exitWith {[_patient, "headElevStop", [_medic, _patient, _quiet]] call ACME_fnc_ownerDispatch;};
-if (canSuspend) exitWith {isNil {[_medic, _patient, _quiet] call ACME_fnc_headElevateStop;};};
+if (!local _patient) exitWith {
+    [_patient, "headElevStop", [_medic, _patient, _quiet, _frontNormalized]] call ACME_fnc_ownerDispatch;
+};
+if (canSuspend) exitWith {isNil {[_medic, _patient, _quiet, _frontNormalized] call ACME_fnc_headElevateStop;};};
 [_patient] call ACME_fnc_headElevHoldClear;
 _patient setVariable ["ACME_headElev_treatments", createHashMap, true];
 if (!alive _patient) exitWith {[_patient] call ACME_fnc_headElevDeathRelease;};
@@ -10,6 +17,37 @@ if !(_patient getVariable ["ACME_headElevated", false]) exitWith {
     [_patient] call ACME_fnc_headElevVestRestore;
     [_patient] call ACME_fnc_chestAccessVestRestore;
 };
+
+// Lowering Semi-Fowler also starts from the back. If something externally left the casualty posterior-up, roll
+// front/supine first and only then play ACME_HeadElevPatientRelease.
+private _actualBeforeLower = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
+    call ACME_fnc_chestSealActualSide;
+private _needFrontFirst = !_frontNormalized && {_actualBeforeLower != "front"};
+
+if (_needFrontFirst) exitWith {
+    private _delay = 0.08;
+
+    if ([_patient] call ACME_fnc_chestSealCanPhysicalRoll) then {
+        [_patient,"front",false,_medic,true] call ACME_fnc_chestSealRoll;
+        private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+        if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
+        _delay = (_rollTime max 0.1) + 0.08;
+    } else {
+        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
+        _patient setVariable ["ACME_CS_facing","front",true];
+        ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+    };
+
+    [{
+        params ["_m","_p","_quiet"];
+        if (!isNull _p && {local _p}) then {
+            _p setVariable ["ACME_CS_facing","front",true];
+            [_m,_p,_quiet,true] call ACME_fnc_headElevateStop;
+        };
+    }, [_medic,_patient,_quiet], _delay] call CBA_fnc_waitAndExecute;
+};
+
+_patient setVariable ["ACME_CS_facing","front",true];
 _patient setVariable ["ACME_headElev_poseToken", "", true];
 _patient setVariable ["ACME_headElevated", false, true];
 _patient setVariable ["ACME_headElev_Suspended", false, true];

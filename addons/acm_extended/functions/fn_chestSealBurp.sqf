@@ -9,4 +9,4 @@ if !([_patient,true] call ACME_fnc_chestSealBurpReady) exitWith {};
 if (alive _patient) then {[_patient,"burp"] call ACME_fnc_ptxTreat;};
 _patient setVariable ["ACME_CS_lastBurp",CBA_missionTime,true];
 [_patient, "burp", "Burped chest seal", [], _medic, 0] call ACME_fnc_chestSealLogOnce;
-[_medic,"chestSealBurpGesture",[_medic,_patient]] call ACME_fnc_ownerDispatch;
+// Provider remains in the persistent workspace hold. medic3 is seal-placement-only.

@@ -3,6 +3,7 @@ if (missionNamespace getVariable ["ACME_NA2_ownerInstalled", false]) exitWith {}
 ACME_NA2_ownerInstalled = true;
 ["ACME_ownerCommand", { isNil { _this call ACME_fnc_ownerDispatch; }; }] call CBA_fnc_addEventHandler;
 ["ACME_netNotice", { _this call ACME_fnc_netNotice; }] call CBA_fnc_addEventHandler;
+["ACME_seizureGestureSync", { _this call ACME_fnc_seizureGestureSync; }] call CBA_fnc_addEventHandler;
 ["ACME_transfusionRemoveResult", {_this call ACME_fnc_transfusionRemoveBagResult;}] call CBA_fnc_addEventHandler;
 ["ACME_transfusionPullResult", {_this call ACME_fnc_transfusionPullResult;}] call CBA_fnc_addEventHandler;
 ["ACME_rehangUsedBagResult", {_this call ACME_fnc_rehangUsedBagResult;}] call CBA_fnc_addEventHandler;
@@ -63,6 +64,8 @@ ACME_NA2_ownerInstalled = true;
 ["ACME_thoraOutput", { if (isServer) then { isNil { _this call ACME_fnc_thoraOutput; }; }; }] call CBA_fnc_addEventHandler;
 ["CAManBase", "Local", {
     params ["_unit", "_isLocal"];
+    // Also invalidates an old callback on an away-and-back locality change.
+    _unit setVariable ["ACME_wakeRepairTicket", (_unit getVariable ["ACME_wakeRepairTicket", 0]) + 1, false];
     [_unit] call ACME_fnc_aajtDownedStop;
     private _headPFH = _unit getVariable ["ACME_headElev_pfh", -1];
     if (_headPFH >= 0) then {[_headPFH] call CBA_fnc_removePerFrameHandler;};

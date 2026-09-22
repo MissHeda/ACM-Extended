@@ -10,8 +10,8 @@ missionNamespace setVariable ["ACME_chestAccess_classes", _classes];
     private _class = toLowerANSI _classname;
     if !(_class in (missionNamespace getVariable ["ACME_chestAccess_classes", []])) exitWith {};
 
-    // The treatment wrapper may already have completed the physical carrier-removal preflight and created this
-    // exact lease. In that case treatmentStarted only confirms ownership; never replay the lift/removal sequence.
+    // The animation preflight reserves custody BEFORE native treatment starts. If this exact provider/patient/class
+    // already owns a lease, keep it; treatmentStarted must not remove the carrier twice or create a second owner.
     private _existing = _medic getVariable ["ACME_chestAccess_treatment", []];
     if ((_existing param [0,objNull]) isEqualTo _patient
         && {(_existing param [1,""]) == _class}

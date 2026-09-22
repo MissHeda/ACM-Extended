@@ -68,11 +68,12 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             interpolateTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15, "Unconscious", 0.02};
         };
 
-        // Chest-seal workspace hold. The runtime freezes this exact medic3 motion at the configured hands-on-chest
-        // sample for the lifetime of the minigame. A Flip may interpolate into medic4 and then return here directly.
-        class AinvPknlMstpSnonWnonDnon_medic3;
-        class ACME_ChestSealWorkspace: AinvPknlMstpSnonWnonDnon_medic3 {
-            looped = 0;
+        // Persistent hands-on-chest workspace pose. This deliberately does NOT inherit medic3:
+        // medic3 is reserved exclusively for the moment a chest seal is actually applied. The CPR stop pose is
+        // already a stable hands-planted-on-chest state, so the panel can remain open without replaying a treatment.
+        class ACM_CPR_Stop;
+        class ACME_ChestSealWorkspace: ACM_CPR_Stop {
+            looped = 1;
             disableWeapons = 1;
             disableWeaponsLong = 1;
             disableWeaponsShort = 1;
@@ -81,17 +82,20 @@ class CfgMovesMaleSdr: CfgMovesBasic {
             enableOptics = 0;
             enableBinocular = 0;
             connectFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
             };
-            connectTo[] = {"AmovPknlMstpSnonWnonDnon", 0.15};
+            connectTo[] = {
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
+            };
             interpolateFrom[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08
             };
             interpolateTo[] = {
-                "AmovPknlMstpSnonWnonDnon", 0.15,
-                "AinvPknlMstpSnonWnonDnon_medic4", 0.10,
+                "AmovPknlMstpSnonWnonDnon", 0.12,
+                "AinvPknlMstpSnonWnonDnon_medic4", 0.08,
                 "Unconscious", 0.02
             };
         };
@@ -133,7 +137,8 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         };
         class ACME_HeadElevPatientRelease: AinjPpneMrunSnonWnonDb_release {
             looped = 0;
-            ConnectTo[] = {"AinjPpneMstpSnonWnonDnon", 0.1};
+            // Lay-flat and chest-access release must finish supine, never in BI's injured-prone idle.
+            ConnectTo[] = {"ACM_LyingState", 0.1};
             InterpolateTo[] = {"Unconscious", 0.02};
         };
 
@@ -182,7 +187,6 @@ class CfgMovesMaleSdr: CfgMovesBasic {
         // ACM_CPR_Stop. The RTM is inherited from ACM, but the graph is connected to the normal unarmed
         // crouch so playMoveNow can interpolate into and out of the hold. This keeps the same visual pose
         // without the one-frame snap that switchMove produces.
-        class ACM_CPR_Stop;
         class ACME_DirectPressureHold: ACM_CPR_Stop {
             looped = 1;
             disableWeapons = 1;
@@ -1269,7 +1273,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         scope = 2;
         author = "mavis";
         displayName = "LifeWarmer Quantum";
-        descriptionShort = "Inline blood/fluid warmer. Carry it when hanging blood: that unit infuses warm, countering transfusion-driven hypothermia.";
+        descriptionShort = "Inline blood/fluid warmer. Non-cold blood runs at 200 mL/min; cold-stored blood uses the cold-flow ladder. Warms transfused blood and counters hypothermia.";
         picture = "\acm_extended\ui\items\quantum_bloodwarmer_ca.paa";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
@@ -1816,9 +1820,10 @@ class CfgFunctions {
             class registerChestAccessVestRuntime {};
             class chestAccessVestEvent {};
             class chestAccessVestAcquire {};
-            class chestAccessVestProvider {};
             class chestAccessVestPark {};
             class chestAccessVestRestore {};
+            class chestAccessVestProvider {};
+            class chestSealProviderHoldStart {};
             class registerMegacodeInteractionRuntime {};
             class registerVentilatorKeybindRuntime {};
             class initMinigameInteractionRuntime {};
@@ -2563,6 +2568,7 @@ class CfgFunctions {
             class debugInduceSeizure {};
             class seizureMotion {};
             class seizureGestureAdvance {};
+            class seizureGestureSync {};
             class clearAllAilments {};
             class syncToggle {};
             class syncCardiovert {};
@@ -2607,7 +2613,6 @@ class CfgFunctions {
             class treatmentGesture {};
             class treatmentPoseStop {};
             class treatmentPoseSync {};
-            class chestSealProviderHoldStart {};
             class providerStanceOwned {};  // Batch 07
             class beginStethoscopeAction {};
             class stethoscopeInit {};

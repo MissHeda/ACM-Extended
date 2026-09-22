@@ -15,13 +15,32 @@
  * Public: No
  */
 
-params [
-    "_medic",
-    "_patient",
-    ["_bodyPart", "Body"],
-    ["_entryReady", false, [false]],
-    ["_entryEpoch", -1, [0]]
-];
+params ["_medic", "_patient", ["_bodyPart", "Body"]];
+
+// ACE treatment callbacks pass the treatment classname in slot 3. ACME's internal prone-entry path historically
+// used slot 3 as a boolean. Accept both shapes explicitly instead of typing slot 3 as BOOL, which made every native
+// UseStethoscope success throw "Params: Type String, expected Bool" before the dialog could be created.
+private _entryReady = false;
+private _slot3 = _this param [3, false];
+if (_slot3 isEqualType true) then {_entryReady = _slot3;};
+private _slot4 = _this param [4, false];
+if (_slot4 isEqualType true) then {_entryReady = _entryReady || _slot4;};
+
+// A chest-prepared auscultation launch has already completed its patient-side lay-flat transaction. Trust that exact
+// lease instead of reclassifying one transitional visual frame and starting a second roll. This is especially
+// important for Semi-Fowler, where the Release > ACM_LyingState handoff happens immediately before this callback.
+private _chestEntry = _medic getVariable ["ACME_chestAccess_treatment", []];
+private _chestLease = _chestEntry param [2, ""];
+if (!_entryReady
+    && {(_chestEntry param [0, objNull]) isEqualTo _patient}
+    && {(_chestEntry param [1, ""]) == "usestethoscope"}
+    && {_chestLease != ""}
+    && {(_patient getVariable ["ACME_chestAccess_readyLease", ""]) == _chestLease}
+    && {(_patient getVariable ["ACME_chestAccess_readyServer", -1]) >= 0}
+    && {serverTime >= (_patient getVariable ["ACME_chestAccess_readyServer", -1])}) then {
+    _entryReady = true;
+    _patient setVariable ["ACME_CS_facing", "front", true];
+};
 
 // you cannot auscultate in an airframe.
 // this is not a balance decision, it is simply true, and every flight medic knows it. a running helicopter puts 500
@@ -57,6 +76,18 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
 [[_medic, _patient, _bodyPart], {  // on start.
     params ["_medic", "_patient", "_bodyPart"];
+
+    // Clinical UI first. The scope is the treatment; provider/patient animation is presentation.
+    // Base ACM creates the stethoscope dialog directly from this callback. Keep that invariant so an
+    // animation or locality problem can never consume the click before the minigame exists.
+    createDialog "ACM_breathing_Stethoscope_Dialog";
+    private _display = findDisplay 81000;
+    if (isNull _display) exitWith {
+        ACM_core_ContinuousAction_Active = false;
+        ["Unable to open auscultation display.", 2, _medic] call ace_common_fnc_displayTextStructured;
+    };
+    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG", _display];
+    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
 
     [_patient,"stethoscopeLungs",[[_patient] call ACME_fnc_clinicalEpoch]] call ACME_fnc_ownerDispatch;
 
@@ -95,25 +126,6 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
     // Reduce surrounding audio while the scope is in use. Diagnostic channels bypass this mix.
     ace_hearing_volumeAttenuation = 0.1;
     [(localize "STR_ACE_Volume_Lowered"), 1.5, _medic] call ace_common_fnc_displayTextStructured;
-
-    createDialog "ACM_breathing_Stethoscope_Dialog";
-
-    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG",(findDisplay 81000)];
-
-    private _display = uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG", displayNull];
-    [_display, _patient, _medic] call ACME_fnc_stethoscopeInit;
-
-    // Scope cleanup is display-generation scoped. Record the exact leases which belong to THIS dialog so a late
-    // Unload from an older scope can never release the patient hold or plate-carrier lease of a newer scope.
-    private _patientLease = _medic getVariable ["ACME_stethPatientAnimLease", []];
-    _display setVariable ["ACME_stethPatientLeaseToken", _patientLease param [1, ""]];
-    private _chestLease = _medic getVariable ["ACME_chestAccess_treatment", []];
-    private _chestLeaseId = "";
-    if ((_chestLease param [0,objNull]) isEqualTo _patient
-        && {toLowerANSI (_chestLease param [1,""]) == "usestethoscope"}) then {
-        _chestLeaseId = _chestLease param [2,""];
-    };
-    _display setVariable ["ACME_stethChestLeaseId", _chestLeaseId];
 
     private _initialSide = [_patient, _patient getVariable ["ACME_CS_facing", "front"]] call ACME_fnc_chestSealActualSide;
     [_display, _initialSide] call ACME_fnc_stethoscopeSetView;
@@ -177,4 +189,4 @@ if (!_entryReady && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}) then {
 
     // The dialog owns its own cursor/audio PFH. This controller retains only treatment validity, CPR exclusion
     // and the casualty animation lease.
-}, false, 81000, _entryEpoch] call ACME_fnc_beginStethoscopeAction;
+}, false, 81000] call ACME_fnc_beginStethoscopeAction;

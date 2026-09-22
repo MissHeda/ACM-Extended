@@ -12,8 +12,8 @@ def test_wake_gate_and_request_are_registered():
     assert "PREP(requestWake);" in prep
 
 def test_request_wake_repairs_only_after_gate_recheck():
-    s = read(ADDONS / "core/functions/fnc_requestWake.sqf")
-    assert "ACM_core_fnc_canWake" in s
+    s = read(ADDONS / "core/functions/fnc_reconcileWake.sqf")
+    assert "FUNC(canWake)" in s
     assert "ACE_isUnconscious" in s
     assert "setUnconsciousState" in s
     assert "ACME CONSCIOUSNESS REPAIR" in s

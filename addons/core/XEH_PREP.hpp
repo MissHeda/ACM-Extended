@@ -6,6 +6,7 @@ PREP(beginContinuousAction);
 PREP(bvmActive);
 PREP(canWake);
 PREP(requestWake);
+PREP(reconcileWake);
 PREP(cancelCarryingPrompt);
 PREP(canCheckDogtag);
 PREP(checkIncompatibleAddons);

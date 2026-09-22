@@ -409,7 +409,9 @@ private _pfh = [{
         GVAR(TransfusionMenu_Selection_IVBags_LastUpdate) = CBA_missionTime;
         [true] call FUNC(TransfusionMenu_UpdateBagList);
     };
-}, 0, [_display, _medic, _patient, _inVehicle, _menuGeneration, _closeID]] call CBA_fnc_addPerFrameHandler;
+// This loop only repaints menu controls. 10 Hz is responsive while avoiding dozens of control mutations
+// on every rendered frame, which was especially costly on lower-FPS clients.
+}, 0.10, [_display, _medic, _patient, _inVehicle, _menuGeneration, _closeID]] call CBA_fnc_addPerFrameHandler;
 
 _display setVariable ["ACM_TX_PFH", _pfh];
 _display displayAddEventHandler ["Unload", {

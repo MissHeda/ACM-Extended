@@ -12,10 +12,15 @@ if (!local _patient) exitWith {[_patient, "chestAccessVestEvent", _this] call AC
 private _leases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
 if (_start) then {
     _leases set [_id, [_medic, CBA_missionTime, toLowerANSI _classname]];
+    _patient setVariable ["ACME_chestAccess_readyLease", _id, true];
+    _patient setVariable ["ACME_chestAccess_readyServer", -1, true];
 } else {
     _leases deleteAt _id;
 };
 _patient setVariable ["ACME_chestAccess_leases", _leases, true];
+if (!_start && {(count _leases) == 0}) then {
+    _patient setVariable ["ACME_chestAccess_readyLease", "", true];
+};
 
 // Thoracostomy is a long minigame rather than one treatment timer. Publish a procedure flag from the live lease
 // set so a roll or another action cannot return the carrier before the thoracostomy screen actually closes.
@@ -29,5 +34,7 @@ _patient setVariable ["ACME_Thora_ChestAccessActive", _thoraActive, true];
 if (_start) then {
     [_patient, _medic, "access"] call ACME_fnc_chestAccessVestAcquire;
 } else {
-    if ((count _leases) == 0) then {[_patient] call ACME_fnc_chestAccessVestRestore;};
+    if ((count _leases) == 0) then {
+        [_patient, false, _medic, "access"] call ACME_fnc_chestAccessVestRestore;
+    };
 };

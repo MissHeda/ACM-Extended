@@ -100,7 +100,8 @@ if (_pr >= _lungKpa) then {
 // one, so waking, the consciousness budget and every existing check behave exactly as they do for any other cause.
 if (_dose >= (missionNamespace getVariable ["ACME_blast_koDose", 0.45]) && {local _unit}) then {
     if (!(_unit getVariable ["ACE_isUnconscious", false])) then {
-        [_unit, true, (10 + (_dose * 40)), false] call ace_medical_status_fnc_setUnconsciousState;
+        // Use ACE's public setter so the medical state machine and ACE_isUnconscious stay synchronized.
+        [_unit, true, (10 + (_dose * 40)), false] call ace_medical_fnc_setUnconscious;
     };
 };
 

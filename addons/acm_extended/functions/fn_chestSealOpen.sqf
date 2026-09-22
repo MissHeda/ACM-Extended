@@ -37,11 +37,16 @@ private _open = {
     params ["_p", "_tok", "_m"];
     if ((uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok) exitWith {};
     if (isNull _p || {isNull _m} || {!alive _m} || {!local _m}
-        || {_m isNotEqualTo ACE_player} || {_m getVariable ["ACE_isUnconscious", false]}) exitWith {
+        || {_m getVariable ["ACE_isUnconscious", false]}) exitWith {
         [] call ACME_fnc_chestSealClose;
     };
+
+    // Presentation begins only after casualty/carrier preparation is complete. The workspace minigame still opens
+    // even if the provider pose cannot start; animation can never veto the clinical UI.
     private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
+    _m setVariable ["ACME_CS_providerHoldEpoch", _holdEpoch, false];
     uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
+
     ["ACME_ChestSeal_Dialog"] call ACME_fnc_minigameOpen;
     [{
         params ["_p", "_tok"];
@@ -55,7 +60,22 @@ private _open = {
     params ["_p", "_tok", "_m"];
     if (isNull _p || {!alive _m} || {(uiNamespace getVariable ["ACME_CS_SessionToken", ""]) != _tok}) exitWith {true};
     private _readyAt = _p getVariable ["ACME_CS_ProcedureReadyAt", -1];
+
+    // Normal path: carrier medic4 is still owned and has reached its 2.2 s frozen stage. Open at that exact
+    // boundary and chestSealProviderHoldStart hands directly into the workspace pose. If provider presentation
+    // failed/retired, clinical UI remains fail-open instead of being blocked forever by theatre.
+    private _pose = _m getVariable ["ACME_treatmentPoseState", []];
+    private _mode = _pose param [1,""];
+    private _stage = _pose param [3,-2];
+    private _providerReady = (_mode == "chestAccess" && {_stage >= 3}) || {_mode != "chestAccess"};
+
     (_tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]))
         && {_readyAt >= 0}
         && {serverTime >= _readyAt}
-}, _open, [_patient, _sessionToken, _medic], 4, _open] call CBA_fnc_waitUntilAndExecute;
+        && {_providerReady}
+}, _open, [_patient, _sessionToken, _medic], 12, {
+    params ["_p","_tok","_m"];
+    if ((uiNamespace getVariable ["ACME_CS_SessionToken",""]) != _tok) exitWith {};
+    diag_log format ["[ACME CHEST SEAL] Preparation timeout on %1; closing workspace instead of opening over an unfinished casualty.", netId _p];
+    [] call ACME_fnc_chestSealClose;
+}] call CBA_fnc_waitUntilAndExecute;

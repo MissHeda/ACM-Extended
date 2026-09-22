@@ -22,6 +22,11 @@ if (_patient getVariable ["ACME_clinicalRestoring", false]) exitWith {};
 
 if (!local _patient) exitWith {};
 
+// A fresh unconscious episode invalidates any earlier deferred wake request.
+if (_state) then {
+    _patient setVariable ["ACME_wakeRepairTicket", (_patient getVariable ["ACME_wakeRepairTicket", 0]) + 1, false];
+};
+
 if !(_state) then {
     if (_patient getVariable [QGVAR(WasTreated), false]) then {
         _patient setVariable [QGVAR(Lying_State), true, true];

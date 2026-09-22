@@ -124,16 +124,18 @@ _logo ctrlSetAngle [-90,0.5,0.5,false];
 _logo ctrlCommit _ease;
 
 _slot params ['_sx','_sy','_sw','_sh'];
-// Keep the deck tight. The offsets are deliberately measured from the real catheter's visible midpoint, not the
-// tray box or the transparent PAA canvas. Every clone uses the same aspect-preserving canvas dimensions as the
-// live logo, so changing angle no longer stretches the artwork or throws it toward the right edge of the screen.
-// UI Y increases downward. Every clone therefore uses a NEGATIVE Y offset so inventory only splays upward
-// from the slightly lowered resting catheter. No copy is allowed to fan below the tray's front needle.
+// One-sided upward fan. UI Y increases downward, so EVERY clone receives a substantial negative-Y rise.
+// The former tiny -0.034/-0.060 offsets moved only the control center a few pixels; once the long catheter was
+// rotated, one end still visibly dropped below the resting needle. These offsets clear the full tilted silhouette,
+// including 32:9 where one tray slot is physically short relative to the catheter length.
+//
+// X still opens the deck slightly left/right, but Y is monotonic upward. Nothing is ever spawned below the
+// resting/front catheter.
 private _poses = [
-    [-0.024, -0.060, -99],
-    [-0.010, -0.034, -94],
-    [ 0.010, -0.034, -86],
-    [ 0.024, -0.060, -81]
+    [-0.036, -0.58, -99],
+    [-0.014, -0.78, -94],
+    [ 0.014, -0.98, -86],
+    [ 0.036, -1.18, -81]
 ];
 private _cloneCount = ((_shown - 1) max 0) min 4;
 private _fanMul = 1.03;
@@ -158,13 +160,14 @@ for '_i' from 0 to 3 do {
 };
 
 if (!isNull _plus) then {
-    // The + badge is always derived from the live tray background, never from the oversized catheter canvas.
-    // Keep a full inset on every edge so UI scale/aspect changes cannot place it outside the actual tile.
+    // >5 badge belongs INSIDE the live gauge tile, at its TOP-LEFT corner. It is deliberately anchored to the
+    // background slot rather than the oversized catheter canvas, so aspect changes and hover scaling cannot push it
+    // outside the tray icon.
     private _pw = _sw * 0.20;
     private _ph = _sh * 0.25;
     private _insetX = _sw * 0.045;
     private _insetY = _sh * 0.035;
-    private _px = _sx + _sw - _pw - _insetX;
+    private _px = _sx + _insetX;
     private _py = _sy + _insetY;
     _plus ctrlSetPosition [_px,_py,_pw,_ph];
     _plus ctrlSetFontHeight (_sh * 0.21);

@@ -9,6 +9,9 @@ if (isNull _target || {_selectionN < 0}) exitWith {};
 
 private _state = _target getVariable ["ACME_lido_seizureState", ""];
 if (_state == "") exitWith {};
+// With no observable motor activity this menu cannot diagnose an electrographic seizure.
+// Debug still exposes the actual cerebral state; no physiology is changed here.
+if (_target getVariable ["ACME_roc_paralyzed", false]) exitWith {};
 
 // a whole-body neuro finding: show it on the head, 0, and the body, 1, only.
 if !(_selectionN in [0, 1]) exitWith {};

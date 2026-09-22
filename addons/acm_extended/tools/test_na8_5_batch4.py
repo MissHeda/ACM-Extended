@@ -96,11 +96,14 @@ class ManualInfusionSource(unittest.TestCase):
         self.assertIn('["ACME_ket_induceThreshold", 7]',src('sedationComponents'))
     def test_b14_all_hypnotics_use_shared_induction(self):
         self.assertIn('ACME_fnc_propofolOnBoard',src('sedationComponents'))
-        self.assertIn('{_maint} else {1}',src('ketamineSedationTick'))
+        self.assertIn('ACME_fnc_sedationActive',src('ketamineSedationTick'))
+        self.assertIn('(_load >= 1) || {_owned && {_load >= _maintenance}}',src('sedationActive'))
     def test_player_exemption_and_locality(self):
         s=src('ketamineSedationTick');self.assertNotIn('isPlayer _patient',s);self.assertIn('!local _patient',s)
     def test_b14_shared_adequacy_reads_live_setting(self):
-        for n in ('ketamineSedationTick','ventStatusTick','rocuroniumTick'):
+        for n in ('ketamineSedationTick','rocuroniumTick'):
+            self.assertIn('call ACME_fnc_sedationActive',src(n))
+        for n in ('sedationActive','ventStatusTick'):
             self.assertIn('call ACME_fnc_sedationThreshold',src(n))
         # B18 capnography no longer manufactures dyssynchrony from sedation/paralytic state; it reads the
         # actual coordination state published by the ventilator drive.

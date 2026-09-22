@@ -18,6 +18,17 @@
  */
 
 params ["_ctrl", "_target", "_selectionN"];
+if (isNull _ctrl) exitWith {};
+
+// The native medical menu asks for this list continuously. Rebuilding the entire listbox every rendered frame
+// (including wound formatting, IV/IO lookups and lbClear/lbAdd churn) is pure UI overhead.
+// A patient/body-part change still bypasses the throttle immediately.
+private _paintKey = [_target, _selectionN];
+private _lastPaintKey = _ctrl getVariable ["ACME_injuryPaintKey", []];
+private _nextPaint = _ctrl getVariable ["ACME_injuryNextPaint", 0];
+if (_paintKey isEqualTo _lastPaintKey && {diag_tickTime < _nextPaint}) exitWith {};
+_ctrl setVariable ["ACME_injuryPaintKey", _paintKey];
+_ctrl setVariable ["ACME_injuryNextPaint", diag_tickTime + 0.15];
 
 private _entries = [];
 private _nonissueColor = [1, 1, 1, 0.33];

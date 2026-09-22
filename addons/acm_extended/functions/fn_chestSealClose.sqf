@@ -9,15 +9,29 @@ if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_rem
 uiNamespace setVariable ["ACME_CS_FlipPFH",-1];
 uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
 private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
+private _closingPatient = uiNamespace getVariable ["ACME_CS_Patient",objNull];
+
 if (!isNull _flipMedic && {local _flipMedic}) then {
     [_flipMedic,"chestSealFlip"] call ACME_fnc_rollProviderCancel;
 
-    private _holdEpoch = _flipMedic getVariable ["ACME_CS_providerHoldEpoch",-1];
+    // Whatever chest presentation owns the provider now (workspace, seal-placement medic3, or a still-frozen
+    // chestAccess medic4) is a handoff into ONE clean exit. Do not run its ordinary crouch exit first.
     private _pose = _flipMedic getVariable ["ACME_treatmentPoseState",[]];
-    if ((_pose param [1,""]) == "chestSealWorkspace") then {
-        [_flipMedic,"chestSealWorkspace",_holdEpoch] call ACME_fnc_treatmentPoseStop;
+    private _poseMode = _pose param [1,""];
+    private _poseEpoch = _pose param [0,-1];
+    if (_poseEpoch >= 0 && {_poseMode in ["chestSealWorkspace","chestSeal","chestAccess"]}) then {
+        [_flipMedic,_poseMode,_poseEpoch,true] call ACME_fnc_treatmentPoseStop;
     };
+
     _flipMedic setVariable ["ACME_CS_providerHoldEpoch",-1,false];
+
+    // User-requested close theatre: the exact Semi-Fowler Putdown pair, then normal unarmed crouch.
+    if (alive _flipMedic
+        && {!(_flipMedic getVariable ["ACE_isUnconscious",false])}
+        && {isNull objectParent _flipMedic}
+        && {!(_flipMedic getVariable ["ACME_headElev_seqActive",false])}) then {
+        [_flipMedic,"lower"] call ACME_fnc_headElevMedicSeq;
+    };
 };
 uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",-1];
 if (!isNull _flipMedic && {local _flipMedic}
@@ -33,15 +47,15 @@ if (!isNull _flipMedic && {local _flipMedic}
 
 // onunload: persist the final hole state to the patient, so re-opening shows exactly what was left, then drop the
 // pfh and clear the runtime state. the ctrlcreate'd dots, holes, seals and cursor-seal die with the dialog.
-private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
+private _patient = _closingPatient;
 if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] call ACME_fnc_ecgJostleRequest;};
 // NA2: no clinical writes on unload. Pending actions resolve independently of this display.
 
-// Restore the casualty through the same owner-local procedure transaction that prepared them. It returns them to
-// the side they had before the minigame, gives the carrier back, then resumes an existing Semi-Fowler placement.
+// Restore through the same owner-local procedure transaction that prepared them. Teardown ALWAYS normalizes
+// anterior-up / lying on the back, gives the carrier back, then resumes Semi-Fowler only from that supine base.
 private _sessionToken = uiNamespace getVariable ["ACME_CS_SessionToken", ""];
 if (!isNull _patient && {_sessionToken != ""}) then {
-    [_patient, "chestSealPatientEnd", [_patient, _sessionToken]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealPatientEnd", [_patient, _sessionToken, _flipMedic]] call ACME_fnc_ownerDispatch;
 };
 uiNamespace setVariable ["ACME_CS_SessionToken", ""];
 
@@ -58,6 +72,7 @@ uiNamespace setVariable ["ACME_CS_Dragging", false];
 uiNamespace setVariable ["ACME_CS_DragPt", []];
 uiNamespace setVariable ["ACME_CS_DragLast", -1];
 uiNamespace setVariable ["ACME_CS_FlipLockedUntil", 0];
+uiNamespace setVariable ["ACME_CS_ApplyGestureUntil", 0];
 uiNamespace setVariable ["ACME_CS_VirtualFlip", false];
 uiNamespace setVariable ["ACME_CS_FingerGlow", []];
 uiNamespace setVariable ["ACME_CS_Held", false];

@@ -62,6 +62,19 @@ def test_sarin_joins_shared_seizure_state_machine():
     assert '_patient setVariable ["ACME_sarinSeizureCause", false, true];' in reset
 
 
+
+def test_seizure_gesture_sequence_is_network_visible_and_vehicle_safe():
+    motion = read(ADDON / "functions" / "fn_seizureMotion.sqf")
+    advance = read(ADDON / "functions" / "fn_seizureGestureAdvance.sqf")
+    sync = read(ADDON / "functions" / "fn_seizureGestureSync.sqf")
+    owner = read(ADDON / "functions" / "fn_ownerInit.sqf")
+    assert '"ACME_seizureGestureSync"' in owner
+    assert "CBA_fnc_globalEvent" in advance
+    assert '_patient switchGesture [_next,0,1,false];' not in advance
+    assert 'switchGesture [_gesture, 0, 1, false]' in sync
+    assert '_on && {!isNull objectParent _patient}' in motion
+    assert '!isNull objectParent _patient' in sync
+
 def test_full_heal_clears_new_gesture_state():
     s = read(ADDON / "functions" / "fn_clearAllAilments.sqf")
     for name in [

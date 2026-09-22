@@ -63,12 +63,17 @@ switch (_operation) do {
     case "headElevTreatment": {_args call ACME_fnc_headElevTreatmentEvent;};
     case "chestAccessVestEvent": {_args call ACME_fnc_chestAccessVestEvent;};
     case "chestAccessVestProvider": {_args call ACME_fnc_chestAccessVestProvider;};
-    case "chestSealProviderHold": {_args call ACME_fnc_chestSealProviderHoldStart;};
+    case "chestAccessFrontRoll": {
+        _args params [["_medic",objNull,[objNull]],["_casualty",objNull,[objNull]]];
+        if (!isNull _medic && {local _medic} && {alive _medic} && {!isNull _casualty}) then {
+            [_medic,"chestAccessFront",_casualty] call ACME_fnc_rollProviderStart;
+        };
+    };
     case "headElevTilt": {_args call ACME_fnc_headElevApplyTilt;};
     case "headElevCollision": {_args call ACME_fnc_headElevCollision;};
     case "headElevSuspend": {_args call ACME_fnc_headElevSuspend;};
     case "headElevTryResume": {_args call ACME_fnc_headElevTryResume;};
-    case "headElevResume": {[_patient] call ACME_fnc_headElevResume;};
+    case "headElevResume": {_args call ACME_fnc_headElevResume;};
     case "headElevStart": {_args call ACME_fnc_headElevateStart;};
     case "headElevStop": {_args call ACME_fnc_headElevateStop;};
     case "headElevDeath": {[_patient] call ACME_fnc_headElevDeathRelease;};
@@ -343,14 +348,6 @@ switch (_operation) do {
     case "nrbState": { _args call ACME_fnc_nrbStateLocal; };
     case "nrbAck": { _args call ACME_fnc_nrbOxygenAck; };
     case "chestEffect": { _args call ACME_fnc_chestSealEffectLocal; };
-    case "chestSealBurpGesture": {
-        _args params ["_medic","_casualty"];
-        if (_medic isEqualTo _patient && {!isNull _casualty} && {alive _medic}
-            && {!(_medic getVariable ["ACE_isUnconscious",false])}
-            && {(_medic distance _casualty) <= 5}) then {
-            [_medic,"chestSeal",3] call ACME_fnc_treatmentGesture;
-        };
-    };
     case "burp": { _args call ACME_fnc_chestSealBurp; };
     case "chestSealRoll": {_args call ACME_fnc_chestSealRoll;};
     case "patientRollCancel": {_args call ACME_fnc_patientRollCancel;};

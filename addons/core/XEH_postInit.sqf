@@ -74,6 +74,29 @@ if (GVAR(ignoreIncompatibleAddonWarning)) then {
     };
 }] call CBA_fnc_addEventHandler;
 
+// External and native wake events share the same state-aware repair as requestWake.
+// A later knockout, full heal/restore, second request or owner handoff invalidates this callback.
+[QACEGVAR(medical,WakeUp), {
+    params [["_unit", objNull, [objNull]]];
+    if (isNull _unit || {!local _unit} || {!alive _unit}) exitWith {};
+    private _ticket = (_unit getVariable ["ACME_wakeRepairTicket", 0]) + 1;
+    _unit setVariable ["ACME_wakeRepairTicket", _ticket, false];
+    private _epoch = _unit getVariable ["ACME_clinicalEpoch", 0];
+    private _owner = owner _unit;
+    [{
+        params ["_unit", "_ticket", "_epoch", "_owner"];
+        if (isNull _unit || {!local _unit} || {!alive _unit}
+            || {owner _unit != _owner}
+            || {(_unit getVariable ["ACME_wakeRepairTicket", -1]) != _ticket}
+            || {(_unit getVariable ["ACME_clinicalEpoch", 0]) != _epoch}
+            || {_unit getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
+        if !([_unit] call FUNC(canWake)) exitWith {};
+        if ([_unit, "wake-event"] call FUNC(reconcileWake)) then {
+            _unit setVariable ["ACME_obtunded_wakeStimGraceUntil", CBA_missionTime + 20, true];
+        };
+    }, [_unit, _ticket, _epoch, _owner]] call CBA_fnc_execNextFrame;
+}] call CBA_fnc_addEventHandler;
+
 [QGVAR(playWakeUpSound), {
     params ["_patient"];
 

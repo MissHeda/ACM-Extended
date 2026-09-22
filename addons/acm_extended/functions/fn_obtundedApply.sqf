@@ -5,6 +5,15 @@
 params ["_patient", "_on", ["_posture", "free"], ["_reason", "recover"], ["_wasOn", false], ["_wasPosture", ""], ["_token", -1], ["_manual", false]];
 if (isNull _patient || {!local _patient}) exitWith {};
 
+private _wasMedicalUncon = _patient getVariable ["ACE_isUnconscious", false];
+// Reject a stale transition before it can alter a newer episode or any posture.
+if (_token >= 0 && {(_patient getVariable ["ACME_obtunded_transitionToken", _token]) != _token}) exitWith {};
+if (_on && {_patient getVariable ["ACE_isUnconscious", false]}
+    && {!([_patient, false, "obtunded"] call ACM_core_fnc_requestWake)}) exitWith {
+    [_patient, false, false, "", _token, true] call ACME_fnc_obtundedStateCommit;
+};
+
+
 [_patient, _on, _manual, _posture, _token, false] call ACME_fnc_obtundedStateCommit;
 _patient setVariable ["ACME_obtunded_transitioning", false, true];
 _patient setVariable ["ACME_obtunded_forcedBack", false, true];
@@ -24,11 +33,7 @@ _patient setVariable ["ACME_obtunded_dirHolder", objNull, false];
 if (_on) then {
     // If ACE had the casualty medically unconscious, wake the medical state but preserve the fact that they were
     // physically down. Do not play any ACME collapse or posture animation on top of the wake-up.
-    private _wasMedicalUncon = _patient getVariable ["ACE_isUnconscious", false];
     if (_wasMedicalUncon) then {
-        if !([_patient, false, "obtunded"] call ACM_core_fnc_requestWake) exitWith {
-            [_patient, false, false, "", _token, true] call ACME_fnc_obtundedStateCommit;
-        };
         [_patient, true, true] call ACM_core_fnc_setWasTreated;
         [_patient, true, true] call ACM_core_fnc_setLyingState;
     };

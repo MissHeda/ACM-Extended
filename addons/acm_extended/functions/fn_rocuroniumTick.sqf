@@ -18,7 +18,17 @@ if (isNull _patient || {!local _patient}) exitWith {};
 private _dt = [_patient, "rocuronium", 0.25, 5] call ACME_fnc_clinicalTickDelta;
 // the system toggle, read live, so unticking paralytics in addon options stops this system immediately and
 // completely with no mission restart.
-if !(missionNamespace getVariable ["ACME_sys_paralytic", true]) exitWith {};
+if !(missionNamespace getVariable ["ACME_sys_paralytic", true]) exitWith {
+    if (alive _patient && {(_patient getVariable ["ACME_roc_paralyzed", false])
+        || {_patient getVariable ["ACME_roc_apnea", false]}}) then {
+        [_patient, false, true, true] call ACME_fnc_rocParalysisCommit;
+        [_patient, false, true, true, false] call ACME_fnc_rocApneaCommit;
+        [_patient, false, true, true, false] call ACME_fnc_rocAwakeParalysisCommit;
+        [_patient, "ACME_roc_onsetT0", -1] call ACME_fnc_setVarNet;
+        [_patient, "KEEP", 0, 0, -1, true, true] call ACME_fnc_rocStressStateCommit;
+        [_patient, false, "paralytic-disabled"] call ACM_core_fnc_requestWake;
+    };
+};
 if (isNull _patient || {!alive _patient} || {!(_patient isKindOf "CAManBase")}) exitWith {};
 
 private _dose = [_patient] call ACME_fnc_rocuroniumOnBoard;
@@ -44,6 +54,9 @@ if (_dose >= _blockThresh) then {
     private _established = true; // B13: _dose already includes native onset; do not delay twice.
     if (_established && {!_wasParalyzed}) then {
         [_patient, true, true, true] call ACME_fnc_rocParalysisCommit;
+        if ((_patient getVariable ["ACME_lido_seizureState", ""]) == "active") then {
+            [_patient, false] call ACME_fnc_seizureMotion;
+        };
         // lock the patient incapacitated, meaning immobile. this is the closest engine state to flaccid paralysis.
         // Use ACE's canonical medical transition so the raw flag and state machine stay coherent.
         [_patient, true, 0, false] call ace_medical_fnc_setUnconscious;

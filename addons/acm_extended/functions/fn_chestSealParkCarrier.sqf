@@ -1,5 +1,5 @@
-// Keep any plate carrier removed for the chest-seal procedure parked beyond the casualty's head.
-// The prop is detached and non-simulated, so front/back rolls never drag it across the chest.
+// Park carrier props beyond the casualty's head at a fixed world-space point for this chest workspace.
+// Once captured, the target never follows later patient rolls or body motion.
 params [["_patient", objNull, [objNull]]];
 if (isNull _patient || {!local _patient}) exitWith {};
 
@@ -7,7 +7,6 @@ private _props = [];
 private _chestProp = _patient getVariable ["ACME_CS_vestProp", objNull];
 if (!isNull _chestProp) then {_props pushBackUnique _chestProp;};
 
-// A Semi-Fowler casualty may already have a carrier prop owned by the head-elevation system.
 private _headProp = _patient getVariable ["ACME_headElev_propObj", objNull];
 if ((_patient getVariable ["ACME_CS_ProcedureActive", false]) && {!isNull _headProp}) then {
     _props pushBackUnique _headProp;
@@ -29,11 +28,18 @@ private _axis = [_dx / _mag, _dy / _mag, 0];
 private _gap = missionNamespace getVariable ["ACME_headElev_propGroundGap", 0.45];
 private _px = (_hed select 0) + ((_axis select 0) * _gap);
 private _py = (_hed select 1) + ((_axis select 1) * _gap);
-private _up = surfaceNormal [_px, _py];
+private _defaultPark = [[_px, _py, 0.02], _axis, surfaceNormal [_px, _py]];
 
 {
-    detach _x;
-    _x disableCollisionWith _patient;
-    _patient disableCollisionWith _x;
-    [_x, [_px, _py, 0.02], _axis, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
+    private _prop = _x;
+    private _park = _prop getVariable ["ACME_chestFixedPark", []];
+    if !(_park isEqualType [] && {count _park == 3}) then {
+        _park = +_defaultPark;
+        _prop setVariable ["ACME_chestFixedPark", +_park, false];
+    };
+    _park params ["_pos", "_dir", "_up"];
+    detach _prop;
+    _prop disableCollisionWith _patient;
+    _patient disableCollisionWith _prop;
+    [_prop, _pos, _dir, _up, missionNamespace getVariable ["ACME_headElev_propEaseTime", 0.24]] call ACME_fnc_propEaseTo;
 } forEach _props;

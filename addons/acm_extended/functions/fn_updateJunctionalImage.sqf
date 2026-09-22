@@ -65,8 +65,9 @@ private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [
         _wrapC ctrlSetPosition _rect;
     };
 
-    _woundC ctrlSetText ("\acm_extended\ui\items\" + _openTex);
-    _packedC ctrlSetText ("\acm_extended\ui\items\" + (if (_state == "xstat") then {_xstatTex} else {_packedTex}));
+    // XStat stays on the original proven body-map control; combat gauze alone uses the added overlay layer.
+    _woundC ctrlSetText ("\acm_extended\ui\items\" + (if (_state == "xstat") then {_xstatTex} else {_openTex}));
+    _packedC ctrlSetText ("\acm_extended\ui\items\" + _packedTex);
     _wrapC ctrlSetText ("\acm_extended\ui\items\" + _wrapTex);
     _wrapC ctrlSetTextColor _wrapColor;
 
@@ -78,7 +79,7 @@ private _wrapColor = missionNamespace getVariable ["ACME_junctionalWrapColor", [
     } forEach [_woundC, _packedC, _wrapC];
 
     _woundC ctrlShow (_state in ["open", "packed", "xstat"]);
-    _packedC ctrlShow (_state in ["packed", "xstat"]);
+    _packedC ctrlShow (_state == "packed");
     _wrapC ctrlShow (_state == "wrapped");
 } forEach _limbs;
 

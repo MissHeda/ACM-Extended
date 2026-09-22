@@ -1,11 +1,6 @@
 // Release only the matching episode; stale callbacks cannot end a newer action.
 // Every ACME-owned treatment pose exits to a movable, unarmed crouch. Weapons are never automatically reselected.
-params [
-    ["_medic", objNull, [objNull]],
-    ["_mode", "", [""]],
-    ["_epoch", -1, [0]],
-    ["_handoff", false, [false]]
-];
+params [["_medic", objNull, [objNull]], ["_mode", "", [""]], ["_epoch", -1, [0]], ["_handoff", false, [false]]];
 if (isNull _medic) exitWith {};
 private _state = _medic getVariable ["ACME_treatmentPoseState", []];
 if (_state isEqualTo []) exitWith {};
@@ -66,7 +61,7 @@ if (!_handoff
     && {alive _medic}
     && {!(_medic getVariable ["ACE_isUnconscious", false])}
     && {!([_medic] call ACME_fnc_animBlocked)}
-    && {_current == toLower _main || {_ownsEntry} || {_stage >= 2} || {_currentMode in ["stethoscope","pulse","chestSealWorkspace"]}}) then {
+    && {_current == toLower _main || {_ownsEntry} || {_stage >= 2} || {_currentMode in ["stethoscope","pulse"]}}) then {
     // B56: a standing medicUp episode exits to the unarmed standing idle; every kneeling episode exits to
     // the unarmed crouch.
     _medic setUnitPos (["MIDDLE", "UP"] select _exitUpright);
@@ -100,4 +95,26 @@ if (!_handoff
             }, [_unit, _endedEpoch], 0.85] call CBA_fnc_waitAndExecute;
         }, [_medic, _currentEpoch], 0.12] call CBA_fnc_waitAndExecute;
     };
+};
+
+// A handoff intentionally skips the neutral exit so the next authored action can take over without a visual pop.
+// If no newer provider controller actually acquires the medic, release the temporary MIDDLE stance after a short
+// grace and once more after ordinary short treatments have had time to finish. Token/owner checks prevent an old
+// handoff from breaking a newer pose.
+if (_handoff && {local _medic} && {alive _medic}) then {
+    private _releaseIfFree = {
+        params ["_u","_endedEpoch"];
+        if (isNull _u || {!local _u} || {!alive _u} || {!isNull objectParent _u}) exitWith {};
+        if ((_u getVariable ["ACME_treatmentPoseEpoch",0]) != _endedEpoch) exitWith {};
+        if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
+        _u setUnitPos "AUTO";
+    };
+    [{
+        params ["_u","_endedEpoch","_fn"];
+        [_u,_endedEpoch] call _fn;
+    }, [_medic,_currentEpoch,_releaseIfFree], 0.35] call CBA_fnc_waitAndExecute;
+    [{
+        params ["_u","_endedEpoch","_fn"];
+        [_u,_endedEpoch] call _fn;
+    }, [_medic,_currentEpoch,_releaseIfFree], 4.25] call CBA_fnc_waitAndExecute;
 };

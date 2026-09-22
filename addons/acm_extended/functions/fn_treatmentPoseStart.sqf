@@ -7,7 +7,7 @@
  *   inspect              AinvPknlMstpSnonWnonDnon_medic4, frozen at 2.2 s until the 6 s inspection ends
  *   stethoscope          ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
  *   pulse                ACME_StethoscopeWork, frozen at 0.421 s until the minigame exits
- *   chestSeal            AinvPknlMstpSnonWnonDnon_medic3
+ *   chestSeal            AinvPknlMstpSnonWrflDnon_medic3 (seal placement only)
  *   ncdSeat              AinvPknlMstpSnonWrflDnon_medic1
  *   torsoBandage         AinvPknlMstpSnonWrflDnon_medic4
  *   headBandageLeft      AinvPknlMstpSnonWrflDnon_medic0
@@ -45,12 +45,7 @@ if (isNull _medic || {!local _medic} || {!alive _medic}
     || {_medic getVariable ["ACE_isUnconscious", false]}
     || {[_medic] call ACME_fnc_animBlocked}) exitWith {-1};
 
-private _existingPose = _medic getVariable ["ACME_treatmentPoseState", []];
-private _existingMode = _existingPose param [1, ""];
-private _directChestHandoff =
-    (_mode == "roll" && {_existingMode == "chestSealWorkspace"})
-    || {_mode == "chestSealWorkspace" && {_existingMode == "roll"}};
-[_medic, "", -1, _directChestHandoff] call ACME_fnc_treatmentPoseStop;
+[_medic] call ACME_fnc_treatmentPoseStop;
 // B56: a treatment pose replaces the medical-menu pose without an intermediate exit motion.
 [_medic, true] call ACME_fnc_menuPoseStop;
 
@@ -61,11 +56,14 @@ private _main = switch (_mode) do {
     // entry and lost the characteristic flip theatre.  Crouch-first entry/empty-hands handling still comes from
     // this controller; only the actual work state is restored to the known-good literal animation.
     case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};
+    // Carrier removal/restoration uses the exact same body-handling medic4 theatre as Flip,
+    // but remains held until the patient lift/lower transaction explicitly hands off.
+    case "chestAccess": {"AinvPknlMstpSnonWnonDnon_medic4"};
     case "inspect": {"ACME_ChestInspectWork"};
+    case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
-    case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
-    case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
+    case "chestSeal": {"AinvPknlMstpSnonWrflDnon_medic3"};
     case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
     case "pulse": {"ACME_StethoscopeWork"};
     case "torsoBandage": {"AinvPknlMstpSnonWrflDnon_medic4"};
@@ -100,19 +98,12 @@ private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
 // A physical Flip is still a real medical animation and must wait for a sidearm to finish holstering. The former
 // roll fast-path used selectWeapon "" and could start medic4 under a pistol that was still visibly in the hands.
 // Direct Pressure remains the one exception because its existing authored hold already owns empty-hand theatre.
-private _prepDelay = if (_directChestHandoff) then {
-    // Both chestSealWorkspace and roll are ACME-authored weapon-disabled states. A direct handoff must not wait
-    // for their class names to contain the literal Wnon/Snon substrings before entering the next state.
+private _prepDelay = if (_dpPoseHandoff) then {
+    if (currentWeapon _medic != "") then {_medic selectWeapon "";};
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
     0
 } else {
-    if (_dpPoseHandoff) then {
-        if (currentWeapon _medic != "") then {_medic selectWeapon "";};
-        _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
-        0
-    } else {
-        [_medic] call ACME_fnc_medicAnimationPrep
-    }
+    [_medic] call ACME_fnc_medicAnimationPrep
 };
 if !(_prepDelay isEqualType 0) then {_prepDelay = 0;};
 private _prepUntil = _actionStarted + (_prepDelay max 0);

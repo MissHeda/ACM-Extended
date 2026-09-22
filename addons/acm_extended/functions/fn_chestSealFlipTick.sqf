@@ -18,14 +18,14 @@ private _finish = {
         _provider setVariable ["ACME_rollProviderPFH",-1];
         _provider setVariable ["ACME_rollProviderToken",""];
         _provider setVariable ["ACME_rollProviderActive",false];
+        // Same live workspace: suppress the neutral crouch and hand directly back to hands-on-chest.
         [_provider,"roll",_epoch,_current] call ACME_fnc_treatmentPoseStop;
     };
     if (!_current) exitWith {};
 
-    // A completed/aborted-in-panel Flip returns directly to the persistent hands-on-chest workspace pose rather
-    // than passing through a neutral crouch first.
     private _holdEpoch = [_provider,_patient] call ACME_fnc_chestSealProviderHoldStart;
-    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
+    _provider setVariable ["ACME_CS_providerHoldEpoch",_holdEpoch,false];
+    uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch",_holdEpoch];
 
     uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
     uiNamespace setVariable ["ACME_CS_FlipLockedUntil",0];
@@ -48,7 +48,14 @@ if (!_current || {isNull _display} || {isNull _patient} || {isNull _provider}
     || {(uiNamespace getVariable ["ACME_CS_SessionToken",""]) != _session}
     || {!((uiNamespace getVariable ["ACME_CS_Patient",objNull]) isEqualTo _patient)}) exitWith {call _finish;};
 if (_rollStarted >= 0) exitWith {
-    if (diag_tickTime >= (_rollStarted + _rollTime)) then {call _finish;};
+    private _poseNow = _provider getVariable ["ACME_treatmentPoseState",[]];
+    private _providerAtHold = (_poseNow param [0,-2]) == _epoch
+        && {(_poseNow param [1,""]) == "roll"}
+        && {(_poseNow param [3,-2]) >= 3};
+    private _patientDone = diag_tickTime >= (_rollStarted + _rollTime);
+    // Patient roll and provider medic4 both complete their authored portions before the handoff back to the
+    // hands-on-chest workspace. The deadline remains the presentation fail-safe.
+    if (_patientDone && {_providerAtHold || {diag_tickTime >= _deadline}}) then {call _finish;};
 };
 
 // The click may have started while the casualty was unconscious and completed after they woke or got up.
