@@ -1,7 +1,7 @@
 // "Elevate Head 30". it raises the head of the bed by about 30 degrees. it sets ACME_headElevated on the patient,
-// which fn_tbihandle reads to ease ICP and CPP down slowly and to make herniation impossible while elevated. the
-// patient plays the authored grab/elevate pose in tandem with the provider. A patient is rolled to the back only
-// when their ACTUAL body surface is prone; already-supine casualties never take a front/back detour.
+// which fn_tbihandle reads to ease ICP and CPP down slowly and to make herniation impossible while elevated.
+// Semi-Fowler has a hard supine invariant: if the casualty is already on their back, keep them there; if they are
+// posterior-up, physically roll them to the anterior/front view FIRST, then run the grab/elevate choreography.
 // the ACE treatment callback args are [_medic, _patient, _bodyPart, _classname, ...], so slot 3 carries the
 // treatment classname, a string, and the auto flag cannot be a typed positional param there. the
 // transport-restore path passes a literal true in slot 3, and anything else, ACE's classname included, reads as
@@ -22,9 +22,46 @@ if (_patient getVariable ["ACME_headElevated", false]) exitWith {
 // This also protects automatic transport restoration if the patient got up in the meantime.
 if !([_patient, _medic] call ACME_fnc_headElevateCanStart) exitWith {};
 
-// Head elevation does NOT roll the casualty. A roll put the casualty into a conscious prone state and started a
-// second animation that competed with the grab. The grab is played from the pose the casualty is in, which is
-// what ACE dragging does. The _afterProneRoll argument is kept so an older call still works.
+// Normalize front/supine before ANY Semi-Fowler animation. The retry flag prevents a second roll request after
+// the authored patient roll finishes. Already-supine casualties take no detour.
+private _actualBeforeElevate = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
+    call ACME_fnc_chestSealActualSide;
+private _needFrontFirst = !_afterProneRoll && {_actualBeforeElevate != "front"};
+
+if (_needFrontFirst) exitWith {
+    private _delay = 0.08;
+
+    if ([_patient] call ACME_fnc_chestSealCanPhysicalRoll) then {
+        if (!isNull _medic && {!(_medic isEqualTo _patient)} && {alive _medic}) then {
+            [_medic,"chestAccessFrontRoll",[_medic,_patient]] call ACME_fnc_ownerDispatch;
+        };
+
+        [_patient,"front",false,_medic,true] call ACME_fnc_chestSealRoll;
+
+        private _patientRoll = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+        if !(_patientRoll isEqualType 0 && {finite _patientRoll}) then {_patientRoll = 1.85;};
+        private _providerRoll = missionNamespace getVariable ["ACME_rollProviderDuration",2.2];
+        if !(_providerRoll isEqualType 0 && {finite _providerRoll}) then {_providerRoll = 2.2;};
+        _delay = (_patientRoll + 0.10) max (_providerRoll + 0.25);
+    } else {
+        // A stale/non-rollable downed state must still never feed the Semi-Fowler grab from the stomach.
+        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
+        _patient setVariable ["ACME_CS_facing","front",true];
+        ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+    };
+
+    [{
+        params ["_m","_p","_body","_auto"];
+        if (!isNull _p && {local _p} && {alive _p}) then {
+            _p setVariable ["ACME_CS_facing","front",true];
+            [_m,_p,_body,_auto,true] call ACME_fnc_headElevateStart;
+        };
+    }, [_medic,_patient,_bodyPart,_auto], _delay] call CBA_fnc_waitAndExecute;
+};
+
+// At this point the patient is definitively anterior-up. All Semi-Fowler patient/provider animations start from it.
+_patient setVariable ["ACME_CS_facing","front",true];
+
 if (_patient getVariable ["ACME_headElev_vestRemoved", false]) then {
     [_patient] call ACME_fnc_headElevVestRestore;
 };
