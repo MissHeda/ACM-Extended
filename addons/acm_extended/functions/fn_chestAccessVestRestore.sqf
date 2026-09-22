@@ -7,7 +7,8 @@ params [
     ["_patient", objNull, [objNull]],
     ["_force", false, [false]],
     ["_medic", objNull, [objNull]],
-    ["_context", "access", [""]]
+    ["_context", "access", [""]],
+    ["_frontNormalized", false, [false]]
 ];
 if (isNull _patient || {!local _patient}) exitWith {false};
 _context = toLowerANSI _context;
@@ -36,13 +37,56 @@ if (!_force) then {
                     && {(count (_p getVariable ["ACME_chestAccess_leases", createHashMap])) == 0}
             }, {
                 _this call ACME_fnc_chestAccessVestRestore;
-            }, [_patient,false,_medic,"access"], 900] call CBA_fnc_waitUntilAndExecute;
+            }, [_patient,false,_medic,"access",_frontNormalized], 900] call CBA_fnc_waitUntilAndExecute;
             false
         };
     } else {
         if !((_patient getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo []) exitWith {false};
     };
 };
+
+// Every chest-access exit normalizes anterior-up BEFORE any carrier-restoration animation.
+// This also runs when there is no carrier in custody, so closing auscultation after a posterior Flip cannot leave
+// the casualty on their stomach.
+if (!_frontNormalized && {alive _patient} && {isNull objectParent _patient}) then {
+    private _rollToken = _patient getVariable ["ACME_CS_rollToken",""];
+    private _rollUntil = _patient getVariable ["ACME_CS_rollUntil",-1];
+    private _rollActive = (_rollToken != "") || {(_rollUntil isEqualType 0) && {_rollUntil > CBA_missionTime}};
+    if (_rollActive) then {
+        [_patient,"front"] call ACME_fnc_patientRollCancel;
+    };
+
+    private _actualBeforeRestore = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
+        call ACME_fnc_chestSealActualSide;
+
+    if (_actualBeforeRestore != "front") exitWith {
+        private _canRollFront = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
+        if (_canRollFront) then {
+            [_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;
+            private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+            if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
+            [{
+                params ["_p","_force","_medic","_ctx"];
+                if (!isNull _p && {local _p}) then {
+                    _p setVariable ["ACME_CS_facing","front",true];
+                    [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
+                };
+            }, [_patient,_force,_medic,_context], (_rollTime max 0.1) + 0.08] call CBA_fnc_waitAndExecute;
+        } else {
+            private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
+            _patient setVariable ["ACME_CS_facing","front",true];
+            ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+            [{
+                params ["_p","_force","_medic","_ctx"];
+                if (!isNull _p && {local _p}) then {
+                    [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
+                };
+            }, [_patient,_force,_medic,_context]] call CBA_fnc_execNextFrame;
+        };
+        true
+    };
+};
+_patient setVariable ["ACME_CS_facing","front",true];
 
 private _saved = +(_patient getVariable [_savedVar, []]);
 private _prop = _patient getVariable [_propVar, objNull];
@@ -92,14 +136,12 @@ if ((count _saved) != 2) exitWith {
 private _busy = _patient getVariable [_busyVar, ""];
 if (_busy != "") exitWith {(_busy find "restore:") == 0};
 
-// Animate only a stable, legitimately controllable, face-up casualty.
-private _actualSide = [_patient, _patient getVariable ["ACME_CS_facing","front"]] call ACME_fnc_chestSealActualSide;
+// Animate only a stable, legitimately controllable casualty. Front/supine was guaranteed above.
 private _canAnimate = !_force
     && {alive _patient}
     && {isNull objectParent _patient}
     && {!([_patient] call ACME_fnc_animBlocked)}
-    && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}
-    && {_actualSide == "front"};
+    && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll};
 
 if (!_canAnimate) exitWith {
     [_patient,_saved,_prop,_savedVar,_propVar,_busyVar,_readyVar,_pfhVar,_finishBookkeeping] call _restoreNow
