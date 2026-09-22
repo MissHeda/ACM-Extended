@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""RC24: chest work and Semi-Fowler must always start/end anterior-up (patient lying on back)."""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+def read(rel):
+    return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+
+def test_chest_start_rolls_front_before_any_carrier_theatre():
+    s = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
+    assert s.index("// Every chest procedure starts anterior-up") < s.index("// Existing custody belongs")
+    assert '[_patient,"front",false,_medic,_preserveHead] call ACME_fnc_chestSealRoll' in s
+    assert "if (_frontRollPending) exitWith {true};" in s
+
+def test_chest_restore_normalizes_front_even_with_no_carrier():
+    s = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
+    normalize = s.index("// Every chest-access exit normalizes anterior-up")
+    no_custody = s.index("// Nothing is in custody.")
+    assert normalize < no_custody
+    assert '[_patient,"front"] call ACME_fnc_patientRollCancel;' in s
+    assert '[_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;' in s
+    assert '["ace_common_switchMove",[_patient,_faceUp]]' in s
+    assert '["_frontNormalized", false, [false]]' in s
+
+def test_chest_seal_never_restores_original_posterior_or_recovery_pose():
+    s = read("addons/acm_extended/functions/fn_chestSealPatientEnd.sqf")
+    assert "_preSide" not in s
+    assert "_preRecovery" not in s
+    assert "_preAnim" not in s
+    assert '[_patient, "front"] call ACME_fnc_patientRollCancel;' in s
+    assert '[_p, "front", false, objNull, true] call ACME_fnc_chestSealRoll;' in s
+    assert 'setVariable ["ACME_CS_facing", "front", true]' in s
+    assert "ACM_airway_fnc_setRecoveryPosition" not in s
+    assert '"back", false' not in s
+
+def test_auscultation_close_always_routes_to_supine_restore():
+    s = read("addons/acm_extended/functions/fn_stethoscopeClose.sqf")
+    assert '[_patient,"front"] call ACME_fnc_patientRollCancel;' in s
+    assert "private _restoreDispatched = false;" in s
+    assert '[_patient,false,_medic,"access",false] call ACME_fnc_chestAccessVestRestore;' in s
+
+def test_semifowler_start_rolls_front_before_grab():
+    s = read("addons/acm_extended/functions/fn_headElevateStart.sqf")
+    roll = s.index('[_patient,"front",false,_medic,true] call ACME_fnc_chestSealRoll;')
+    elevate = s.index('[_patient] call ACME_fnc_headElevApplyTilt;')
+    assert roll < elevate
+    assert "private _needFrontFirst" in s
+    assert 'setVariable ["ACME_CS_facing","front",true]' in s
+
+def test_semifowler_suspend_resume_and_lower_all_normalize_front_first():
+    suspend = read("addons/acm_extended/functions/fn_headElevSuspend.sqf")
+    resume = read("addons/acm_extended/functions/fn_headElevResume.sqf")
+    lower = read("addons/acm_extended/functions/fn_headElevateStop.sqf")
+
+    assert '[_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;' in suspend
+    assert '[_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;' in resume
+    assert '[_patient,"front",false,_medic,true] call ACME_fnc_chestSealRoll;' in lower
+
+    assert suspend.index("private _needFrontFirst") < suspend.index('"ACME_HeadElevPatientRelease"')
+    assert resume.index("private _needFrontFirst") < resume.index("ACME_fnc_headElevApplyTilt")
+    assert lower.index("private _needFrontFirst") < lower.index('"ACME_HeadElevPatientRelease"')
+
+def test_semifowler_rest_animation_can_never_replay_face_down_base_pose():
+    s = read("addons/acm_extended/functions/fn_headElevRestAnim.sqf")
+    assert "ACME_headElev_baseAnim" not in s
+    assert 'ACME_uncon_faceUp' in s
+    assert "face-down" in s.lower()
+    assert "_base" not in s
+
+def test_front_semantics_still_mean_anterior_chest_up():
+    s = read("addons/acm_extended/functions/fn_chestSealActualSide.sqf")
+    assert '"front" means the casualty is supine / anterior chest up.' in s
+    assert '"back"  means the casualty is prone / posterior chest up.' in s
+
+if __name__ == "__main__":
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            fn()
+    print("PASS rc24: absolute supine patient invariant")
