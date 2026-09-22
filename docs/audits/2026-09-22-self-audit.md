@@ -34,7 +34,9 @@ The wake execution cases cover valid/invalid medical machine states, unstable vi
 
 The broad historical addon suite is **not clean**. Before these audit changes, the newer baseline produced 448 failures and 12 collection errors, with 1,587 passing tests, 151 skips and 2,747 passing subtests (excluding a retired B77 import-time version check that exits collection). Many assertions reference old implementation text or retired layouts. They were not mass-edited or treated as proof that current gameplay needed changing. The two newly changed inline-sedation assertions have been reconciled with the shared-helper contract. This is not a claim that every historical failure has been diagnosed or is harmless.
 
-HEMTT full-project checking in the initial extracted local snapshot stopped because the snapshot-transfer selection omitted the repository's five .inc include files. That result was an incomplete audit fixture, not evidence that the source should be changed. The isolated GitHub validation job uses the complete checkout and records the full-project result separately.
+Independent clean-checkout validation passed in GitHub Actions run `35687989371`, using source commit `691bfd10f44c8616673fce3af75f15d97eef145b` and complete source tree `3e81602e3a4ddb16ed60d14d3c2ba6f38e82397e`. The same focused suite passed **156 tests with no skips**, and **HEMTT check returned 0**. HEMTT reported seven non-blocking style suggestions (five pushBackUnique, one L-S48 and one isEqualTypeAny); they were deliberately left unchanged. The validation workflow had read-only repository permissions and made no source changes.
+
+The earlier full-project check in the extracted local snapshot stopped because the snapshot transfer omitted five tracked .inc files. The complete-checkout check above resolved that audit-fixture omission without changing the game's source or inventing include stubs.
 
 No Arma client or dedicated server was run in this environment. SQF-VM tests mock engine UI/animation/network boundaries; they do not prove rendered pose, live network ordering, sound, or game-engine integration. In-game validation remains required before a release.
 
