@@ -3,9 +3,15 @@
 // temporary suspension. It is parked beyond the head until the maneuver ends, then the same carrier is re-seated
 // behind the upper back when elevation resumes. Only actually lowering/canceling Semi-Fowler restores that support
 // carrier as worn gear. Backpack-supported chest-access vest removal is handled independently by chestAccess leases.
-params [["_patient", objNull, [objNull]], ["_keepVestOut", false, [false]]];
+params [
+    ["_patient", objNull, [objNull]],
+    ["_keepVestOut", false, [false]],
+    ["_frontNormalized", false, [false]]
+];
 if (isNull _patient) exitWith {};
-if (!local _patient) exitWith {[_patient, "headElevSuspend", [_patient, _keepVestOut]] call ACME_fnc_ownerDispatch;};
+if (!local _patient) exitWith {
+    [_patient, "headElevSuspend", [_patient, _keepVestOut, _frontNormalized]] call ACME_fnc_ownerDispatch;
+};
 if (!alive _patient) exitWith {[_patient] call ACME_fnc_headElevDeathRelease;};
 // Manual Semi-Fowler uses a provider-owned support hold when no backpack/carrier can prop the casualty.
 // A temporary chest/airway maneuver must release that provider hold but preserve the logical Semi-Fowler episode,
@@ -15,6 +21,37 @@ if !((_patient getVariable ["ACME_headElev_hold", []]) isEqualTo []) then {
     [_patient] call ACME_fnc_headElevHoldClear;
 };
 if !(_patient getVariable ["ACME_headElevated", false]) exitWith {};
+
+// Even temporary lowering starts from anterior-up. An already-correct Semi-Fowler patient is untouched; any stale
+// posterior orientation is normalized first so ACME_HeadElevPatientRelease is never played from the stomach.
+private _actualBeforeSuspend = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
+    call ACME_fnc_chestSealActualSide;
+private _needFrontFirst = !_frontNormalized && {_actualBeforeSuspend != "front"};
+
+if (_needFrontFirst) exitWith {
+    private _delay = 0.08;
+
+    if ([_patient] call ACME_fnc_chestSealCanPhysicalRoll) then {
+        [_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;
+        private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+        if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
+        _delay = (_rollTime max 0.1) + 0.08;
+    } else {
+        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
+        _patient setVariable ["ACME_CS_facing","front",true];
+        ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+    };
+
+    [{
+        params ["_p","_keep"];
+        if (!isNull _p && {local _p} && {alive _p}) then {
+            _p setVariable ["ACME_CS_facing","front",true];
+            [_p,_keep,true] call ACME_fnc_headElevSuspend;
+        };
+    }, [_patient,_keepVestOut], _delay] call CBA_fnc_waitAndExecute;
+};
+
+_patient setVariable ["ACME_CS_facing","front",true];
 
 private _parkSupport = {
     params ["_p"];
