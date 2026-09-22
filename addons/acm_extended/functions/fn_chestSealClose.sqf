@@ -51,8 +51,8 @@ private _patient = _closingPatient;
 if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, false] call ACME_fnc_ecgJostleRequest;};
 // NA2: no clinical writes on unload. Pending actions resolve independently of this display.
 
-// Restore the casualty through the same owner-local procedure transaction that prepared them. It returns them to
-// the side they had before the minigame, gives the carrier back, then resumes an existing Semi-Fowler placement.
+// Restore through the same owner-local procedure transaction that prepared them. Teardown ALWAYS normalizes
+// anterior-up / lying on the back, gives the carrier back, then resumes Semi-Fowler only from that supine base.
 private _sessionToken = uiNamespace getVariable ["ACME_CS_SessionToken", ""];
 if (!isNull _patient && {_sessionToken != ""}) then {
     [_patient, "chestSealPatientEnd", [_patient, _sessionToken, _flipMedic]] call ACME_fnc_ownerDispatch;
