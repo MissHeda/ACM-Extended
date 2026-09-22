@@ -2792,6 +2792,7 @@ class CfgFunctions {
             class laryngoPersistBleed {};
             class laryngoTubeFrames {};
             class sedationOnBoard {};
+            class sedationActive {};
             class preparedComponents {};
             class vialHolder {};
             class vialClass {};

@@ -45,9 +45,8 @@ if (_dose >= _blockThresh) then {
     if (_established && {!_wasParalyzed}) then {
         [_patient, true, true, true] call ACME_fnc_rocParalysisCommit;
         // lock the patient incapacitated, meaning immobile. this is the closest engine state to flaccid paralysis.
-        if (!isNil "ace_medical_status_fnc_setUnconsciousState") then {
-            [_patient, true] call ace_medical_status_fnc_setUnconsciousState;
-        };
+        // Use ACE's canonical medical transition so the raw flag and state machine stay coherent.
+        [_patient, true, 0, false] call ace_medical_fnc_setUnconscious;
         [_patient, true, true, true, false] call ACME_fnc_rocApneaCommit;  // the respiratory muscles are out, so they must be ventilated.
     };
 } else {
@@ -59,17 +58,11 @@ if (_dose >= _blockThresh) then {
         [_patient, false, true, true] call ACME_fnc_rocParalysisCommit;
         [_patient, false, true, true, false] call ACME_fnc_rocApneaCommit;
         [_patient, false, true, true, false] call ACME_fnc_rocAwakeParalysisCommit;
-        private _sedLoad = [_patient] call ACME_fnc_sedationOnBoard;
-        private _sedThresh = (call ACME_fnc_sedationThreshold);
-        private _otherReason = (_sedLoad >= _sedThresh)
-            || {(_patient getVariable ["ACM_core_TargetVitals_GCS", 15]) < 8}
-            || {_patient getVariable ["ace_medical_inCardiacArrest", false]}
-            || {_patient getVariable ["ACME_tbi_HasTBI", false]};
-        if (!_otherReason) then {
-            if (!isNil "ace_medical_status_fnc_setUnconsciousState") then {
-                [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
-            };
-        };
+
+        // Paralysis is now cleared. The shared wake authority decides whether
+        // anesthesia, seizure, traumatic KO, arrest or unstable physiology still
+        // requires the patient to remain unconscious.
+        [_patient, false, "rocuronium-release"] call ACM_core_fnc_requestWake;
     };
 };
 
@@ -80,12 +73,11 @@ if (_dose >= _blockThresh) then {
 // monitor, a climbing heart rate and a rising blood pressure in a patient who should be flat, and it is the job
 // of the provider to read that and understand what they did.
 if (_patient getVariable ["ACME_roc_paralyzed", false]) then {
-    // sedation means any adequate anesthetic on board, ketamine or midazolam, rather than ketamine alone.
-    private _sedLoad = [_patient] call ACME_fnc_sedationOnBoard;
-    private _sedThresh = (call ACME_fnc_sedationThreshold);
+
+    // Awareness under paralysis uses the same induction/maintenance ownership as every sedation consumer.
     private _inArrest = _patient getVariable ["ace_medical_inCardiacArrest", false];
     private _postROSCGrace = CBA_missionTime < (_patient getVariable ["ACME_roc_postROSCGraceUntil", 0]);
-    private _awake = (!_inArrest) && {!_postROSCGrace} && {_sedLoad < _sedThresh};
+    private _awake = (!_inArrest) && {!_postROSCGrace} && {!([_patient] call ACME_fnc_sedationActive)};
     [_patient, _awake, true, true, false] call ACME_fnc_rocAwakeParalysisCommit;
     if (_awake) then {
         // the unblunted catecholamine surge of an aware, paralyzed patient: tachycardia and hypertension.

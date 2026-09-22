@@ -25,10 +25,10 @@ if (_on) then {
     // If ACE had the casualty medically unconscious, wake the medical state but preserve the fact that they were
     // physically down. Do not play any ACME collapse or posture animation on top of the wake-up.
     private _wasMedicalUncon = _patient getVariable ["ACE_isUnconscious", false];
-    if (_wasMedicalUncon && {!isNil "ace_medical_status_fnc_setUnconsciousState"}) then {
-        [_patient, false] call ace_medical_status_fnc_setUnconsciousState;
-    };
     if (_wasMedicalUncon) then {
+        if !([_patient, false, "obtunded"] call ACM_core_fnc_requestWake) exitWith {
+            [_patient, false, false, "", _token, true] call ACME_fnc_obtundedStateCommit;
+        };
         [_patient, true, true] call ACM_core_fnc_setWasTreated;
         [_patient, true, true] call ACM_core_fnc_setLyingState;
     };
