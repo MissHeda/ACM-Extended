@@ -73,7 +73,7 @@ switch (_operation) do {
     case "headElevCollision": {_args call ACME_fnc_headElevCollision;};
     case "headElevSuspend": {_args call ACME_fnc_headElevSuspend;};
     case "headElevTryResume": {_args call ACME_fnc_headElevTryResume;};
-    case "headElevResume": {[_patient] call ACME_fnc_headElevResume;};
+    case "headElevResume": {_args call ACME_fnc_headElevResume;};
     case "headElevStart": {_args call ACME_fnc_headElevateStart;};
     case "headElevStop": {_args call ACME_fnc_headElevateStop;};
     case "headElevDeath": {[_patient] call ACME_fnc_headElevDeathRelease;};
