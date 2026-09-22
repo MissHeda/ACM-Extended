@@ -1,9 +1,10 @@
+from historical_source import read_source
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(path):
-    return (ROOT / path).read_text(encoding="utf-8", errors="ignore")
+    return read_source(ROOT / path, encoding="utf-8", errors="ignore")
 
 def main():
     seq = txt("functions/fn_headElevMedicSeq.sqf")

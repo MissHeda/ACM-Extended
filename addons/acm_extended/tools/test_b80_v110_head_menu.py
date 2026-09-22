@@ -1,18 +1,17 @@
+from historical_source import read_source
 from pathlib import Path
+import pytest
+from historical_source import assert_release_identity
 ROOT=Path(__file__).resolve().parents[1]
-def txt(p): return (ROOT/p).read_text(encoding='utf-8',errors='ignore')
+def txt(p): return read_source(ROOT/p, encoding='utf-8',errors='ignore')
 checks=[]
 def check(name, ok):
     checks.append((name,bool(ok)))
-    if not ok: raise AssertionError(name)
 
 cfg=txt('config.cpp'); post=txt('functions/fn_postInit.sqf'); dbg=txt('functions/fn_debugMenu.sqf')
 seq=txt('functions/fn_headElevMedicSeq.sqf'); tilt=txt('functions/fn_headElevApplyTilt.sqf')
 stop=txt('functions/fn_headElevateStop.sqf'); susp=txt('functions/fn_headElevSuspend.sqf')
 prep=txt('functions/fn_medicAnimationPrep.sqf'); menu=txt('overrides/fn_updateActions.sqf')
-check('public version is 1.2.0-r0', 'version = "1.2.0-r0";' in cfg)
-check('runtime fallback 1.2.0-r0', 'ACME_infusion_version = "1.2.0-r0"' in post)
-check('internal B80', 'ACME_buildBatch = "B80";' in post)
 check('debug reads runtime version', 'ACME_infusion_version' in dbg and 'ACME DEBUG v%2' in dbg)
 check('provider DraggerBase wrapper', 'class ACME_HeadElevProviderLift: DraggerBase' in cfg)
 check('patient grab wrapper exact RTM inheritance', 'class ACME_HeadElevPatientGrab: AinjPpneMrunSnonWnonDb_grab' in cfg)
@@ -25,4 +24,10 @@ check('patient lower uses wrapper', '"ACME_HeadElevPatientRelease"' in stop)
 check('patient suspend uses wrapper', '"ACME_HeadElevPatientRelease"' in susp)
 check('alternate row color now white', 'ACME_menuRowColorAlternate = [1, 1, 1, 1];' in post)
 check('renderer does not alternate ordinary rows', "select (_actionIndex mod 2)" not in menu and "ACME_menuRowColorDefault" in menu)
-print(f'{len(checks)}/{len(checks)} B80 focused contracts passed')
+@pytest.mark.parametrize("name,ok", checks, ids=[c[0] for c in checks])
+def test_historical_head_menu_contract(name, ok):
+    assert ok, name
+
+
+def test_release_identity():
+    assert_release_identity()

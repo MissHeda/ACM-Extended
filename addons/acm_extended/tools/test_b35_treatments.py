@@ -1,4 +1,5 @@
 """B35 treatment integration contracts; these inspect SQF and do not execute Arma."""
+from historical_source import read_source
 from pathlib import Path
 import re
 import unittest
@@ -12,7 +13,7 @@ LOCAL = (
 
 
 def override(name):
-    return (ROOT / "overrides" / f"fn_{name}.sqf").read_text(encoding="utf-8")
+    return read_source(ROOT / "overrides" / f"fn_{name}.sqf", encoding="utf-8")
 
 
 class TreatmentProgressionContracts(unittest.TestCase):
@@ -51,14 +52,14 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertLess(text.index('if (!_indicated)'), text.index('call ACME_fnc_ptxInjury'))
         self.assertLess(text.index('call ACME_fnc_ptxInjury'), text.index('call ACME_fnc_ptxTreat'))
         self.assertIn('[_patient, 0.5] call ace_medical_fnc_adjustPainLevel', text)
-        effect = (ROOT / 'functions/fn_chestSealEffectLocal.sqf').read_text()
+        effect = read_source(ROOT / 'functions/fn_chestSealEffectLocal.sqf')
         self.assertEqual(effect.count('call ACME_fnc_ptxInjury'), 1)  # Explicit missed insertion only.
         self.assertNotIn('case "ncdTension"', effect)
         self.assertNotIn('call CBA_fnc_waitAndExecute', effect)
         self.assertNotRegex(effect, r'setVariable\s*\[\s*"ACM_breathing_TensionPneumothorax_State"')
 
     def test_seal_removal_cannot_become_a_new_injury(self):
-        effect = (ROOT / 'functions/fn_chestSealEffectLocal.sqf').read_text()
+        effect = read_source(ROOT / 'functions/fn_chestSealEffectLocal.sqf')
         peel = effect.split('case "peel":', 1)[1].split('case "miss":', 1)[0]
         self.assertIn('[_patient, "peel"] call ACME_fnc_ptxTreat', peel)
         self.assertNotIn('call ACME_fnc_ptxInjury', peel)
@@ -82,13 +83,13 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertIn('"ACM_breathing_Thoracostomy_UsedKit", false, true', override('Thoracostomy_closeLocal'))
 
     def test_sealed_surgical_tract_cannot_cover_external_chest_wounds(self):
-        click = (ROOT / 'functions/fn_thoraMouseDown.sqf').read_text()
+        click = read_source(ROOT / 'functions/fn_thoraMouseDown.sqf')
         seal = click.split('if (_held == "seal") exitWith {', 1)[1].split('private _tubeMedic', 1)[0]
         self.assertNotIn('call ACM_breathing_fnc_applyChestSeal', seal)
         self.assertIn('"chestEffect", [_patient, _medS, "thoraSeal"', seal)
         self.assertIn('call ACME_fnc_clinicalEpoch', seal)
         self.assertNotIn('They still need a tube', click)
-        effect = (ROOT / 'functions/fn_chestSealEffectLocal.sqf').read_text()
+        effect = read_source(ROOT / 'functions/fn_chestSealEffectLocal.sqf')
         branch = effect.split('case "thoraSeal":', 1)[1].split('case "peel":', 1)[0]
         self.assertIn('_clinicalEpoch != ([_patient] call ACME_fnc_clinicalEpoch)', branch)
         self.assertIn('ACME_thora_sealed_%1', branch)
@@ -108,13 +109,13 @@ class TreatmentProgressionContracts(unittest.TestCase):
         self.assertLess(text.index('"ACME_thora_ver"'), text.index('call ACME_fnc_ptxTreat'))
         self.assertNotIn('ACME_CS_holeData', text)
         self.assertNotIn('ACME_CS_penetratingWounds', text)
-        edit = (ROOT / 'functions/fn_chestSealEdit.sqf').read_text()
+        edit = read_source(ROOT / 'functions/fn_chestSealEdit.sqf')
         self.assertNotIn('5th intercostal space', edit)
         self.assertIn('_message = "NAR SPEAR placed.";', edit)
 
     def test_callbacks_are_registered_and_old_ncd_wrapper_cannot_override_them(self):
-        config = (ROOT / 'config.cpp').read_text()
-        post = (ROOT / 'functions/fn_postInit.sqf').read_text()
+        config = read_source(ROOT / 'config.cpp')
+        post = read_source(ROOT / 'functions/fn_postInit.sqf')
         for name in LOCAL + ("handlePneumothorax",):
             self.assertTrue(f'class {name} {{ file = "\\acm_extended\\overrides\\fn_{name}.sqf"; }};' in config, f"Missing override: {name}")
         self.assertNotIn('ACM_breathing_fnc_performNCDLocal =', post)

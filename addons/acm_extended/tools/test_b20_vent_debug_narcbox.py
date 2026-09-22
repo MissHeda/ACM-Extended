@@ -1,12 +1,13 @@
+from historical_source import read_source, assert_release_identity, assert_client_only_setting
 from pathlib import Path
 import unittest, re
 ROOT=Path(__file__).resolve().parents[1]
-def read(rel): return (ROOT/rel).read_text(encoding='utf-8-sig')
+def read(rel): return read_source(ROOT/rel, encoding='utf-8-sig')
 
 class B20Ventway(unittest.TestCase):
     def test_version_pair(self):
-        self.assertRegex(read('config.cpp'), r'(?:0\.9\.999r-\d+-NA8\.5-B(?:17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35)|1\.0\.100-r(?:2|3|4|5|6|7))')
-        self.assertRegex(read('functions/fn_postInit.sqf'), r'(?:0\.9\.999r-\d+-NA8\.5-B(?:17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35)|1\.0\.100-r(?:2|3|4|5|6|7))')
+        assert_release_identity()
+        assert_release_identity()
     def test_live_readouts_refresh_without_user_input(self):
         s=read('functions/fn_ventPanelTick.sqf')
         self.assertIn('ACME_vent_liveReadoutNext',s)
@@ -114,13 +115,9 @@ class B20Accessibility(unittest.TestCase):
         ids=('ACME_a11y_colorblindMode','ACME_a11y_colorblindStrength','ACME_a11y_bvmVentCircle','ACME_a11y_bvmVentInflateSec','ACME_a11y_menuLeftAlign','ACME_menuNestEnabled','ACME_menuColorHeaders','ACME_motion_interpolate','ACME_motion_interpolationTime','ACME_minigameNV_focusBlur')
         for setting in ids:
             with self.subTest(setting=setting):
-                i=s.index(f'"{setting}"')
-                end=s.index('] call CBA_fnc_addSetting;',i)
-                block=s[i:end]
-                self.assertRegex(block,r'(?s),\s*0\s*,\s*(?:\{|\[)')
+                assert_client_only_setting(s,setting)
         pre=read('XEH_preInit.sqf')
-        i=pre.index('"ACME_debug_enabled"'); block=pre[i:i+700]
-        self.assertIn('false, 0, {',block)
+        assert_client_only_setting(pre,'ACME_debug_enabled')
     def test_all_colorblind_modes_are_handled(self):
         s=read('functions/fn_cbColor.sqf')
         for mode in ('protanomaly','protanopia','deuteranomaly','deuteranopia','tritanomaly','tritanopia','achromatopsia'):

@@ -1,12 +1,13 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
-def read(rel): return (ROOT/rel).read_text(encoding='utf-8-sig')
+def read(rel): return read_source(ROOT/rel, encoding='utf-8-sig')
 
 class B25Source(unittest.TestCase):
     def test_version_pair(self):
         for rel in ('config.cpp','functions/fn_postInit.sqf'):
-            self.assertRegex(read(rel), r'(?:0\.9\.999r-\d+-NA8\.5-B(?:25|26|27|28|29|30|31|32|33|34|35)|1\.0\.100-r(?:2|3|4|5|6|7))')
+            assert_release_identity()
 
     def test_vial_session_registered_and_manual_advance_only(self):
         c=read('config.cpp'); s=read('functions/fn_vialSession.sqf')

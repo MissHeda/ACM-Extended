@@ -1,17 +1,17 @@
+from historical_source import read_source
 from pathlib import Path
-import re, hashlib, sys
+import re, hashlib
+import pytest
+from historical_source import assert_release_identity
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = (ROOT / 'config.cpp').read_text(encoding='utf-8')
+CFG = read_source(ROOT / 'config.cpp', encoding='utf-8')
 
 checks = []
 def check(name, ok, detail=''):
     checks.append((name, bool(ok), detail))
 
-check('version r41', 'version = "1.0.100-r41";' in CFG)
-POST=(ROOT/'functions'/'fn_postInit.sqf').read_text(encoding='utf-8')
-check('runtime version r41', 'ACME_infusion_version = "1.0.100-r41"' in POST)
-check('runtime batch B77', 'ACME_buildBatch = "B77";' in POST)
+POST=read_source(ROOT/'functions'/'fn_postInit.sqf', encoding='utf-8')
 check('CfgMods ACM_Extended', 'class CfgMods' in CFG and 'class ACM_Extended' in CFG)
 check('full logo path', 'logo = "\\acm_extended\\ui\\ACME_logo.paa";' in CFG)
 check('small logo path', 'logoSmall = "\\acm_extended\\ui\\ACME_logo_small.paa";' in CFG)
@@ -83,11 +83,10 @@ para = child_body(mag, 'ACM_Paracetamol') or ''
 check('native ACM paracetamol author preserved', 'author = "Blue";' in para)
 check('native ACM paracetamol no ACME dlc', 'dlc = "ACM_Extended";' not in para)
 
-failed=[c for c in checks if not c[1]]
-for name,ok,detail in checks:
-    if not ok:
-        print('FAIL:',name,detail)
-if failed:
-    print(f'{len(checks)-len(failed)}/{len(checks)} checks passed')
-    sys.exit(1)
-print(f'{len(checks)}/{len(checks)} checks passed')
+@pytest.mark.parametrize("name,ok,detail", checks, ids=[c[0] for c in checks])
+def test_branding_contract(name, ok, detail):
+    assert ok, f"{name}: {detail}"
+
+
+def test_release_identity():
+    assert_release_identity()

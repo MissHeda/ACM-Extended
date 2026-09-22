@@ -4,15 +4,16 @@ This is a source/math regression, not an Arma engine input test. It includes the
 transparent native body canvas that previously intercepted most route clicks,
 the separate route backings, and the optional epinephrine dose button.
 """
+from historical_source import read_source
 from pathlib import Path
 import operator
 import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-INJECT = (ROOT / 'functions/fn_skInject.sqf').read_text()
-DOSE = (ROOT / 'functions/fn_skEpinephrineDose.sqf').read_text()
-INIT = (ROOT / 'functions/fn_postInit.sqf').read_text()
+INJECT = read_source(ROOT / 'functions/fn_skInject.sqf')
+DOSE = read_source(ROOT / 'functions/fn_skEpinephrineDose.sqf')
+INIT = read_source(ROOT / 'functions/fn_postInit.sqf')
 OPS = {'+': (1, operator.add), '-': (1, operator.sub), '*': (2, operator.mul),
        '/': (2, operator.truediv), 'min': (1, min), 'max': (1, max)}
 

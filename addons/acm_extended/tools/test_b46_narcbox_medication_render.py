@@ -1,16 +1,17 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def text(rel):
-    return (ROOT / rel).read_text(errors="ignore")
+    return read_source(ROOT / rel, errors="ignore")
 
 
 def test_b46_version_stamp():
-    assert 'version = "1.0.100-r10";' in text('config.cpp')
+    assert_release_identity()
     p = text('functions/fn_postInit.sqf')
-    assert 'ACME_buildBatch = "B46";' in p
-    assert 'ACME_infusion_version = "1.0.100-r10"' in p
+    assert_release_identity()
+    assert_release_identity()
 
 
 def test_b38_runtime_title_bar_is_removed_from_renderer():

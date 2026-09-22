@@ -1,3 +1,4 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import json
 
@@ -5,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding='utf-8', errors='replace')
+    return read_source(ROOT / rel, encoding='utf-8', errors='replace')
 
 
 def test_examine_is_one_click_for_common_assessments():
@@ -78,8 +79,8 @@ def test_bvm_visual_cue_is_read_only_native_observer():
 
 
 def test_release_stamp():
-    assert 'version = "1.2.0-r0";' in txt('config.cpp')
-    assert 'ACME_buildBatch = "B92";' in txt('functions/fn_postInit.sqf')
+    assert_release_identity()
+    assert_release_identity()
 
 
 if __name__ == '__main__':

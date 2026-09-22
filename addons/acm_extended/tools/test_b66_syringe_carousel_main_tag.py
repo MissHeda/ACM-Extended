@@ -1,15 +1,16 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+    return read_source(ROOT / rel, encoding="utf-8", errors="replace")
 
 def test_b66_version_stamp():
-    assert 'version = "1.0.100-r30";' in txt("config.cpp")
+    assert_release_identity()
     post = txt("functions/fn_postInit.sqf")
-    assert 'ACME_infusion_version = "1.0.100-r30"' in post
-    assert 'ACME_buildBatch = "B66";' in post
+    assert_release_identity()
+    assert_release_identity()
 
 def test_main_select_syringe_tag_is_persistent_and_left_of_native_syringe():
     pending = txt("functions/fn_skPendingTagRender.sqf")

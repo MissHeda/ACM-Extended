@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """B8 source contracts and independent route/placement examples. Does not execute SQF."""
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import json,math,re,unittest
 from source_scan import lex
 ROOT=Path(__file__).resolve().parents[1]
-FIXTURE=json.loads((ROOT/'tools/na8_5_b8_medication_routes.json').read_text())
-def source(name):return (ROOT/'functions'/f'fn_{name}.sqf').read_text(encoding='utf-8-sig')
+FIXTURE=json.loads(read_source(ROOT/'tools/na8_5_b8_medication_routes.json'))
+def source(name):return read_source(ROOT/'functions'/f'fn_{name}.sqf', encoding='utf-8-sig')
 def code(name):return [t.value for t in lex(source(name))]
 
 def route_model(name,via=None):
@@ -47,10 +48,10 @@ class SourceContracts(unittest.TestCase):
     def test_real_iv_flag_required_when_supplied(self):self.assertIn('_viaIV isEqualTo true',source('vesicantRouteAllows'))
     def test_legacy_is_only_null_object_sentinel(self):self.assertIn('if (_viaIV isEqualType objNull) exitWith {isNull _viaIV}',source('vesicantRouteAllows'))
     def test_event_retains_first_four_fields(self):
-        s=(ROOT/'overrides/fn_medicationLocal.sqf').read_text()
+        s=read_source(ROOT/'overrides/fn_medicationLocal.sqf')
         self.assertIn('[QEGVAR(circulation,handleMedicationEffects), [_patient, _bodyPart, _classname, _dose, _iv, _delivery]] call CBA_fnc_localEvent;',s)
     def test_systemic_medication_is_recorded_before_event(self):
-        s=(ROOT/'overrides/fn_medicationLocal.sqf').read_text()
+        s=read_source(ROOT/'overrides/fn_medicationLocal.sqf')
         self.assertLess(s.index('call ACEFUNC(medical_status,addMedicationAdjustment)'),s.index('[QEGVAR(circulation,handleMedicationEffects)'))
         self.assertLess(s.index('call ACEFUNC(medical_treatment,onMedicationUsage)'),s.index('[QEGVAR(circulation,handleMedicationEffects)'))
     def test_postinit_receives_metadata(self):self.assertIn('["_viaIV", objNull]',source('postInit'))
@@ -62,7 +63,7 @@ class SourceContracts(unittest.TestCase):
     def test_b14_credit_and_local_antidote_hooks_preserved(self):
         s=source('postInit');s=s[s.index('["ACM_circulation_handleMedicationEffects"'):]
         self.assertIn('call ACME_fnc_applyCalciumCredit',s)
-        self.assertIn('call ACME_fnc_vesicantReverse',(ROOT/'overrides/fn_medicationLocal.sqf').read_text())
+        self.assertIn('call ACME_fnc_vesicantReverse',read_source(ROOT/'overrides/fn_medicationLocal.sqf'))
         self.assertNotIn('call ACME_fnc_vesicantInjure',s.split('}] call CBA_fnc_addEventHandler;',1)[0])
     def test_direct_injury_caller_is_also_guarded(self):
         s=source('vesicantInjure');self.assertLess(s.index('call ACME_fnc_vesicantRouteAllows'),s.index('ACME_vesExposure_'))
@@ -79,20 +80,31 @@ class SourceContracts(unittest.TestCase):
     def test_wrist_tight_14g_tolerance(self):self.assertEqual(TOL,0.15)
     def test_caliber_depth_roll_unchanged(self):self.assertRegex(CATALOG,r'"lateral forearm", 16, 0\.35, 0\.10, 0\.75')
     def test_item_no_longer_claims_20g_only(self):
-        s=(ROOT/'config.cpp').read_text();self.assertNotIn('only catheter a wrist vein will take',s);self.assertNotIn('only one that fits a wrist',s)
+        s=read_source(ROOT/'config.cpp');self.assertNotIn('only catheter a wrist vein will take',s);self.assertNotIn('only one that fits a wrist',s)
         self.assertIn('Wrist placement requires an extremely accurate central stick',s)
     def test_gauge_availability_is_inventory_only(self):
         s=source('ivMinigameGrabNeedle');self.assertIn('getCountOfItem',s);self.assertNotIn('maxG',code('ivMinigameGrabNeedle'))
     def test_puncture_uses_actual_site_margin(self):
         s=source('ivMinigameClick');self.assertIn('_gauge',source('ivSiteDifficulty'))
-        self.assertIn('"ACME_IV_Gauge", 16], _stickSite] call ACME_fnc_ivSiteDifficulty',s)
-        self.assertLess(s.index('_hit = _punctureDifficulty select 2'),s.index('"ACME_IV_StickAcc", (if'))
-    def test_ej_retains_existing_click_margin(self):self.assertIn('if (!_isEJc && {_stickSite in',source('ivMinigameClick'))
+        self.assertIn('[_patientStick, _bpStick, _gaugeStick, _diffSite] call ACME_fnc_ivSiteDifficulty',s)
+        self.assertLess(s.index('_punctureDifficulty params ["_patStick", "_feelStick", "_hit", "_hotStick"]'),s.index('"ACME_IV_StickAcc", (if'))
+    def test_ej_retains_existing_click_margin(self):
+        # EJ now intentionally shares the pressure-sensitive difficulty API rather than a hardcoded margin.
+        # Check that the selected EJ anatomical side and the returned margin are actually consumed.
+        s=source('ivMinigameClick')
+        self.assertIn('private _diffSite = if (_isEJc) then {uiNamespace getVariable ["ACME_IV_EJAnatomicalSide", "left"]} else {_stickSite};',s)
+        self.assertIn('[_patientStick, _bpStick, _gaugeStick, _diffSite] call ACME_fnc_ivSiteDifficulty',s)
+        self.assertIn('_punctureDifficulty params ["_patStick", "_feelStick", "_hit", "_hotStick"];',s)
     def test_blow_has_no_blood_volume_veto_or_rng(self):
         for n in ('ivStickBlows','ivMinigameStickSuccess'):
             s=source(n);self.assertNotIn('5.99',s);self.assertNotIn('ace_medical_bloodVolume',s);self.assertNotIn('random',code(n))
     def test_hypotension_still_affects_difficulty(self):
-        self.assertIn('linearConversion [70, 90, _sys, 0, 1, true]',source('ivSiteDifficulty'))
+        s=source('ivSiteDifficulty')
+        self.assertIn('private _map = _dia + ((_sys - _dia) / 3);',s)
+        self.assertIn('_sysScore',s);self.assertIn('_mapScore',s)
+        self.assertIn('private _patency = _pressure ^',s)
+        from test_historical_clinical_execution import verify_pressure_difficulty
+        verify_pressure_difficulty()
     def test_blow_uses_frozen_puncture(self):
         s=source('ivMinigameStickSuccess')
         for term in ('ACME_IV_InsGauge','ACME_IV_InsHit','ACME_IV_StickAcc','ACME_IV_InsSite'):self.assertIn(term,s)
@@ -106,15 +118,15 @@ class SourceContracts(unittest.TestCase):
     def test_outcome_guard_invalid_accuracy(self):
         s=source('ivStickBlows');self.assertIn('!finite _accuracy',s);self.assertIn('_accuracy > 1',s)
     def test_added_functions_registered_once(self):
-        s=(ROOT/'config.cpp').read_text()
+        s=read_source(ROOT/'config.cpp')
         for n in ('vesicantRouteAllows','ivStickBlows'):self.assertEqual(s.count('class '+n+' {};'),1)
     def test_no_new_logging(self):
         for n in ('vesicantRouteAllows','ivStickBlows'):
             for word in ('diag_log','diag_logSlowFrame','systemChat','hint'):self.assertNotIn(word,code(n))
     def test_version_pair(self):
         version=re.search(r'ACME_infusion_version = "([^"]+)"',source('postInit')).group(1)
-        self.assertRegex(version,r"^(?:0\.9\.999r-(?:73-NA8\.5-B(?:8|9|10|11)|74-NA8\.5-B12|75-NA8\.5-B13|78-NA8\.5-B17|79-NA8\.5-B18|80-NA8\.5-B19|81-NA8\.5-B20|82-NA8\.5-B21|83-NA8\.5-B22|84-NA8\.5-B23|85-NA8\.5-B24|86-NA8\.5-B25|87-NA8\.5-B26|88-NA8\.5-B27|89-NA8\.5-B28|90-NA8\.5-B29|91-NA8\.5-B30|92-NA8\.5-B31|93-NA8\.5-B32|94-NA8\.5-B33|95-NA8\.5-B34|96-NA8\.5-B35)|1\.0\.100-r(?:2|3|4|5|6|7))$")
-        self.assertIn('version = "'+version+'"',(ROOT/'config.cpp').read_text())
+        assert_release_identity()
+        self.assertIn('version = "'+version+'"',read_source(ROOT/'config.cpp'))
 
 class RouteExamples(unittest.TestCase):
     def test_malformed_delivery_metadata(self):
@@ -167,7 +179,8 @@ class PlacementExamples(unittest.TestCase):
     def test_ej_tolerance_unchanged(self):
         self.assertFalse(outcome_model('ej','left',14,True,.6));self.assertTrue(outcome_model('ej','right',14,True,.6001))
     def test_18g_and_20g_still_distinct_gauge_multipliers(self):
-        s=source('ivSiteDifficulty');self.assertIn('case 18: { 1.15 }',s);self.assertIn('case 20: { 1.35 }',s)
+        from test_historical_clinical_execution import verify_gauge_precision
+        verify_gauge_precision()
     def test_bad_accuracy_never_grants_success(self):
         for a in (float('nan'),float('inf'),-1,1.01):self.assertTrue(outcome_model('leftarm',2,14,True,a))
     def test_repeated_outcome_does_not_reroll(self):

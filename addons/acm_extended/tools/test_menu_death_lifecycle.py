@@ -10,6 +10,7 @@ import shutil
 import subprocess
 
 import pytest
+from source_scan import lex, matching, split_args
 
 ROOT = Path(__file__).resolve().parents[3]
 F = ROOT / 'addons/acm_extended/functions'
@@ -17,6 +18,48 @@ F = ROOT / 'addons/acm_extended/functions'
 
 def read(name):
     return (F / f'fn_{name}.sqf').read_text()
+
+
+def namespace_public_arguments(source):
+    """Strip only a top-level literal public flag for namespace engine stand-ins.
+
+    Tokenization ignores comments/strings and preserves nested values, including
+    two-argument setVariable calls whose value ends with a Boolean.
+    """
+    ts=lex(source); pairs=matching(ts); edits=[]
+    for i,t in enumerate(ts[:-1]):
+        if t.kind!='ident' or t.value!='setVariable' or ts[i+1].value!='[':continue
+        opening=i+1
+        assert opening in pairs, 'unclosed setVariable in test input'
+        closing=pairs[opening]; args=split_args(ts,opening+1,closing,pairs)
+        if len(args)!=3 or len(args[-1])!=1 or args[-1][0].value not in ('true','false'):continue
+        commas=[]; j=opening+1
+        while j<closing:
+            if ts[j].value in ('[','{','(') and j in pairs:j=pairs[j]+1;continue
+            if ts[j].value==',':commas.append(j)
+            j+=1
+        assert len(commas)==2
+        edits.append((ts[commas[-1]].offset,ts[closing].offset))
+    # CBA input handlers also compile literal/format code. Adapt only those
+    # executable strings, never ordinary UI labels or diagnostics.
+    for i,t in enumerate(ts):
+        if t.kind!='string':continue
+        direct=i>=1 and ts[i-1].value in ('compile','compileFinal')
+        formatted=i>=3 and [v.value for v in ts[i-3:i]] in (
+            ['compile','format','['],['compileFinal','format','['])
+        if not (direct or formatted):continue
+        q=source[t.offset]; end=t.offset+1
+        while end<len(source):
+            if source[end]==q:
+                if end+1<len(source) and source[end+1]==q:end+=2;continue
+                end+=1;break
+            end+=1
+        replacement=namespace_public_arguments(t.value)
+        if replacement!=t.value:edits.append((t.offset,end,q+replacement.replace(q,q+q)+q))
+    for change in sorted(edits,reverse=True):
+        start,end=change[:2]; replacement=change[2] if len(change)==3 else ''
+        source=source[:start]+replacement+source[end:]
+    return source
 
 
 def adapt(s, component='core'):
@@ -51,14 +94,13 @@ def adapt(s, component='core'):
     s = s.replace('ACME_CS_sessions set ', 'ACME_CS_sessions setVariable ')
     s = re.sub(r'\bisNull (\(uiNamespace getVariable \[[^\n]*?\]\))', r'(\1 isEqualTo objNull)', s)
     s = re.sub(r'\bisNull (_\w+)', r'(\1 isEqualTo objNull)', s)
-    s = re.sub(r'(setVariable \[[^;\n]*,[^;\n]*), (?:true|false)(\])', r'\1\2', s)
     s = re.sub(r'"ACM_[^"]+" cut(?:Rsc|Text) \[[^;]*;', '', s)
     s = re.sub(r'private (_ctrl\w+) = _display displayCtrl \w+;', r'private \1 = objNull;', s)
     s = re.sub(r'_ctrl\w+ ctrlSetText [^;]*;', '', s)
     s = s.replace('_medic setUnitPos "AUTO";', '_stanceFreed = true;')
     s = re.sub(r'\bdialog\b', '_dialog', s)
     s = s.replace('    false\n}];', '    false\n}] select 1);')
-    return s
+    return namespace_public_arguments(s)
 
 
 PREAMBLE = r'''
@@ -180,7 +222,8 @@ def test_last_viewer_restore_cannot_clear_reopened_workspace():
         [_patient,"second"] call _end;
         [(_patient getVariable "ACME_CS_ProcedureTokens") isEqualTo ["first","third"],"other viewers released"] call _check;
         [_patient,"third"] call _end;
-        _patient setVariable ["ACME_CS_rollUntil",12];
+        private _actualSide = "front";
+        _patient setVariable ["ACME_CS_vestBusy","park:existing"];
         [_patient,"first"] call _end;
         [count _waits == 1,"last viewer did not schedule restore"] call _check;
         [_patient,"new"] call _begin;

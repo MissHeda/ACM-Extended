@@ -1,17 +1,18 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+    return read_source(ROOT / rel, encoding="utf-8", errors="replace")
 
 
 def test_version_batch():
-    assert 'version = "1.0.100-r37";' in txt('config.cpp')
+    assert_release_identity()
     post = txt('functions/fn_postInit.sqf')
-    assert 'ACME_infusion_version = "1.0.100-r37"' in post
-    assert 'ACME_buildBatch = "B73";' in post
+    assert_release_identity()
+    assert_release_identity()
 
 
 def test_main_tag_selector_is_native_syringe_anchored_and_aspect_independent():
@@ -212,7 +213,7 @@ def test_no_acme_medical_animation_entry_uses_priority_two_switchmove_fallback()
     offenders = []
     for base in (ROOT / 'functions', ROOT / 'overrides'):
         for path in base.glob('fn_*.sqf'):
-            src = path.read_text(encoding='utf-8', errors='replace')
+            src = read_source(path, encoding='utf-8', errors='replace')
             if '] call ACME_fnc_doAnim;' in src:
                 for line_no, line in enumerate(src.splitlines(), 1):
                     if 'call ACME_fnc_doAnim;' in line and ', 2]' in line:

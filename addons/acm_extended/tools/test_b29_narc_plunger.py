@@ -4,6 +4,7 @@ This evaluates only the cursor/control arithmetic, not an Arma UI runtime.
 Control heights sample ACM's 0.9 GUI-grid-unit grab band across UI scales.
 """
 from pathlib import Path
+from functools import lru_cache
 import operator
 import re
 import unittest
@@ -44,17 +45,21 @@ def assignment(name):
     return expression(re.search(r'private ' + name + r' = ([^;]+);', SOURCE)[1])
 
 
-CALCULATIONS = [(name, assignment(name)) for name in ('_mouseOffset', '_bottomMouse', '_floorYMouse', '_rawY')]
-CURSORS = re.findall(r'setMousePosition\s*\[\(safeZoneX[^,]+,\s*(.*?)\];', SOURCE)
-assert len(CURSORS) == 1, 'Compound draw must clamp the incoming cursor once per frame.'
-CURSOR = expression(CURSORS[0])
+@lru_cache(maxsize=1)
+def calculations():
+    names = ('_mouseOffset', '_bottomMouse', '_floorYMouse', '_mouseYClamped', '_rawY')
+    steps = [(name, assignment(name)) for name in names]
+    cursors = re.findall(r'setMousePosition\s*\[[^,]+,\s*(.*?)\];', SOURCE)
+    assert len(cursors) == 1, 'Compound draw must clamp the incoming cursor once per frame.'
+    return steps, expression(cursors[0])
 
 
 def tick(mouse, floor, limit, height):
+    steps, cursor = calculations()
     env = {'_mouseY': mouse, '_floorY': floor, '_maxY': limit, '_plungerH': height}
-    for name, calculate in CALCULATIONS:
+    for name, calculate in steps:
         env[name] = calculate(env)
-    return CURSOR(env), env['_rawY']
+    return cursor(env), env['_rawY']
 
 
 class NarcPlunger(unittest.TestCase):

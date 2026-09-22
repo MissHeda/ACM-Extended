@@ -1,16 +1,17 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding="utf-8")
+    return read_source(ROOT / rel, encoding="utf-8")
 
 def test_b67_build_stamp_and_single_rosc_registration():
     cfg = txt("config.cpp")
     post = txt("functions/fn_postInit.sqf")
-    assert 'version = "1.0.100-r31";' in cfg
-    assert 'ACME_infusion_version = "1.0.100-r31"' in post
-    assert 'ACME_buildBatch = "B67";' in post
+    assert_release_identity()
+    assert_release_identity()
+    assert_release_identity()
     assert 'class roscEligibility {};' in cfg
     assert 'class attemptROSC { file = "\\acm_extended\\overrides\\fn_attemptROSC.sqf"; };' in cfg
 
@@ -51,7 +52,7 @@ def test_direct_arrest_call_sites_are_intentional_only():
     found = set()
     for base in (ROOT / "functions", ROOT / "overrides"):
         for f in base.glob("*.sqf"):
-            if "call ACME_fnc_arrestLocal" in f.read_text(encoding="utf-8", errors="ignore"):
+            if "call ACME_fnc_arrestLocal" in read_source(f, encoding="utf-8", errors="ignore"):
                 found.add(str(f.relative_to(ROOT)).replace("\\", "/"))
     assert found == allowed
 

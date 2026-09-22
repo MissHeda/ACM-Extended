@@ -1,14 +1,15 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding='utf-8', errors='ignore')
+    return read_source(ROOT / rel, encoding='utf-8', errors='ignore')
 
 def test_version_batch():
-    assert 'version = "1.0.100-r35";' in txt('config.cpp')
+    assert_release_identity()
     p = txt('functions/fn_postInit.sqf')
-    assert '"1.0.100-r35"' in p
-    assert 'ACME_buildBatch = "B71";' in p
+    assert_release_identity()
+    assert_release_identity()
 
 def test_main_tag_button_copies_carousel_tag_face_anchor():
     render = txt('functions/fn_skPendingTagRender.sqf')

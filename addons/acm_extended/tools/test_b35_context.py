@@ -1,10 +1,11 @@
 """Offline pleural-context contracts and scenarios; does not execute SQF/Arma."""
+from historical_source import read_source
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 def source(name):
-    return (ROOT / 'functions' / f'fn_{name}.sqf').read_text(encoding='utf-8')
+    return read_source(ROOT / 'functions' / f'fn_{name}.sqf', encoding='utf-8')
 
 
 def coverage(holes=(), tracked=0, processed=0, native_records=-1, native_holes=-1):

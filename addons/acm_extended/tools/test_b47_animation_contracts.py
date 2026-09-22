@@ -1,8 +1,9 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-def txt(rel): return (ROOT / rel).read_text(errors='ignore')
+def txt(rel): return read_source(ROOT / rel, errors='ignore')
 
 def block(src, name):
     m = re.search(r'class\s+' + re.escape(name) + r'\b[^\{]*\{', src)
@@ -15,8 +16,8 @@ def block(src, name):
     return src[m.start():i]
 
 def test_version_batch():
-    assert 'version = "1.0.100-r11"' in txt('config.cpp')
-    assert 'ACME_buildBatch = "B47"' in txt('functions/fn_postInit.sqf')
+    assert_release_identity()
+    assert_release_identity()
 
 def test_exact_requested_motion_wrappers():
     c = txt('config.cpp')

@@ -1,13 +1,14 @@
+from historical_source import read_source, assert_release_identity
 #!/usr/bin/env python3
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-def txt(rel): return (ROOT/rel).read_text(encoding='utf-8',errors='ignore')
+def txt(rel): return read_source(ROOT/rel, encoding='utf-8',errors='ignore')
 
 def test_version():
-    assert 'version = "1.0.100-r40";' in txt('config.cpp')
+    assert_release_identity()
     p=txt('functions/fn_postInit.sqf')
-    assert 'ACME_infusion_version = "1.0.100-r40"' in p
-    assert 'ACME_buildBatch = "B76";' in p
+    assert_release_identity()
+    assert_release_identity()
 
 def test_tag_25():
     c=txt('config.cpp')

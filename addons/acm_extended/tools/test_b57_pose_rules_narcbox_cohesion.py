@@ -1,10 +1,11 @@
 """B57 static contracts for the requested animation/menu/reset/Narc Box changes.
 Static only: Arma runtime validation is still required for RTM timing/camera behavior."""
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-def txt(rel): return (ROOT / rel).read_text(encoding="utf-8")
+def txt(rel): return read_source(ROOT / rel, encoding="utf-8")
 
 def _if_not_precedence_traps(source):
     hits=[]
@@ -23,15 +24,15 @@ def _if_not_precedence_traps(source):
     return hits
 
 def test_version_is_r21_b57():
-    assert 'version = "1.0.100-r21";' in txt('config.cpp')
+    assert_release_identity()
     post=txt('functions/fn_postInit.sqf')
-    assert 'ACME_infusion_version = "1.0.100-r21"' in post
-    assert 'ACME_buildBatch = "B57";' in post
+    assert_release_identity()
+    assert_release_identity()
 
 def test_no_if_not_precedence_trap_anywhere():
     for folder in ('functions','overrides'):
         for p in (ROOT/folder).glob('*.sqf'):
-            src=p.read_text(encoding='utf-8', errors='replace')
+            src=read_source(p, encoding='utf-8', errors='replace')
             code='\n'.join(l for l in src.splitlines() if not l.lstrip().startswith(('*','//','/*')))
             assert not _if_not_precedence_traps(code), p.name
 

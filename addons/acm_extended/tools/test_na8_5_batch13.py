@@ -5,14 +5,16 @@ The inherited B12 tests remain active. Per-class checks cover the entire supplie
 Run with PYTHONDONTWRITEBYTECODE=1 to keep an exact-source patch tree clean.
 """
 from __future__ import annotations
+from historical_source import read_source
 import json, math, re, unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-MATRIX=json.loads((ROOT/'audit/MEDICATION_MATRIX.json').read_text())
+from historical_source import medication_matrix
+MATRIX=medication_matrix()
 MEDS={r['classname']:r for r in MATRIX['medication_classes']}
 SOURCES={r['source']:r for r in MATRIX['concentrations']}
-def src(n):return (ROOT/'functions'/('fn_'+n+'.sqf')).read_text()
-def ov(n):return (ROOT/'overrides'/('fn_'+n+'.sqf')).read_text()
+def src(n):return read_source(ROOT/'functions'/('fn_'+n+'.sqf'))
+def ov(n):return read_source(ROOT/'overrides'/('fn_'+n+'.sqf'))
 def clamp(x,a=0.,b=1.):return max(a,min(b,x))
 def envelope(route,t,peak,life,plateau):
     # Caller excludes expired/future records. Matches supplied native route functions.
@@ -124,7 +126,7 @@ class PreparationAndRoutes(unittest.TestCase):
     def test_local_antidotes_not_iv(self):
         for n in ('Phentolamine','Hyaluronidase'):
             self.assertTrue(permitted(n,False,True));self.assertFalse(permitted(n+'_IV',True,True))
-    def test_source_debit_helper_registered(self):self.assertIn('class medicationTakeSources', (ROOT/'config.cpp').read_text())
+    def test_source_debit_helper_registered(self):self.assertIn('class medicationTakeSources', read_source(ROOT/'config.cpp'))
     def test_compound_batch_debits_and_tag(self):
         t=src('skCompoundCommit');self.assertIn('ACME_fnc_medicationTakeSources',t);self.assertIn('compoundB13',t)
     def test_dilution_now_consumes_drug_not_just_saline(self):
@@ -148,7 +150,7 @@ class EffectAndLifecycleContracts(unittest.TestCase):
     def test_shared_nausea_reader_uses_dose(self):self.assertIn('_concentration',ov('getNauseaMedicationEffects'));self.assertIn('ACME_fnc_medicationAvailability',ov('getNauseaMedicationEffects'))
     def test_b14_naloxone_is_vanilla_not_temporary_antagonist(self):
         self.assertFalse((ROOT/'overrides/fn_handleMed_NaloxoneLocal.sqf').exists())
-        self.assertNotIn('class handleMed_NaloxoneLocal', (ROOT/'config.cpp').read_text())
+        self.assertNotIn('class handleMed_NaloxoneLocal', read_source(ROOT/'config.cpp'))
         self.assertNotIn('naloxoneCache',src('medicationAvailability'))
         self.assertIn('_class == "Naloxone"',src('medicationExposure'))
         self.assertIn('_fired set ["opioid"',src('medicationExposure'))
@@ -193,7 +195,7 @@ class EffectAndLifecycleContracts(unittest.TestCase):
         for n in ('ACME_medicationToxicity','ACME_sug_bindings','ACME_sug_spent','ACME_nativeCalciumFirstGram','ACME_suctionSessions','ACME_o2Drain_suction'):
             self.assertIn('["'+n+'", "", true',t)
     def test_external_count_delegate_is_separately_registered(self):
-        t=(ROOT/'config.cpp').read_text();self.assertIn('class ACME_native',t);self.assertIn('tag = "ACME_native"',t)
+        t=read_source(ROOT/'config.cpp');self.assertIn('class ACME_native',t);self.assertIn('tag = "ACME_native"',t)
 
 class SuctionAndSALAD(unittest.TestCase):
     def test_no_penalty_through_ten_seconds(self):self.assertAlmostEqual(suction_run(10)[1],0)

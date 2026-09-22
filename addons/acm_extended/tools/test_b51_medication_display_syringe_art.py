@@ -1,16 +1,17 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding="utf-8-sig", errors="ignore")
+    return read_source(ROOT / rel, encoding="utf-8-sig", errors="ignore")
 
 
 def test_version_and_batch():
-    assert 'version = "1.0.100-r15";' in txt('config.cpp')
+    assert_release_identity()
     p = txt('functions/fn_postInit.sqf')
-    assert 'ACME_buildBatch = "B51";' in p
-    assert 'ACME_infusion_version = "1.0.100-r15"' in p
+    assert_release_identity()
+    assert_release_identity()
 
 
 def test_three_column_header_is_retained():

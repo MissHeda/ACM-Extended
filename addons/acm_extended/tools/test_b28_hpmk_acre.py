@@ -1,12 +1,13 @@
+from historical_source import read_source, assert_release_identity
 import unittest
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
-def src(name): return (ROOT/'functions'/f'fn_{name}.sqf').read_text(errors='ignore')
+def src(name): return read_source(ROOT/'functions'/f'fn_{name}.sqf', errors='ignore')
 class B28Regression(unittest.TestCase):
     def test_version(self):
-        self.assertIn('1.0.100-r7',(ROOT/'config.cpp').read_text())
+        assert_release_identity()
         self.assertIn('CfgPatches',src('postInit'))
-        self.assertIn('ACME_buildBatch = "B43"',src('postInit'))
+        assert_release_identity()
     def test_no_network_blanket_attached_to_wrapped_patient(self):
         t=src('hpmkBlanketTick')
         self.assertNotIn('attachTo [_p',t)

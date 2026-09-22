@@ -38,7 +38,7 @@ def test_actual_edit_handler_preserves_digits_and_backspace_without_rewriting():
         {
             _x params ["_testInput", "_expected", "_expectedWrites"];
             private _writes = 0;
-            [0] call {''' + handler + '''};
+            [uiNamespace] call {''' + handler + '''};
             if (_testInput != _expected || {_writes != _expectedWrites}) then {_ok = false;};
         } forEach [["", "", 0], ["3", "3", 0], ["30", "30", 0], ["120", "120", 0],
             ["300", "300", 0], ["30s", "30", 1], ["abc", "", 1]];

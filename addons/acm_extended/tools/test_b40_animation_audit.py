@@ -1,14 +1,15 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def text(rel):
-    return (ROOT / rel).read_text(errors="ignore")
+    return read_source(ROOT / rel, errors="ignore")
 
 def test_runtime_is_b41_r5():
-    assert 'version = "1.0.100-r7";' in text('config.cpp')
-    assert 'ACME_buildBatch = "B43";' in text('functions/fn_postInit.sqf')
+    assert_release_identity()
+    assert_release_identity()
 
 def test_direct_pressure_has_connected_hold_state():
     cfg = text('config.cpp')
@@ -78,7 +79,7 @@ def test_remaining_hard_switches_are_known_state_locks_only():
     found=set()
     for base in ('functions','overrides'):
         for p in (ROOT/base).glob('*.sqf'):
-            s=p.read_text(errors='ignore')
+            s=read_source(p, errors='ignore')
             if 'ace_common_switchMove' in s or 'QACEGVAR(common,switchMove)' in s or re.search(r'(?<!_)\bswitchMove\s*\[', s):
                 found.add(str(p.relative_to(ROOT)).replace('\\','/'))
     assert found <= allowed, sorted(found-allowed)

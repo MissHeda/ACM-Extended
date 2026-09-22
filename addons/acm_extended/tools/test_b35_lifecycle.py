@@ -1,4 +1,5 @@
 """PTX owner/reset/save source contracts; these checks do not execute Arma or CBA."""
+from historical_source import read_source
 from pathlib import Path
 import re
 import unittest
@@ -7,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def read(relative):
-    return (ROOT / relative).read_text(encoding="utf-8-sig")
+    return read_source(ROOT / relative, encoding="utf-8-sig")
 
 
 def source(name):

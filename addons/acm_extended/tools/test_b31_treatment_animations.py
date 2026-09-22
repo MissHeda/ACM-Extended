@@ -1,4 +1,5 @@
 """B31 source/geometry contracts. These do not execute Arma's animation graph."""
+from historical_source import read_source
 from pathlib import Path
 import math
 import re
@@ -6,11 +7,11 @@ import unittest
 from test_b29_narc_plunger import expression
 
 ROOT = Path(__file__).resolve().parents[1]
-START = (ROOT / 'functions/fn_treatmentPoseStart.sqf').read_text()
-STOP = (ROOT / 'functions/fn_treatmentPoseStop.sqf').read_text()
-SYNC = (ROOT / 'functions/fn_treatmentPoseSync.sqf').read_text()
-CONTINUOUS = (ROOT / 'functions/fn_beginStethoscopeAction.sqf').read_text()
-CONFIG = (ROOT / 'config.cpp').read_text()
+START = read_source(ROOT / 'functions/fn_treatmentPoseStart.sqf')
+STOP = read_source(ROOT / 'functions/fn_treatmentPoseStop.sqf')
+SYNC = read_source(ROOT / 'functions/fn_treatmentPoseSync.sqf')
+CONTINUOUS = read_source(ROOT / 'functions/fn_beginStethoscopeAction.sqf')
+CONFIG = read_source(ROOT / 'config.cpp')
 PHASE = expression(re.search(r'private _phase = ([^;]+);', START)[1])
 
 
@@ -104,7 +105,7 @@ class TreatmentAnimationContracts(unittest.TestCase):
         self.assertIn('call _onCancel', CONTINUOUS)
         self.assertIn('CBA_fnc_removeKeyHandler', CONTINUOUS)
         self.assertIn('ACM_core_openMedicalMenu', CONTINUOUS)
-        steth = (ROOT / 'overrides/fn_useStethoscope.sqf').read_text()
+        steth = read_source(ROOT / 'overrides/fn_useStethoscope.sqf')
         self.assertIn('call ACME_fnc_beginStethoscopeAction', steth)
         self.assertIn('ace_hearing_fnc_updateHearingProtection', steth)
 

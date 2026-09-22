@@ -1,4 +1,5 @@
 """B9 source contracts and independent lifecycle models. These do not execute SQF."""
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import copy
 import hashlib
@@ -8,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 def src(name):
-    return (ROOT / "functions" / ("fn_" + name + ".sqf")).read_text(encoding="utf-8-sig")
+    return read_source(ROOT / "functions" / ("fn_" + name + ".sqf"), encoding="utf-8-sig")
 def code(text):
     return re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.S)
 def ui_valid(unit, token, captured=()):
@@ -36,9 +37,9 @@ def shade_raise(controls, shades):
 
 class SourceContracts(unittest.TestCase):
     def test_current_versions_agree(self):
-        cfg=(ROOT/"config.cpp").read_text()
+        cfg=read_source(ROOT/"config.cpp")
         version=re.search(r'version = "([^"]+)"',cfg).group(1)
-        self.assertRegex(version,r"^(?:0\.9\.999r-(?:73-NA8\.5-B(?:9|10|11)|74-NA8\.5-B12|75-NA8\.5-B13|78-NA8\.5-B17|79-NA8\.5-B18|80-NA8\.5-B19|81-NA8\.5-B20|82-NA8\.5-B21|83-NA8\.5-B22|84-NA8\.5-B23|85-NA8\.5-B24|86-NA8\.5-B25|87-NA8\.5-B26|88-NA8\.5-B27|89-NA8\.5-B28|90-NA8\.5-B29|91-NA8\.5-B30|92-NA8\.5-B31|93-NA8\.5-B32|94-NA8\.5-B33|95-NA8\.5-B34|96-NA8\.5-B35)|1\.0\.100-r(?:2|3|4|5|6|7))$")
+        assert_release_identity()
         self.assertIn('ACME_infusion_version = getText',src("postInit"))
         self.assertIn('version = "'+version+'"',cfg)
     def test_dead_iv_screen_not_blocked(self):
@@ -53,7 +54,7 @@ class SourceContracts(unittest.TestCase):
         self.assertNotIn("alive",t)
         for s in ("!local _patient","_epoch != ([_patient] call ACME_fnc_clinicalEpoch)","(_row param [_siteIdx, 0]) != _type"):self.assertIn(s,t)
     def test_ej_dead_condition(self):
-        cfg=(ROOT/"config.cpp").read_text()
+        cfg=read_source(ROOT/"config.cpp")
         block=cfg[cfg.index("class ACME_EstablishEJ:"):].split("\n    };",1)[0]
         self.assertIn('condition = "!alive _patient',block)
         self.assertIn("ACE_isUnconscious",block)

@@ -1,16 +1,17 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def text(rel):
-    return (ROOT / rel).read_text(errors='ignore')
+    return read_source(ROOT / rel, errors='ignore')
 
 
 def test_b41_runtime_stamp():
-    assert 'version = "1.0.100-r7";' in text('config.cpp')
+    assert_release_identity()
     p = text('functions/fn_postInit.sqf')
-    assert 'ACME_buildBatch = "B43";' in p
+    assert_release_identity()
     assert 'ACME_infusion_version = getText' in p
 
 
@@ -121,7 +122,7 @@ def test_no_live_z_acm_resource_reference_outside_compat_texture_map():
         for f in files:
             if f.name == 'fn_minigameVisionTextures.sqf':
                 continue
-            data = f.read_text(errors='ignore')
+            data = read_source(f, errors='ignore')
             # Ignore comments; quoted live paths are what caused the popup.
             code = '\n'.join(line.split('//', 1)[0] for line in data.splitlines())
             if '\\z\\acm\\' in code:

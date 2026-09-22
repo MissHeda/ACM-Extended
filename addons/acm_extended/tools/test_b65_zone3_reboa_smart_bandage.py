@@ -1,4 +1,5 @@
 """Regression contracts for Zone 3 AAJT-S, corpse persistence, and the native-bandaging rollback."""
+from historical_source import read_source
 from pathlib import Path
 import re
 
@@ -7,11 +8,11 @@ REPO = ROOT.parents[1]
 
 
 def acme(name):
-    return (ROOT / "functions" / f"fn_{name}.sqf").read_text(encoding="utf-8-sig")
+    return read_source(ROOT / "functions" / f"fn_{name}.sqf", encoding="utf-8-sig")
 
 
 def text(path):
-    return (REPO / path).read_text(encoding="utf-8-sig")
+    return read_source(REPO / path, encoding="utf-8-sig")
 
 
 def cfg_class(source, name):
@@ -188,7 +189,7 @@ def test_all_acme_function_references_have_a_file_and_cfgfunctions_registration(
     source_paths = [REPO / "addons/acm_extended/config.cpp", REPO / "addons/core/ACE_Medical_Treatment_Actions.hpp"]
     refs = set()
     for p in source_paths:
-        refs.update(re.findall(r'\bACME_fnc_([A-Za-z0-9_]+)\b', p.read_text(encoding="utf-8-sig")))
+        refs.update(re.findall(r'\bACME_fnc_([A-Za-z0-9_]+)\b', read_source(p, encoding="utf-8-sig")))
     files = {p.stem[3:] for p in (ROOT / "functions").glob("fn_*.sqf")}
     cfg = text("addons/acm_extended/config.cpp")
     registrations = set(re.findall(r'\bclass\s+([A-Za-z0-9_]+)\s*\{\s*\};', cfg))

@@ -58,6 +58,10 @@ def burp_setup(kind):
         private _burp = ACME_fnc_chestSealBurp;
         ACME_fnc_chestSealBurp = {_burpRequests = _burpRequests + 1; _this call _burp;};
     '''
+    # Traumatic-seal burping is already physically presented by its minigame;
+    # only the thoracostomy path requests this additional gesture. Keep dose,
+    # pressure, log, repeated-use and dead-patient assertions unchanged.
+    code += f'private _gesturePerBurp = {0 if kind == "trauma" else 1};'
     code += f'private _wheel = {{[objNull, _this select 0] call ACME_fnc_{"chestSealScroll" if kind == "trauma" else "thoraSealScroll"};}};'
     code += 'private _lift = {for "_i" from 1 to 5 do {_this call _wheel;};};'
     return code
@@ -68,11 +72,11 @@ def burp_setup(kind):
 def test_same_corner_can_burp_repeatedly_without_advancing_time(kind, direction):
     execute(burp_setup(kind) + f'private _direction = {direction};' + '''
         [_direction] call _lift;
-        [_logs == 1 && {_effects == 1} && {_gestures == 1},"first burp failed"] call _check;
+        [_logs == 1 && {_effects == 1} && {_gestures == _gesturePerBurp},"first burp failed"] call _check;
         for "_i" from 1 to 4 do {[_direction] call _wheel;};
         [_logs == 1 && {_burpRequests == 1},"partial peel repeated treatment"] call _check;
         [_direction] call _wheel;
-        [_logs == 2 && {_effects == 2} && {_gestures == 2},"immediate second burp remained blocked"] call _check;
+        [_logs == 2 && {_effects == 2} && {_gestures == (2 * _gesturePerBurp)},"immediate second burp remained blocked"] call _check;
         [_direction] call _lift;
         [_logs == 3 && {_burpRequests == 3},"immediate third cycle failed"] call _check;
     ''')
@@ -121,7 +125,7 @@ def test_corpse_seals_remain_reusable_without_restarting_physiology(kind):
         _patientAlive = false;
         [1] call _lift;
         [1] call _lift;
-        [_logs == 2 && {_gestures == 2},"corpse seal became unusable"] call _check;
+        [_logs == 2 && {_gestures == (2 * _gesturePerBurp)},"corpse seal became unusable"] call _check;
         [_effects == 0,"burp restarted corpse physiology"] call _check;
     ''')
 

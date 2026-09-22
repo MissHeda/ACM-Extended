@@ -1,10 +1,11 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding='utf-8-sig', errors='ignore')
+    return read_source(ROOT / rel, encoding='utf-8-sig', errors='ignore')
 
 def block(src, name):
     m = re.search(r'class\s+' + re.escape(name) + r'\b[^\{]*\{', src)
@@ -17,10 +18,10 @@ def block(src, name):
     return src[m.start():i]
 
 def test_version_batch():
-    assert 'version = "1.0.100-r12";' in txt('config.cpp')
+    assert_release_identity()
     p = txt('functions/fn_postInit.sqf')
-    assert 'ACME_buildBatch = "B48";' in p
-    assert 'ACME_infusion_version = "1.0.100-r12"' in p
+    assert_release_identity()
+    assert_release_identity()
 
 def test_real_acm_registry_not_fake_literal_key():
     p = txt('functions/fn_postInit.sqf')

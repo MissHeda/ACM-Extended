@@ -1,3 +1,4 @@
+from historical_source import read_source
 from collections import Counter
 from pathlib import Path
 import re
@@ -10,7 +11,7 @@ F = ROOT / "functions"
 
 
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8-sig")
+    return read_source(path, encoding="utf-8-sig")
 
 
 def source(name: str) -> str:

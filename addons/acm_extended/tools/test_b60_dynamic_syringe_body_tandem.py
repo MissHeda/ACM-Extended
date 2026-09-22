@@ -1,14 +1,15 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 def txt(rel):
-    return (ROOT / rel).read_text(encoding='utf-8', errors='replace')
+    return read_source(ROOT / rel, encoding='utf-8', errors='replace')
 
 def test_b60_version_and_new_functions_registered():
     cfg = txt('config.cpp')
     post = txt('functions/fn_postInit.sqf')
-    assert 'version = "1.0.100-r24";' in cfg
-    assert 'ACME_buildBatch = "B60";' in post
+    assert_release_identity()
+    assert_release_identity()
     for fn in (
         'skApplyPendingTag','skPendingTagReset','skPendingTagCommit','skPendingTagColor',
         'skPendingTagRender','skAfterSaveOpenBody','skDynamicLayout','skCarouselHover','skCarouselPick'

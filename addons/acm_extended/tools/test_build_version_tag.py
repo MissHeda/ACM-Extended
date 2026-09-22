@@ -1,10 +1,11 @@
+from historical_source import read_source
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def read(rel: str) -> str:
-    return (ROOT / rel).read_text(encoding="utf-8-sig", errors="strict")
+    return read_source(ROOT / rel, encoding="utf-8-sig", errors="strict")
 
 
 def test_release_is_the_cfgpatches_version():

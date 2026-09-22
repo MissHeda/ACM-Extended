@@ -9,6 +9,7 @@ import pytest
 
 from test_bvm_startup import completion_setup, setup as bvm_setup
 from test_menu_death_lifecycle import adapt, execute, read
+from historical_source import switch_case_body
 
 
 def pressure_source(name):
@@ -50,6 +51,13 @@ def setup():
         ACM_damage_fnc_clotWoundsOnBodyPart = {};
         CBA_fnc_execNextFrame = {_waits pushBack [_this select 0,_this select 1];};
     '''
+    # The BVM fixture simulates only the breath command. Execute the current
+    # owner-side DP marker branch too, rather than letting the mock drop it.
+    marker=switch_case_body(read("ownerDispatch"),"directPressureMarker")
+    source += ('private _originalOwnerDispatch = ACME_fnc_ownerDispatch; '
+               'ACME_fnc_ownerDispatch = {params ["_patient","_command","_args"]; '
+               'if (_command == "directPressureMarker") exitWith {' + adapt(marker) + '}; '
+               '_this call _originalOwnerDispatch;};')
     for name in ("doAnimHeld", "directPressureStop", "directPressurePose", "directPressureTick", "directPressureLimb", "directPressureTorso", "directPressureStart"):
         source += f"ACME_fnc_{name} = {{" + pressure_source(name) + "};"
     source += '''

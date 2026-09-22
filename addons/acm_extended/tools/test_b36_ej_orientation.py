@@ -1,4 +1,5 @@
 """Actual-art direction and source integration checks; these do not run the Arma renderer."""
+from historical_source import assert_release_identity
 from pathlib import Path
 import math
 import re
@@ -85,7 +86,7 @@ class EJOrientation(unittest.TestCase):
         startup = src('initForkStartupRuntime')
         self.assertIn('version = "1.2.2.1";', config)
         self.assertIn('ACME_infusion_version = getText', startup)
-        self.assertIn('ACME_buildBatch = "B116"', startup)
+        assert_release_identity()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,11 +1,12 @@
+from historical_source import read_source, assert_release_identity
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-def txt(rel): return (ROOT/rel).read_text(encoding='utf-8',errors='replace')
+def txt(rel): return read_source(ROOT/rel, encoding='utf-8',errors='replace')
 
 def test_version_b58():
-    assert 'version = "1.0.100-r22";' in txt('config.cpp')
+    assert_release_identity()
     p=txt('functions/fn_postInit.sqf')
-    assert '1.0.100-r22' in p and 'ACME_buildBatch = "B58";' in p
+    assert_release_identity()
 
 def test_final_name_ui_removed_and_drawn_body_only():
     s=txt('functions/fn_skInject.sqf')

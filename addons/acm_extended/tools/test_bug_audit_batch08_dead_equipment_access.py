@@ -1,3 +1,4 @@
+from historical_source import read_source
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -6,7 +7,7 @@ CORE = ROOT / "addons/core/overrides"
 
 
 def read(path: Path) -> str:
-    return path.read_text(errors="ignore")
+    return read_source(path, errors="ignore")
 
 
 def fn(name: str) -> str:
