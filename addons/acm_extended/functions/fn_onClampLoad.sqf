@@ -12,6 +12,12 @@ uiNamespace setVariable ["ACME_RollerClamp_ReleaseOnUp", false];
 uiNamespace setVariable ["ACME_RollerClamp_NextCommit", 0];
 uiNamespace setVariable ["ACME_RollerClamp_Track", []];
 
+// Vision is owned by the clamp runtime, not by one-shot dialog redraws.
+// Arma can transiently report normal vision during the first frames of a dialog even when NV is already active.
+// Re-check every frame briefly, then fall back to a low-rate local refresh while the clamp remains open.
+uiNamespace setVariable ["ACME_RollerClamp_VisionSettleUntil", diag_tickTime + 0.25];
+uiNamespace setVariable ["ACME_RollerClamp_NextVisionTick", 0];
+
 // the panel layout. every control is anchored to the backdrop panel, so the title, the rate strip and the button
 // row always line up with the HUD overlay.
 private _uiW = safeZoneW min (safeZoneH * 1.7777778);

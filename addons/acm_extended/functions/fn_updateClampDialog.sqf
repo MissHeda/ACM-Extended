@@ -113,5 +113,7 @@ if (!_dragging) then {
 };
 
 };
-[findDisplay 86200, [], "ACME_Clamp_Shade"] call ACME_fnc_darknessShade;
-[findDisplay 86200] call ACME_fnc_minigameVisionTick;
+
+// Darkness/NV state is refreshed independently by fn_registerClampDragRuntime.
+// Do not sample it here: this function can run during the dialog-transition frame,
+// when currentVisionMode can briefly report normal vision and latch a black shade.

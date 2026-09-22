@@ -5,6 +5,22 @@
     // watchdog. this initializes the clamp dialog whatever created it.
     call ACME_fnc_onClampLoad;
 
+    // Keep the full-screen darkness shade synchronized with the player's real vision state even when the wheel
+    // is not moving. The old one-shot update could sample the dialog-transition frame as normal vision, paint an
+    // opaque shade, and then leave that shade latched over native NV. During the short settle window we check every
+    // frame; afterward 10 Hz is enough for NV toggles and ambient-light changes while keeping this purely local.
+    private _visionNow = diag_tickTime;
+    private _visionSettleUntil = uiNamespace getVariable ["ACME_RollerClamp_VisionSettleUntil", 0];
+    private _visionNext = uiNamespace getVariable ["ACME_RollerClamp_NextVisionTick", 0];
+    if (_visionNow <= _visionSettleUntil || {_visionNow >= _visionNext}) then {
+        uiNamespace setVariable [
+            "ACME_RollerClamp_NextVisionTick",
+            if (_visionNow <= _visionSettleUntil) then {_visionNow} else {_visionNow + 0.10}
+        ];
+        [_display, [], "ACME_Clamp_Shade"] call ACME_fnc_darknessShade;
+        [_display] call ACME_fnc_minigameVisionTick;
+    };
+
     if !(uiNamespace getVariable ["ACME_RollerClamp_Dragging", false]) exitWith {};
 
     private _track = uiNamespace getVariable ["ACME_RollerClamp_Track", []];
