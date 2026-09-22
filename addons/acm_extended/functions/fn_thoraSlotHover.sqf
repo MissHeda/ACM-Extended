@@ -10,7 +10,8 @@ private _bg = _btn getVariable ["thoraBG", controlNull];
 private _rect = _btn getVariable ["thoraIconRect", []];
 private _tool = _btn getVariable ["thoraTool", ""];
 private _held = uiNamespace getVariable ["ACME_Thora_Held", ""];
-private _selected = (_held isEqualTo _tool) || {_tool == "tube" && {_held == "seal"}};
+// Tube and seal have separate slots; only the actual held tool owns this shadow.
+private _selected = _held isEqualTo _tool;
 
 if (!isNull _ic && {count _rect == 4}) then {
     _rect params ["_ix", "_iy", "_iw", "_ih"];

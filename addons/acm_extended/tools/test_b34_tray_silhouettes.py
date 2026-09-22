@@ -74,9 +74,15 @@ class TraySilhouetteContracts(unittest.TestCase):
                            init.index('uiNamespace setVariable ["ACME_laryngo_held", _sHeld]'))
 
     def test_existing_thoracostomy_shadow_survives_hover_and_inventory_refresh(self):
-        for function in ('thoraSelectTool', 'thoraSlotHover', 'thoraTick'):
-            self.assertRegex(source(function), r'\[0,\s*0,\s*0,\s*1\]', function)
-        self.assertNotIn('ctrlSetTextColor', source('thoraUpdateTrayIcons'))
+        from test_historical_procedure_trays import test_inventory_refresh_preserves_held_identity_and_black_shadow, test_hover_preserves_only_the_actual_held_tools_shadow
+        # Rendering moved to the shared refresh helper; the selected physical tool remains the authority.
+        self.assertIn('call ACME_fnc_thoraUpdateTrayIcons',source('thoraSelectTool'))
+        self.assertIn('call ACME_fnc_thoraUpdateTrayIcons',source('thoraTick'))
+        for held in ('tube','seal'):
+            test_inventory_refresh_preserves_held_identity_and_black_shadow(held)
+            for hover in ('tube','seal'):
+                for enter in (True,False):
+                    test_hover_preserves_only_the_actual_held_tools_shadow(held,hover,enter)
 
 
 if __name__ == '__main__':

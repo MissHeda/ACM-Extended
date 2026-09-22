@@ -52,7 +52,11 @@ class AirwaySource(unittest.TestCase):
         t=src('laryngoTeethArt');self.assertIn('ctrlSetAngle [180, 0.5, 0.5, false]',t)
         self.assertIn('ctrlShow true',t);self.assertIn('ctrlSetFade 0',t)
     def test_no_two_way_mouth_dissolve(self):
-        self.assertIn('case (_forEachIndex == _i):     { 1 }',src('laryngoFrames'))
+        # The later approved tongue animation is a true adjacent-frame crossfade,
+        # not the old opaque-base stacking. Preserve actual complementary opacity.
+        from test_historical_laryngoscopy_execution import test_tongue_frames_are_complementary_adjacent_crossfade_not_opaque_stacking
+        for opening in (0,0.1,0.25,1/3,0.5,2/3,0.85,1):
+            test_tongue_frames_are_complementary_adjacent_crossfade_not_opaque_stacking(opening)
     def test_owner_routes_attempt_consequences(self):
         self.assertIn('"laryngoConsequence"',src('ownerDispatch'))
         self.assertIn('ACME_fnc_clinicalEpoch',src('laryngoConsequenceLocal'))
@@ -67,8 +71,11 @@ class AirwaySource(unittest.TestCase):
         self.assertNotIn('setVariable ["ACME_airwayGrade"',code(src('laryngoFail')))
         self.assertNotIn('setVariable ["ACME_airwayGrade"',code(src('laryngoConsequenceLocal')))
     def test_success_resets_streak(self):
-        self.assertIn('["ACME_laryngo_gagMisses", 0, true]',src('laryngoConsequenceLocal'))
-        self.assertIn('[_patient, "success"]',src('laryngoPassTube'))
+        from test_historical_laryngoscopy_execution import test_sedated_success_resets_streak_and_passage_is_idempotent
+        # Passage now chooses its owner-routed event by the sampled reflex; exercise the
+        # actual sender and owner handler rather than requiring an obsolete literal call.
+        for existing in (False,True):
+            test_sedated_success_resets_streak_and_passage_is_idempotent(existing)
     def test_reflex_and_life_guards(self):
         t=src('laryngoConsequenceLocal')
         self.assertIn('ACME_fnc_laryngoReflexChance',t)
@@ -77,8 +84,17 @@ class AirwaySource(unittest.TestCase):
     def test_ui_miss_latch(self):
         self.assertIn('missLatched',src('laryngoFail'));self.assertIn('["ACME_laryngo_missLatched", false]',src('laryngoClick'))
     def test_delayed_callbacks_check_display_patient(self):
-        for n in ('laryngoAbort','laryngoPassTube'):
-            self.assertIn('_oldDisplay !=',src(n));self.assertIn('_oldPatient !=',src(n))
+        from test_historical_laryngoscopy_execution import test_abort_callback_cannot_reset_a_different_patient_or_reopened_display, test_valid_abort_resets_once_without_consuming_or_putting_away_the_scope
+        for change in ('uiNamespace setVariable ["ACME_laryngo_dlg",profileNamespace];',
+                       'uiNamespace setVariable ["ACME_laryngo_patient",missionNamespace];',
+                       'uiNamespace setVariable ["ACME_laryngo_dlg",objNull];'):
+            test_abort_callback_cannot_reset_a_different_patient_or_reopened_display(change)
+        for held in ('scope','tube'):
+            test_valid_abort_resets_once_without_consuming_or_putting_away_the_scope(held)
+        # Passage is synchronous now. It must not acquire a new delayed reset just to
+        # satisfy the older test's demand for _oldDisplay/_oldPatient in both functions.
+        for forbidden in ('waitAndExecute','waitUntilAndExecute','execNextFrame'):
+            self.assertNotIn(forbidden,code(src('laryngoPassTube')))
 
 class ICPSource(unittest.TestCase):
     def test_owner_stimulus_cooldown(self):self.assertIn('CBA_missionTime - _previous < 60',src('laryngoStimulusLocal'))

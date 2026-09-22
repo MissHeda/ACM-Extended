@@ -12,13 +12,13 @@ _receipts pushBack _id;
 if (count _receipts > 64) then {_receipts deleteAt 0;};
 _patient setVariable ["ACME_laryngoEventReceipts", _receipts, true];
 
-private _arrestNowB39 = _patient getVariable ["ace_medical_inCardiacArrest", false];
-
 // B39: an awake patient does not calmly accept an oral ET tube, and moving a tube without a fully
 // exposed airway provokes an immediate wet gag/emesis episode. These are explicit manipulation events,
 // not accumulated placement misses, so they bypass the 3..5 miss tolerance while retaining owner authority.
 if (_reason in ["awakeTube", "tubeManip"]) exitWith {
-    if (_arrestNowB39) exitWith {};
+    // Recheck on the patient owner: the reflex may be absent now even if the UI sampled it earlier.
+    // Do not roll twice or change the graded sedation model; only honor its zero-reflex exclusions.
+    if (([_patient] call ACME_fnc_laryngoReflexChance) <= 0) exitWith {};
     private _old = _patient getVariable ["ACM_airway_AirwayObstructionVomit_State", 0];
     private _remaining = _patient getVariable ["ACM_airway_AirwayObstructionVomit_Count", 0];
     private _poolBefore = [_patient] call ACME_fnc_laryngoFluidState;

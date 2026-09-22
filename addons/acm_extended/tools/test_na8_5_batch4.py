@@ -147,14 +147,24 @@ class SedationExamples(unittest.TestCase):
 
 class ThoracostomySource(unittest.TestCase):
     def test_captured_medic_used_for_inventory(self):
-        for n in ('thoraInit','thoraTick','thoraSelectTool'):self.assertIn('"ACME_Thora_Medic"',src(n))
+        from test_historical_procedure_trays import test_selection_uses_captured_provider_not_new_controlled_unit
+        # The tick delegates inventory reads to the shared refresh, not an inline count.
+        self.assertIn('call ACME_fnc_thoraUpdateTrayIcons',src('thoraTick'))
+        for n in ('thoraInit','thoraSelectTool','thoraUpdateTrayIcons'):
+            self.assertIn('"ACME_Thora_Medic"',src(n))
         self.assertNotIn('ACE_player',tokens('thoraClosureMode'))
+        for tool in ('tube','seal'):
+            test_selection_uses_captured_provider_not_new_controlled_unit(tool)
     def test_original_doctor_default_is_now_configurable(self):
         self.assertIn('[_medic, "chestTube"] call ACME_fnc_procedureAllowed',src('thoraClosureMode'))
         self.assertIn('["ACME_allowChestTubes", "ACME_skillChestTube", 2]',src('procedureAllowed'))
     def test_seal_is_real_held_tool(self):
         self.assertIn('_held in ["seal", "tube"]',src('thoraSelectTool'));self.assertIn('if (_held == "seal") exitWith',src('thoraMouseDown'))
-    def test_held_tool_does_not_change_with_inventory(self):self.assertIn('_preferred = _heldClosure',src('thoraTick'))
+    def test_held_tool_does_not_change_with_inventory(self):
+        from test_historical_procedure_trays import test_inventory_refresh_preserves_held_identity_and_black_shadow, test_real_closure_availability_never_substitutes_a_seal_for_a_tube
+        for held in ('tube','seal'):
+            test_inventory_refresh_preserves_held_identity_and_black_shadow(held)
+        test_real_closure_availability_never_substitutes_a_seal_for_a_tube()
     def test_seal_art_shared_held_and_placed(self):
         for n in ('thoraTick','thoraRenderTube'):self.assertIn('ACME_fnc_thoraClosureArt',src(n))
     def test_seal_has_center_anchor(self):self.assertIn('0.18, [0.5, 0.5]',src('thoraClosureArt'))
@@ -172,7 +182,15 @@ class ThoracostomySource(unittest.TestCase):
         s=src('thoraMouseDown');self.assertIn('_medS removeItem "ACM_ChestSeal"',s);self.assertIn('>= _before) exitWith',s)
     def test_repeat_dressing_checks_precede_consumption(self):
         s=src('thoraMouseDown');a=s.index('if (_held == "seal") exitWith');self.assertLess(s.index('ACME_thora_sealed_%1',a),s.index('_medS removeItem',a))
-    def test_hover_selects_shared_slot(self):self.assertIn('_tool == "tube" && {_held == "seal"}',src('thoraSlotHover'))
+    def test_hover_selects_shared_slot(self):
+        # Retain the historical identity, not the retired shared-slot alias. The current
+        # separate tube/seal rows must never claim each other's held-tool shadow.
+        from test_historical_procedure_trays import test_hover_preserves_only_the_actual_held_tools_shadow
+        self.assertIn('[_t, true] call ACME_fnc_thoraSelectTool',src('thoraInit'))
+        for held in ('tube','seal'):
+            for hover in ('tube','seal'):
+                for enter in (True,False):
+                    test_hover_preserves_only_the_actual_held_tools_shadow(held,hover,enter)
     def test_values_refresh_independently_of_version(self):self.assertIn('ACME_Thora_ClosureSeen',src('thoraTick'))
 
 class ClosureExamples(unittest.TestCase):

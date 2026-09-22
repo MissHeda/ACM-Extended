@@ -23,7 +23,8 @@ private _arrest = _patient getVariable ["ace_medical_inCardiacArrest", false];
 private _paralyzed = _patient getVariable ["ACME_roc_paralyzed", false];
 private _gagChance = [_patient, 1 + (_misses max 0) * 0.4] call ACME_fnc_laryngoReflexChance;
 private _underSedated = !_arrest && {!_paralyzed} && {_sedLoad < (missionNamespace getVariable ["ACME_laryngo_proceduralSedation", 0.75])};
-private _gagged = !_arrest && {!_paralyzed} && {_underSedated || {random 1 < _gagChance}};
+// A low hypnotic load cannot override the shared helper's absent-reflex/life exclusions.
+private _gagged = _gagChance > 0 && {!_arrest} && {!_paralyzed} && {_underSedated || {random 1 < _gagChance}};
 
 [_patient, ["success", "awakeTube"] select _gagged] call ACME_fnc_laryngoConsequence;
 // Through the cords; cuff and securement still require completion.

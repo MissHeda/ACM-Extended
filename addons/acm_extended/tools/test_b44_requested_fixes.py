@@ -52,10 +52,13 @@ def test_close_holes_independent_seals():
     assert 'open' in m.lower() and 'hole' in m.lower()
 
 def test_airway_patent_suffix():
-    s=txt('functions/fn_airwayInjuryRelabel.sqf')
-    assert 'airway is patent' in s
-    for x in ['NPA','OPA','iGel','Endotracheal Tube']:
-        assert x.lower() in s.lower()
+    # Current device labels show placement only. Patency belongs to Check Airway;
+    # do not restore an automatic patent label from a device's mere presence.
+    from test_historical_laryngoscopy_execution import test_airway_device_rows_do_not_disclose_unassessed_patency
+    for selection in (0,1):
+        for inserted in (False,True):
+            for alive in (False,True):
+                test_airway_device_rows_do_not_disclose_unassessed_patency(selection,inserted,alive)
 
 def test_airway_menu_order_and_tab():
     c=txt('functions/fn_postInit.sqf'); u=txt('overrides/fn_updateActions.sqf')
