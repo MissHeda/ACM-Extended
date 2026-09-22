@@ -55,37 +55,42 @@ if (!_frontNormalized && {alive _patient} && {isNull objectParent _patient}) the
     if (_rollActive) then {
         [_patient,"front"] call ACME_fnc_patientRollCancel;
     };
-
-    private _actualBeforeRestore = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
-        call ACME_fnc_chestSealActualSide;
-
-    if (_actualBeforeRestore != "front") exitWith {
-        private _canRollFront = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
-        if (_canRollFront) then {
-            [_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;
-            private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
-            if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
-            [{
-                params ["_p","_force","_medic","_ctx"];
-                if (!isNull _p && {local _p}) then {
-                    _p setVariable ["ACME_CS_facing","front",true];
-                    [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
-                };
-            }, [_patient,_force,_medic,_context], (_rollTime max 0.1) + 0.08] call CBA_fnc_waitAndExecute;
-        } else {
-            private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
-            _patient setVariable ["ACME_CS_facing","front",true];
-            ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
-            [{
-                params ["_p","_force","_medic","_ctx"];
-                if (!isNull _p && {local _p}) then {
-                    [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
-                };
-            }, [_patient,_force,_medic,_context]] call CBA_fnc_execNextFrame;
-        };
-        true
-    };
 };
+
+private _actualBeforeRestore = [_patient, _patient getVariable ["ACME_CS_facing","front"]]
+    call ACME_fnc_chestSealActualSide;
+private _needFrontNormalize = !_frontNormalized
+    && {alive _patient}
+    && {isNull objectParent _patient}
+    && {_actualBeforeRestore != "front"};
+
+if (_needFrontNormalize) exitWith {
+    private _canRollFront = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;
+    if (_canRollFront) then {
+        [_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;
+        private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime",1.85];
+        if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85;};
+        [{
+            params ["_p","_force","_medic","_ctx"];
+            if (!isNull _p && {local _p}) then {
+                _p setVariable ["ACME_CS_facing","front",true];
+                [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
+            };
+        }, [_patient,_force,_medic,_context], (_rollTime max 0.1) + 0.08] call CBA_fnc_waitAndExecute;
+    } else {
+        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
+        _patient setVariable ["ACME_CS_facing","front",true];
+        ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+        [{
+            params ["_p","_force","_medic","_ctx"];
+            if (!isNull _p && {local _p}) then {
+                [_p,_force,_medic,_ctx,true] call ACME_fnc_chestAccessVestRestore;
+            };
+        }, [_patient,_force,_medic,_context]] call CBA_fnc_execNextFrame;
+    };
+    true
+};
+
 _patient setVariable ["ACME_CS_facing","front",true];
 
 private _saved = +(_patient getVariable [_savedVar, []]);
