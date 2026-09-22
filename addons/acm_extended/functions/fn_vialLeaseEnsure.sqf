@@ -23,9 +23,13 @@ if (_accepted isEqualType [] && {count _accepted >= 3}) then {
     };
 } else {
     private _pending = missionNamespace getVariable ["ACME_vialLeasePending", []];
+    // While awaiting the owner, retain this request token. A nested exitWith here used to leave only
+    // the inner block and then send a replacement claim on every stock refresh.
+    if (_pending isEqualType [] && {count _pending >= 3}
+        && {(_pending select 0) isEqualTo _holder}
+        && {diag_tickTime - (_pending select 2) < 1.5}) exitWith {false};
     if (_pending isEqualType [] && {count _pending >= 3}) then {
         _pending params ["_pendingHolder","_pendingToken","_sentAt"];
-        if (_pendingHolder isEqualTo _holder && {diag_tickTime - _sentAt < 1.5}) exitWith {false};
         if (!isNull _pendingHolder && {_pendingToken != ""}) then {
             [_pendingHolder,"vialLease",[_medic,"release",_pendingToken]] call ACME_fnc_ownerDispatch;
         };

@@ -130,7 +130,12 @@ class PreparationAndRoutes(unittest.TestCase):
     def test_compound_batch_debits_and_tag(self):
         t=src('skCompoundCommit');self.assertIn('ACME_fnc_medicationTakeSources',t);self.assertIn('compoundB13',t)
     def test_dilution_now_consumes_drug_not_just_saline(self):
-        t=src('skWasteDraw');self.assertIn('ACME_fnc_medicationTakeSources',t);self.assertIn('dilutionB13',t)
+        # Current Draw only stages; the Save transaction validates and consumes all source components and the flush.
+        t=src('skFlushSave')
+        self.assertIn('ACME_fnc_medicationTakeSources',t)
+        self.assertIn('dilutionB13',t)
+        from test_historical_medication_preparation import test_flush_draw_only_stages_and_save_funds_all_components_and_saline_carrier
+        test_flush_draw_only_stages_and_save_funds_all_components_and_saline_carrier()
     def test_syringe_checks_injectable_route(self):self.assertIn('[_routeClass, _iv, true] call ACME_fnc_medicationRouteAllowed',ov('Syringe_Inject'))
     def test_map_checks_injectable_route(self):self.assertIn('[_class, _iv, true, _virtual] call ACME_fnc_medicationRouteAllowed',src('skInjectSite'))
     def test_recipe_mg_and_mcg_conserved(self):

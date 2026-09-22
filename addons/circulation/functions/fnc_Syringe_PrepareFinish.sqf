@@ -13,10 +13,10 @@ if (!isNull _dlgVial) then {
     if (_dose > _unlocked + 0.0005) then {_sessionOK = false;};
 };
 if (!_sessionOK) exitWith {false};
-if !([_holder, _medication, _dose] call ACME_fnc_vialTake) exitWith {false};
+if !([_holder, _medication, _dose, _medic] call ACME_fnc_vialTake) exitWith {false};
 private _empty = format ["ACM_Syringe_%1", _size];
 if (([_medic, _empty] call ace_common_fnc_getCountOfItem) < 1) exitWith {
-    [_holder, _medication, _dose] call ACME_fnc_vialRefund;
+    [_holder, _medication, _dose, _medic] call ACME_fnc_vialRefund;
     false
 };
 _medic removeItem _empty;

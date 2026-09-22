@@ -54,14 +54,27 @@ class B23MedicationListContracts(unittest.TestCase):
 
 class B23VialHardStop(unittest.TestCase):
     def test_infusion_draw_max_is_limited_by_syringe_and_stock(self):
-        s = read('functions/fn_infusionDrawStock.sqf')
-        self.assertIn('ACM_circulation_SyringeDraw_Size min', s)
-        self.assertIn('ACME_fnc_infusionVialVolume', s)
+        # Stock refresh is no longer a competing plunger writer. The native mover owns the session ceiling;
+        # final bag acceptance independently rechecks real stock and requires reconfirmation after a correction.
+        native=(ROOT.parent/'circulation/functions/fnc_Syringe_Draw.sqf').read_text()
+        self.assertIn('_effectiveMax = (_effectiveMax max 0) min _size;',native)
+        self.assertIn('call ACME_fnc_vialSession',native)
+        stock=read('functions/fn_infusionDrawStock.sqf')
+        self.assertNotIn('ctrlSetPosition',stock)
+        self.assertNotIn('SyringeDraw_DrawnAmount =',stock)
+        from test_historical_medication_preparation import test_bag_injection_over_available_stock_or_explicit_quota_requires_reconfirmation
+        for limit,stock,drawn in [(2,20,3),(10,2,3),(1,20,1.5)]:
+            test_bag_injection_over_available_stock_or_explicit_quota_requires_reconfirmation(limit,stock,drawn)
 
     def test_live_ui_physically_clamps_plunger_to_stock(self):
-        s = read('functions/fn_skUiTick.sqf')
-        for token in ['_hardMax', 'ACM_circulation_SyringeDraw_DrawnAmount = _hardMax', '_maxMouse', 'setMousePosition']:
-            self.assertIn(token, s)
+        text=read('functions/fn_skUiTick.sqf')
+        block=text.split('// The native ACM drag loop now consumes this hard limit',1)[1].split('// Inventory can change',1)[0]
+        self.assertIn('_drawnNow > _hardMax',block)
+        self.assertIn('[_hardMax, _d, false] call ACME_fnc_syringeDrawSetAmount',block)
+        self.assertNotIn('setMousePosition',block)
+        from test_historical_medication_preparation import test_syringe_amount_correction_keeps_hitbox_art_and_numeric_fill_together
+        for size in [1,3,5,10]:
+            test_syringe_amount_correction_keeps_hitbox_art_and_numeric_fill_together(size,0.25)
 
     def test_compound_path_keeps_stock_hard_stop(self):
         s = read('functions/fn_skCompoundBegin.sqf')

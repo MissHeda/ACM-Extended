@@ -128,12 +128,16 @@ class B38Mixtures(unittest.TestCase):
         self.assertNotIn('count _components > 1', src('skInjectSite'))
 
     def test_named_recipe_labels_do_not_gate_commit(self):
-        self.assertIn('epinephrineRecipe', src('skCompoundLabel'))
-        self.assertNotIn('epinephrineRecipe', src('skCompoundCommit'))
-        self.assertNotIn('_unique', src('skCompoundCommit'))
-        waste = src('skWasteDraw')
-        self.assertIn('&& {[_med, _cap, _drugMl, _nsMl] call ACME_fnc_epinephrineRecipe}', waste)
-        self.assertIn('"dilutionB13"', waste)
+        self.assertIn('epinephrineRecipe',src('skCompoundLabel'))
+        self.assertNotIn('epinephrineRecipe',src('skCompoundCommit'))
+        self.assertNotIn('_unique',src('skCompoundCommit'))
+        # Draw now stages components; Save performs source-funded generic preparation or the exact recognized epi recipe.
+        save=src('skFlushSave')
+        self.assertIn('call ACME_fnc_epinephrineRecipe',save)
+        self.assertIn('call ACME_fnc_medicationTakeSources',save)
+        self.assertIn('"dilutionB13"',save)
+        from test_historical_medication_preparation import test_flush_draw_only_stages_and_save_funds_all_components_and_saline_carrier
+        test_flush_draw_only_stages_and_save_funds_all_components_and_saline_carrier()
 
     def test_preparation_validates_before_atomic_source_debit(self):
         commit = src('skCompoundCommit')
@@ -154,13 +158,15 @@ class B38Mixtures(unittest.TestCase):
         self.assertLess(inject.index('forEach _sourceParts'), inject.index('_store deleteAt'))
 
     def test_actual_route_is_kept_through_owner_and_flush(self):
-        for name in ('medicationRequest', 'medicationLineLocal'):
-            self.assertIn('[_x select 0,_x select 2,true,_x param [5,false]]', src(name))
-        owner = src('medicationLineLocal')
-        self.assertIn('_label,_site,_identity,_seconds,_preparedMixture', owner)
-        self.assertIn('_x param [8,false]', owner)
-        self.assertIn('[_site,_identity,_seconds,"bolus",_preparedMixture]', owner)
-        self.assertLess(owner.index('setVariable ["ACME_pendingFlush"'), owner.index('call ace_medical_treatment_fnc_medicationLocal'))
+        for name in ('medicationRequest','medicationLineLocal'):
+            self.assertIn('[_x select 0,_x select 2,true,_x param [5,false]]',src(name))
+        owner=src('medicationLineLocal')
+        self.assertIn('[_site,_identity,_seconds,"bolus",_preparedMixture,_rateMeta]',owner)
+        self.assertLess(owner.index('setVariable ["ACME_pendingFlush"'),owner.index('call ace_medical_treatment_fnc_medicationLocal'))
+        from test_historical_medication_preparation import test_actual_route_and_prepared_metadata_survive_owner_delivery_without_dose_duplication, test_flush_queue_preserves_actual_route_mixture_and_rate_metadata_and_drains_once
+        for iv in [True,False]:
+            test_actual_route_and_prepared_metadata_survive_owner_delivery_without_dose_duplication(iv,0.6)
+        test_flush_queue_preserves_actual_route_mixture_and_rate_metadata_and_drains_once()
 
     def test_native_gate_unchanged_but_prepared_uses_actual_route(self):
         route = src('medicationRouteAllowed')

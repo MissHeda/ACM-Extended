@@ -10,12 +10,11 @@ class B25Source(unittest.TestCase):
             assert_release_identity()
 
     def test_vial_session_registered_and_manual_advance_only(self):
-        c=read('config.cpp'); s=read('functions/fn_vialSession.sqf')
-        self.assertIn('class vialSession {};',c)
-        self.assertIn('No automatic rollover occurs',s)
-        self.assertIn('_reservedMl >= (_unlocked - 0.0005)',s)
-        self.assertIn('_selectedSealed = _selectedSealed + 1',s)
+        self.assertIn('class vialSession {};',read('config.cpp'))
         self.assertIn('["select", _data, _reserved, _d] call ACME_fnc_vialSession',read('functions/fn_skListSelect.sqf'))
+        from test_historical_vial_execution import test_partial_vial_precedes_sealed_and_next_vial_needs_deliberate_selection, test_repeated_limit_and_preview_never_unlock_another_vial
+        test_partial_vial_precedes_sealed_and_next_vial_needs_deliberate_selection()
+        test_repeated_limit_and_preview_never_unlock_another_vial()
 
     def test_compound_plunger_uses_manual_vial_quota(self):
         s=read('functions/fn_skCompoundBegin.sqf')

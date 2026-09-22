@@ -11,9 +11,12 @@ class B19Source(unittest.TestCase):
     def test_exact_vial_ledger_registered(self):
         c=read('config.cpp')
         for fn in ('vialHolder','vialItemCount','vialTake','vialRefund'):
-            self.assertIn(f'class {fn} {{}};',c)
+            self.assertEqual(c.count(f'class {fn} {{}};'),1)
+        # Native syringe callbacks now belong to the circulation addon, not an Extended override class.
+        prep=(ROOT.parent/'circulation/XEH_PREP.hpp').read_text()
         for fn in ('Syringe_PrepareFinish','Syringe_GetMedicationList','Syringe_UpdateMedicationList'):
-            self.assertIn(f'class {fn} ',c)
+            self.assertEqual(prep.count(f'PREP({fn});'),1)
+            self.assertTrue((ROOT.parent/'circulation/functions'/f'fnc_{fn}.sqf').is_file())
     def test_native_syringe_debits_exact_ml(self):
         s=read('overrides/fn_syringePrepareFinish.sqf')
         self.assertIn('ACME_fnc_vialTake',s)
@@ -39,11 +42,15 @@ class B19Source(unittest.TestCase):
         # The hard stop is ledger-backed through vialSession; B41 removed a second redundant stock scan.
         self.assertIn('ACME_fnc_vialSession',s); self.assertIn('private _hardMax',s)
     def test_compound_save_keeps_original_save_label_and_reopens_draw_dialog(self):
+        # Keep the historical identity, but enforce the approved immediate in-place reset rather than a retired reopen delay.
         begin=read('functions/fn_skCompoundBegin.sqf')
         self.assertIn('ctrlSetText "Save"',begin)
         self.assertNotIn('Save & New Syringe',begin)
-        s=read('functions/fn_skCompoundSave.sqf')
-        self.assertIn('ACME_fnc_skOpenDraw',s); self.assertIn('closeDialog 0',s)
+        save=read('functions/fn_skCompoundSave.sqf')
+        self.assertNotIn('closeDialog',save)
+        self.assertNotIn('call ACME_fnc_skOpenDraw',save)
+        from test_historical_medication_preparation import test_compound_save_reuses_the_same_dialog_and_does_not_recommit_on_repeated_event
+        test_compound_save_reuses_the_same_dialog_and_does_not_recommit_on_repeated_event()
     def test_infusion_done_explicitly_returns(self):
         d=read('functions/fn_infusionDone.sqf'); c=read('functions/fn_skClose.sqf')
         self.assertIn('ACME_SK_suppressReturn',d); self.assertIn('ACME_fnc_reopenTransfusion',d)

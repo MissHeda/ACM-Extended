@@ -23,12 +23,12 @@ if (!_valid || {_container != "" && {([_medic, _container] call ace_common_fnc_g
 {if (([_medic, _x] call ACME_fnc_infusionVialVolume) + 0.000001 < (_need get _x)) then {_valid = false;};} forEach (keys _need);
 if (!_valid) exitWith {false};
 {
-    if !([_medic, _x, _need get _x] call ACME_fnc_vialTake) exitWith {_valid = false;};
+    if !([_medic, _x, _need get _x, _medic] call ACME_fnc_vialTake) exitWith {_valid = false;};
     _taken pushBack [_x, _need get _x];
 } forEach (keys _need);
 if (!_valid) exitWith {
     // Unexpected late debit failure restores exact solution, including repeated draws.
-    {[_medic, _x select 0, _x select 1] call ACME_fnc_vialRefund;} forEach _taken;
+    {[_medic, _x select 0, _x select 1, _medic] call ACME_fnc_vialRefund;} forEach _taken;
     false
 };
 if (_consumeContainer && {_container != ""}) then {_medic removeItem _container;};

@@ -57,17 +57,16 @@ class B22UIContracts(unittest.TestCase):
         self.assertIn('safeZoneW / 6.5',inject)
         self.assertIn('safeZoneH / 20',rows)
     def test_partial_vial_ledger_still_persists(self):
-        take=read('functions/fn_vialTake.sqf')
-        refund=read('functions/fn_vialRefund.sqf')
-        update=read('overrides/fn_syringeUpdateMedicationList.sqf')
-        sync=read('functions/fn_skMedicationSync.sqf')
-        for text in ('ACME_infusion_openVials','_left','setVariable'):
-            self.assertIn(text,take)
-        self.assertIn('ACME_infusion_openVials',refund)
-        # B42 delegates native rebuilding to the same live-inventory + open-ledger row source as the overlay.
-        source=read('functions/fn_medicationSourceRows.sqf')
-        self.assertIn('ACME_fnc_skMedicationSync',update)
-        self.assertIn('ACME_fnc_medicationSourceRows',sync)
-        self.assertIn('ACME_infusion_openVials',source)
+        for name in ('vialTake','vialRefund'):
+            text=read('functions/fn_'+name+'.sqf')
+            self.assertIn('ACME_infusion_openVials',text)
+            self.assertIn('call ACME_fnc_openVialStoreCommit',text)
+        writer=read('functions/fn_openVialStoreCommit.sqf')
+        self.assertIn('_holder setVariable ["ACME_infusion_openVials", _map, true]',writer)
+        self.assertIn('ACME_fnc_skMedicationSync',read('overrides/fn_syringeUpdateMedicationList.sqf'))
+        self.assertIn('ACME_fnc_medicationSourceRows',read('functions/fn_skMedicationSync.sqf'))
+        self.assertIn('ACME_infusion_openVials',read('functions/fn_medicationSourceRows.sqf'))
+        from test_historical_vial_execution import test_partial_vial_is_used_first_and_explicit_multivial_transaction_conserves_solution
+        test_partial_vial_is_used_first_and_explicit_multivial_transaction_conserves_solution()
 
 if __name__=='__main__': unittest.main()

@@ -1,19 +1,14 @@
-Unresolved original source-contract outcomes after batch 2: 234
-Base: 5e134975242f182ebbed1225c96709eb7b2cce96
+Unresolved original source-contract outcomes after batch 3: 228
+Base: 539c7e802261b78247a74f1208b3170a75a4734a
 Not a waiver, skip list, or expected-failure list. Each ID retains its original identity.
 
 H015 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_ace_timer_events_drive_artifact
-H017 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_exact_vial_ledger_registered
 H018 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_monitor_generators_apply_artifact
 H021 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_pea_morphology_distinct_from_sinus
 H040 addons/acm_extended/tools/test_b21_rhythm_sync.py::B21RhythmRegression::test_threshold_forced_vt_can_recover_but_true_vt_is_not_blanket_cleared
 H044 addons/acm_extended/tools/test_b22_narc_revert.py::B22UIContracts::test_infusion_inherits_same_original_row_overlay
-H046 addons/acm_extended/tools/test_b22_narc_revert.py::B22UIContracts::test_partial_vial_ledger_still_persists
 H048 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23MedicationListContracts::test_normal_narc_box_rebuilds_empty_backing_list
-H049 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23VialHardStop::test_infusion_draw_max_is_limited_by_syringe_and_stock
-H050 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23VialHardStop::test_live_ui_physically_clamps_plunger_to_stock
 H051 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23RouteSelector::test_selected_route_has_green_backing
-H055 addons/acm_extended/tools/test_b25_vials_epi_iv_angles.py::B25Source::test_vial_session_registered_and_manual_advance_only
 H067 addons/acm_extended/tools/test_b28_hpmk_acre.py::B28Regression::test_no_network_blanket_attached_to_wrapped_patient
 H068 addons/acm_extended/tools/test_b28_hpmk_acre.py::B28Regression::test_obtunded_tick_can_cleanup_when_master_off
 H070 addons/acm_extended/tools/test_b28_hpmk_acre.py::B28Regression::test_wrapped_blanket_is_local_simple_object
@@ -232,7 +227,6 @@ H433 addons/acm_extended/tools/test_na8_5_batch4.py::ThoracostomySource::test_ca
 H434 addons/acm_extended/tools/test_na8_5_batch4.py::ThoracostomySource::test_held_tool_does_not_change_with_inventory
 H436 addons/acm_extended/tools/test_na8_5_batch5.py::SourceContracts::test_debug_propofol_separate
 H437 addons/acm_extended/tools/test_na8_5_batch5.py::SourceContracts::test_open_vials_visible_and_selectable
-H438 addons/acm_extended/tools/test_na8_5_batch5.py::SourceContracts::test_plunger_visual_uses_id_as_control
 H439 addons/acm_extended/tools/test_na8_5_batch6.py::SourceTests::test_all_visual_passes_after_procedure
 H452 addons/acm_extended/tools/test_na8_5_batch9.py::SourceContracts::test_old_pose_callback_owns_token
 H453 addons/acm_extended/tools/test_na8_5_batch9.py::SourceContracts::test_stop_death_branch_before_pose

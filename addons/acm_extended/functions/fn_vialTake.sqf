@@ -1,15 +1,21 @@
 /* Debit exact source-solution mL from a background partial-vial ledger.
    The first partial draw consumes the physical vial item and leaves its unused solution in ACME_infusion_openVials.
    Multiple opened vials of the same medication may be pooled invisibly; total volume is conserved exactly. */
-params [["_holder", objNull, [objNull]], ["_med", "", [""]], ["_ml", 0, [0]]];
+params [["_holder", objNull, [objNull]], ["_med", "", [""]], ["_ml", 0, [0]], ["_provider", objNull, [objNull]]];
 if (isNull _holder || {_med == ""} || {_ml <= 0} || {!finite _ml}) exitWith {false};
-if (hasInterface && {!isNull ACE_player} && {_holder isNotEqualTo ACE_player}) then {
+// Callers with a captured provider retain that provider across player switching/refund callbacks.
+// Legacy three-argument UI callers still use the currently controlled provider.
+if (isNull _provider && {hasInterface}) then {_provider = ACE_player;};
+private _leaseValid = true;
+if (hasInterface && {!isNull _provider} && {_holder isNotEqualTo _provider}) then {
     private _lease = missionNamespace getVariable ["ACME_vialLeaseAccepted", []];
-    if !(_lease isEqualType [] && {count _lease >= 3}
+    _leaseValid = _lease isEqualType [] && {count _lease >= 3}
         && {(_lease param [0,objNull]) isEqualTo _holder}
         && {(_lease param [1,""]) != ""}
-        && {(_lease param [2,0]) > serverTime}) exitWith {false};
+        && {(_lease param [2,0]) > serverTime};
 };
+// Exit the function, not just the nested shared-source branch, before any inventory or ledger write.
+if (!_leaseValid) exitWith {false};
 private _cap = [_med] call ACME_fnc_vialCapacity;
 if (_cap <= 0) exitWith {false};
 private _vial = [_med] call ACME_fnc_vialClass;

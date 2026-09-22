@@ -117,8 +117,14 @@ class SourceContracts(unittest.TestCase):
     def test_injection_stays_open(self):
         self.assertNotIn('closeDialog',src('injectIntoBag'));self.assertNotIn('infusionDone',src('injectIntoBag'))
     def test_plunger_visual_uses_id_as_control(self):
-        self.assertIn('_display displayCtrl (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Ctrl_PlungerVisual", 84010])',src('injectIntoBag'))
-        self.assertIn('_top - _offset',src('injectIntoBag'))
+        self.assertIn('[0, _display, true] call ACME_fnc_syringeDrawSetAmount',src('injectIntoBag'))
+        helper=src('syringeDrawSetAmount')
+        self.assertIn('ACM_circulation_SyringeDraw_Ctrl_PlungerVisual',helper)
+        self.assertIn('_display displayCtrl _visualIdc',helper)
+        self.assertIn('_y - _adjust',helper)
+        from test_historical_medication_preparation import test_syringe_amount_correction_keeps_hitbox_art_and_numeric_fill_together
+        for size in [1,3,5,10]:
+            test_syringe_amount_correction_keeps_hitbox_art_and_numeric_fill_together(size,0)
     def test_open_vials_visible_and_selectable(self):
         # B20's row renderer uses a non-mutating vial preview for partial/open stock; the actual draw paths still
         # use infusionVialVolume for authoritative availability and debit.
