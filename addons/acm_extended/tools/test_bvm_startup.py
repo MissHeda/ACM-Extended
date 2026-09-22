@@ -121,3 +121,39 @@ def test_bvm_cancel_releases_direct_pressure_completion_and_allows_restart():
         [_medic,_patient] call ACM_breathing_fnc_useBVM; call _tick;
         [ACM_core_ContinuousAction_Active,"BVM could not restart after cancellation"] call _check;
     ''')
+
+
+def test_listen_server_lingering_source_dialog_does_not_cancel_bvm():
+    execute(setup() + '''
+        [_medic,_patient] call ACM_breathing_fnc_useBVM;
+        [ACM_core_ContinuousAction_Active,"BVM startup rejected"] call _check;
+
+        // Simulate the listen-server/UI race: the source medical/progress dialog reports live again
+        // on the first frames even though beginContinuousAction already requested closeDialog 0.
+        _dialog = true;
+        _nowTime = _nowTime + 0.10;
+        call _tick;
+        [ACM_core_ContinuousAction_Active,"lingering source dialog cancelled BVM during startup grace"] call _check;
+        [!_dialog,"startup grace did not close lingering source dialog"] call _check;
+
+        _dialog = true;
+        _nowTime = _nowTime + 0.20;
+        call _tick;
+        [ACM_core_ContinuousAction_Active,"second hosted startup frame cancelled BVM"] call _check;
+        [!_dialog,"second hosted startup frame left stale dialog open"] call _check;
+
+        // Once the bounded handoff is over, opening a real dialog regains normal cancellation semantics.
+        _nowTime = _nowTime + 1.0;
+        _dialog = true;
+        call _tick;
+        [!ACM_core_ContinuousAction_Active,"post-start dialog failed to cancel BVM"] call _check;
+    ''')
+
+
+def test_continuous_controller_has_bounded_non_dialog_startup_grace():
+    s=(ROOT / 'addons/core/functions/fnc_beginContinuousAction.sqf').read_text()
+    assert 'private _dialogStartupUntil = diag_tickTime + 0.75;' in s
+    assert 'if (diag_tickTime < _dialogStartupUntil) then {' in s
+    assert 'ACEGVAR(medical_gui,pendingReopen) = false;' in s
+    assert 'GVAR(ContinuousAction_ShouldReopen) = false;' in s
+    assert '_dialogCondition = dialog;' in s
