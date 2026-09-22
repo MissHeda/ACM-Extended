@@ -53,7 +53,11 @@ if (!(_oldEscapeID isEqualTo -1) && {!(_oldEscapeID isEqualTo "")}) then {[_oldE
 GVAR(ContinuousAction_OpenMedicalMenu_ID) = -1;
 GVAR(ContinuousAction_Cancel_EscapeID) = -1;
 
-if (dialog) then { // If another dialog is open (medical menu) close it
+// Non-dialog continuous actions (BVM, head tilt, etc.) are commonly started FROM ACE's medical/progress
+// dialog. On a listen server closeDialog 0 is not guaranteed to make "dialog" false before the next PFH frame.
+// Give only that startup handoff a bounded grace so the source dialog cannot immediately cancel the action.
+private _dialogStartupUntil = diag_tickTime + 0.75;
+if (dialog) then {
     closeDialog 0;
 };
 
@@ -128,7 +132,7 @@ if (currentWeapon _medic != "") then {
 
 private _pfh = [{
     params ["_args", "_idPFH"];
-    _args params ["_medic", "_patient", "_bodyPart", "_extraArgs", "_notInVehicle", "_isProne", "_perFrame", "_onCancel", "_dialogID", "_epoch", "_keyID", "_isDialog"];
+    _args params ["_medic", "_patient", "_bodyPart", "_extraArgs", "_notInVehicle", "_isProne", "_perFrame", "_onCancel", "_dialogID", "_epoch", "_keyID", "_isDialog", "_dialogStartupUntil"];
 
     // Superseded action. Retire only this PFH and its own key id. Never run the old cancellation/reopen path against
     // the newer generation.
@@ -143,9 +147,20 @@ private _pfh = [{
     private _enteredVehicle = _notInVehicle && {!isNull objectParent _medic};
     private _distanceCondition = (!isNull _patient) && {(_patient distance2D _medic) > ACEGVAR(medical_gui,maxDistance)};
 
-    private _dialogCondition = dialog;
+    private _dialogCondition = false;
     if (_isDialog) then {
         _dialogCondition = isNull (findDisplay _dialogID);
+    } else {
+        // The source ACE dialog may still report live for a few frames on locally hosted/listen-server clients.
+        // During this bounded startup window the continuous maneuver owns the interface: suppress stale reopen state
+        // and keep asking the old dialog to close. After the window expires, any new dialog again cancels normally.
+        if (diag_tickTime < _dialogStartupUntil) then {
+            ACEGVAR(medical_gui,pendingReopen) = false;
+            GVAR(ContinuousAction_ShouldReopen) = false;
+            if (dialog) then {closeDialog 0;};
+        } else {
+            _dialogCondition = dialog;
+        };
     };
 
     if (_patientCondition || _medicCondition || _enteredVehicle || !GVAR(ContinuousAction_Active) || _dialogCondition || {(!_notInVehicle && _vehicleCondition) || {(_notInVehicle && _distanceCondition)}}) exitWith {
@@ -190,7 +205,7 @@ private _pfh = [{
         _medic setVariable [QGVAR(ContinuousAction_LastSeen), CBA_missionTime, true];
     };
     _args call _perFrame;
-}, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _isProne, _perFrame, _onCancel, _dialogID, _epoch, _keyID, _isDialog]] call CBA_fnc_addPerFrameHandler;
+}, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _isProne, _perFrame, _onCancel, _dialogID, _epoch, _keyID, _isDialog, _dialogStartupUntil]] call CBA_fnc_addPerFrameHandler;
 
 GVAR(ContinuousAction_PFH) = _pfh;
 _args call _onStart;
