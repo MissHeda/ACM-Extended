@@ -258,7 +258,12 @@ private _needleRects = [];
     _x params ["_bgIdc", "_logoIdc", "_lblIdc", "_clickIdc", "_g"];
     private _ry = _nY0 + (_forEachIndex * _step);
     private _iconH = _slotH * _iconScale;
-    private _iconW = _iconH / _af;  // square in pixels.
+    // _af is pixelW / pixelH. For a physically square PAA canvas:
+    //     width / pixelW == height / pixelH
+    // therefore width = height * (pixelW / pixelH).
+    // The old division inverted this ratio, stretching the rotated catheter horizontally by 1/_af^2
+    // (about 3.16x at 16:9 and 12.64x at 32:9).
+    private _iconW = _iconH * _af;
     private _iconX = _colX + (_slotW / 2) - (_iconW / 2);
     // Keep the resting catheter slightly low in its tray so the inventory fan has room to open upward.
     // This is only tray placement; source-art centroid math lives in fn_ivTrayHover and must not be coupled to it.
@@ -292,7 +297,8 @@ if (!_lineSlotOn) then {
 // the multiplier follows the count of needle rows above it. it was 3 for three gauges and it is 4 for four.
 private _lineY = _nY0 + (_step * (count _gauges));
 private _lIconH = _slotH * (missionNamespace getVariable ["ACME_iv_trayLineScale", 1.9]);
-private _lIconW = _lIconH / _af;
+// Same physical-pixel-square rule as the catheter icons above.
+private _lIconW = _lIconH * _af;
 (_display displayCtrl 86552) ctrlSetPosition [_colX, _lineY, _slotW, _slotH]; (_display displayCtrl 86552) ctrlCommit 0;
 (_display displayCtrl 86553) ctrlSetPosition [_colX + (_slotW / 2) - (_lIconW / 2), _lineY + (_slotH / 2) - (_lIconH / 2), _lIconW, _lIconH]; (_display displayCtrl 86553) ctrlCommit 0;
 (_display displayCtrl 86554) ctrlSetPosition [_colX, _lineY + _slotH, _slotW, _lblH]; (_display displayCtrl 86554) ctrlCommit 0;
