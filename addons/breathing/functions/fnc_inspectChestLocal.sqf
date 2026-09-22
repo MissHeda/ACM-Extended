@@ -87,18 +87,21 @@ switch (true) do {
             _hintLogFormat = ["%1 %2: %3, %4", "%1 %2: %3, %4, %5"] select _hasPneumothorax;
         };
     };
-    case (_pneumothorax): {
+    case (_pneumothorax || _hemothorax): {
+        // These findings can coexist. Keep every selected observation visible and logged.
+        _hintArray set [0, "%1<br/>%2"];
         _hintArray pushBack "STR_ACM_Breathing_InspectChest_Uneven";
         _hintLogArray pushBack "STR_ACM_Breathing_InspectChest_Uneven_Short";
-    };
-    case (_hemothorax): {
-        _hintHeight = 2.5;
-
-        _hintArray set [0, "%1<br/>%2"];
-        _hintArray append ["STR_ACM_Breathing_InspectChest_Uneven", "STR_ACM_Breathing_InspectChest_Bruising"];
-
-        _hintLogArray append ["STR_ACM_Breathing_InspectChest_Uneven_Short", "STR_ACM_Breathing_InspectChest_Bruising_Short"];
         _hintLogFormat = "%1 %2: %3, %4";
+        _hintHeight = 2;
+
+        if (_hemothorax) then {
+            _hintHeight = 2.5;
+            _hintArray set [0, "%1<br/>%2<br/>%3"];
+            _hintArray pushBack "STR_ACM_Breathing_InspectChest_Bruising";
+            _hintLogArray pushBack "STR_ACM_Breathing_InspectChest_Bruising_Short";
+            _hintLogFormat = "%1 %2: %3, %4, %5";
+        };
     };
     default {};
 };
@@ -121,7 +124,7 @@ if (_patient getVariable ["ACME_ETT_Mainstem", false]) then {
     _hintArray set [0, (_hintArray select 0) + "<br/>%" + (str _idx)];
     _hintArray pushBack (if (_hc) then {"Asymmetric chest rise, absent on the left"} else {"The left side of the chest is not moving"});
     _hintLogArray pushBack (if (_hc) then {"asymmetric rise, absent left"} else {"left chest not moving"});
-    _hintLogFormat = _hintLogFormat + ", %" + (str ((count _hintLogArray) + 1));
+    _hintLogFormat = _hintLogFormat + ", %" + (str ((count _hintLogArray) + 2));
     _hintHeight = _hintHeight + 0.5;
 };
 
@@ -167,5 +170,5 @@ private _logArray = [[_medic, false, true] call ace_common_fnc_getName, "STR_ACM
 [_patient, "quick_view", _hintLogFormat, (_logArray + _hintLogArray)] call ace_medical_treatment_fnc_addToLog;
 
 if (_secondEntry) then {
-    [_patient, "quick_view", _hintLogFormat, (_logArray + [_hintSecondLog])] call ace_medical_treatment_fnc_addToLog;
+    [_patient, "quick_view", "%1 %2: %3", (_logArray + [_hintSecondLog])] call ace_medical_treatment_fnc_addToLog;
 };

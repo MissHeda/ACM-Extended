@@ -14,11 +14,11 @@ class B39RuntimeStampAndSpawn(unittest.TestCase):
         assert_release_identity()
         self.assertIn('private _ver = getText',d)
     def test_reset_never_calls_getup(self):
-        r=read('overrides/fn_resetVariables.sqf')
-        self.assertIn('ACM_core_Lying_State',r)
-        body='\n'.join(line.split('//',1)[0] for line in r.splitlines())
-        self.assertNotIn('call ACM_core_fnc_getUp',body)
-        self.assertIn('class resetVariables { file = "\\acm_extended\\overrides\\fn_resetVariables.sqf"; };',read('config.cpp'))
+        # resetVariables is compiled by ACM core now, not an Extended override registration.
+        self.assertEqual((ROOT.parent/'core/XEH_PREP.hpp').read_text().count('PREP(resetVariables);'),1)
+        from test_historical_state_cleanup import test_native_reset_clears_bookkeeping_without_getup_or_equipment_removal
+        for player in (False,True):
+            test_native_reset_clears_bookkeeping_without_getup_or_equipment_removal(player)
     def test_native_getup_callers_remain_compatible(self):
         g=read('overrides/fn_getUp.sqf')
         self.assertIn('["_authorized", true, [false]]',g)
@@ -27,10 +27,9 @@ class B39RuntimeStampAndSpawn(unittest.TestCase):
         sync=read('functions/fn_skMedicationSync.sqf')
         self.assertIn('_ctrl lbSetData',sync.replace('_list','_ctrl')) if False else self.assertIn('lbSetData',sync)
     def test_obtunded_weapon_path_does_not_delete_projectiles(self):
-        t=read('functions/fn_obtundedInputLock.sqf')
-        self.assertIn('ACME_fnc_obtundedWeaponIntent',t)
-        self.assertIn('removeEventHandler ["FiredMan"',t)
-        self.assertNotIn('deleteVehicle _projectile',t)
+        # No interception/FiredMan handler is installed by the current compatibility shim.
+        from test_historical_state_cleanup import test_obtunded_input_shim_retires_handlers_without_intercepting_weapons_or_projectiles
+        test_obtunded_input_shim_retires_handlers_without_intercepting_weapons_or_projectiles()
         self.assertIn('class obtundedWeaponIntent {};',read('config.cpp'))
     def test_awake_ett_rejection_present(self):
         s=read('functions/fn_laryngoScroll.sqf')

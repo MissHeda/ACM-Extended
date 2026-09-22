@@ -81,12 +81,15 @@ class ActionSourceData(unittest.TestCase):
         got={k for k in ENTRIES if classify(k)[1]=='route_buc'};self.assertEqual(got,{'fentanyllozenge','removefentanyllozenge'})
     def test_lozenge_and_inhalant_parent_really_is_oral_class(self):
         for k in ('FentanylLozenge','Naloxone','Penthrox'):self.assertIn('paracetamol',lineage(ENTRIES,k))
-    def test_unrelated_head_actions_not_oral(self):self.assertEqual(classify('SlapAwake'),('examine','examine_response',False))
+    def test_unrelated_head_actions_not_oral(self):
+        from test_historical_menu_execution import test_current_routes_do_not_capture_foreign_descendants_or_restore_basic_dropdowns as verify
+        verify('SlapAwake','advanced','CheckResponse',['examine','',False])
     def test_chest_examination_does_not_move_bvm_descendants(self):
-        for name in ('ACME_InspectChest', 'UseStethoscope'):
-            self.assertEqual(classify(name),('examine','examine_chest',False))
-        self.assertIn('usestethoscope',lineage(ENTRIES,'UseBVM'))
-        self.assertEqual(classify('UseBVM'),('airway','',False))
+        from test_historical_menu_execution import test_current_routes_do_not_capture_foreign_descendants_or_restore_basic_dropdowns as verify
+        for name in ('ACME_InspectChest','UseStethoscope'):
+            verify(name,'examine','CheckBreathing',['airway','chest',False])
+        for name in ('UseBVM','UseBVM_Oxygen','UseBVM_VehicleOxygen','UseBVM_PortableOxygen'):
+            verify(name,'airway','UseStethoscope',['airway','ventilation',False])
     def test_injectable_not_misclassified(self):self.assertEqual(classify('Morphine'),('medication','',False))
     def test_aed_advanced_stays_advanced(self):self.assertEqual(classify('AED_ApplyPads'),('advanced','',False))
     def test_unknown_extension_is_retained(self):self.assertEqual(policy('AnotherAddonAction','advanced',['anotheraddonaction']),('advanced','',False))

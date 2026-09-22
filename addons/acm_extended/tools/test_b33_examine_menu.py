@@ -50,32 +50,34 @@ class ExaminePresentation(unittest.TestCase):
                 self.assertEqual(policy(name, 'examine', [name]), ('examine', key, False))
 
     def test_known_order_survives_native_config_declaration_order(self):
-        names = ['usestethoscope', 'acme_checktemperature', 'checkresponse', 'acme_assesspupils', 'acme_inspectchest', 'checkpulse']
-        expected = ['checkresponse', 'acme_assesspupils', 'checkpulse', 'acme_inspectchest', 'usestethoscope', 'acme_checktemperature']
-        rng = random.Random(33)
-        for _ in range(20):
+        # Current policy groups equipment only. Direct bedside actions retain native
+        # order rather than being forced into the retired response/chest dropdowns.
+        from test_historical_menu_execution import test_table_orders_only_grouped_equipment_and_keeps_direct_rows_in_native_order
+        names=['CheckPulse','InspectIV_Lower','MeasureBloodPressure','ForeignExam','PressureCuff_Attach']
+        rng=random.Random(33)
+        for _ in range(10):
             rng.shuffle(names)
-            rows = [dict(**{'class': name}, available=True) for name in names]
-            self.assertEqual(render(rows, False), expected)
+            test_table_orders_only_grouped_equipment_and_keeps_direct_rows_in_native_order(names)
 
     def test_callbacks_and_foreign_examinations_are_retained(self):
-        callback = object()
-        rows = [dict(**{'class': n}, available=True, callback=callback) for n in ['anotheraddon_exam', 'acme_inspectchest', 'anotheraddon_second']]
-        result = order(rows)
-        self.assertEqual([r['class'] for r in result], ['acme_inspectchest', 'anotheraddon_exam', 'anotheraddon_second'])
-        self.assertTrue(all(r['callback'] is callback for r in result))
+        from test_historical_menu_execution import test_collector_preserves_callbacks_items_icons_and_foreign_examination_order
+        test_collector_preserves_callbacks_items_icons_and_foreign_examination_order()
 
     def test_grouped_and_flat_keep_body_site_eligibility(self):
-        rows = [dict(**{'class': n}, available=a) for n, a in [('checkresponse', False), ('acme_inspectchest', True), ('usestethoscope', False)]]
-        self.assertEqual(render(rows, False), ['acme_inspectchest'])
-        self.assertEqual(render(rows, True), ['Chest Inspection'])
-        self.assertEqual(render(rows, True, ['examine_chest']), ['Chest Inspection', 'acme_inspectchest'])
-        rows[1]['available'] = False
-        self.assertEqual(render(rows, True, ['examine_chest']), [])
+        from test_historical_menu_execution import test_section_eligibility_and_callbacks_survive_flat_closed_and_open_views, test_head_assessment_filter_is_anatomical_not_a_death_detector
+        for grouped in (False,True):
+            for available in (False,True):
+                for opened in (False,True):
+                    test_section_eligibility_and_callbacks_survive_flat_closed_and_open_views(grouped,opened,available)
+        for bodypart in range(6):
+            for dead in (False,True):
+                test_head_assessment_filter_is_anatomical_not_a_death_detector(bodypart,dead)
 
     def test_chest_move_does_not_capture_bvm_descendants(self):
-        self.assertEqual(policy('UseBVM', 'airway', ['usebvm', 'usestethoscope', 'checkbreathing', 'checkpulse']), ('airway', '', False))
-        self.assertEqual(policy('SlapAwake', 'advanced', ['slapawake', 'shakeawake', 'checkresponse']), ('examine', 'examine_response', False))
+        from test_historical_menu_execution import test_current_routes_do_not_capture_foreign_descendants_or_restore_basic_dropdowns as verify
+        verify('UseBVM','airway','UseStethoscope',['airway','ventilation',False])
+        verify('UseStethoscope','examine','CheckBreathing',['airway','chest',False])
+        verify('SlapAwake','advanced','CheckResponse',['examine','',False])
 
     def test_runtime_shares_one_membership_and_order_table(self):
         collector = read_source(ROOT / 'overrides/fn_collectActions.sqf')
@@ -102,12 +104,9 @@ class CorpseChestAssessment(unittest.TestCase):
         self.assertEqual(fields['animationMedic'], '')
 
     def test_dead_findings_survive_without_a_live_obtunded_roll(self):
-        source = read_source(ROOT / 'overrides/fn_inspectChestLocal.sqf')
-        self.assertIn('if (isNull _patient) exitWith {};', source)
-        self.assertIn('if (alive _patient\n', source)
-        self.assertIn('!(alive _patient)', source)
-        self.assertIn('STR_ACM_Breathing_InspectChest_None', source)
-        self.assertNotIn('if (!alive _patient) exitWith', source)
+        from test_historical_assessment_execution import test_absent_respiration_and_retained_injury_evidence_do_not_reposition_or_heal
+        for injured in (False,True):
+            test_absent_respiration_and_retained_injury_evidence_do_not_reposition_or_heal(True,False,False,injured)
 
 
 if __name__ == '__main__':

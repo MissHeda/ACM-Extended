@@ -92,7 +92,7 @@ if (_active) then {
     };
     private _lucid = _now < _lucidUntil;
     private _prevLucid = uiNamespace getVariable ["ACME_obtunded_lucidActive", false];
-    if (_lucid != _prevLucid) then {
+    if (_lucid isNotEqualTo _prevLucid) then {
         uiNamespace setVariable ["ACME_obtunded_lucidActive", _lucid];
         [_p, !_lucid] call ACME_fnc_obtundedVoice;
         (missionNamespace getVariable ["ACME_obtunded_muffleFade", 1.0]) fadeSound
