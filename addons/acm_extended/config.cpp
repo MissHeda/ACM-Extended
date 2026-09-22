@@ -2334,6 +2334,7 @@ class CfgFunctions {
             class seizureInjuryEntry {};
             class seizureCollapse {};
             class benzoOnBoard {};
+            class seizureControl {};
             class forceRagdoll {};
             class aajtApply {};
             class aajtRemove {};
