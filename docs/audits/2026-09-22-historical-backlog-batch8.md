@@ -67,3 +67,13 @@ Toolchain: HEMTT 1.22.0 and SQF-VM v2026.04.03-ed9f5f5. Engine display/control/e
 No Arma client or dedicated server ran. No claim is made about live networking, rendered geometry, every delayed-event interleaving, or broad gameplay freedom from bugs. The remaining 178 original source-contract identities and all other unresolved failures remain visible in the index and evidence ledger.
 
 **No gameplay rebuild is required for this test/documentation-only batch.** Keep the previous stash as a backup and do not reapply superseded patch installers. This work does not change the running mod's behavior.
+
+## Independent clean-checkout verification
+
+GitHub Actions run **35805536891**, job **107005394504**, independently verified candidate **584195002038e4c8b1b03840da084ef5e06286d8**, parent **f5f2c3b436a3462103256f78596df1fcf9653d7d**, and complete tree **f5aad244197d2d442d3dc9c30e6db1830bed986c**. The reviewed patch matched SHA256 **99b0f445ff4f63b89db93a2e9d8d1f52f977c68a0cbdf010811d88b9bfe83893**. The candidate source was not changed to satisfy the independent run.
+
+The focused suite independently passed **1,100 tests plus 400 subtests**, with no failures, errors or skips. Full-project HEMTT returned **0**. The complete broad runs matched the table above: **nine previous failures now passing, no newly failing identities, no comparable passing-outcome regressions, no missing prior identities, zero collection/setup errors and four unchanged skips**. Both broad-suite commands still returned **1**; successful validation is not a clean broad-suite result.
+
+The independent reference control copied only the two new test modules onto the unchanged starting checkout: **all 72 cases passed**. This verifies the examined current behavior without a production change. Exact-tree and existing-test AST checks restrict the candidate to **eight added/modified test/documentation paths** and **nine intended existing test-body changes**. All **4,025 other existing paths remain unchanged**, with **no deleted files and no runtime or asset changes**. The audit workflow, settings bundle and transferred patch payload are not in the production candidate. The follow-up changes only this report to record the independent results.
+
+Raw commands, return codes, before/after outcome streams, JUnit results, reviewed patch, test-edit scope, preservation proof and candidate identity are retained in artifact **10727413902**, `historical-backlog-batch8-results`, SHA256 **2f6222e5648a0d093934a76fc50f46040557ed7f35476d73980ebdbc2c2d8de5**. The evidence package retains the complete **460-outcome ledger** and **178-entry unresolved original source-contract index**.
