@@ -48,7 +48,7 @@ private _retained = false;
 {
     private _bag = _x;
     _bag params ["_bagType", "_volume", "_accessType", "_site", "_bagIV", "_bloodType"];
-    if (_bagIV != _iv || {_site != _accessSite}) then {_keep pushBack _bag; continue;};
+    if (_bagIV isNotEqualTo _iv || {_site != _accessSite}) then {_keep pushBack _bag; continue;};
     private _uid = [_patient, _bodyPart, _forEachIndex] call ACME_fnc_bagIdentity;
     // bagIdentity stamps the source bag in place; fetch it to retain the UID.
     _bag = (_map get _bodyPart) select _forEachIndex;

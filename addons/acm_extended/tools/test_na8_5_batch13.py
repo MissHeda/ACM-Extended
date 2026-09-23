@@ -151,14 +151,26 @@ class PreparationAndRoutes(unittest.TestCase):
         self.assertIn('gluconate',t.lower())
 
 class EffectAndLifecycleContracts(unittest.TestCase):
-    def test_shared_cardiac_reader_uses_dose(self):self.assertIn('_concentration',ov('getCardiacMedicationEffects'));self.assertIn('ACME_fnc_medicationAvailability',ov('getCardiacMedicationEffects'))
-    def test_shared_nausea_reader_uses_dose(self):self.assertIn('_concentration',ov('getNauseaMedicationEffects'));self.assertIn('ACME_fnc_medicationAvailability',ov('getNauseaMedicationEffects'))
+    def test_shared_cardiac_reader_uses_dose(self):
+        text=(ROOT.parent/'circulation/functions/fnc_getCardiacMedicationEffects.sqf').read_text()
+        self.assertIn('_concentration',text);self.assertIn('ACME_fnc_medicationAvailability',text)
+        from test_historical_medication_effects import test_cardiac_reader_scales_admitted_dose_once_and_preserves_caps
+        for dose in (0,.25,3):
+            test_cardiac_reader_scales_admitted_dose_once_and_preserves_caps('Morphine_IV',1,'morphine',.6,.8,dose)
+    def test_shared_nausea_reader_uses_dose(self):
+        text=(ROOT.parent/'circulation/functions/fnc_getNauseaMedicationEffects.sqf').read_text()
+        self.assertIn('_concentration',text);self.assertIn('ACME_fnc_medicationAvailability',text)
+        from test_historical_medication_effects import test_nausea_reader_uses_dose_thresholds_not_number_of_records
+        for dose in (0,.2,.75,2):
+            test_nausea_reader_uses_dose_thresholds_not_number_of_records('Morphine_IV',.3,dose)
     def test_b14_naloxone_is_vanilla_not_temporary_antagonist(self):
         self.assertFalse((ROOT/'overrides/fn_handleMed_NaloxoneLocal.sqf').exists())
-        self.assertNotIn('class handleMed_NaloxoneLocal', read_source(ROOT/'config.cpp'))
+        self.assertNotIn('class handleMed_NaloxoneLocal',read_source(ROOT/'config.cpp'))
         self.assertNotIn('naloxoneCache',src('medicationAvailability'))
         self.assertIn('_class == "Naloxone"',src('medicationExposure'))
-        self.assertIn('_fired set ["opioid"',src('medicationExposure'))
+        self.assertIn('call ACME_fnc_medicationToxicityFiredCommit',src('medicationExposure'))
+        from test_historical_medication_effects import test_naloxone_marks_current_opioid_generation_without_consuming_or_masking_opioid_records
+        test_naloxone_marks_current_opioid_generation_without_consuming_or_masking_opioid_records()
     def test_naloxone_model_can_wear_off_before_opioid(self):
         nal=MEDS['Naloxone'];opioid=MEDS['Morphine_IV'];t=400
         self.assertEqual(envelope(nal['administrationType'],t,nal['timeTillMaxEffect'],nal['timeInSystem'],nal['maxEffectTime']),0)
@@ -171,7 +183,12 @@ class EffectAndLifecycleContracts(unittest.TestCase):
     def test_sugammadex_unused_capacity_is_not_destroyed(self):self.assertAlmostEqual(1.2-min(1.2,.4),.8)
     def test_rocuronium_not_native_sedative(self):
         r=MEDS['Rocuronium_IV'];self.assertEqual(r['painReduce'],0);self.assertEqual(r['rrAdjust'],[0,0])
-    def test_opioid_threshold_not_disabled_below_one_mg(self):self.assertIn('_maxDose <= 0',ov('onMedicationUsage'));self.assertNotIn('_maxDose < 1',ov('onMedicationUsage'))
+    def test_opioid_threshold_not_disabled_below_one_mg(self):
+        text=(ROOT.parent/'core/overrides/fnc_onMedicationUsage.sqf').read_text()
+        self.assertIn('_maxDose <= 0',text);self.assertNotIn('_maxDose < 1',text)
+        from test_historical_medication_effects import test_submilligram_overdose_threshold_checks_total_and_bolus_without_double_callback
+        for total,bolus,expected in ((.05,.05,0),(.101,0,1),(0,.101,1),(.2,.2,1)):
+            test_submilligram_overdose_threshold_checks_total_and_bolus_without_double_callback(total,bolus,expected)
     def test_b14_overdose_effect_and_new_exposure_gate(self):
         t=src('medicationToxicityTick')
         self.assertIn('[_patient,_x,false]',t);self.assertIn('_generation > _last',t)
@@ -179,8 +196,14 @@ class EffectAndLifecycleContracts(unittest.TestCase):
         self.assertIn('Fentanyl_BUC',t);self.assertIn('Esketamine',t)
     def test_toxicity_runs_without_extended_circulation_toggle(self):self.assertIn('ACME_fnc_medicationToxicityTick',ov('handleUnitVitals'))
     def test_cbrn_no_timed_pfh_onset_termination(self):
-        for n in ('Atropine','Dimercaprol'):self.assertNotIn('addPerFrameHandler',ov('handleMed_'+n+'Local'))
+        from test_historical_medication_effects import test_cbrn_entrypoint_registers_owner_without_a_disposable_effect_timer, test_cbrn_effect_waits_for_onset_and_remains_time_normalized, test_atropine_clears_the_same_airway_spasm_flag_consumed_by_native_airway
+        for drug in ('Atropine','Dimercaprol'):
+            text=(ROOT.parent/'circulation/functions'/('fnc_handleMed_'+drug+'Local.sqf')).read_text()
+            self.assertNotIn('addPerFrameHandler',text)
+            test_cbrn_entrypoint_registers_owner_without_a_disposable_effect_timer(drug)
         self.assertIn('ACME_fnc_medicationCBRNTick',ov('handleUnitVitals'))
+        test_cbrn_effect_waits_for_onset_and_remains_time_normalized(False)
+        test_atropine_clears_the_same_airway_spasm_flag_consumed_by_native_airway('Atropine_IV')
     def test_cbrn_reduction_time_normalized(self):
         t=src('medicationCBRNTick');self.assertIn('_dt / 25',t);self.assertIn('ACME_fnc_clinicalTickDelta',t)
         self.assertAlmostEqual(sum([8*.1/25]*250),8)
@@ -194,13 +217,23 @@ class EffectAndLifecycleContracts(unittest.TestCase):
         t=src('medicationLineLocal')
         for x in ('_identity','_receipts getOrDefault [_id','ACME_fnc_clinicalEpoch','ACME_fnc_medicationLineIdentity','ACME_pendingFlush'):self.assertIn(x,t)
         self.assertLess(t.index('_prior ='),t.index('_epoch !='))
-    def test_removed_catheter_clears_its_pending_drugs(self):self.assertIn('ACME_pendingFlush',ov('setIVLocal'))
+    def test_removed_catheter_clears_its_pending_drugs(self):
+        text=(ROOT.parent/'circulation/functions/fnc_setIVLocal.sqf').read_text()
+        self.assertIn('ACME_pendingFlush',text)
+        from test_historical_medication_retirement import test_catheter_change_invalidates_only_exact_line_and_legacy_queue
+        for iv,site in ((True,0),(True,1),(True,2),(False,-1)):
+            test_catheter_change_invalidates_only_exact_line_and_legacy_queue(iv,site,0)
     def test_new_state_fields_have_fullheal_policy(self):
         t=src('clinicalFields')
         for n in ('ACME_medicationToxicity','ACME_sug_bindings','ACME_sug_spent','ACME_nativeCalciumFirstGram','ACME_suctionSessions','ACME_o2Drain_suction'):
             self.assertIn('["'+n+'", "", true',t)
     def test_external_count_delegate_is_separately_registered(self):
-        t=read_source(ROOT/'config.cpp');self.assertIn('class ACME_native',t);self.assertIn('tag = "ACME_native"',t)
+        # The former delegate name is retired; the native ACE-facing override
+        # owns this API now, including foreign medication classes and raw counts.
+        from test_historical_medication_effects import test_native_count_registration_replaces_retired_external_delegate, test_native_medication_count_accepts_foreign_classes_and_preserves_site_filter
+        test_native_count_registration_replaces_retired_external_delegate()
+        for raw in (False,True):
+            test_native_medication_count_accepts_foreign_classes_and_preserves_site_filter(-1,1.5,raw)
 
 class SuctionAndSALAD(unittest.TestCase):
     def test_no_penalty_through_ten_seconds(self):self.assertAlmostEqual(suction_run(10)[1],0)
@@ -234,9 +267,16 @@ class SuctionAndSALAD(unittest.TestCase):
     def test_owner_rechecks_equipment_and_consciousness(self):
         t=src('suctionPhysiologyTick');self.assertIn('ACM_ACCUVAC',t);self.assertIn('ACE_isUnconscious',t);self.assertIn('!local _patient',t)
     def test_no_penalty_double_application(self):
-        self.assertIn('ACME_o2Drain_suction',ov('updateOxygen'))
-        for n in ('altitudeTick','ventDriveTick'):self.assertNotIn('ACME_o2Drain_suction',src(n))
-    def test_suction_updates_before_native_oxygen(self):self.assertIn('ACME_fnc_suctionPhysiologyTick',ov('updateOxygen'))
+        from test_historical_medication_retirement import test_native_target_is_the_only_suction_penalty_consumer_in_reviewed_paths, test_suction_debt_is_computed_before_one_native_target_deduction
+        test_native_target_is_the_only_suction_penalty_consumer_in_reviewed_paths()
+        test_suction_debt_is_computed_before_one_native_target_deduction('hand',1,6,False)
+        for name in ('altitudeTick','ventDriveTick'):
+            self.assertNotIn('ACME_o2Drain_suction',src(name))
+    def test_suction_updates_before_native_oxygen(self):
+        text=(ROOT.parent/'core/overrides/fnc_updateOxygen.sqf').read_text()
+        self.assertLess(text.index('call ACME_fnc_suctionPhysiologyTick'),text.index('getVariable ["ACME_o2Drain_suction"'))
+        from test_historical_medication_retirement import test_suction_debt_is_computed_before_one_native_target_deduction
+        test_suction_debt_is_computed_before_one_native_target_deduction('salad',.15,1,True)
     def test_fluid_counts_actual_removed_only(self):
         t=src('laryngoFluidDrainLocal');self.assertIn('private _removed = _remaining min _amount',t);self.assertIn('private _ml = _removed * 50',t)
     def test_manual_reservoir_capacity_owner_enforced(self):self.assertIn('1000 - _base',src('laryngoFluidDrainLocal'))
