@@ -21,11 +21,10 @@ def test_finite_provider_animations_are_one_shot_not_watchdog_replayed():
         test_owner_hold_reasserts_only_observed_drift_and_never_replays_running_action(disturbance)
 
 def test_tsp_sling_is_latched_and_never_reinvoked_during_same_handoff():
-    s = txt('functions/fn_medicAnimationPrep.sqf')
-    assert '[_medic, true] call tsp_fnc_animate_sling;' in s
-    assert '_elapsed < 1.25' in s
-    assert 'if (_elapsed < 0.34)' in s
-    assert 'fail safe without replaying its sling gesture' in s
+    # The one-shot guarantee belongs to the current holster reservation, not old TSP timings.
+    from test_historical_weapon_preflight import test_real_pose_handoff_shares_pending_holster_instead_of_restarting_it
+    for weapon in ('pistol','rifle','launcher'):
+        test_real_pose_handoff_shares_pending_holster_instead_of_restarting_it(weapon)
 
 def test_medication_three_column_overlay_is_restored_and_direct_data_driven():
     r = txt('functions/fn_skListRefresh.sqf')

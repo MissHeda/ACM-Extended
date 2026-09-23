@@ -44,25 +44,12 @@ def test_semifowler_provider_runs_requested_full_duration_sequence_and_finishes_
 
 
 def test_provider_weapon_preflight_is_one_clear_only_and_never_tsp_or_auto_redraw():
-    prep = txt('functions/fn_medicAnimationPrep.sqf')
-    start = txt('functions/fn_treatmentPoseStart.sqf')
-    stop = txt('functions/fn_treatmentPoseStop.sqf')
-    assert 'tsp_fnc_animate_sling' not in prep
-    assert prep.count('selectWeapon ""') == 1
-    assert 'selectWeapon ""' not in start
-    assert 'selectWeapon ""' not in stop
-    # Ordinary provider-action controllers must not keep fighting a manual weapon redraw.
-    for rel in [
-        'functions/fn_menuPoseStart.sqf',
-        'functions/fn_directPressureSelf.sqf',
-        'functions/fn_directPressureTorso.sqf',
-        'functions/fn_directPressureTick.sqf',
-        'functions/fn_directPressurePose.sqf',
-        'functions/fn_directPressureStop.sqf',
-        'overrides/fn_treatment.sqf',
-        'overrides/fn_beginCPR.sqf',
-    ]:
-        assert 'selectWeapon ""' not in txt(rel), rel
+    from test_historical_weapon_preflight import test_current_weapon_paths_do_not_invoke_optional_sling_or_direct_reselection, test_one_engine_holster_request_is_retained_across_repeated_controllers, test_pose_direct_pressure_exception_stays_scoped_and_does_not_restore_a_weapon
+    test_current_weapon_paths_do_not_invoke_optional_sling_or_direct_reselection()
+    for weapon,delay in [('pistol',0.95),('rifle',0.70),('launcher',0.70)]:
+        test_one_engine_holster_request_is_retained_across_repeated_controllers(weapon,delay,True)
+    # Established DP theatre intentionally clears logical selection without replaying a holster.
+    test_pose_direct_pressure_exception_stays_scoped_and_does_not_restore_a_weapon()
 
 
 def test_all_bvm_variants_are_class_routed_to_breathing():

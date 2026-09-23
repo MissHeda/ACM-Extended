@@ -27,13 +27,15 @@ if (_weapon == "" && {_visuallyEmpty}) exitWith {
 // Keep the one-shot reservation longer than the treatment preflight timeout so another controller cannot enqueue
 // a second launcher/rifle/pistol put-away chain while the first request is still settling.
 private _previous = _medic getVariable ["ACME_medicAnimationPrep", []];
-if (_previous isEqualType [] && {count _previous >= 2} && {(_previous param [0, ""]) == "empty_hands_once"}) then {
-    private _elapsed = CBA_missionTime - (_previous param [1, -99]);
-    if (_elapsed >= 0 && {_elapsed < 3.2}) exitWith {
-        private _requested = _previous param [2, ""];
-        private _minSettle = if (_requested != "" && {_requested == handgunWeapon _medic}) then {0.95} else {0.70};
-        (_minSettle - _elapsed) max 0.05
-    };
+private _elapsed = if (_previous isEqualType [] && {count _previous >= 2}
+    && {(_previous param [0, ""]) == "empty_hands_once"}) then {
+    CBA_missionTime - (_previous param [1, -99])
+} else {-1};
+// Return from this function, not an inner block, while the original holster is pending.
+if (_elapsed >= 0 && {_elapsed < 3.2}) exitWith {
+    private _requested = _previous param [2, ""];
+    private _minSettle = if (_requested != "" && {_requested == handgunWeapon _medic}) then {0.95} else {0.70};
+    (_minSettle - _elapsed) max 0.05
 };
 
 // If the logical weapon is already clear but the holster animation is still finishing, just wait for the visible

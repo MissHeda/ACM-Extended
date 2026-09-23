@@ -67,16 +67,14 @@ def test_stethoscope_hold_is_minigame_owned():
     assert '[_medic, "stethoscope", _poseEpoch] call ACME_fnc_treatmentPoseStop' in b
 
 def test_tsp_animate_rewrite_optional_sling_support():
-    c = txt('config.cpp'); p = txt('functions/fn_medicAnimationPrep.sqf')
-    assert 'class medicAnimationPrep {}' in c
+    # The current preflight deliberately uses ACE/engine holstering, not TSP sling callbacks.
+    c = txt('config.cpp')
+    assert 'class medicAnimationPrep {};' in c
     req = c.split('requiredAddons[] = {',1)[1].split('};',1)[0]
     assert 'tsp_animate' not in req
-    for x in ['tsp_fnc_animate_sling','tsp_fnc_animate_sling_get','tsp_cba_animate_sling','tsp_slings']:
-        assert x in p
-    assert '[_medic, true] call tsp_fnc_animate_sling' in p
-    assert 'selectWeapon ""' in p
-    st = block(c,'UseStethoscope')
-    assert 'ACME_fnc_medicAnimationPrep' in st
+    from test_historical_weapon_preflight import test_one_engine_holster_request_is_retained_across_repeated_controllers, test_engine_fallback_has_same_provider_and_switchweapon_contract
+    test_one_engine_holster_request_is_retained_across_repeated_controllers('pistol',0.95,True)
+    test_engine_fallback_has_same_provider_and_switchweapon_contract()
 
 def test_roll_uses_shared_medic4_pose_for_2_5_seconds():
     r = txt('functions/fn_rollProviderStart.sqf')

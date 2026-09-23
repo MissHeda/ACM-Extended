@@ -141,17 +141,11 @@ def test_head_elevation_only_rolls_patient_when_actually_prone():
 
 
 def test_generic_provider_work_preflights_to_empty_hands_and_crouch_once():
-    prep = txt('functions/fn_medicAnimationPrep.sqf')
-    tr = txt('overrides/fn_treatment.sqf')
-    assert 'ace_weaponselect_fnc_putWeaponAway' in prep
-    assert 'SwitchWeapon' in prep and '299' in prep
-    assert 'selectWeapon ""' not in prep
-    assert 'ACME_treatmentPreflightActive' in tr
-    assert 'currentWeapon _m == ""' in tr
-    assert 'stance _m == "CROUCH"' in tr
-    assert '_medic setUnitPos "MIDDLE";' in tr
-    assert '_headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"]' in tr
-    assert 'ACME_treatmentPreflightBypass' in tr
+    from test_historical_weapon_preflight import test_native_treatment_waits_for_logical_and_visible_holster_then_crouch, test_repeated_click_cannot_queue_a_second_generic_preflight, test_active_direct_pressure_remains_a_native_handoff_without_reholstering
+    for stance in ('STAND','PRONE','CROUCH'):
+        test_native_treatment_waits_for_logical_and_visible_holster_then_crouch(stance)
+    test_repeated_click_cannot_queue_a_second_generic_preflight()
+    test_active_direct_pressure_remains_a_native_handoff_without_reholstering()
 
 
 def test_generic_acme_treatment_poses_never_choose_standing_medicup_variants():
@@ -175,11 +169,14 @@ def test_no_automatic_weapon_restore_in_core_provider_paths():
 
 
 def test_generic_preflight_never_falls_through_with_weapon_or_standing_state():
-    tr = txt('overrides/fn_treatment.sqf')
-    assert '[_medic,_argsB72,_tokenB72], 3.0' in tr
-    timeout = tr[tr.index('[_medic,_argsB72,_tokenB72], 3.0'):tr.index('}] call CBA_fnc_waitUntilAndExecute;', tr.index('[_medic,_argsB72,_tokenB72], 3.0'))]
-    assert '_args call ace_medical_treatment_fnc_treatment;' not in timeout
-    assert '_m setUnitPos "AUTO";' in timeout
+    # The current preflight has two sequential waits, not the retired single callback tuple.
+    from test_historical_weapon_preflight import test_preflight_timeout_releases_its_own_reservation_without_starting_treatment, test_superseded_preflight_callback_cannot_clear_new_reservation, test_second_phase_does_not_bypass_readiness_after_weapon_or_stance_changes
+    for phase in (0,1):
+        test_preflight_timeout_releases_its_own_reservation_without_starting_treatment(phase)
+        for delivery in ('_deliver','_timeout'):
+            test_superseded_preflight_callback_cannot_clear_new_reservation(phase,delivery)
+    for change in ('_weaponNow="rifle"; _stanceNow="CROUCH";', '_animNowFixture="AmovPknlMstpSrasWpstDnon"; _stanceNow="CROUCH";', '_stanceNow="STAND";'):
+        test_second_phase_does_not_bypass_readiness_after_weapon_or_stance_changes(change)
 
 
 def test_provider_stance_lock_is_released_after_native_and_custom_treatment_end():

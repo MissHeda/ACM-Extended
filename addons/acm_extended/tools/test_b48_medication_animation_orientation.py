@@ -128,9 +128,10 @@ def test_chest_view_follows_actual_patient_orientation():
     assert 'if (_flipLocked) then {' in t
 
 def test_tsp_sling_support_retained():
-    p = txt('functions/fn_medicAnimationPrep.sqf')
+    # Keep the historical identity, but do not reinstate the retired optional sling call.
     req = txt('config.cpp').split('requiredAddons[] = {',1)[1].split('};',1)[0]
-    for token in ['tsp_fnc_animate_sling', 'tsp_fnc_animate_sling_get', 'tsp_cba_animate_sling', 'tsp_slings']:
-        assert token in p
-    assert '[_medic, true] call tsp_fnc_animate_sling' in p
     assert 'tsp_animate' not in req.lower()
+    from test_historical_weapon_preflight import test_one_engine_holster_request_is_retained_across_repeated_controllers, test_logical_clear_during_visible_holster_waits_without_reissuing
+    for ace in (True,False):
+        test_one_engine_holster_request_is_retained_across_repeated_controllers('rifle',0.70,ace)
+    test_logical_clear_during_visible_holster_waits_without_reissuing(True)

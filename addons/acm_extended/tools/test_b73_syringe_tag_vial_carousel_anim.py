@@ -162,15 +162,10 @@ def test_chest_seal_patient_roll_interpolates_without_priority_two():
 
 
 def test_generic_treatment_preflight_uses_transition_priority_one_and_never_restores_weapon():
-    tr = txt('overrides/fn_treatment.sqf')
-    prep = txt('functions/fn_medicAnimationPrep.sqf')
-    stop = txt('functions/fn_treatmentPoseStop.sqf')
-    assert '[_medic, _transition, 1] call ACME_fnc_doAnim;' in tr
-    assert '[_medic, _transition, 2] call ACME_fnc_doAnim;' not in tr
-    assert 'ace_weaponselect_fnc_putWeaponAway' in prep
-    for src in (tr, prep, stop):
-        assert 'selectWeapon (primaryWeapon' not in src
-        assert 'selectWeapon (handgunWeapon' not in src
+    from test_historical_weapon_preflight import test_native_treatment_waits_for_logical_and_visible_holster_then_crouch, test_current_weapon_paths_do_not_invoke_optional_sling_or_direct_reselection
+    for stance in ('STAND','PRONE','CROUCH'):
+        test_native_treatment_waits_for_logical_and_visible_holster_then_crouch(stance)
+    test_current_weapon_paths_do_not_invoke_optional_sling_or_direct_reselection()
 
 
 def test_custom_pose_exit_remains_crouched_and_releases_stance_lock():
