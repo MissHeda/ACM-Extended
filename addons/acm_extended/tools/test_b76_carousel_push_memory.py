@@ -21,17 +21,16 @@ def test_tag_25():
     assert '_lineH = 0.038' in s and '_lineFontH = 0.0185' in s and '_w*0.230' in s
 
 def test_hover_and_opacity():
-    h=txt('functions/fn_skCarouselHover.sqf')
-    assert 'ACME_SK_CarouselExpanded",true' in h
-    assert '[0.14] call ACME_fnc_skDynamicLayout' in h
-    inj=txt('functions/fn_skInject.sqf')
-    assert inj.count('[true] call ACME_fnc_skCarouselHover;') >= 2
+    from test_historical_carousel_input import test_hover_is_presentation_only_and_keeps_selection_and_expansion, test_actual_slot_hover_alpha_changes_without_changing_its_geometry
+    # Hover no longer expands the layout. It still fades the hovered slot and retains tooltip privacy.
+    for expanded in (False,True):
+        for hover in (False,True):
+            test_hover_is_presentation_only_and_keeps_selection_and_expansion(expanded,hover)
+        for slot in range(5):
+            test_actual_slot_hover_alpha_changes_without_changing_its_geometry(expanded,slot)
     r=txt('functions/fn_skCarouselRender.sqf')
-    assert '[0.08,0.34,1.0,0.34,0.08]' in r
     assert '_hit ctrlSetTooltip "";' in r
     assert 'ACME_fnc_skSyringeRemembered' in r and '"???"' in r
-    m=txt('functions/fn_skCarouselMove.sqf')
-    assert '[0.08,0.34,1.0,0.34,0.08]' in m
 
 def test_three_syringe_memory():
     s=txt('functions/fn_skSyringeRemembered.sqf')

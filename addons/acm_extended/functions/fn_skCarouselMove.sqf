@@ -3,9 +3,11 @@
    controls for every A/D/click step and produced client-side frame hitches on some systems. Selection semantics are
    unchanged; only decorative movement interpolation/nudging is removed. */
 disableSerialization;
-params [["_dir", 1, [0]]];
+params [["_dir", 1, [0]], ["_steps", 1, [0]]];
 if (_dir == 0) exitWith {};
 _dir = if (_dir < 0) then {-1} else {1};
+// Existing A/D callers remain one step; only an outer-slot click requests two.
+_steps = if (_steps == 2) then {2} else {1};
 private _d = findDisplay 84000;
 if (isNull _d || {(uiNamespace getVariable ["ACME_SK_View", "syringe"]) != "body"}) exitWith {};
 if (uiNamespace getVariable ["ACME_SK_TagEditMode", false]) exitWith {};
@@ -25,7 +27,7 @@ uiNamespace setVariable ["ACME_SK_CarouselBusy", false];
 private _idx = [_store] call ACME_fnc_skSelectedIndex;
 if (_idx < 0) then {_idx = 0;};
 if (_n > 1) then {
-    private _new = ((_idx + _dir) mod _n);
+    private _new = ((_idx + (_dir * _steps)) mod _n);
     if (_new < 0) then {_new = _new + _n;};
     [_new, _store] call ACME_fnc_skSelectStored;
 };

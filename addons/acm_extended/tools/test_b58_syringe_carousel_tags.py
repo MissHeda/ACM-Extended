@@ -26,13 +26,15 @@ def test_dedicated_syringe_menu_button_and_keys():
     assert '_carousel = _view == "carousel"' in v
 
 def test_carousel_infinite_wrap_and_measured_plunger():
-    r=txt('functions/fn_skCarouselRender.sqf')
-    m=txt('functions/fn_skCarouselMove.sqf')
-    assert 'mod _n' in r and 'mod _n' in m
-    assert '(_amt/_size)' in r
-    assert 'syringe_%1_plunger_ca.paa' in r
-    assert 'ctrlCommit 0.085' in m
-    assert 'ACME_SK_CarouselBusy' in m
+    from test_historical_carousel_input import test_keyboard_steps_keep_wraparound_and_never_mutate_the_store, test_actual_plunger_fraction_uses_total_solution_and_clamps_to_the_barrel
+    # The old interpolation/nudge path is retired. Use the shared immediate selector and total-solution plunger.
+    for count in (0,1,2,3):
+        for direction in (-1,1):
+            test_keyboard_steps_keep_wraparound_and_never_mutate_the_store(count,direction)
+    for size in (1,3,5,10):
+        for fraction in (0,0.5,1,1.2):
+            test_actual_plunger_fraction_uses_total_solution_and_clamps_to_the_barrel(size,fraction)
+    assert 'syringe_%1_plunger_ca.paa' in txt('functions/fn_skCarouselRender.sqf')
 
 def test_tags_have_three_editors_and_all_colors():
     s=txt('functions/fn_skInject.sqf')

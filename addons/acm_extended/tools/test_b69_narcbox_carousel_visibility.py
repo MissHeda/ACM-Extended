@@ -72,10 +72,14 @@ def test_carousel_layout_cannot_reveal_hidden_body_overlays_during_promotion():
 
 
 def test_hover_events_cannot_snap_an_in_flight_carousel():
-    hover = txt('functions/fn_skCarouselHover.sqf')
-    render = txt('functions/fn_skCarouselRender.sqf')
-    assert 'if (uiNamespace getVariable ["ACME_SK_CarouselBusy",false]) exitWith {};' in hover
-    assert '[0.08] call ACME_fnc_skCarouselRender;' in hover
+    from test_historical_carousel_input import test_hover_is_presentation_only_and_keeps_selection_and_expansion, test_actual_slot_hover_alpha_changes_without_changing_its_geometry
+    # There is no interpolated in-flight carousel now. Hover changes alpha, not selection/geometry.
+    for expanded in (False,True):
+        for hover in (False,True):
+            test_hover_is_presentation_only_and_keeps_selection_and_expansion(expanded,hover)
+        test_actual_slot_hover_alpha_changes_without_changing_its_geometry(expanded,2)
+    render=txt('functions/fn_skCarouselRender.sqf')
+    assert 'private _duration = 0;' in render
     assert 'private _carouselBusy = uiNamespace getVariable ["ACME_SK_CarouselBusy",false];' in render
     assert '!_carouselBusy' in render
 

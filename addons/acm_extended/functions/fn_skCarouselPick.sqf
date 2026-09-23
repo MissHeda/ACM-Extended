@@ -1,6 +1,6 @@
-/* B66: clicking a visible carousel syringe uses the same animated step motion as A/D instead of snapping the stable
-   selection index.  Far-left/far-right entries are two sequential steps; the center click simply promotes/holds the
-   carousel. */
+/* Carousel movement is immediate. Resolve the clicked offset in one selection transaction;
+   a delayed second step could otherwise navigate a reopened dialog or another provider's store.
+   The center click keeps its existing browsing/staged-target policy. */
 params [["_offset", 0, [0]]];
 private _d = findDisplay 84000;
 if (isNull _d || {(uiNamespace getVariable ["ACME_SK_View","syringe"]) != "body"}) exitWith {};
@@ -13,10 +13,7 @@ if (_n < 1) exitWith {};
 
 if (_offset != 0) exitWith {
     private _dir = if (_offset < 0) then {-1} else {1};
-    [_dir] call ACME_fnc_skCarouselMove;
-    if (abs _offset > 1) then {
-        [{params ["_dir"]; [_dir] call ACME_fnc_skCarouselMove;},[_dir],0.24] call CBA_fnc_waitAndExecute;
-    };
+    [_dir, if (abs _offset > 1) then {2} else {1}] call ACME_fnc_skCarouselMove;
 };
 
 // Clicking the selected center syringe still toggles normal browsing. A staged administration target keeps the

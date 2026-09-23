@@ -125,14 +125,14 @@ def test_micro_residue_accounting_reference_model():
 
 
 def test_carousel_hover_no_longer_changes_geometry_alpha_or_rerenders():
-    hover = txt('functions/fn_skCarouselHover.sqf')
-    render = txt('functions/fn_skCarouselRender.sqf')
-    assert 'skCarouselRender' not in hover
-    assert 'Never repaint, resize or fade' in hover
-    assert 'if (_hover) then {_w = _w * 1.10' not in render
-    assert '_slot == 2 && {_hover}' not in render
-    assert 'private _activeScale = 1;' in render
-    assert 'private _alpha = 0.85;' in render
+    from test_historical_carousel_input import test_hover_is_presentation_only_and_keeps_selection_and_expansion, test_actual_slot_hover_alpha_changes_without_changing_its_geometry
+    # B78 deliberately restored hover alpha only; keep geometry steady, not the retired blanket render ban.
+    for expanded in (False,True):
+        for hover in (False,True):
+            test_hover_is_presentation_only_and_keeps_selection_and_expansion(expanded,hover)
+        for slot in range(5):
+            test_actual_slot_hover_alpha_changes_without_changing_its_geometry(expanded,slot)
+    assert 'private _activeScale = 1;' in txt('functions/fn_skCarouselRender.sqf')
 
 
 def test_selected_carousel_syringe_has_only_one_live_hitbox():

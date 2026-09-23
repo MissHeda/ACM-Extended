@@ -27,19 +27,11 @@ def test_body_and_carousel_have_compact_and_expanded_geometry():
     assert 'ACME_SK_LayoutBusyUntil' in layout
 
 def test_ad_expands_carousel_and_auto_collapse_is_hover_aware():
-    inj = txt('functions/fn_skInject.sqf')
-    move = txt('functions/fn_skCarouselMove.sqf')
-    tick = txt('functions/fn_skUiTick.sqf')
-    hover = txt('functions/fn_skCarouselHover.sqf')
-    assert 'case 30: {-1}' in inj and 'case 32: {1}' in inj
-    assert 'ACME_SK_CarouselExpanded",true' in move
-    assert 'ACME_fnc_skDynamicLayout' in move
-    assert 'ACME_SK_CarouselCollapseAt' in move
-    assert 'ACME_SK_CarouselHover' in tick
-    assert '_editingTag' in tick and '_colorOpen' in tick and '_heldDir != 0' in tick
-    assert 'ACME_SK_CarouselExpanded", false' in tick
-    assert '[0.12] call ACME_fnc_skDynamicLayout' in tick
-    assert 'diag_tickTime + 0.28' in hover
+    from test_historical_carousel_input import test_keydown_hold_and_keyup_preserve_existing_repeat_cadence, test_expanded_view_collapse_respects_existing_retention_conditions
+    for key,expected in ((30,'id-c'),(32,'id-b')):
+        test_keydown_hold_and_keyup_preserve_existing_repeat_cadence(key,expected)
+    for guard in ('pointer','zone','tag-focus','color','held','pending','editor','busy','none'):
+        test_expanded_view_collapse_respects_existing_retention_conditions(guard)
 
 def test_active_syringe_is_85_percent_then_100_percent_on_hover():
     car = txt('functions/fn_skCarouselRender.sqf')
@@ -60,14 +52,11 @@ def test_same_five_carousel_controls_are_used_in_both_layouts():
     assert 'ctrlCreate ["RscPicture", 84500' not in inj
 
 def test_clicking_visible_syringe_selects_stable_record_and_expands():
-    pick = txt('functions/fn_skCarouselPick.sqf')
-    ensure = txt('functions/fn_skStoreEnsureIds.sqf')
-    selected = txt('functions/fn_skSelectedIndex.sqf')
-    assert 'ACME_fnc_skSelectStored' in pick
-    assert 'ACME_SK_CarouselExpanded",true' in pick
-    assert 'ACME_SK_SiteIdx",-1' in pick
-    assert '_row set [11, _id]' in ensure
-    assert 'param [11, "", [""]]' in selected
+    from test_historical_carousel_input import test_click_selects_its_final_visible_record_once_without_a_deferred_second_step, test_navigation_clears_existing_site_dose_and_discard_transients_without_touching_contents
+    # The pick delegates to the shared identity-preserving move, not an inline index writer.
+    for offset,expected in ((-2,'id-b'),(-1,'id-c'),(1,'id-b'),(2,'id-c')):
+        test_click_selects_its_final_visible_record_once_without_a_deferred_second_step(offset,expected)
+    test_navigation_clears_existing_site_dose_and_discard_transients_without_touching_contents()
 
 def test_preparation_has_optional_none_tag_and_three_invisible_editors():
     inj = txt('functions/fn_skInject.sqf')
@@ -123,12 +112,14 @@ def test_total_solution_volume_drives_stored_plunger_position():
     assert 'syringe_%1_plunger_ca.paa' in car
 
 def test_tag_editing_does_not_steal_ad_typing_and_holds_expanded_view():
-    inj = txt('functions/fn_skInject.sqf')
-    tick = txt('functions/fn_skUiTick.sqf')
-    assert '(ctrlIDC _focus) in [84460,84461,84462,84601,84602,84603]' in inj
-    assert 'exitWith {false}' in inj
-    assert '(ctrlIDC _focus) in [84460,84461,84462]' in tick
-    assert 'ctrlShown (_d displayCtrl 84471)' in tick
+    from test_historical_carousel_input import test_any_edit_control_keeps_ad_typing_and_cancels_an_existing_hold, test_keyup_in_tag_mode_cancels_hold_even_without_an_intervening_tick, test_expanded_view_collapse_respects_existing_retention_conditions
+    # Any CT_EDIT owns typing, including push seconds; do not restore a narrow hardcoded IDC list.
+    for focus in (84460,84461,84462,84601,84602,84603,84830):
+        for key in (30,32):
+            test_any_edit_control_keeps_ad_typing_and_cancels_an_existing_hold(focus,key)
+    for key in (30,32):
+        test_keyup_in_tag_mode_cancels_hold_even_without_an_intervening_tick(key)
+    test_expanded_view_collapse_respects_existing_retention_conditions('editor')
 
 def test_body_hitboxes_wait_for_layout_animation_to_finish():
     hot = txt('functions/fn_skBuildHotspots.sqf')

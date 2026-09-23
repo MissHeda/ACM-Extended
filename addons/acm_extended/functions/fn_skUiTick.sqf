@@ -22,6 +22,14 @@ if (_body) then {
     private _tagEditMode = uiNamespace getVariable ["ACME_SK_TagEditMode", false];
     private _pendingInjection = uiNamespace getVariable ["ACME_SK_PendingInjection",[]];
     private _hasPendingInjection = _pendingInjection isEqualType [] && {count _pendingInjection >= 3};
+    // Focus can change between keyboard events. Never replay a browsing hold into
+    // an editor or resume it after an exclusive edit/push workflow has finished.
+    private _repeatFocus = focusedCtrl _d;
+    if (_tagEditMode || {!isNull _repeatFocus && {ctrlType _repeatFocus == 2}}
+        || {uiNamespace getVariable ["ACME_SK_InjectionBusy", false]}) then {
+        uiNamespace setVariable ["ACME_SK_CarouselHeldDir", 0];
+        uiNamespace setVariable ["ACME_SK_CarouselRepeatAt", 0];
+    };
     private _heldDir = uiNamespace getVariable ["ACME_SK_CarouselHeldDir", 0];
     private _repeatAt = uiNamespace getVariable ["ACME_SK_CarouselRepeatAt", 0];
     if (!_tagEditMode && {_heldDir != 0} && {_now >= _repeatAt} && {!(uiNamespace getVariable ["ACME_SK_CarouselBusy", false])}) then {

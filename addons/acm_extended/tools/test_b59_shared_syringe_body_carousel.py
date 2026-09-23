@@ -48,19 +48,13 @@ def test_body_and_full_carousel_share_stable_id_selection():
     assert 'ACME_fnc_skSelectedIndex' in txt('functions/fn_skCarouselRender.sqf')
 
 def test_ad_keys_drive_both_views_without_stealing_tag_typing():
-    inj = txt('functions/fn_skInject.sqf')
-    move = txt('functions/fn_skCarouselMove.sqf')
-    body_move = txt('functions/fn_skBodySyringeMove.sqf')
-    assert '_view in ["carousel","body"]' in inj
-    assert '(ctrlIDC _focus) in [84460,84461,84462]' in inj
-    assert 'case 30: {-1}' in inj and 'case 32: {1}' in inj
-    assert 'if(_view=="body")exitWith{[_dir]call ACME_fnc_skBodySyringeMove;};' in move
-    assert 'ctrlCommit 0.075' in move
-    assert 'ctrlCommit 0.07' in body_move
-    tick = txt('functions/fn_skUiTick.sqf')
-    assert 'ACME_SK_CarouselHeldDir' in inj and 'ACME_SK_CarouselRepeatAt' in inj
-    assert 'displayAddEventHandler ["KeyUp"' in inj
-    assert '_now + 0.09' in tick and 'ACME_SK_CarouselBusy' in tick
+    from test_historical_carousel_input import test_current_keyboard_route_is_body_only_and_legacy_bridge_uses_the_same_move, test_keydown_hold_and_keyup_preserve_existing_repeat_cadence, test_any_edit_control_keeps_ad_typing_and_cancels_an_existing_hold
+    # One tandem Body Map replaced the separate carousel page. Both entry paths delegate to the same navigation.
+    for view in ('syringe','body'):
+        test_current_keyboard_route_is_body_only_and_legacy_bridge_uses_the_same_move(view)
+    for key,expected in ((30,'id-c'),(32,'id-b')):
+        test_keydown_hold_and_keyup_preserve_existing_repeat_cadence(key,expected)
+        test_any_edit_control_keeps_ad_typing_and_cancels_an_existing_hold(84460,key)
 
 def test_view_buttons_make_carousel_to_body_workflow_explicit():
     view = txt('functions/fn_skSetView.sqf')

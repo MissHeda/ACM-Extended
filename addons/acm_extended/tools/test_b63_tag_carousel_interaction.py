@@ -111,17 +111,19 @@ def test_access_click_is_immediate_selected_syringe_administration():
     assert '!_carouselBusy' in hot
 
 def test_carousel_motion_has_two_phase_scroll_and_clicks_use_it():
-    move = txt('functions/fn_skCarouselMove.sqf')
-    pick = txt('functions/fn_skCarouselPick.sqf')
-    assert 'private _motion = 0.085;' in move
-    assert '_c ctrlCommit _motion;' in move
-    assert '[_motion] call ACME_fnc_skCarouselRender;' in move
-    assert '[_dir] call ACME_fnc_skCarouselMove;' in pick
-    assert 'abs _offset > 1' in pick
+    from test_historical_carousel_input import test_click_selects_its_final_visible_record_once_without_a_deferred_second_step
+    # Phase 121 retired multi-control motion. Do not reinstate 0.085-second interpolation or delayed selection.
+    for offset,expected in ((-2,'id-b'),(-1,'id-c'),(1,'id-b'),(2,'id-c')):
+        test_click_selects_its_final_visible_record_once_without_a_deferred_second_step(offset,expected)
+    move=txt('functions/fn_skCarouselMove.sqf')
+    assert 'CBA_fnc_waitAndExecute' not in move
+    assert '[0] call ACME_fnc_skCarouselRender;' in move
 
 def test_single_syringe_only_nudges_and_does_not_duplicate_neighbors():
-    move = txt('functions/fn_skCarouselMove.sqf')
-    car = txt('functions/fn_skCarouselRender.sqf')
-    assert 'if (_n == 1) exitWith' in move
-    assert 'private _shift=_dir*_rw*0.070;' in move
-    assert '_n == 1 && {_slot != 2}' in car
+    from test_historical_carousel_input import test_keyboard_steps_keep_wraparound_and_never_mutate_the_store
+    # No decorative nudge is needed for the immediate renderer. A sole syringe stays selected.
+    for direction in (-1,1):
+        test_keyboard_steps_keep_wraparound_and_never_mutate_the_store(1,direction)
+    render=txt('functions/fn_skCarouselRender.sqf')
+    assert '_n == 1 && {_slot != 2}' in render
+    assert 'ctrlShow false' in render

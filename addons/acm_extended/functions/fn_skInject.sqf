@@ -403,7 +403,7 @@ _display displayAddEventHandler ["KeyUp", {
         uiNamespace setVariable ["ACME_SK_CarouselRepeatAt",0];
         false
     };
-    if (uiNamespace getVariable ["ACME_SK_TagEditMode",false]) exitWith {_key in [30,32]};
+    // Release a browsing hold even when tag mode currently owns the keyboard.
     private _dir = switch (_key) do {case 30: {-1}; case 32: {1}; default {0};};
     if (_dir == 0) exitWith {false};
     if ((uiNamespace getVariable ["ACME_SK_CarouselHeldDir", 0]) == _dir) then {
@@ -487,6 +487,9 @@ _display setVariable ["ACME_SK_SaveRect", _saveRect];
 // Draw and Save also retain their configured button sounds. Callback replacement cannot mute them.
 private _afterSaveId = uiNamespace getVariable ["ACME_SK_OpenBodyAfterSaveId", ""];
 private _openStoredId = uiNamespace getVariable ["ACME_SK_OpenCarouselId", ""];
+// A closed display may never receive its final KeyUp. A new display owns a fresh hold.
+uiNamespace setVariable ["ACME_SK_CarouselHeldDir", 0];
+uiNamespace setVariable ["ACME_SK_CarouselRepeatAt", 0];
 uiNamespace setVariable ["ACME_SK_CarouselExpanded", false];
 uiNamespace setVariable ["ACME_SK_CarouselHover", false];
 uiNamespace setVariable ["ACME_SK_CarouselHoverOffset", 99];

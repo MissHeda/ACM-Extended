@@ -61,12 +61,11 @@ def test_hover_is_visual_only():
     assert '_activeHit ctrlSetTooltip _activeTip;' in r
 
 def test_expansion_still_click_or_ad():
-    pick=txt('functions/fn_skCarouselPick.sqf')
-    move=txt('functions/fn_skCarouselMove.sqf')
-    inj=txt('functions/fn_skInject.sqf')
-    assert 'call ACME_fnc_skCarouselToggle' in pick
-    assert 'ACME_SK_CarouselExpanded",true' in move
-    assert '[_dir] call ACME_fnc_skCarouselMove;' in inj
+    from test_historical_carousel_input import test_center_click_toggles_browsing_but_keeps_a_staged_target_promoted, test_keydown_hold_and_keyup_preserve_existing_repeat_cadence
+    for pending in (False,True):
+        test_center_click_toggles_browsing_but_keeps_a_staged_target_promoted(pending)
+    for key,expected in ((30,'id-c'),(32,'id-b')):
+        test_keydown_hold_and_keyup_preserve_existing_repeat_cadence(key,expected)
 
 if __name__=='__main__':
     tests=[v for k,v in sorted(globals().items()) if k.startswith('test_')]

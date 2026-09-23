@@ -89,10 +89,9 @@ def test_body_map_no_longer_prints_current_medication_details_at_top():
     assert 'ctrlSetText _sum' not in car
 
 def test_ad_and_click_still_promote_carousel_without_manual_open_button():
-    move = txt('functions/fn_skCarouselMove.sqf')
-    pick = txt('functions/fn_skCarouselPick.sqf')
-    inj = txt('functions/fn_skInject.sqf')
-    assert 'ACME_SK_CarouselExpanded",true' in move
-    assert 'ACME_SK_CarouselExpanded",true' in pick
-    assert 'case 30: {-1}' in inj and 'case 32: {1}' in inj
-    assert 'ACME_fnc_skCarouselToggle' not in inj
+    from test_historical_carousel_input import test_keydown_hold_and_keyup_preserve_existing_repeat_cadence, test_center_click_toggles_browsing_but_keeps_a_staged_target_promoted
+    for key,expected in ((30,'id-c'),(32,'id-b')):
+        test_keydown_hold_and_keyup_preserve_existing_repeat_cadence(key,expected)
+    for pending in (False,True):
+        test_center_click_toggles_browsing_but_keeps_a_staged_target_promoted(pending)
+    assert 'Open Syringe Menu' not in txt('functions/fn_skInject.sqf')
