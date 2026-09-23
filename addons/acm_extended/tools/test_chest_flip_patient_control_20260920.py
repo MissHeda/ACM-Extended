@@ -48,11 +48,16 @@ def test_patient_owner_rejects_stale_or_remote_roll_before_side_effects():
     assert src.count('call ACME_fnc_chestSealCanPhysicalRoll') >= 3
 
 def test_workspace_open_and_close_cannot_convert_conscious_prone_into_roll_permission():
-    begin = read("fn_chestSealPatientBegin.sqf")
-    end = read("fn_chestSealPatientEnd.sqf")
+    begin=read("fn_chestSealPatientBegin.sqf")
     assert 'private _preGrounded = [_patient] call ACME_fnc_chestSealCanPhysicalRoll;' in begin
     assert 'stance _patient) == "PRONE"' not in begin
-    restore = end.split('private _restoreSide = {', 1)[1]
-    assert 'call ACME_fnc_chestSealCanPhysicalRoll' in restore
-    assert 'stance _p) == "PRONE"' not in restore
-    assert 'ACME_obtunded' not in restore
+    from test_historical_chest_workspace import (
+        test_workspace_close_never_forces_conscious_mobile_prone_into_unconscious_pose,
+        test_common_carrier_restore_does_not_override_a_denied_roll,
+    )
+    for carrier in (False,True):
+        for state in ('', '_patient setVariable ["ACME_CS_ProcedureGrounded",true];',
+                      '_patient setVariable ["ACM_core_Lying_State",true];'):
+            test_workspace_close_never_forces_conscious_mobile_prone_into_unconscious_pose(state,carrier)
+        for context in ('access','chestseal'):
+            test_common_carrier_restore_does_not_override_a_denied_roll(context,carrier)

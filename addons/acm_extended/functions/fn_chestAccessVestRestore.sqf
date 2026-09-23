@@ -84,9 +84,8 @@ if (_needFrontNormalize) exitWith {
             };
         }, [_patient,_force,_medic,_context], (_rollTime max 0.1) + 0.08] call CBA_fnc_waitAndExecute;
     } else {
-        private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp","ACM_LyingState"];
-        _patient setVariable ["ACME_CS_facing","front",true];
-        ["ace_common_switchMove",[_patient,_faceUp]] call CBA_fnc_globalEvent;
+        // A denied physical roll is not permission to force an unconscious rest pose.
+        // Retain the existing deferred gear-restoration path without taking body control.
         [{
             params ["_p","_force","_medic","_ctx"];
             if (!isNull _p && {local _p}) then {

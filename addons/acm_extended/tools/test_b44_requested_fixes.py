@@ -21,13 +21,19 @@ def test_roll_provider_emptyhand_wrapper():
     assert '2.5' in f
 
 def test_chest_seal_flip_patient_roll():
-    f=txt('functions/fn_chestSealFlip.sqf')
-    r=txt('functions/fn_chestSealRoll.sqf')
-    assert 'ACME_fnc_chestSealRoll' in f
-    assert 'ACME_fnc_rollProviderStart' in f
-    assert 'owner' in f or 'remoteExec' in f
-    assert 'rolltofront' in r and 'rolltoback' in r
-    assert ', 2] call ACME_fnc_doAnim' in r or ',2] call ACME_fnc_doAnim' in r
+    # Route through the patient owner and preserve a priority-one lease, with the
+    # existing token-scoped priority-two graph repair only if the transition fails.
+    from test_historical_chest_workspace import (
+        test_roll_uses_priority_one_lease_then_only_a_scoped_fallback_and_requested_rest,
+        test_same_side_request_is_a_noop_and_nonlocal_request_is_forwarded,
+    )
+    assert 'ACME_fnc_rollProviderStart' in txt('functions/fn_chestSealFlip.sqf')
+    for target,transition,hold in (
+        ('front','AinjPpneMstpSnonWrflDnon_rolltoback','ACM_LyingState'),
+        ('back','AinjPpneMstpSnonWrflDnon_rolltofront','ace_medical_engine_uncon_anim_1')):
+        for started in (False,True):
+            test_roll_uses_priority_one_lease_then_only_a_scoped_fallback_and_requested_rest(target,transition,hold,started)
+        test_same_side_request_is_a_noop_and_nonlocal_request_is_forwarded(target)
 
 def test_death_is_hard_reset_boundary():
     p=txt('functions/fn_postInit.sqf'); c=txt('functions/fn_clearAllAilments.sqf')

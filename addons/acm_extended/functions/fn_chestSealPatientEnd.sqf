@@ -27,12 +27,15 @@ private _pre = +(_patient getVariable ["ACME_CS_PreProcedureState", ["front", fa
 private _preHeadElev = _pre param [1, false, [false]];
 
 private _forceFrontRest = {
-    params ["_p"];
-    if (isNull _p || {!local _p}) exitWith {};
+    params ["_p","_generation"];
+    // Delayed/timeout cleanup must not reposition a newly opened workspace.
+    if (isNull _p || {!local _p}
+        || {(_p getVariable ["ACME_CS_ProcedureGeneration",-1]) != _generation}
+        || {!((_p getVariable ["ACME_CS_ProcedureTokens",[]]) isEqualTo [])}) exitWith {};
 
     _p setVariable ["ACME_CS_facing", "front", true];
 
-    if (alive _p && {isNull objectParent _p}) then {
+    if (alive _p && {isNull objectParent _p} && {[_p] call ACME_fnc_chestSealCanPhysicalRoll}) then {
         private _actual = [_p, "front"] call ACME_fnc_chestSealActualSide;
         if (_actual != "front") then {
             private _faceUp = missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"];
@@ -47,7 +50,7 @@ private _finalize = {
         || {(_p getVariable ["ACME_CS_ProcedureGeneration",-1]) != _generation}
         || {!((_p getVariable ["ACME_CS_ProcedureTokens",[]]) isEqualTo [])}) exitWith {};
 
-    [_p] call _forceFront;
+    [_p,_generation] call _forceFront;
 
     _p setVariable ["ACME_CS_ProcedureActive", false, true];
     _p setVariable ["ACME_CS_ProcedureReadyAt", -1, true];
@@ -85,21 +88,21 @@ private _restoreCarrier = {
             [_p,_medic,_head,_generation,_finalize,_forceFront,_restoreCarrier] call _restoreCarrier;
         }, [_p,_medic,_head,_generation,_finalize,_forceFront,_restoreCarrier], 12, {
             params ["_p","_medic","_head","_generation","_finalize","_forceFront"];
-            [_p] call _forceFront;
+            [_p,_generation] call _forceFront;
             [_p,_head,_generation,_forceFront] call _finalize;
         }] call CBA_fnc_waitUntilAndExecute;
     };
 
     private _saved = +(_p getVariable ["ACME_CS_vestLoadout", []]);
     if ((count _saved) != 2) exitWith {
-        [_p] call _forceFront;
+        [_p,_generation] call _forceFront;
         [_p,_head,_generation,_forceFront] call _finalize;
     };
 
-    // _frontNormalized=true: this function is only reached after _beginRestore has guaranteed front/supine.
+    // Rollable casualties are front/supine; an ineligible body is left under its own control.
     private _started = [_p,false,_medic,"chestseal",true] call ACME_fnc_chestAccessVestRestore;
     if (!_started) exitWith {
-        [_p] call _forceFront;
+        [_p,_generation] call _forceFront;
         [_p,_head,_generation,_forceFront] call _finalize;
     };
 
@@ -109,11 +112,11 @@ private _restoreCarrier = {
             && {(count (_p getVariable ["ACME_CS_vestLoadout",[]])) != 2}
     }, {
         params ["_p","_head","_generation","_finalize","_forceFront"];
-        [_p] call _forceFront;
+        [_p,_generation] call _forceFront;
         [_p,_head,_generation,_forceFront] call _finalize;
     }, [_p,_head,_generation,_finalize,_forceFront], 12, {
         params ["_p","_head","_generation","_finalize","_forceFront"];
-        [_p] call _forceFront;
+        [_p,_generation] call _forceFront;
         [_p,_head,_generation,_forceFront] call _finalize;
     }] call CBA_fnc_waitUntilAndExecute;
 };
@@ -139,14 +142,14 @@ private _beginRestore = {
 
         [{
             params ["_p","_medic","_head","_generation","_restoreCarrier","_finalize","_forceFront"];
-            [_p] call _forceFront;
+            [_p,_generation] call _forceFront;
             [_p,_medic,_head,_generation,_finalize,_forceFront,_restoreCarrier] call _restoreCarrier;
         }, [_p,_medic,_head,_generation,_restoreCarrier,_finalize,_forceFront], (_rollTime max 0.1) + 0.08]
             call CBA_fnc_waitAndExecute;
     };
 
-    // Last-resort normalization for a grounded/downed casualty whose animation graph is no longer rollable.
-    [_p] call _forceFront;
+    // No physical-roll permission: leave the body alone while completing gear restoration.
+    [_p,_generation] call _forceFront;
     [{
         params ["_p","_medic","_head","_generation","_finalize","_forceFront","_restoreCarrier"];
         [_p,_medic,_head,_generation,_finalize,_forceFront,_restoreCarrier] call _restoreCarrier;

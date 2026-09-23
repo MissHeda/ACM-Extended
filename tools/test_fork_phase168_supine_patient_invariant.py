@@ -20,7 +20,9 @@ def test_chest_restore_normalizes_front_even_with_no_carrier():
     assert normalize < no_custody
     assert '[_patient,"front"] call ACME_fnc_patientRollCancel;' in s
     assert '[_patient,"front",false,objNull,true] call ACME_fnc_chestSealRoll;' in s
-    assert '["ace_common_switchMove",[_patient,_faceUp]]' in s
+    # The final hold remains, but a denied roll must not force a conscious patient down.
+    hold = s.index('["ace_common_switchMove",[_p,_faceUp]]')
+    assert s.index('if (alive _p && {isNull objectParent _p} && {[_p] call ACME_fnc_chestSealCanPhysicalRoll}) then {') < hold
     assert '["_frontNormalized", false, [false]]' in s
 
 def test_chest_seal_never_restores_original_posterior_or_recovery_pose():

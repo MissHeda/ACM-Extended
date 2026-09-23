@@ -79,17 +79,12 @@ def test_release_has_no_pose_rpt_diagnostic():
     assert 'diag_log' not in pose
 
 def test_flip_diagram_is_locked_to_one_requested_endpoint():
-    flip=txt('functions/fn_chestSealFlip.sqf')
-    tick=txt('functions/fn_chestSealTick.sqf')
-    assert 'ACME_CS_FlipTarget' in flip
-    assert 'ACME_CS_FlipLockedUntil' in flip
-    guard=flip.index('if (!_willAnimate) exitWith')
-    target=flip.index('uiNamespace setVariable ["ACME_CS_Side", _newSide]')
-    assert guard < target
-    assert 'uiNamespace setVariable ["ACME_CS_Side", _actualSide]' in flip[guard:target]
-    assert 'if (_flipLocked) then {' in tick
-    assert 'uiNamespace setVariable ["ACME_CS_Side", _flipTarget]' in tick
-    assert 'call ACME_fnc_chestSealActualSide' in tick[tick.index('} else {'):]
+    from test_historical_chest_workspace import test_procedural_canvas_retains_selected_endpoint_without_geometry_reclassification
+    for side,target,expiry,expected in (
+        ('front','back',11,'back'),('back','front',11,'front'),
+        ('back','back',11,'back'),('front','back',10,'front'),
+        ('back','front',9,'back'),('back','invalid',11,'back')):
+        test_procedural_canvas_retains_selected_endpoint_without_geometry_reclassification(side,target,expiry,expected)
 
 def test_pulse_escape_is_consumed_on_main_display():
     p=txt('overrides/fn_feelPulse.sqf')

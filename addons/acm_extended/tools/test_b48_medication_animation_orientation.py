@@ -103,29 +103,25 @@ def test_requested_assessment_animations_and_durations_retained():
     assert '[_medic, "inspect", 6, _patient]' in txt('functions/fn_inspectChestPoseStart.sqf')
 
 def test_chest_view_follows_actual_patient_orientation():
-    c = txt('config.cpp')
-    a = txt('functions/fn_chestSealActualSide.sqf')
-    i = txt('functions/fn_chestSealInit.sqf')
-    t = txt('functions/fn_chestSealTick.sqf')
-    f = txt('functions/fn_chestSealFlip.sqf')
-    r = txt('functions/fn_chestSealRoll.sqf')
-    assert 'class chestSealActualSide {};' in c
-    for token in ['animationState _patient', 'ace_medical_engine_animations', 'modelToWorldVisual', 'vectorCrossProduct']:
-        assert token in a
-    assert 'ACME_CS_facing as the primary signal' in a
-    assert 'ACME_fnc_chestSealActualSide' in i
-    assert 'ACME_fnc_chestSealActualSide' in t
-    assert 'ACME_fnc_chestSealActualSide' in f
-    assert 'ACME_fnc_chestSealActualSide' in r
-    assert 'if (_actualSide != _uiSide)' in t
-    # Flip cannot fabricate the opposite diagram when the body cannot be rolled; during a real roll B57 locks
-    # the diagram to the requested endpoint so intermediate animation geometry cannot make it double-flip.
-    assert 'if (!_willAnimate) exitWith' in f
-    guard=f.index('if (!_willAnimate) exitWith')
-    target=f.index('uiNamespace setVariable ["ACME_CS_Side", _newSide]')
-    assert guard < target
-    assert 'ACME_CS_FlipTarget' in f
-    assert 'if (_flipLocked) then {' in t
+    # Actual surface classifies physical roll endpoints. The later procedural
+    # canvas is explicit-state, not continuously reclassified from moving geometry.
+    from test_historical_chest_workspace import (
+        test_actual_surface_reader_prefers_known_pose_then_geometry_then_cached_side,
+        test_ineligible_patient_flip_remains_a_virtual_view_without_physical_control,
+    )
+    assert 'class chestSealActualSide {};' in txt('config.cpp')
+    for name in ('chestSealRoll','chestSealPatientBegin','chestSealPatientEnd'):
+        assert 'ACME_fnc_chestSealActualSide' in txt('functions/fn_'+name+'.sqf')
+    front=[[0,0,0],[0,1,0],[0,0,0],[1,0,0]]
+    back=[[0,0,0],[0,1,0],[1,0,0],[0,0,0]]
+    for animation,points,cached,expected in (
+        ('ACM_LyingState',back,'back','front'),
+        ('ace_medical_engine_uncon_anim_1',front,'front','back'),
+        ('unknown',front,'back','front'),('unknown',back,'front','back')):
+        test_actual_surface_reader_prefers_known_pose_then_geometry_then_cached_side(animation,points,cached,expected)
+    for side in ('front','back'):
+        for dead in (False,True):
+            test_ineligible_patient_flip_remains_a_virtual_view_without_physical_control(side,dead)
 
 def test_tsp_sling_support_retained():
     # Keep the historical identity, but do not reinstate the retired optional sling call.

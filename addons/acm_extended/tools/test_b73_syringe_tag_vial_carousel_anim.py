@@ -156,9 +156,19 @@ def test_provider_roll_uses_crouch_connected_wrapper_and_no_switchmove_fallback(
 
 
 def test_chest_seal_patient_roll_interpolates_without_priority_two():
-    roll = txt('functions/fn_chestSealRoll.sqf')
-    assert '[_patient, _trans, 1] call ACME_fnc_doAnim;' in roll
-    assert '[_patient, _trans, 2] call ACME_fnc_doAnim;' not in roll
+    # Historical name retained. Normal entry is priority one; forbidding the
+    # current guarded graph-repair fallback would regress swallowed lying-state transitions.
+    from test_historical_chest_workspace import (
+        test_roll_uses_priority_one_lease_then_only_a_scoped_fallback_and_requested_rest,
+        test_delayed_roll_callbacks_recheck_token_and_physical_permission,
+    )
+    for started in (False,True):
+        test_roll_uses_priority_one_lease_then_only_a_scoped_fallback_and_requested_rest(
+            'front','AinjPpneMstpSnonWrflDnon_rolltoback','ACM_LyingState',started)
+    for change in ('_patient setVariable ["ACME_CS_rollToken","new-token"];',
+                   '_patientLocal=false;', '_patientAlive=false;', '_parent=missionNamespace;',
+                   '_patient setVariable ["ACE_isUnconscious",false];'):
+        test_delayed_roll_callbacks_recheck_token_and_physical_permission(change)
 
 
 def test_generic_treatment_preflight_uses_transition_priority_one_and_never_restores_weapon():
