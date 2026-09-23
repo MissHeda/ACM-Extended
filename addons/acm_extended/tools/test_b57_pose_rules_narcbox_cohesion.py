@@ -37,20 +37,17 @@ def test_no_if_not_precedence_trap_anywhere():
             assert not _if_not_precedence_traps(code), p.name
 
 def test_exact_freeze_rules_retained():
-    post=txt('functions/fn_postInit.sqf')
-    block=post[post.index('ACME_poseHoldAt = createHashMapFromArray ['):]
-    block=block[:block.index('];')+2]
-    for token in ('["roll", 2.2]','["inspect", 2.2]','["pulse", 0.691]','["stethoscope", 0.421]'):
-        assert token in block
-    assert '["roll", 0.25]' in post[post.index('ACME_poseStopAfterHold = createHashMapFromArray ['):]
+    from test_historical_pose_lifecycle import test_owner_freeze_uses_current_mode_timeline_despite_frame_overshoot
+    # Pulse now shares the approved stethoscope sample; do not restore its retired 0.691 value.
+    for mode,hold in [('roll',2.2),('chestAccess',2.2),('inspect',2.2),('pulse',.421),('stethoscope',.421)]:
+        test_owner_freeze_uses_current_mode_timeline_despite_frame_overshoot(mode,hold,12)
+    assert '["roll", 0.25]' in txt('functions/fn_postInit.sqf')
 
 def test_owner_freezes_locally_and_sync_does_not_restart_owner():
-    start=txt('functions/fn_treatmentPoseStart.sqf')
-    assert 'if (_phase >= 0) then {_medic switchMove [_main, _phase, 1, false];};\n            _medic setAnimSpeedCoef 0;' in start
-    assert 'private _elapsed = _now - _stageStarted;' in start
-    sync=txt('functions/fn_treatmentPoseSync.sqf')
-    assert '_operation == "hold" && {local _medic} && {owner _medic == _owner}' in sync
-    assert 'same switchMove through the global event can look like a one-frame animation restart' in sync
+    from test_historical_pose_lifecycle import test_hold_receiver_owner_does_not_seek_and_observer_seeks_before_freezing, test_duplicate_hold_reuses_one_observer_worker_and_release_is_idempotent
+    for local,server,client in [(True,False,7),(False,False,8),(False,True,2)]:
+        test_hold_receiver_owner_does_not_seek_and_observer_seeks_before_freezing(local,server,client)
+    test_duplicate_hold_reuses_one_observer_worker_and_release_is_idempotent()
 
 def test_menu_open_is_only_empty_hands_and_crouch_transition():
     start=txt('functions/fn_menuPoseStart.sqf')
@@ -72,11 +69,9 @@ def test_roll_inspect_pulse_cannot_exit_standing():
     assert 'AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon' in stop
 
 def test_exact_roll_inspect_pulse_states_are_never_replaced_by_medicup():
-    start=txt('functions/fn_treatmentPoseStart.sqf')
-    assert 'if !(_mode in ["roll", "inspect", "pulse"]) then {' in start
-    assert 'case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};' in start
-    assert 'case "inspect": {"AinvPknlMstpSnonWnonDnon_medic4"};' in start
-    assert 'case "pulse": {"AinvPknlMstpSnonWrflDnon_medic1"};' in start
+    from test_historical_pose_lifecycle import test_selected_assessment_states_are_crouch_authored_not_standing_substitutes
+    for mode,main in [('roll','AinvPknlMstpSnonWnonDnon_medic4'),('inspect','ACME_ChestInspectWork'),('pulse','ACME_StethoscopeWork')]:
+        test_selected_assessment_states_are_crouch_authored_not_standing_substitutes(mode,main)
 
 def test_release_has_no_pose_rpt_diagnostic():
     pose=txt('functions/fn_poseUprightState.sqf')

@@ -30,28 +30,17 @@ class TreatmentAnimationContracts(unittest.TestCase):
     def test_source_time_is_exact_after_frame_overshoot(self):
         # Evaluate the actual SQF phase expression across source durations and frame
         # rates. A delay-only freeze would stop at the overshot frame instead.
-        for duration in (0.8, 1.116, 3, 7.23, 12, 19.7):
-            for fps in (13, 24, 30, 60, 144):
-                sampled_time = math.ceil(.421 * fps) / fps
-                self.assertGreaterEqual(sampled_time, .421)
-                phase = PHASE({'_duration': duration})
-                self.assertAlmostEqual(phase * duration, .421, places=12)
-        self.assertIn('_medic getUnitMovesInfo 2', START)
-        self.assertIn('_moveTime >= 0.421', START)
-        self.assertIn('switchMove [_main, _phase, 1, false]', SYNC)
-        self.assertLess(SYNC.index('setAnimSpeedCoef 0'), SYNC.index('switchMove [_main'))
+        from test_historical_pose_lifecycle import test_owner_freeze_uses_current_mode_timeline_despite_frame_overshoot
+        # The current controller uses per-mode owner-clock timing and seeks before its final freeze.
+        for mode,hold in [('roll',2.2),('inspect',2.2),('pulse',.421),('stethoscope',.421)]:
+            for duration in (3,12):
+                test_owner_freeze_uses_current_mode_timeline_despite_frame_overshoot(mode,hold,duration)
 
     def test_native_motions_have_work_loops_and_real_crouch_exits(self):
-        for child, native in (
-            ('ACME_ChestInspectWork', 'AinvPknlMstpSnonWrflDr_medic4'),
-            ('ACME_JunctionalWork', 'AinvPknlMstpSnonWnonDnon_medic4'),
-            ('ACME_StethoscopeWork', 'UnconsciousReviveMedic_B'),
-        ):
-            self.assertIn('class ' + child + ': ' + native, CONFIG)
-            block = class_block(child)
-            self.assertIn('looped = 1;', block)
-            self.assertRegex(block, r'interpolateFrom\[\].*AmovPknlMstpSnonWnonDnon')
-            self.assertRegex(block, r'interpolateTo\[\].*AmovPknlMstpSnonWnonDnon.*Unconscious')
+        from test_historical_pose_lifecycle import WRAPPERS, test_work_wrappers_keep_authored_entry_exit_and_weapon_restrictions
+        # Finite inspection uses its held frame; junctional and stethoscope wrappers remain looped.
+        for args in WRAPPERS:
+            test_work_wrappers_keep_authored_entry_exit_and_weapon_restrictions(*args)
 
     def test_ace_has_no_competing_pose_for_owned_progress_actions(self):
         for action in ('ACME_InspectChest', 'ACME_PackJunctional', 'ACME_WrapJunctional'):
@@ -66,11 +55,9 @@ class TreatmentAnimationContracts(unittest.TestCase):
 
     def test_cancel_between_work_request_and_entry_cancels_pending_move(self):
         # Regress stage1: being in crouch does not mean no work is queued.
-        self.assertIn('private _ownsEntry = _stage <= 1', STOP)
-        self.assertIn('amovpknlmstpsnonwnondnon', STOP)
-        self.assertIn('_current == toLower _main || {_ownsEntry}', STOP)
-        self.assertIn('["_medic",', START)
-        self.assertIn('[_medic, "AmovPknlMstpSnonWnonDnon", 1]', STOP)
+        from test_historical_pose_lifecycle import test_matching_stop_clears_its_pending_work_once_and_returns_to_crouch
+        for stage in (-1,-2,0,1,2,3):
+            test_matching_stop_clears_its_pending_work_once_and_returns_to_crouch(stage)
         self.assertNotIn('call ACME_fnc_animQueue', START + STOP)
 
     def test_jip_waits_for_atomic_episode_and_retires_unique_hold(self):
@@ -85,15 +72,10 @@ class TreatmentAnimationContracts(unittest.TestCase):
         self.assertIn('(_record select 1) == "release"', SYNC)
 
     def test_fatigue_and_deleted_provider_cleanup_are_episode_scoped(self):
-        self.assertIn('pushBackUnique _exclusion', START)
-        self.assertIn('_args params ["_medic", "_epoch", "_exclusion"]', START)
-        null_branch = START.split('if (isNull _medic) exitWith {', 1)[1].split('private _state', 1)[0]
-        self.assertIn('removeGlobalEventJIP', null_branch)
-        self.assertIn('setAnimExclusions deleteAt _index', null_branch)
-        self.assertIn('if (_index >= 0)', null_branch)
-        self.assertIn('if (_index >= 0)', STOP)
-        self.assertIn('owner _medic != _owner', SYNC)
-        self.assertIn('setAnimSpeedCoef 1', SYNC)
+        from test_historical_pose_lifecycle import test_deleted_provider_retires_only_its_handler_jip_and_fatigue_exclusion, test_old_owner_tick_cannot_stop_a_new_treatment_episode
+        # Current callback carries entry helpers as well as the episode/exclusion; do not require the old tuple text.
+        test_deleted_provider_retires_only_its_handler_jip_and_fatigue_exclusion()
+        test_old_owner_tick_cannot_stop_a_new_treatment_episode()
 
     def test_stethoscope_lifecycle_has_one_pose_owner_and_native_cleanup(self):
         self.assertNotRegex(CONTINUOUS, r'"ACM_GenericContinuous"')

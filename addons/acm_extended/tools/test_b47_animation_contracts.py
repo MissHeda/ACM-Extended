@@ -20,15 +20,9 @@ def test_version_batch():
     assert_release_identity()
 
 def test_exact_requested_motion_wrappers():
-    c = txt('config.cpp')
-    assert 'class ACME_RollProviderWork: AinvPknlMstpSnonWrflDnon_medic4' in c
-    assert 'class ACME_ChestInspectWork: AinvPknlMstpSnonWrflDnon_medic4' in c
-    assert 'class ACME_ResponseCheckWork: AinvPknlMstpSnonWrflDr_medic3_old' in c
-    assert 'class ACME_AirwayCheckWork: AinvPknlMstpSnonWrflDr_medic4_old' in c
-    for n in ['ACME_RollProviderWork','ACME_ChestInspectWork','ACME_ResponseCheckWork','ACME_AirwayCheckWork']:
-        b = block(c,n)
-        assert 'disableWeapons = 1' in b and 'canPullTrigger = 0' in b
-        assert 'AmovPknlMstpSnonWnonDnon' in b
+    from test_historical_pose_lifecycle import WRAPPERS, test_work_wrappers_keep_authored_entry_exit_and_weapon_restrictions
+    for args in WRAPPERS:
+        test_work_wrappers_keep_authored_entry_exit_and_weapon_restrictions(*args)
 
 def test_check_response_five_seconds_custom_pose():
     b = block(txt('config.cpp'),'CheckResponse')
@@ -54,14 +48,13 @@ def test_inspect_chest_six_seconds():
     assert '[_medic, "inspect", 6, _patient]' in txt('functions/fn_inspectChestPoseStart.sqf')
 
 def test_shared_pose_timing_and_clean_exit():
-    s = txt('functions/fn_treatmentPoseStart.sqf')
-    e = txt('functions/fn_treatmentPoseStop.sqf')
-    for mode, anim in [('response','ACME_ResponseCheckWork'),('airway','ACME_AirwayCheckWork'),('roll','ACME_RollProviderWork'),('stethoscope','ACME_StethoscopeWork')]:
-        assert f'case "{mode}": {{"{anim}"}}' in s
-    assert 'ACME_fnc_medicAnimationPrep' in s
-    assert 'ace_common_setAnimSpeedCoef' in s
-    assert 'AmovPknlMstpSnonWnonDnon' in s and 'AmovPknlMstpSnonWnonDnon' in e
-    assert 'selectWeapon ""' in e
+    from test_historical_pose_lifecycle import test_selected_assessment_states_are_crouch_authored_not_standing_substitutes, test_ordinary_cleanup_remains_bounded_and_releases_temporary_stance
+    for mode,main in [('roll','AinvPknlMstpSnonWnonDnon_medic4'),('inspect','ACME_ChestInspectWork'),('pulse','ACME_StethoscopeWork')]:
+        test_selected_assessment_states_are_crouch_authored_not_standing_substitutes(mode,main)
+    for stance in ('STAND','CROUCH'):
+        test_ordinary_cleanup_remains_bounded_and_releases_temporary_stance(stance)
+    # Entry owns weapon handling; stopping must not reselect or repeatedly holster a weapon.
+    assert 'selectWeapon' not in txt('functions/fn_treatmentPoseStop.sqf')
 
 def test_stethoscope_hold_is_minigame_owned():
     s = txt('functions/fn_treatmentPoseStart.sqf')

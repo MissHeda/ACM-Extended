@@ -77,6 +77,8 @@ if (!_handoff
             if ((_unit getVariable ["ACME_treatmentPoseState", []]) isNotEqualTo []) exitWith {};
             if ((_unit getVariable ["ACME_treatmentPoseEpoch", 0]) != _endedEpoch) exitWith {};
             if (!isNull objectParent _unit) exitWith {};
+            // A newer controller may own stance without incrementing the treatment-pose epoch.
+            if ([_unit] call ACME_fnc_providerStanceOwned) exitWith {};
             if (stance _unit == "STAND") then {
                 _unit setUnitPos "MIDDLE";
                 [_unit, "AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon", 1] call ACME_fnc_doAnim;

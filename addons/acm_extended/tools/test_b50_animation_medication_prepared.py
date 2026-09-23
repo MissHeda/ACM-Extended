@@ -14,15 +14,11 @@ def test_version_batch():
     assert_release_identity()
 
 def test_finite_provider_animations_are_one_shot_not_watchdog_replayed():
-    s = txt('functions/fn_treatmentPoseStart.sqf')
-    assert 'case "response": {"AinvPknlMstpSnonWrflDr_medic3_old"};' in s
-    assert 'case "airway": {"AinvPknlMstpSnonWrflDr_medic4_old"};' in s
-    assert 'case "roll": {"AinvPknlMstpSnonWrflDnon_medic4"};' in s
-    # Immediate, TSP-delayed, and hot-reload compatibility starts only. No Stage 1/2 0.10s restart loop.
-    assert s.count('[_medic, _main, 2] call ACME_fnc_doAnim;') == 3
-    assert 'CBA_missionTime - _lastAssert >= 0.10' not in s
-    assert 'Do not replay the requested state while it is entering' in s
-    assert 'CBA_missionTime - _lastAssert >= 0.25' in s  # held stethoscope frame only
+    from test_historical_pose_lifecycle import test_finite_work_enters_once_without_a_fixed_replay_loop, test_owner_hold_reasserts_only_observed_drift_and_never_replays_running_action
+    for mode in ('response','airway','torsoBandage'):
+        test_finite_work_enters_once_without_a_fixed_replay_loop(mode)
+    for disturbance in ('none','speed','state'):
+        test_owner_hold_reasserts_only_observed_drift_and_never_replays_running_action(disturbance)
 
 def test_tsp_sling_is_latched_and_never_reinvoked_during_same_handoff():
     s = txt('functions/fn_medicAnimationPrep.sqf')
