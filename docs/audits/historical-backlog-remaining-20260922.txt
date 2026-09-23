@@ -1,16 +1,9 @@
-Unresolved original source-contract outcomes after batch 6: 194
-Base: f44efd601cad1f0f47c5f0bb28a37a9d42731ace
+Unresolved original source-contract outcomes after batch 7: 187
+Base: 0b583737f8542a56fb66ad739c587aaadf3deefd
 Not a waiver, skip list, or expected-failure list. Each ID retains its original identity.
 
-H015 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_ace_timer_events_drive_artifact
-H018 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_monitor_generators_apply_artifact
-H021 addons/acm_extended/tools/test_b19_vials_pea_artifact.py::B19Source::test_pea_morphology_distinct_from_sinus
-H040 addons/acm_extended/tools/test_b21_rhythm_sync.py::B21RhythmRegression::test_threshold_forced_vt_can_recover_but_true_vt_is_not_blanket_cleared
 H044 addons/acm_extended/tools/test_b22_narc_revert.py::B22UIContracts::test_infusion_inherits_same_original_row_overlay
 H051 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23RouteSelector::test_selected_route_has_green_backing
-H076 addons/acm_extended/tools/test_b31_junctional_balance.py::JunctionalB31::test_active_and_fallback_balance_match
-H077 addons/acm_extended/tools/test_b31_junctional_balance.py::JunctionalB31::test_compensated_two_junction_window_is_materially_longer
-H078 addons/acm_extended/tools/test_b31_junctional_balance.py::JunctionalB31::test_corpse_render_keeps_evidence_without_rebleed_progression
 H120 addons/acm_extended/tools/test_b37_labels_and_order.py::LabelsAndOrder::test_both_posture_actions_remain_on_head_and_chest
 H121 addons/acm_extended/tools/test_b37_labels_and_order.py::LabelsAndOrder::test_default_palette_and_optional_separate_colors
 H131 addons/acm_extended/tools/test_b40_animation_audit.py::test_direct_pressure_entry_exit_are_priority_one

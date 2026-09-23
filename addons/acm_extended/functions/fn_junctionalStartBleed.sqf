@@ -187,11 +187,12 @@ private _handle = [{
                 // to its true open-state bleed rate. No permanent partial packing is written before success.
                 private _gauze = missionNamespace getVariable ["ACME_junctionalGauzeControl", 0.50];
                 private _packProgress = 0;
+                private _packingPart = _x; // The inner map loop uses _x for its transaction key.
                 private _activeBandages = _unit getVariable ["ACM_damage_BandageProgress", createHashMap];
                 if (_activeBandages isEqualType createHashMap) then {
                     {
                         _y params ["_bp", "", "_started", "_duration", ["_bandageClass", ""]];
-                        if (_bandageClass == "ACME_PackJunctional" && {_bp == _x}) then {
+                        if (_bandageClass == "ACME_PackJunctional" && {_bp == _packingPart}) then {
                             private _p = ((serverTime - _started) / (_duration max 0.01)) max 0 min 1;
                             _packProgress = _packProgress max (_p * _p);
                         };

@@ -22,14 +22,14 @@ class B21RhythmRegression(unittest.TestCase):
         self.assertGreaterEqual(score,35)
 
     def test_threshold_forced_vt_can_recover_but_true_vt_is_not_blanket_cleared(self):
-        src=read('functions/fn_rhythmThresholdTick.sqf')
-        self.assertIn('ACME_rhythmNativeVTRecoverHR', src)
-        self.assertIn('ACME_rhythmNativeVTRecoverSec', src)
-        self.assertIn('== "ACM VT fallback"', src)
-        self.assertIn('!(_u getVariable ["ace_medical_inCardiacArrest", false])', src)
-        self.assertIn('[_u, 0] call ACME_fnc_rhythmSet;', src)
-        # Recovery is source-tagged; no unconditional "if VT then sinus" shortcut.
-        self.assertNotIn('if (_rhythm == 4) then { [_u, 0] call ACME_fnc_rhythmSet;', src)
+        # Native ACM now owns VT recovery; the Extended fallback latch was retired.
+        # Execute native recovery and the observer's noninterference contract instead of demanding that latch.
+        from test_historical_ecg_artifact_execution import test_native_critical_vitals_owns_recovery_without_an_extended_vt_timer
+        from test_historical_cardiac_execution import test_threshold_observer_never_clears_native_critical_rhythm_without_treatment
+        for rate,pressure,recovered in ((80,[80,120],True),(45,[80,120],False),(210,[80,120],False),(80,[45,65],False)):
+            test_native_critical_vitals_owns_recovery_without_an_extended_vt_timer(rate,pressure,recovered)
+        for rhythm in (-1,1,2,3,4):
+            test_threshold_observer_never_clears_native_critical_rhythm_without_treatment(rhythm)
 
     def test_new_rhythm_tunables_are_registered(self):
         fields=read('functions/fn_clinicalFields.sqf')

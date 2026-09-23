@@ -18,7 +18,8 @@ private _dp = false;
 } forEach ["head","body","leftarm","rightarm","leftleg","rightleg"];
 if (_dp) then {_s = _s max 0.62;};
 // suction and recent bagging can tug the head/circuit/pads, but are milder than CPR.
-private _sessions = (_patient getVariable ["ACME_suctionSessions", []]) select {(_x param [4,-1]) > _now};
+// Suction records store expiry at index 2; index 4 is the clinical episode.
+private _sessions = (_patient getVariable ["ACME_suctionSessions", []]) select {(_x param [2,-1]) > _now};
 if !(_sessions isEqualTo []) then {_s = _s max 0.42;};
 if (((serverTime - (_patient getVariable ["ACME_bvm_lastBreathServer", -99])) max 0) < 1.2) then {_s = _s max 0.30;};
 if (!isNull (_patient getVariable ["ace_medical_CPR_provider", objNull])) then {_s = 1.0;};

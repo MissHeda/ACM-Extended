@@ -14,7 +14,14 @@ def source(name):
 
 
 def configured_norm(name):
-    return float(re.search(r'ACME_junctionalBleedNorm\s*=\s*([.\d]+);', source(name))[1])
+    # Baselines are named settings now; applyHardcore composes them with the user's multiplier.
+    # Read canonical numeric defaults for the retained isolated reference model. Execution tests below
+    # separately exercise the real runtime assignment rather than treating this parser as physiology proof.
+    key = 'ACME_junctionalBleedHardcoreNorm' if name == 'applyHardcore' else 'ACME_junctionalBleedBaseNorm'
+    text = source('initJunctionalConfig')
+    values = re.findall(r'\b'+key+r'\s*=\s*([.\d]+);', text)
+    assert len(values) == 1, (key, values)
+    return float(values[0])
 
 
 def isolated_two_litre_time(norm, parts, compensation=False):
@@ -47,7 +54,10 @@ class JunctionalB31(unittest.TestCase):
         self.assertEqual(configured_norm('postInit'), 0.10)
         self.assertEqual(configured_norm('applyHardcore'), 0.15)
         self.assertIn('["ACME_junctionalBleedNorm", 0.10]', source('junctionalStartBleed'))
-        self.assertIn('["ACME_junctionalPackControl", 0.0]', source('junctionalStartBleed'))
+        from test_historical_junctional_execution import test_junctional_difficulty_uses_current_base_and_multiplier_without_compounding
+        for hardcore in (False,True):
+            for multiplier in (0.5,1.0,2.0):
+                test_junctional_difficulty_uses_current_base_and_multiplier_without_compounding(hardcore,multiplier)
 
     def test_isolated_loss_matches_analytic_stroke_curve(self):
         for parts in (1, 2):
@@ -106,13 +116,12 @@ class JunctionalB31(unittest.TestCase):
             self.assertIn('!alive _unit', source(name))
 
     def test_corpse_render_keeps_evidence_without_rebleed_progression(self):
-        image = source('updateJunctionalImage')
-        self.assertIn('_woundC ctrlShow (_state in ["open", "packed", "xstat"]);', image)
-        self.assertIn('_packedC ctrlShow (_state in ["packed", "xstat"]);', image)
-        self.assertIn('_wrapC ctrlShow (_state == "wrapped");', image)
-        self.assertNotIn('alive _target', image)
+        from test_historical_junctional_execution import test_junctional_body_evidence_uses_current_layers_on_live_and_dead_patients, test_junctional_injury_label_reads_frozen_state_without_advancing_rebleed
+        for state in ('open','packed','xstat','wrapped',''):
+            test_junctional_body_evidence_uses_current_layers_on_live_and_dead_patients(state,False)
+        for rebled in (True,False):
+            test_junctional_injury_label_reads_frozen_state_without_advancing_rebleed(False,rebled)
         self.assertIn('alive _target,', source('junctionalGuiSyncTick'))
-        self.assertIn('if (alive _target && {(time - _at) > _xDwell})', source('junctionalInjuryEntry'))
 
     def test_packing_layers_over_wound_without_fade(self):
         image = source('updateJunctionalImage')

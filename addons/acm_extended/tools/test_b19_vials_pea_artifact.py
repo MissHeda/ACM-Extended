@@ -61,13 +61,12 @@ class B19Source(unittest.TestCase):
         self.assertIn('ACM_circulation_AED_NIBP_Display", [0,0]',read('functions/fn_circHandle.sqf'))
         co=read('overrides/fn_getCardiacOutput.sqf'); self.assertIn('rhythmGet) == 5',co); self.assertIn('exitWith {0}',co)
     def test_pea_morphology_distinct_from_sinus(self):
-        g=read('overrides/fn_genEKG.sqf')
-        self.assertIn('case 5: {  // true PEA',g)
-        self.assertIn('[0,-2,-8,-20,-38,-50',g)
-        m=read('functions/fn_megacodePanelTick.sqf')
-        self.assertIn('case (_acmRhythm == 5)',m)
-        self.assertNotIn('case (_acmRhythm in [0, 5])',m)
-        self.assertIn('_SBP = 0; _DBP = 0',m)
+        # Current PEA has a narrow/default and a severe-burden wide subtype.
+        # Neither waveform creates mechanical perfusion. Do not restore the retired all-wide template.
+        from test_historical_ecg_artifact_execution import test_pea_subtype_changes_morphology_without_changing_rhythm_or_circulation, test_megacode_routes_both_ecg_windows_through_native_generator
+        for blood,calcium,wide in ((0,0,False),(2,0,False),(2.1,0,True),(2.1,0.1,False),(3,0.5,True)):
+            test_pea_subtype_changes_morphology_without_changing_rhythm_or_circulation(blood,calcium,wide)
+        test_megacode_routes_both_ecg_windows_through_native_generator()
     def test_artifact_is_visual_only_and_network_visible(self):
         a=read('functions/fn_ecgArtifactApply.sqf')
         self.assertIn('_mask set [_idx, false]',a)
@@ -76,14 +75,15 @@ class B19Source(unittest.TestCase):
         o=read('functions/fn_ownerDispatch.sqf'); self.assertIn('case "ecgJostle"',o)
         e=read('functions/fn_ecgJostleLocal.sqf'); self.assertIn('ACME_ecgJostleLeases',e); self.assertIn(', true]',e)
     def test_ace_timer_events_drive_artifact(self):
-        p=read('functions/fn_postInit.sqf')
-        for ev in ('ace_treatmentStarted','ace_treatmentSucceded','ace_treatmentFailed'):
-            self.assertIn(ev,p)
-        for rel in ('functions/fn_ivMinigameOpen.sqf','functions/fn_chestSealOpen.sqf','functions/fn_thoraOpen.sqf','functions/fn_laryngoInit.sqf'):
-            self.assertIn('ACME_fnc_ecgJostleRequest',read(rel))
+        from test_historical_ecg_artifact_execution import test_timed_treatments_publish_and_release_only_their_own_artifact_lease, test_minigame_artifact_start_and_close_use_matching_keys_at_current_entry_modules
+        for ending in ('ace_treatmentSucceded','ace_treatmentFailed'):
+            test_timed_treatments_publish_and_release_only_their_own_artifact_lease(ending)
+        test_minigame_artifact_start_and_close_use_matching_keys_at_current_entry_modules()
     def test_monitor_generators_apply_artifact(self):
-        g=read('overrides/fn_genEKG.sqf'); self.assertGreaterEqual(g.count('ACME_fnc_ecgArtifactApply'),2)
-        self.assertIn('ACME_fnc_ecgArtifactStrength',read('functions/fn_megacodePanelTick.sqf'))
+        from test_historical_ecg_artifact_execution import test_native_and_custom_generator_paths_apply_same_artifact_boundary, test_megacode_routes_both_ecg_windows_through_native_generator
+        for rhythm in (0,1,2,3,4,5,104):
+            test_native_and_custom_generator_paths_apply_same_artifact_boundary(rhythm)
+        test_megacode_routes_both_ecg_windows_through_native_generator()
 
 class B19Reference(unittest.TestCase):
     def test_propofol_50ml_conserves_five_ten_ml_draws(self):
