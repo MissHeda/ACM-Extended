@@ -10,7 +10,8 @@
  * the fluid-pressure syncope. A saline flush uses mode "fluid" and therefore follows the fluid rule.
  */
 params ["_patient", ["_bodyPart", "body"], ["_mode", "fluid"]];
-if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
+if (isNull _patient || {!alive _patient} || {!local _patient}
+    || {_patient getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
 _mode = toLowerANSI _mode;
 
 private _isUncon = (_patient getVariable ["ACE_isUnconscious", false])
@@ -50,16 +51,24 @@ if (_mode == "fluid" && {!_isUncon}) then {
         _patient setVariable ["ACME_ioSyncopeSerial", _serial, false];
         _patient setVariable ["ACME_ioSyncopeToken", _serial, false];
         private _delay = (missionNamespace getVariable ["ACME_ioFluidSyncopeDelay", 3]) max 0.1;
+        // A full heal can reset the serial to zero. The clinical epoch prevents an
+        // older callback from consuming an identically numbered new-episode job.
+        private _epoch = [_patient] call ACME_fnc_clinicalEpoch;
+        private _owner = owner _patient;
         [{
-            params ["_patient", "_token"];
-            if (isNull _patient || {!local _patient} || {!alive _patient}) exitWith {};
+            params ["_patient", "_token", "_epoch", "_owner"];
+            if (isNull _patient || {!local _patient} || {!alive _patient}
+                || {owner _patient != _owner}
+                || {([_patient] call ACME_fnc_clinicalEpoch) != _epoch}
+                || {_patient getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
             if ((_patient getVariable ["ACME_ioSyncopeToken", -1]) != _token) exitWith {};
             _patient setVariable ["ACME_ioSyncopeToken", -1, false];
             private _alreadyUncon = (_patient getVariable ["ACE_isUnconscious", false])
                 || {_patient getVariable ["ace_medical_unconscious", false]};
-            if (!_alreadyUncon && {!isNil "ace_medical_status_fnc_setUnconsciousState"}) then {
-                [_patient, true] call ace_medical_status_fnc_setUnconsciousState;
+            if (!_alreadyUncon && {!isNil "ace_medical_fnc_setUnconscious"}) then {
+                // Use the same medical transition as other ACME unconscious entries.
+                [_patient, true, 0, false] call ace_medical_fnc_setUnconscious;
             };
-        }, [_patient, _serial], _delay] call CBA_fnc_waitAndExecute;
+        }, [_patient, _serial, _epoch, _owner], _delay] call CBA_fnc_waitAndExecute;
     };
 };

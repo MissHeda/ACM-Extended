@@ -61,17 +61,28 @@ class QuietOutput(unittest.TestCase):
         for p in ['functions/fn_ivMinigameRegister.sqf','functions/fn_medLog.sqf']:
             self.assertIn('ace_medical_treatment_fnc_addToLog',read(p))
     def test_finite_value_guard_remains(self):
-        s=read('overrides/fn_getBloodVolumeChange.sqf')
-        self.assertIn('finite _v',s)
-        self.assertEqual(s.count('call _fnc_finite'),4)
-        self.assertIn('_fallback',s)
+        from test_historical_core_boundaries import (
+            test_ace_volume_bridge_delegates_inputs_and_return_without_second_integration,
+            test_actual_native_volume_exit_preserves_valid_values_and_routes_bad_values_to_fallbacks,
+        )
+        # The guard lives in the canonical circulation transaction, not its ACE bridge.
+        s = (R.parent / "circulation/functions/fnc_getBloodVolumeChange.sqf").read_text()
+        self.assertIn('finite _v', s)
+        self.assertEqual(s.count('call _fnc_finite'), 4)
+        self.assertIn('_fallback', s)
+        test_ace_volume_bridge_delegates_inputs_and_return_without_second_integration()
+        test_actual_native_volume_exit_preserves_valid_values_and_routes_bad_values_to_fallbacks(5, .2, .1, 5.5, 4, True)
+        test_actual_native_volume_exit_preserves_valid_values_and_routes_bad_values_to_fallbacks([], 2, 1, "bad", 4, True)
     def test_restore_rejections_remain(self):
         s=read('overrides/fn_deserializeState.sqf')
         for guard in ['if (isNull _state) exitWith', 'if (!_clockOK) exitWith', 'if (_invalid != "") exitWith']:
             self.assertIn(guard,s)
     def test_binding_results_are_kept(self):
-        self.assertIn('ACME_NA3_bindingResult = call ACME_fnc_clinicalBindings',read('functions/fn_clinicalInit.sqf'))
-        self.assertIn('ACME_runtimeOverrideStatus',read('functions/fn_postInit.sqf'))
+        from test_historical_core_boundaries import test_delayed_native_binding_diagnostic_retains_real_results_and_detects_missing_bindings
+        self.assertIn('ACME_NA3_bindingResult = call ACME_fnc_clinicalBindings', read('functions/fn_clinicalInit.sqf'))
+        # Native function ownership replaced the obsolete runtime-override status mirror.
+        for missing in ("", "ACM_core_fnc_onUnconscious"):
+            test_delayed_native_binding_diagnostic_retains_real_results_and_detects_missing_bindings(missing, False)
     def test_network_report_keeps_rates_and_rows(self):
         s=read('functions/fn_netReport.sqf')
         self.assertIn('ACME_netReportDetails',s)

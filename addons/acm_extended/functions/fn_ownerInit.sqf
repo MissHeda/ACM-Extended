@@ -64,6 +64,9 @@ ACME_NA2_ownerInstalled = true;
 ["ACME_thoraOutput", { if (isServer) then { isNil { _this call ACME_fnc_thoraOutput; }; }; }] call CBA_fnc_addEventHandler;
 ["CAManBase", "Local", {
     params ["_unit", "_isLocal"];
+    // IO syncope timers are machine-local. A departed owner's job must neither
+    // resume after an away/back transfer nor strand the returning owner's token.
+    _unit setVariable ["ACME_ioSyncopeToken", -1, false];
     // Also invalidates an old callback on an away-and-back locality change.
     _unit setVariable ["ACME_wakeRepairTicket", (_unit getVariable ["ACME_wakeRepairTicket", 0]) + 1, false];
     [_unit] call ACME_fnc_aajtDownedStop;

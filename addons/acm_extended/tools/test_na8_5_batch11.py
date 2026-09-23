@@ -43,7 +43,9 @@ class SettingsTests(unittest.TestCase):
     def test_no_new_cache_switch(self):self.assertNotRegex(code(src('postInit')),r'setVariable\s*\[\s*"ACME_hc_descriptors"')
 
 class ConnectorTests(unittest.TestCase):
-    def test_native_delegate_exact(self):self.assertIn('class treatment { file = "\\x\\ACM\\addons\\core\\overrides\\fnc_treatment.sqf"; };',read('config.cpp'))
+    def test_native_delegate_exact(self):
+        from test_historical_core_boundaries import test_treatment_override_is_registered_under_the_native_core_owner
+        test_treatment_override_is_registered_under_the_native_core_owner()
     def test_checks_permissions(self):self.assertIn('_this call ace_medical_treatment_fnc_canTreat',read('overrides/fn_treatment.sqf'))
     def test_checks_interaction(self):self.assertIn('call ace_common_fnc_canInteractWith',read('overrides/fn_treatment.sqf'))
     def test_checks_distance(self):self.assertIn('call ACME_fnc_ventRecoveryNear',read('overrides/fn_treatment.sqf'))

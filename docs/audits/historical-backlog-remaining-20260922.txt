@@ -1,6 +1,6 @@
-Unresolved original source-contract outcomes after batch 8: 178
-Base: f5f2c3b436a3462103256f78596df1fcf9653d7d
-Not a waiver, skip list, or expected-failure list. Each ID retains its original identity.
+Unresolved original source-contract outcomes in local batch 9 candidate: 174
+Base: 1aaf9953e0036babbe37c9800cd32e1768c66600
+Candidate not published to GitHub. Not a waiver, skip list, or expected-failure list.
 
 H044 addons/acm_extended/tools/test_b22_narc_revert.py::B22UIContracts::test_infusion_inherits_same_original_row_overlay
 H051 addons/acm_extended/tools/test_b23_narc_route_dead.py::B23RouteSelector::test_selected_route_has_green_backing
@@ -18,7 +18,6 @@ H148 addons/acm_extended/tools/test_b42_medication_menu_dp.py::test_auscultate_c
 H156 addons/acm_extended/tools/test_b44_requested_fixes.py::test_roll_provider_emptyhand_wrapper
 H157 addons/acm_extended/tools/test_b44_requested_fixes.py::test_chest_seal_flip_patient_roll
 H165 addons/acm_extended/tools/test_b45_medication_steth_io_logs.py::test_medication_column_visible_in_body_and_infusion_views
-H167 addons/acm_extended/tools/test_b45_medication_steth_io_logs.py::test_io_pain_fires_on_actual_bag_volume_and_exact_io_pushes
 H170 addons/acm_extended/tools/test_b46_narcbox_medication_render.py::test_b38_runtime_title_bar_is_removed_from_renderer
 H171 addons/acm_extended/tools/test_b46_narcbox_medication_render.py::test_separate_count_child_control_is_removed
 H172 addons/acm_extended/tools/test_b46_narcbox_medication_render.py::test_tick_updates_one_combined_stock_control
@@ -167,9 +166,6 @@ H386 addons/acm_extended/tools/test_b90_critical_provider_cpr_bvm.py::test_cpr_a
 H388 addons/acm_extended/tools/test_chest_flip_patient_control_20260920.py::test_workspace_open_and_close_cannot_convert_conscious_prone_into_roll_permission
 H389 addons/acm_extended/tools/test_chest_interaction_followup.py::test_patient_flip_cannot_dispatch_from_the_button_or_prep_state
 H390 addons/acm_extended/tools/test_chest_interaction_followup.py::test_both_burp_paths_check_patient_ownership_without_a_timer
-H395 addons/acm_extended/tools/test_na8_5_batch1.py::QuietOutput::test_binding_results_are_kept
-H396 addons/acm_extended/tools/test_na8_5_batch1.py::QuietOutput::test_finite_value_guard_remains
-H410 addons/acm_extended/tools/test_na8_5_batch11.py::ConnectorTests::test_native_delegate_exact
 H415 addons/acm_extended/tools/test_na8_5_batch11.py::DistanceTests::test_floor_restore_uses_asl
 H416 addons/acm_extended/tools/test_na8_5_batch11.py::DistanceTests::test_helper_created_at_patient
 H428 addons/acm_extended/tools/test_na8_5_batch2.py::EmmaSource::test_existing_state_keys_are_retained

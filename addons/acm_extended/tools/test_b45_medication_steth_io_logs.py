@@ -60,12 +60,17 @@ def test_stethoscope_dialog_does_not_depend_on_pose_episode():
 
 
 def test_io_insertion_has_moderate_floor_and_fluid_has_max_pain_syncope():
-    s = text('functions/fn_ioPainResponse.sqf')
-    assert '"placement"' in s
-    assert 'ACME_ioInsertionMinPain' in s
-    assert 'ace_medical_pain", 1, true' in s
-    assert 'ACME_ioFluidSyncopeDelay' in s
-    assert 'ace_medical_status_fnc_setUnconsciousState' in s
+    from test_historical_io_lifecycle import (
+        test_placement_keeps_existing_floor_without_scheduling_syncope,
+        test_flow_and_medication_preserve_pain_but_only_awake_fluid_schedules,
+        test_syncope_uses_public_transition_once_after_the_existing_delay,
+    )
+    for pain in (0, 0.35, 1):
+        test_placement_keeps_existing_floor_without_scheduling_syncope(pain, False)
+    for mode in ("fluid", "medication"):
+        test_flow_and_medication_preserve_pain_but_only_awake_fluid_schedules(mode, False)
+    test_syncope_uses_public_transition_once_after_the_existing_delay(3)
+    # Preserve current policy constants and native placement event registration.
     p = text('functions/fn_postInit.sqf')
     assert 'ACME_ioInsertionMinPain = 0.35;' in p
     assert 'ACME_ioFluidSyncopeDelay = 3;' in p
@@ -74,13 +79,18 @@ def test_io_insertion_has_moderate_floor_and_fluid_has_max_pain_syncope():
 
 
 def test_io_pain_fires_on_actual_bag_volume_and_exact_io_pushes():
-    b = text('overrides/fn_getBloodVolumeChange.sqf')
-    assert 'if (_admitted > 0 && {_accessType in [ACM_IO_FAST1_M, ACM_IO_EZ_M]})' in b
-    assert '[_unit, _targetBodyPart, "fluid"] call ACME_fnc_ioPainResponse;' in b
-    p = text('functions/fn_postInit.sqf')
-    assert 'whole-unit watcher is removed' in p
-    m = text('functions/fn_medicationLineLocal.sqf')
-    assert 'if (_iv && {_site == -1}) then {[_patient, _bodyPart, "fluid"] call ACME_fnc_ioPainResponse;};' in m
+    from test_historical_core_boundaries import (
+        test_ace_volume_bridge_delegates_inputs_and_return_without_second_integration,
+        test_only_positive_admitted_io_bag_volume_reaches_the_actual_response,
+    )
+    from test_historical_io_lifecycle import test_actual_medication_line_routes_only_io_and_debounces_receipts
+    test_ace_volume_bridge_delegates_inputs_and_return_without_second_integration()
+    for admitted in (0, 25):
+        for access in ("ACM_IO_FAST1_M", "ACM_IO_EZ_M", "1"):
+            test_only_positive_admitted_io_bag_volume_reaches_the_actual_response(admitted, access)
+    # IO medication pushes retain their medication mode; actual carrier flushes use fluid mode.
+    for site, operation, mode in ((-1, "administer", "medication"), (-1, "flush", "fluid"), (0, "flush", "")):
+        test_actual_medication_line_routes_only_io_and_debounces_receipts(site, operation, mode)
 
 
 def test_chest_seal_public_wrapper_duplicate_removed():
