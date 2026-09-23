@@ -60,8 +60,18 @@ class DogtagTests(unittest.TestCase):
     def test_no_global_faction_edit(self):self.assertNotIn('disabledFactions',code(src('canCheckPatientDogtags')))
     def test_null_denied(self):self.assertIn('if (isNull _patient) exitWith {false}',src('canCheckPatientDogtags'))
     def test_config_overrides_action_only(self):self.assertIn('class CheckDogTags: CheckResponse {\n        condition = "ACME_fnc_canCheckPatientDogtags";',read('config.cpp'))
-    def test_cache_checks_shape(self):self.assertIn('count _cached >= 3',read('overrides/fn_getDogtagData.sqf'));self.assertIn('_x isEqualType ""',read('overrides/fn_getDogtagData.sqf'))
-    def test_cache_generated_by_native(self):self.assertIn('call ACME_native_fnc_getDogtagData',read('overrides/fn_getDogtagData.sqf'))
+    def test_cache_checks_shape(self):
+        from test_historical_dogtag_identity import test_valid_core_identity_cache_is_returned_unchanged_without_regeneration, test_invalid_cache_regenerates_once_and_second_read_reuses_native_result
+        for cached in ('["Name","SSN","A+"]','["Name","SSN","A+","90 KG"]'):
+            test_valid_core_identity_cache_is_returned_unchanged_without_regeneration(cached)
+        for cached in ('nil','5','"bad"','[]','["Name","SSN"]','["Name",6,"A+"]','["Name","SSN",true]'):
+            test_invalid_cache_regenerates_once_and_second_read_reuses_native_result(cached)
+    def test_cache_generated_by_native(self):
+        from test_historical_dogtag_identity import test_missing_blood_type_uses_native_generation_and_dead_identity_remains_available, test_registered_native_override_and_consumer_are_connected
+        test_registered_native_override_and_consumer_are_connected()
+        for weight in (True,False):
+            for alive in (True,False):
+                test_missing_blood_type_uses_native_generation_and_dead_identity_remains_available(weight,alive)
 
 class ManualSupportTests(unittest.TestCase):
     def test_empty_requires_hold(self):self.assertEqual(support(False,False),'held')

@@ -39,17 +39,13 @@ def test_body_map_has_compact_three_slot_mini_carousel():
     assert 'SELECTED SYRINGE' in render
 
 def test_body_and_full_carousel_share_stable_id_selection():
-    ensure = txt('functions/fn_skStoreEnsureIds.sqf')
-    select = txt('functions/fn_skSelectStored.sqf')
-    selected = txt('functions/fn_skSelectedIndex.sqf')
-    car = txt('functions/fn_skCarouselRender.sqf')
-    body = txt('functions/fn_skBodySyringeRender.sqf')
-    assert '_row set [11, _id]' in ensure
-    assert 'ACME_SK_SelectedSyringeId' in select
-    assert 'param [11, "", [""]]' in selected
-    assert 'ACME_fnc_skSelectedIndex' in car
-    assert 'ACME_fnc_skSelectedIndex' in body
-    assert 'ACME_SK_SelectedSyringeId' not in car or 'skSelectedIndex' in car
+    from test_historical_syringe_identity import test_selection_follows_identity_after_store_reordering, test_missing_selected_identity_requires_explicit_fallback
+    for order in ('[_c,_a,_b]','[_b,_c,_a]','[_a,_b,_c]'):
+        test_selection_follows_identity_after_store_reordering(order)
+    for fallback in (True,False):
+        test_missing_selected_identity_requires_explicit_fallback(fallback)
+    assert 'call ACME_fnc_skCarouselRender;' in txt('functions/fn_skBodySyringeRender.sqf')
+    assert 'ACME_fnc_skSelectedIndex' in txt('functions/fn_skCarouselRender.sqf')
 
 def test_ad_keys_drive_both_views_without_stealing_tag_typing():
     inj = txt('functions/fn_skInject.sqf')
@@ -126,11 +122,10 @@ def test_carousel_hides_draw_ui_sections_and_uses_native_scale():
     assert 'private _sc=[0.55,0.75,1.0,0.75,0.55]' in car
 
 def test_life_reset_clears_store_and_stable_selection():
-    post = txt('functions/fn_postInit.sqf')
-    assert '_unit setVariable ["ACME_narcStore", [], true]' in post
-    assert 'ACME_SK_SelectedSyringeId", ""' in post
-    assert 'player addEventHandler ["Killed"' in post
-    assert 'player addEventHandler ["Respawn"' in post
+    from test_historical_syringe_identity import test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment
+    assert 'call ACME_fnc_registerSyringeLifecycleRuntime;' in txt('functions/fn_postInit.sqf')
+    for event in ('Killed','Respawn'):
+        test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment(event)
 
 
 def test_no_user_facing_drawn_list_wording_remains():

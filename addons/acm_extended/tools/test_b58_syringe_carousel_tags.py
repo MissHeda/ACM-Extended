@@ -50,18 +50,22 @@ def test_tag_assets_are_paa_and_all_sizes_present():
         assert len(files)==12, (size,len(files))
 
 def test_tag_metadata_persists_on_store_and_self_menu_exists():
-    assert 'set[7,_id]' in txt('functions/fn_skTagColor.sqf')
-    assert 'set[8+_n' in txt('functions/fn_skTagCommit.sqf')
+    from test_historical_syringe_identity import test_tag_color_uses_selected_identity_without_changing_text_or_dose, test_editing_updates_only_selected_tag_without_repainting_active_editor
+    for color in ("", "none", "blue_opioid"):
+        test_tag_color_uses_selected_identity_without_changing_text_or_dose(color)
+    for editing in (True, False):
+        test_editing_updates_only_selected_tag_without_repainting_active_editor(editing)
     c=txt('config.cpp')
     assert 'class ACME_DrawnSyringes' in c
     assert 'insertChildren = "_this call ACME_fnc_skSyringeSelfMenu";' in c
     assert 'class skSyringeSelfMenu {};' in c
 
 def test_store_lifetime_current_life_only():
-    p=txt('functions/fn_postInit.sqf')
-    assert 'player addEventHandler ["Killed"' in p
-    assert 'player addEventHandler ["Respawn"' in p
-    assert '_unit setVariable ["ACME_narcStore", [], true]' in p
+    from test_historical_syringe_identity import test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment, test_headless_machine_does_not_install_personal_kit_handlers
+    assert 'call ACME_fnc_registerSyringeLifecycleRuntime;' in txt('functions/fn_postInit.sqf')
+    for event in ('Killed','Respawn'):
+        test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment(event)
+    test_headless_machine_does_not_install_personal_kit_handlers()
 
 def test_carousel_headers_summary_and_patient_location():
     r=txt('functions/fn_skCarouselRender.sqf')
@@ -87,7 +91,8 @@ def test_tag_static_text_matches_editor_font_and_ad_keys_do_not_steal_typing():
 
 
 def test_self_action_opens_native_size_before_entering_carousel():
-    s=txt('functions/fn_skOpenStoredSyringe.sqf')
-    assert 'private _size = _row param [1,10,[0]];' in s
-    assert '[_size] call ACME_fnc_skOpenDraw;' in s
-    assert 'ACME_SK_OpenCarouselIndex' in s
+    from test_historical_syringe_identity import test_self_menu_open_uses_stable_id_and_native_size, test_stale_self_menu_callback_cannot_open_a_different_syringe
+    # The pending entry is now a stable ID, not the retired array-index handoff.
+    for size, expected in ((1,1),(3,3),(5,5),(10,10),(2,10)):
+        test_self_menu_open_uses_stable_id_and_native_size(size,expected)
+    test_stale_self_menu_callback_cannot_open_a_different_syringe()

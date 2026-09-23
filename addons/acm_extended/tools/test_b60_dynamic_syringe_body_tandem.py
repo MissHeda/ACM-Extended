@@ -93,17 +93,16 @@ def test_all_requested_tag_colors_are_available_during_preparation():
         assert color in inj
 
 def test_pending_tag_is_applied_to_every_narcbox_save_path():
-    apply = txt('functions/fn_skApplyPendingTag.sqf')
-    assert '_out set [7, _color]' in apply
-    assert '_out set [8 + _i' in apply
-    for rel in (
-        'functions/fn_skCompoundCommit.sqf',
-        'functions/fn_skWasteDraw.sqf',
-        'functions/fn_epinephrineDrawCardiac.sqf',
-        'overrides/fn_syringeDrawButton.sqf',
-    ):
-        assert 'ACME_fnc_skApplyPendingTag' in txt(rel), rel
-    assert 'ACME_fnc_skApplyPendingTag' in txt('functions/fn_epinephrinePrepare.sqf')
+    from source_scan import lex
+    from test_historical_syringe_identity import test_actual_save_attaches_pending_tag_without_changing_source_funding
+    # Waste Draw only stages a flush now; metadata is attached when Save funds it.
+    for rel in ('functions/fn_skCompoundCommit.sqf','functions/fn_skFlushSave.sqf',
+                'functions/fn_epinephrineDrawCardiac.sqf','functions/fn_epinephrinePrepare.sqf',
+                'overrides/fn_syringeDrawButton.sqf'):
+        tokens=lex(txt(rel))
+        assert any(a.value=='call' and b.value=='ACME_fnc_skApplyPendingTag' for a,b in zip(tokens,tokens[1:])),rel
+    for kind in ('compound','flush'):
+        test_actual_save_attaches_pending_tag_without_changing_source_funding(kind)
 
 def test_save_returns_to_large_body_and_compact_carousel():
     after = txt('functions/fn_skAfterSaveOpenBody.sqf')
@@ -137,8 +136,7 @@ def test_body_hitboxes_wait_for_layout_animation_to_finish():
     assert '_layoutReady' in hot
 
 def test_store_still_expires_on_death_and_respawn():
-    post = txt('functions/fn_postInit.sqf')
-    assert 'player addEventHandler ["Killed"' in post
-    assert 'player addEventHandler ["Respawn"' in post
-    assert '_unit setVariable ["ACME_narcStore", [], true]' in post
-    assert 'ACME_SK_SelectedSyringeId", ""' in post
+    from test_historical_syringe_identity import test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment
+    assert 'call ACME_fnc_registerSyringeLifecycleRuntime;' in txt('functions/fn_postInit.sqf')
+    for event in ('Killed','Respawn'):
+        test_personal_lifecycle_clears_kit_and_selection_but_not_patient_equipment(event)
